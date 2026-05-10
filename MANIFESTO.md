@@ -44,4 +44,4 @@ Examples:
 
 - calibrated-design-canon — this repo, source-of-truth for the philosophy
 - calibrateddesign.com (planned) — public-facing manifesto site
-- calibrateddesignapps.com — the franchise of apps that embody it
+- calibrateddesignapp.com — the franchise of apps that embody it

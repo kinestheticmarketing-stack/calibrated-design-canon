@@ -14,7 +14,7 @@ methods.
 ## What this repo eventually powers
 
 - calibrateddesign.com — philosophy / manifesto site
-- calibrateddesignapps.com — franchise app overview
+- calibrateddesignapp.com — franchise app overview
 - calibratedvibecoding.com — CVC manifesto + registered methods
 
 ## Status
