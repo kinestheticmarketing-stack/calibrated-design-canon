@@ -8,20 +8,31 @@ CVC principles for solo development on web and mobile products.
 
 ## Architecture
 
-Two AI roles, plus a human director:
+A human director, plus three AI roles:
 
+- **Director (human):** Holds context across sessions, exercises
+  taste, gates ship decisions, verifies output, owns the project,
+  adjudicates disagreements between Architect and Auditor.
 - **Architect (chat AI):** Brainstorms, researches, drafts kickoffs,
   makes architectural recommendations, writes documentation. Does
   not execute code.
 - **Executor (Claude Code):** Receives kickoffs, executes the work,
   runs tests, reports back. Does not make architectural decisions
   unilaterally.
-- **Director (human):** Holds context across sessions, exercises
-  taste, gates ship decisions, verifies output, owns the project.
+- **Auditor (chat AI):** Performs adversarial review of kickoffs
+  before they fire and Final Reports after they return. Operates
+  in isolation from the Architect's context. Does not modify
+  artifacts. The Auditor is the external reference point that
+  verifies the Architect's calibration. Invoked selectively — see
+  METHODS/AUDITOR_PROTOCOL.md for invocation criteria.
 
 The architect and executor are intentionally separated. Mixing them
 causes the executor to drift into architecture decisions and the
 architect to drift into premature execution.
+
+The four-role architecture is what distinguishes Calibrated Vibe
+Coding from casual AI-paired development: a calibrated practitioner
+does not trust their own design without an external check.
 
 ## Workflow rules
 

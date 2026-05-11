@@ -10,7 +10,7 @@ keystrokes, runs the checks. The vibe is the speed of pairing.
 The calibration is the judgment, the testing, and the documentation
 that make the speed safe.
 
-## The five principles
+## The six principles
 
 1. **AI surfaces, human chooses.** Architecture and approach come from
    established practice. AI researches options and tradeoffs; the
@@ -34,6 +34,11 @@ that make the speed safe.
 5. **Decisions live in writing.** Architectural choices are documented
    when made, not reconstructed later. The audit trail is what lets
    future-you trust past-you's calibration.
+
+6. **Design is verified against itself.** A calibrated practitioner
+   does not trust their own design without an external adversarial
+   review. The Auditor role exists to break the Architect's
+   self-blindness. See METHODS/AUDITOR_PROTOCOL.md.
 
 ## Methods
 
