@@ -38,7 +38,7 @@ Not seven. One. Restraint enforces clarity; clarity enforces care.
 
 Examples:
 - Sumi world (STUND): viscous ink behavior
-- Blueprint world (STUND): drafted-erasure feel
+- Cyanotype world (STUND): drafted-erasure feel
 
 ## Where this lives
 
