@@ -86,14 +86,38 @@ Priming structure is two-layer:
   Layer 1 (universal):  METHODS/AUDITOR_PRIMING_TEMPLATE.md in the
                         canon repo. Role definition, output format, 
                         engagement rules, universal audit dimensions.
+                        Public, fetchable.
   
   Layer 2 (project):    AUDITOR_PRIMING.md in each project repo. 
                         Project identity, canonical doc placeholders,
-                        project-specific audit dimensions.
+                        project-specific audit dimensions. Lives in
+                        the project repo (typically private).
 
-At prime time, paste Layer 1 first, then Layer 2, then the project's
-canonical docs as specified by Layer 2's placeholders. The Auditor
-stitches them into one operating frame at session start.
+Priming workflow (preferred — fetch-based):
+
+  1. Spin up a new Claude.ai chat. Name it "[Project] — Auditor."
+
+  2. First message instructs the Auditor to fetch Layer 1 from the
+     canon repo URL and tells it that Layer 2 and canon docs follow.
+
+  3. Second message pastes the project's AUDITOR_PRIMING.md (Layer 2)
+     content.
+
+  4. Third message pastes the project's canonical docs as requested
+     by Layer 2.
+
+  5. Auditor acknowledges and stands by.
+
+Fetch URL for Layer 1 (public canon, main branch):
+
+  https://raw.githubusercontent.com/kinestheticmarketing-stack/calibrated-design-canon/main/METHODS/AUDITOR_PRIMING_TEMPLATE.md
+
+Priming workflow (fallback — paste-based):
+
+  If the Auditor chat lacks web_fetch capability or the canon repo
+  is temporarily unreachable, paste the full Layer 1 template
+  content as the first message instead of having the Auditor fetch
+  it. Layer 2 and canon docs follow as in steps 3-4 above.
 
 A project without a custom Layer 2 file can still run a generic 
 Auditor with Layer 1 + canonical docs alone — useful for low-stakes
