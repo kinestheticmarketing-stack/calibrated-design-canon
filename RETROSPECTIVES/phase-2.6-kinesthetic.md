@@ -118,7 +118,7 @@ The relevant comparison is "what would each Auditor catch have cost in Claude Co
 
 ### Cost note — subscription vs. API pricing
 
-The per-gate dollar figures above are estimates for API-priced usage (someone running the methodology by calling the Anthropic API directly). The actual Phase 2.6 work ran on a Claude.ai Max 5x subscription ($100/month flat fee, rate-limit-bounded).
+The per-gate dollar figures above are estimates for API-priced usage (someone running the methodology by calling the Anthropic API directly). The actual Phase 2.6 work ran on a Claude.ai Max 5x subscription (\$100/month flat fee, rate-limit-bounded).
 
 Under Max 5x, the cost structure splits in two:
 
