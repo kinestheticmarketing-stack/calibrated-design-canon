@@ -116,6 +116,20 @@ The relevant comparison is "what would each Auditor catch have cost in Claude Co
 
 **Aggregate phase ROI estimate:** ~\$7 in Auditor costs prevented an estimated ~\$150-400 in Claude Code rework + multiple hours of Director attention recovery. Net ROI in the 20-60x range, consistent with the canon's 80-300x framing on individual catches at the high end.
 
+### Cost note — subscription vs. API pricing
+
+The per-gate dollar figures above are estimates for API-priced usage (someone running the methodology by calling the Anthropic API directly). The actual Phase 2.6 work ran on a Claude.ai Max 5x subscription ($100/month flat fee, rate-limit-bounded).
+
+Under Max 5x, the cost structure splits in two:
+
+- **Architect and Auditor (Claude.ai chat):** Marginal dollar cost per gate is effectively zero — the subscription is paid regardless of how many gates run. The real constraint is the 5-hour rate-limit window. Each gate consumes a portion of the window. If the window depletes, work pauses until reset. Cost is measured in window budget, not invoiced dollars.
+
+- **Executor (Claude Code):** Real metered API dollars. Phase 2.6 Claude Code usage was ~\$33 in actual API spend.
+
+The ROI argument is therefore stronger than the dollar framing suggests: the Auditor's marginal cost is effectively zero against an already-paid subscription, while the Executor savings hit the metered API directly. In effect, near-zero-marginal-cost adversarial review prevents real-dollar Executor rework.
+
+For readers running the methodology on API pricing, the per-gate dollar estimates above remain a useful reference. For practitioners on Max plans, the relevant constraint is rate-limit window budget, and the dollar savings are concentrated entirely on the Executor side.
+
 ### Where the methodology runs efficient
 
 The cheap-iteration-in-chat pattern is the unsung win. When the Builder copy went FAIL → PASS-WITH-FLAGS → PASS across three Auditor cycles, each cycle was ~\$1-2. The alternative — firing FAIL-quality copy at Claude Code, getting back a broken build, doing remediation, refiring — would have cost ~\$30-80 per cycle. The methodology turns expensive sequential Claude Code retries into cheap parallel Auditor + Architect chat iterations.
