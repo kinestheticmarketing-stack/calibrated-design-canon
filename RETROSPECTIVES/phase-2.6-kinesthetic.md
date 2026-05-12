@@ -118,17 +118,21 @@ The relevant comparison is "what would each Auditor catch have cost in Claude Co
 
 ### Cost note — subscription vs. API pricing
 
-The per-gate dollar figures above are estimates for API-priced usage (someone running the methodology by calling the Anthropic API directly). The actual Phase 2.6 work ran on a Claude.ai Max 5x subscription (\$100/month flat fee, rate-limit-bounded).
+Honesty layer on the dollar figures above.
 
-Under Max 5x, the cost structure splits in two:
+The per-gate dollar figures earlier in this section ("\$0.06-0.12 per gate at Sonnet 4.6," "\$0.45-0.90 per gate at Opus 4.7," "~\$7 total for the phase") are NOT the cost the author actually paid for this phase. They are reference math computed against Anthropic's API pricing — useful for readers who run the methodology by calling the Anthropic API directly, useful for understanding the relative cost of the Auditor cycle, and useful for the ROI argument framed in API-equivalent terms.
 
-- **Architect and Auditor (Claude.ai chat):** Marginal dollar cost per gate is effectively zero — the subscription is paid regardless of how many gates run. The real constraint is the 5-hour rate-limit window. Each gate consumes a portion of the window. If the window depletes, work pauses until reset. Cost is measured in window budget, not invoiced dollars.
+The actual phase ran on a Claude.ai Max 5x subscription (\$100/month flat fee, rate-limit-bounded). Under that plan, the cost structure splits in two:
 
-- **Executor (Claude Code):** Real metered API dollars. Phase 2.6 Claude Code usage was ~\$33 in actual API spend.
+- **Architect and Auditor (Claude.ai chat):** Marginal dollar cost per gate is effectively zero — the \$100/month subscription is paid regardless of how many gates run. The real constraint is the 5-hour rate-limit window. Each gate consumes a portion of the window. If the window depletes, work pauses until reset. Cost is measured in window budget, not invoiced dollars.
 
-The ROI argument is therefore stronger than the dollar framing suggests: the Auditor's marginal cost is effectively zero against an already-paid subscription, while the Executor savings hit the metered API directly. In effect, near-zero-marginal-cost adversarial review prevents real-dollar Executor rework.
+- **Executor (Claude Code):** Real metered API dollars. Phase 2.6 Claude Code usage was approximately \$33 in actual API spend.
 
-For readers running the methodology on API pricing, the per-gate dollar estimates above remain a useful reference. For practitioners on Max plans, the relevant constraint is rate-limit window budget, and the dollar savings are concentrated entirely on the Executor side.
+Why this retro uses API math anyway. The window-consumption-per-gate on Max 5x has not been formally measured yet. Running that experiment requires noting the 5-hour-window percentage before and after each gate over a sample of 5-10 gates of varying size, then computing a real consumption range. That work hasn't been done. Until it is, API math is the only honest source of per-gate cost numbers — it represents what readers running on API pricing would actually pay, and it gives the ROI argument a defensible numeric basis even though it overestimates the author's actual cost.
+
+The ROI argument is therefore stronger than the API math suggests for Max-plan practitioners. The Auditor's marginal cost against an already-paid subscription is effectively zero, while the Executor savings (~\$150-400 in prevented rework) hit the metered API directly. In effect, near-zero-marginal-cost adversarial review prevents real-dollar Executor rework.
+
+For readers running the methodology on API pricing, the per-gate dollar estimates above are the relevant numbers. For Max-plan practitioners, the relevant constraint is rate-limit window budget — measurement TBD in a future retro update.
 
 ### Where the methodology runs efficient
 
