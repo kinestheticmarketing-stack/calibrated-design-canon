@@ -57,6 +57,10 @@ their own design without an external check.
 
 ## Canon contents
 
+Meta-canon:
+- [ROADMAP.md](ROADMAP.md) — running status board for shipped,
+  in-progress, and planned canon
+
 Standard and philosophy:
 - [MANIFESTO.md](MANIFESTO.md) — the philosophical position
 - [CVC.md](CVC.md) — the Calibrated Vibe Coding standard
