@@ -130,6 +130,7 @@ RELATED DOCUMENTS
 
 - `SEO_GEO_AUDIT_DIMENSIONS.md` — checkable dimensions used in audits
 - `SEO_GEO_TOOLS_AND_TECHNIQUES.md` — implementation patterns (search operators, regex, IMPORTXML, etc.)
+- Competitor on-page scrape (titles, H1, meta, canonical, robots via IMPORTXML) → `templates/competitor-onpage-audit.md`
 - `SEO_GEO_PRINCIPLES.md` — operational discipline (5% rule, change-bundling rules, leave-well-enough-alone rule, etc.)
 - `SEO_GEO_SOURCES.md` — source tier tracking and attribution
 - `SEO_GEO_GRAY_HAT_REFERENCE.md` — gray-hat tactics, documented for informed operator decisions
