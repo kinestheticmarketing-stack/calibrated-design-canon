@@ -27,6 +27,10 @@ The methodology is being built incrementally from primary sources (paid courses,
 - Each course has `EXTRACTION_LOG.md` indexing what's been extracted
 - Each lesson gets its own file with structured extraction
 
+### Implementation assets (per-module, running/executable)
+- `link-building/SUPER_100.md` — the Module 2 (Link Building) dream-list: a reusable 13-category template, seeded per property. First instance populated for Kinesthetic Marketing.
+- `keyword-research/KEYWORD_TOOL_EXTRACTION_PLAN.md` — the Module 2+3 tool-gated work banked into one executable checklist, split by free (Ahrefs Webmaster Tools) vs. paid-blitz (Ahrefs Starter / SE Ranking / Semrush) tooling tiers.
+
 ## Build philosophy
 
 Three commitments shape this section:
