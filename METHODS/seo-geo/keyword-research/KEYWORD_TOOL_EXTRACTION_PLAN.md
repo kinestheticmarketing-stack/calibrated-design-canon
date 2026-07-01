@@ -84,3 +84,60 @@ _Competitor + market data. Time/credit-limited. Execute as one focused blitz. Ex
   - L10 — Quora Ads Manager signup (free).
   - L09 — manual competitor SERP spot-checks (free, just time).
   - L08 — the core qualification-query thinking exercise, runnable today from existing GSC data alone.
+
+## Portfolio-wide blitz framing (the pre-blitz planning session)
+
+This doc's Sections 1–3 are the KINESTHETIC instance. The real leverage is running ONE
+paid-tool window (or the free AWT baseline) across the WHOLE property portfolio at once —
+marginal cost of adding a domain to the same blitz is ~zero, so harvest everything together.
+
+BEFORE pulling the trial, run a dedicated PRE-BLITZ PLANNING session whose job is, per property:
+  1. List every property (kinesthetic, DCI/denvercoloradoinsulation.com, titillatingtilework.com,
+     the /names/ parked domains, ToteFinders, Don's Garage, etc. — assemble the full list).
+  2. For each, decide WHAT IT MIGHT BECOME — because the property TYPE determines what keywords
+     to pull:
+       - Local rank-and-rent (DCI-style): local + service keywords, "[service] [suburb]" patterns,
+         local-pack competitor analysis.
+       - Directory (non-local): national-scale "[category] [city]" + "find a [pro]" intent.
+       - Resource/product site for a trade (e.g. tile pros): informational + commercial —
+         how-to's, tool/product keywords ("best tile saw," "grout calculator"), buyer intent.
+       - Parked/speculative (/names/ domains): LIGHT demand-validation only — "is there demand
+         here and what shape," so if activated/sold later, the landscape is already known.
+  3. From the type, define EXACTLY what to extract for that property (mirror Sections 1-3's structure).
+  4. Split each property's list into free-AWT-tier (owned+verified) vs paid-blitz-tier (competitor/market).
+  5. Order the whole thing so the paid window is maximally efficient — free extraction first, then
+     paid blitz, export-everything-to-CSV.
+
+SCOPE NOTE: This planning session is CROSS-PROPERTY — DCI, the tile site, the /names/ domains are
+other chats' / other contexts' domains. Do NOT build the portfolio plan from a single project chat
+working blind on properties it doesn't have loaded. Either (a) run a dedicated cross-property session
+that brings the whole portfolio into one place, or (b) have each property's chat contribute its
+section, then assemble. The Kinesthetic section (Sections 1-3 above) is the template for what each
+property's section looks like.
+
+RATIONALE: figuring out property-type + extraction targets DURING the trial burns paid time. Ducks
+in a row first → hit go → crank out the whole portfolio's research in one disciplined window.
+
+## Keyword research as a SELLABLE ASSET (raises domain resale value)
+
+Insight (2026-07-01): the portfolio keyword blitz has a THIRD payoff beyond (1) feeding own
+content/build decisions and (2) feeding Modules 2/3 — the research itself is a SELLABLE
+DUE-DILIGENCE ASSET that raises each domain's resale value.
+
+WHY: a buyer purchasing a domain (or a rank-and-rent lease) is buying future earning potential.
+A named domain is worth X. A named domain PLUS a documented keyword-opportunity map ("here's the
+search demand, here's what's winnable, here's the traffic waiting") is worth meaningfully more —
+it de-risks the purchase by doing the buyer's due diligence for them. You're not selling
+titillatingtilework.com; you're selling it + proof there's a real business in the keyword landscape.
+
+IMPLICATION for the blitz: for any property that MIGHT be sold, structure/export its keyword
+research as a BUYER-READY DUE-DILIGENCE PACKET, not just personal working notes. Same underlying
+data, but organized so it IS the thing you hand a buyer: demand volumes, difficulty/winnability,
+opportunity map, competitor snapshot. This is a small framing change with real dollar consequences —
+research-as-scratchpad vs. research-as-sale-asset.
+
+TOOL NOTE: $29/mo Ahrefs Starter (monthly, cancel anytime) is the practical vehicle for the
+whole-portfolio own-property blitz — covers everything except heavy competitor tooling (capped at
+1,000 rows/1,000 credits, no Content Explorer). Fine for own-property keyword maps; the ceiling
+only bites on deep competitor backlink work. One focused month, whole portfolio, export to
+buyer-ready CSVs.
