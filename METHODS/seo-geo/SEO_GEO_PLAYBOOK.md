@@ -125,6 +125,35 @@ When sources disagree on a tactic or principle, the playbook surfaces the disagr
 This posture exists because most SEO content pretends there's one right answer when there isn't. Sophisticated readers see through false confidence. Honest documentation of disagreement is more credible than fabricated consensus.
 
 ═══════════════════════════════════════════════════════════════
+KEYWORD-SELECTION DISCIPLINE (MODULE 3: L01, L07)
+═══════════════════════════════════════════════════════════════
+
+Two standing process rules from the Keyword Research Blueprint module, adopted
+as canon. Both fire on every page build, not just once.
+
+### Rule 1 — Keyword-Selection Lens (L01)
+
+Before building any new page or content brief, the brief MUST state:
+- The single PRIMARY target query the page is built to rank for.
+- The search INTENT behind it (informational / commercial / transactional / navigational).
+- A SERP-REWARD CHECK: someone has eyeballed the live SERP for that query to confirm the page
+  TYPE being built (roundup / service page / guide / calculator / atomic-answer) matches what
+  Google already rewards there. If the SERP shows listicles and you're building a service page,
+  that's a mismatch — flag it before building.
+
+No page gets built without these three stated. Missing them = build halts until supplied.
+
+### Rule 2 — Stick-to-the-Wall Testing (L07)
+
+Before generalizing a NEW page-type across the generator/site at scale, TEST one instance
+against a proven competitor pattern first:
+- Identify a competitor page already ranking for the target query-type.
+- Model the new page-type on what's demonstrably working (structure, depth, format).
+- Ship ONE, verify it holds up / ranks, THEN roll the pattern out.
+
+Never mass-generate a brand-new page-type on assumption. One proven instance gates the rollout.
+
+═══════════════════════════════════════════════════════════════
 RELATED DOCUMENTS
 ═══════════════════════════════════════════════════════════════
 
