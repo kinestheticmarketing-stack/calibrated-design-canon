@@ -154,6 +154,113 @@ against a proven competitor pattern first:
 Never mass-generate a brand-new page-type on assumption. One proven instance gates the rollout.
 
 ═══════════════════════════════════════════════════════════════
+EXPERT REFINEMENTS (extracted signal, hype stripped)
+═══════════════════════════════════════════════════════════════
+
+**Source #1:** Caleb Ulku (YouTube @calebulku) — 10-yr local-SEO agency owner,
+critique-breakdown of a viral vibe-coded diesel-mechanic site. Extracted 2026-07-02.
+
+**Method:** experts leak finite, load-bearing details inside critiques — the specifics
+their tool or service does that a free-prompt AI misses. Apply the trivium to every
+expert source before banking anything: separate what's SAID (the claim) from whether
+it FOLLOWS (the logic) from WHY it's framed that way (the rhetoric / sales motive).
+Extract the load-bearing technique; discard the marketing hyperfocus.
+
+**Filing principle:** this SEO skill is CAPABILITY-FIRST and SOURCE-AGNOSTIC. Glen
+Allsopp's Blueprint modules are the current spine because that course was the first
+big complete input and got structured in first — NOT because Glen is the authority.
+Every source (Glen, Caleb Ulku, future local-SEO / parasite-SEO / link-building
+courses) is a TEST SUBJECT graded by what demonstrably improves results, then filed
+onto the module-shelf(s) it deepens. The spine can be reorganized if a better
+structure emerges; results are load-bearing, no single source is. Each refinement
+below is tagged with the module-shelf(s) it sharpens.
+
+**Governing correction for this source** (a 10-year local-SEO agency owner critiquing
+a viral vibe-coded diesel-mechanic site): the expert's own framing — "the website
+doesn't matter, GBP is everything" — is rhetoric that contradicts his own tactics,
+every one of which depends on the website existing and being correct. The corrected
+model: **the website is the qualifying base layer.** It substantiates the entity
+claims the GBP makes — GBP is the claim, the website is the evidence Google
+corroborates it against. Build order stays locked: on-site foundation first (fully in
+your control, now) → GBP / entity layer (outside your control but directly workable,
+next tier) → outreach / links (long-shot, last tier). The five refinements below
+STRENGTHEN the base layer and the tiers above it — none of them invert that order.
+
+### Refinement 1 — Structured Internal Linking (mirror the category tree, not "what seems relevant")
+
+The sharpest detail in the source. AI systems and Google build their picture of a
+site from its INTERNAL LINK STRUCTURE, not its URL structure. Default AI-assisted
+internal linking free-associates ("these pages feel related") — that's the wrong
+model. Links must deliberately follow the category → service tree: for local
+properties, that tree is the GBP category/service hierarchy; for non-local
+properties, it's the site's own service taxonomy. This is the concrete fix for the
+internal-linking blind spot flagged in earlier audits. Free, on-site, do-now.
+Applies to ALL properties — only the source of the tree differs (local vs.
+non-local).
+
+**Module-shelf:** Module 1 (On-Site) primary + Module 5 (Local SEO) overlay. NOTE:
+Module 1 audit treated internal links as crawl-plumbing only; this ADDS the
+authority/entity-structure dimension it missed.
+
+### Refinement 2 — Entity/Category Research Axis (a second research axis, local properties)
+
+Not a replacement for keyword research — keywords stay in the process, neutral-to-
+helpful, no penalty for continuing to do them. This is an ADDITION: for local
+properties, research the GBP primary category, secondary categories, and services
+that the ranking competitors actually use, then complete your own profile to match.
+That research drives three things: (a) GBP setup itself, (b) which pages the site
+needs (a page per category/service the competitors are winning with), and (c) the
+internal-link structure in Refinement 1. This is a research input for the Ahrefs
+blitz month. Applies to LOCAL properties (DCI, Denver trades, mechanic sites, Don's
+Garage). Non-local properties stay keyword-first, unchanged.
+
+**Module-shelf:** Module 5 (Local SEO), feeds the Ahrefs blitz research. LOCAL
+properties only.
+
+### Refinement 3 — Hyper-Local Means Local Eccentricities, Not Landmark Trivia
+
+Listing nearby landmarks ("we serve customers near the old clock tower") is geo
+trivia — weak, doesn't signal real local expertise. Writing about problems SPECIFIC
+to the area's actual conditions is real entity relevance. Source example: lead
+main drain lines in old Boston housing stock vs. newer California construction —
+a genuine regional difference a local expert would know and a generic writer
+wouldn't. For DCI: Denver-specific insulation realities (altitude, old-Denver
+housing stock, climate loads) beat generic "insulation in [suburb]" copy. This
+sharpens content that's already being written — no new content type, just a test
+before publishing it. Applies to LOCAL properties.
+
+**Module-shelf:** Module 5 (Local SEO) for the local-relevance principle + Module 4
+(Super Content) for the deep-content craft. LOCAL properties.
+
+### Refinement 4 — Rank-Grid Measurement for Local (a measurement method, later tier)
+
+Don't judge local ranking from a single search — proximity means rank varies across
+a geographic mesh around the business. The correct measurement method is a rank
+grid: check position across a grid of points, then target the cells sitting at
+position 4-7 to push into the top 3. Single-point checks (like the L09 SERP
+spot-check) are directionally useful but insufficient as the measurement method once
+a property reaches the GBP/local-pack tier. Applies to LOCAL properties, at the
+GBP/measurement tier — not a base-layer concern.
+
+**Module-shelf:** Module 5 (Local SEO) + Module 9 (Audits Blueprint) for measurement
+method. LOCAL properties, GBP/measurement tier.
+
+### Refinement 5 — GBP Categories Are a Fixed Dropdown; AI Hallucinates Them
+
+A concrete setup gotcha: asking an AI "what GBP category should I use" produces
+invented categories that don't exist in Google's actual, fixed category list. GBP
+category selection must be picked from the real dropdown, never AI-generated —
+verify any AI-suggested category against Google's current category list before
+using it. Prevents a real setup error at the GBP tier. Applies to LOCAL properties,
+GBP-setup tier.
+
+**Module-shelf:** Module 5 (Local SEO), GBP-setup tier. LOCAL properties.
+
+**Extraction pattern is repeatable** — future expert sources get mined the same way
+(trivium filter: claim / logic / rhetoric → extract the load-bearing detail, discard
+the hype) and banked here.
+
+═══════════════════════════════════════════════════════════════
 RELATED DOCUMENTS
 ═══════════════════════════════════════════════════════════════
 
