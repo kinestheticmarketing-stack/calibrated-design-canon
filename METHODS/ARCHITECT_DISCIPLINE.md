@@ -221,5 +221,34 @@ For the practitioner method spec that this Architect operates
 under: see METHODS/the-calibrated-stack.md.
 
 ═══════════════════════════════════════════════════════════════
+SESSION-CLOSE CANON CHECK
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+Session paperwork updates project docs but generalizable lessons
+never reach method canon. Promotion has no trigger, so canon drift
+is silent and unbounded.
+
+CANON RULE
+Every session-close paperwork pass MUST include one question: "Did
+any lesson this session generalize beyond this project?" If yes,
+append one line to CANON_QUEUE.md at the canon repo root (date,
+source project, lesson) in the same paperwork pass. If no, state
+"canon check: nothing to queue" in the paperwork summary.
+
+Promotion remains deliberate: retrospective sessions drain the
+queue into METHODS/ docs. The queue makes drift visible; it does
+not auto-promote. A queue exceeding ~8 entries is the signal that
+a retrospective session is due.
+
+PRACTICAL IMPLEMENTATION
+- The Architect runs the check, not the Director. It fires as part
+  of the same response that delivers other paperwork artifacts.
+- Queue entries are one line each. No essays — the retro session
+  does the expansion.
+- Entries are deleted from the queue when promoted, keeping the
+  file a live backlog rather than an archive.
+
+═══════════════════════════════════════════════════════════════
 END OF DOCUMENT
 ═══════════════════════════════════════════════════════════════
