@@ -70,6 +70,16 @@ The Auditor adds real production tax — a second chat session, priming
 time, audit round-trips. Use it where the cost is justified by the 
 stakes. Calibration is the goal, not coverage.
 
+VERDICT SCOPE RULE:
+
+A skip-or-invoke decision, and any verdict, belongs to a specific
+artifact at a specific scope. Any material change to a drafted
+kickoff after the invocation decision — new infrastructure, new
+middleware, migrations, changed blast radius, changed deliverables —
+VOIDS the prior decision. The Architect must restate the skip-or-
+invoke call for the revised artifact before it fires. "The earlier
+version was cleared" is never carried forward across a scope change.
+
 ═══════════════════════════════════════════════════════════════
 PER-PROJECT INSTANTIATION
 ═══════════════════════════════════════════════════════════════
@@ -176,6 +186,17 @@ FAIL verdict:
   - Architect revises addressing critical issues.
   - Re-submit to Auditor for a second audit pass.
   - Loop until PASS or PASS-WITH-FLAGS.
+
+  THE FAIL LOOP IS CLOSED. From the moment a FAIL verdict lands
+  until the Auditor returns PASS or PASS-WITH-FLAGS on the revised
+  artifact, NOTHING in that thread fires at the Executor. The
+  revision artifact itself — including any revision kickoff — goes
+  to the Auditor pre-fire. Architect skip discretion is suspended
+  inside an active FAIL loop; there are no low-stakes exceptions,
+  no "the output goes back to audit anyway" reasoning, no urgency
+  override. The Director does not police this gate — the Architect
+  holds it. An Architect that hands the Director an Executor-
+  addressed block during an active FAIL loop has produced a defect.
 
 PASS-WITH-FLAGS verdict:
   - Director reads the flags.
