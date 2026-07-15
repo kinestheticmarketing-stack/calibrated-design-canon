@@ -27,3 +27,11 @@ here. One line per entry: date, source project, lesson.
 - 2026-07-08 | roadmap backlog | Architect-discipline patterns 6-11
   formal canonization (observed in practice, never written into
   ARCHITECT_DISCIPLINE.md).
+- 2026-07-15 | kinestheticmarketing.com | Source-attribution as a
+  universal DR principle: every public link/ad/offer/entry point
+  carries a distinct source tag (?source=linkedin, ?source=card,
+  etc.) so conversions attribute to the exact channel. This is
+  bedrock direct response — measure what pulls, kill what doesn't;
+  the alternative is the unmeasurable brand-awareness racket. Belongs
+  in dr-canon (the DR substrate library) once that file is stood up;
+  queued here until then.
