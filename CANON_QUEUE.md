@@ -35,3 +35,7 @@ here. One line per entry: date, source project, lesson.
   the alternative is the unmeasurable brand-awareness racket. Belongs
   in dr-canon (the DR substrate library) once that file is stood up;
   queued here until then.
+- 2026-07-19 | design canon | Decoy-effect and Pratfall entries in
+  METHODS/DESIGN_PSYCHOLOGY.md overlap dr-canon principles
+  (offer-stack architecture, damaging admission) — fold
+  cross-references into dr-canon when it stands up.
