@@ -40,7 +40,8 @@ SOURCE TIER FRAMEWORK
 - John Mueller / Martin Splitt / Gary Illyes (Google reps)
 - Rand Fishkin (SparkToro)
 - Cyrus Shepard
-- **Glen Allsopp (Detailed)** — SEO Blueprint 3, being extracted
+- **Glen Allsopp (Detailed)** — SEO Blueprint 3, extraction complete
+- **Vahe Arabian (State of Digital Publishing)** — Publisher SEO Course, extraction complete
 - Andrea Volpini (WordLift) — entity SEO
 
 ### Tier 4 — Information retrieval academic foundations
@@ -67,19 +68,25 @@ COURSES BEING EXTRACTED
 ═══════════════════════════════════════════════════════════════
 
 ### Glen Allsopp / Detailed / SEO Blueprint 3 (Tier 3)
-- On-Site Blueprint (58 lessons) — extraction in progress
-- Link Building Blueprint (26 lessons) — pending
-- Keyword Research Blueprint (15 lessons) — pending
-- Super Content Blueprint (5 lessons) — pending
-- Local SEO Blueprint (18 lessons) — pending
-- Experts Blueprint — pending
-- Superpixels (2 lessons) — pending
-- SEO Blueprint 3 Playbook (1 lesson) — pending
-- Audits Blueprint (13 lessons) — pending
+- ✓ COMPLETE (9/9 modules + course extras). Source extraction closed 2026-06-18. Prefixes: TLB, TKR, TSC, TLO, TEB, TSP, TPB (221 tactic IDs total). See `sources/glen-allsopp-seo-blueprint-3/EXTRACTION_LOG.md`.
+- On-Site Blueprint (58 lessons) — ✓ complete
+- Link Building Blueprint (26 lessons) — ✓ complete
+- Keyword Research Blueprint (15 lessons) — ✓ complete
+- Super Content Blueprint (5 lessons) — ✓ complete
+- Local SEO Blueprint (18 lessons) — ✓ complete
+- Experts Blueprint (4 lessons) — ✓ complete
+- Superpixels (29 lessons + 15 galleries) — ✓ complete
+- SEO Blueprint 3 Playbook — ✓ complete for provided scope only; 8 report pages never supplied, re-open at TPB-10 if obtained (see README.md "Known gaps")
+- Audits Blueprint (13 audits) — ✓ complete, mints no new tactic IDs
+
+### Vahe Arabian / State of Digital Publishing / Publisher SEO Course (Tier 3)
+- ✓ COMPLETE (7/7 modules + rollups). Prefixes: PIN, PTE, PCO, PTA, PPI, PRA, PCD (240 tactic IDs total). See `sources/vahe-arabian-publisher-seo/EXTRACTION_LOG.md`.
+- Introduction, Technical SEO, Content SEO, Tactics, Practical Implementation, Reporting & Analytics, Content Distribution — all complete.
+- Primary source for publisher-specific SEO (news sitemaps, Google Publisher Center, Bing News PubHub, crawl speed/frequency, E-E-A-T for publishers).
 
 ### SEO Jesus / One Page Websites 2025 (Tier 3, gray-hat-heavy)
-- 13 lessons already extracted (see sources/seo-jesus-one-page-websites-2025/EXTRACTION_LOG.md)
-- Primary source for gray-hat reference documentation
+- **NOT extracted.** Module folders exist (`intro/`, `01-finding-emds/`, `02-launching-sites/`, `03-niche-selection/`, `04-link-building/`) but are empty — no lesson files, no `EXTRACTION_LOG.md`, no rollups. This entry previously claimed "13 lessons already extracted"; that claim does not match the current working tree and has been corrected. See README.md "Known gaps" for detail. Extraction needs to be (re-)run before this source can be used in an audit.
+- Intended as primary source for gray-hat reference documentation once extracted.
 - Teaches: EMD-based rank-and-rent, citations purchased in bulk, expired domain redirects, PBNs, shared domains, paid guest posts, paid link insertions
 
 ### Kinesthetic Marketing AI Visibility Playbook (Tier 3)
