@@ -85,6 +85,15 @@ Methodology playbooks (METHODS/):
   audits; chat-side Auditor remains for stakes-bearing audits)
 - POLISH_PROTOCOL.md — Auditor-findings-to-fixes workflow codified
   as a reusable kickoff template
+- RELATIONSHIP_DISCIPLINE.md — solo-operator network-building as
+  canonized sales discipline; systematizes how the operator
+  accumulates people who care about the work before they buy;
+  covers Point 5 (buy from friends) and Point 6 (be valuable,
+  expect nothing) from foundational sales wisdom
+- GIVE_FIRST_DISCIPLINE.md — giving as an explicit sales discipline,
+  not just brand strategy; codifies the value-to-ask ratio and the
+  specific mechanisms (public canon, substantive engagement, useful
+  introductions, shared ideas)
 
 Methodology metrics:
 - METRICS.md — multi-vertical methodology metrics tracking; per-
@@ -92,6 +101,29 @@ Methodology metrics:
   attribution (Architect drafting / Architect spec-drift / Senior
   catch / Auditor catch / Builder catch); active-phase running
   tallies plus closed-phase finals
+
+Publishing infrastructure:
+- NEWSLETTER_FORMAT.md — locked structure for the CVC publication;
+  4 weekly field notes + 1 monthly synthesis cycle; feeds off
+  structured artifacts from session-close discipline
+- NEWSLETTER_VOICE.md — DR-newsletter voice canon; peer to
+  COPY_VOICE.md but tuned for editorial register rather than sales
+  register
+- SESSION_CLOSE_PROTOCOL.md — canon rule that every working session
+  produces or updates at least one structured artifact; prerequisite
+  substrate for newsletter agent automation and metrics tracking
+
+Meta-canon on the practice itself:
+- THE_DIRECTOR_ROLE.md — explicit definition of the Director role as
+  "the person who knows what completeness looks like"; not defined by
+  title or ownership but by domain knowledge of what all the pieces
+  are that must exist for the artifact to be real rather than a
+  surface simulation
+- CONVERSATIONAL_ARCHITECTURE.md — extended structured conversation
+  as the current form of prompt engineering; documents why rigid
+  prompt structures died (reasoning models internalized them) and
+  what replaced them; names the practice the Calibrated Stack
+  methodology is built on
 
 Retrospectives (RETROSPECTIVES/):
 - phase-2.7-kinesthetic.md — Phase 2.7 retro covering 5 surfaces
@@ -160,6 +192,12 @@ Why this order:
 6. Project-type scaffolds and specialist priming templates are
    lower priority because they're consolidation work, not new
    capability. Ship them when there's time, not before.
+
+7. Meta-canon on the practice itself (THE_DIRECTOR_ROLE.md,
+   CONVERSATIONAL_ARCHITECTURE.md) captures the philosophical
+   position that makes the methodology defensible against
+   "just use ChatGPT" competition. Not urgent, but worth
+   locking while the framing is fresh from recent sessions.
 
 ═══════════════════════════════════════════════════════════════
 UPDATE PROTOCOL

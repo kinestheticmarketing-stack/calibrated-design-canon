@@ -76,6 +76,10 @@ Method specs (METHODS/):
   universal Layer 1 priming for the Auditor
 - [ARCHITECT_DISCIPLINE.md](METHODS/ARCHITECT_DISCIPLINE.md) —
   Architect workflow-discipline rules
+- [GIVE_FIRST_DISCIPLINE.md](METHODS/GIVE_FIRST_DISCIPLINE.md) —
+  giving as sales discipline
+- [RELATIONSHIP_DISCIPLINE.md](METHODS/RELATIONSHIP_DISCIPLINE.md) —
+  solo-operator network-building as canonized discipline
 
 Retrospectives (RETROSPECTIVES/):
 - [phase-2.6-kinesthetic.md](RETROSPECTIVES/phase-2.6-kinesthetic.md) —
