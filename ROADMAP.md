@@ -35,6 +35,13 @@ Method specifications (METHODS/):
   Auditor
 - ARCHITECT_DISCIPLINE.md — Architect workflow-discipline rules
   (patterns 1-5 currently canonized)
+- RELATIONSHIP_DISCIPLINE.md — solo-operator network-building as
+  canonized sales discipline; four mechanisms (substantive
+  engagement, public canon, useful introductions, shared ideas);
+  20% time budget
+- GIVE_FIRST_DISCIPLINE.md — giving as explicit sales discipline;
+  3:1 give-to-promote ratio; conversion mechanism for solo
+  operators without paid distribution
 
 Retrospectives (RETROSPECTIVES/):
 - phase-2.6-kinesthetic.md — first full deployment of four-role
@@ -85,15 +92,6 @@ Methodology playbooks (METHODS/):
   audits; chat-side Auditor remains for stakes-bearing audits)
 - POLISH_PROTOCOL.md — Auditor-findings-to-fixes workflow codified
   as a reusable kickoff template
-- RELATIONSHIP_DISCIPLINE.md — solo-operator network-building as
-  canonized sales discipline; systematizes how the operator
-  accumulates people who care about the work before they buy;
-  covers Point 5 (buy from friends) and Point 6 (be valuable,
-  expect nothing) from foundational sales wisdom
-- GIVE_FIRST_DISCIPLINE.md — giving as an explicit sales discipline,
-  not just brand strategy; codifies the value-to-ask ratio and the
-  specific mechanisms (public canon, substantive engagement, useful
-  introductions, shared ideas)
 
 Methodology metrics:
 - METRICS.md — multi-vertical methodology metrics tracking; per-

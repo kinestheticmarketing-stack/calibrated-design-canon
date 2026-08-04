@@ -76,6 +76,10 @@ Method specs (METHODS/):
   universal Layer 1 priming for the Auditor
 - [ARCHITECT_DISCIPLINE.md](METHODS/ARCHITECT_DISCIPLINE.md) —
   Architect workflow-discipline rules
+- [DESIGN_PSYCHOLOGY.md](METHODS/DESIGN_PSYCHOLOGY.md) — seven
+  design-psychology principles (Jakob's Law and others) with
+  per-page audit checklists, applied across every Calibrated
+  Stack web property
 - [GIVE_FIRST_DISCIPLINE.md](METHODS/GIVE_FIRST_DISCIPLINE.md) —
   giving as sales discipline
 - [RELATIONSHIP_DISCIPLINE.md](METHODS/RELATIONSHIP_DISCIPLINE.md) —
