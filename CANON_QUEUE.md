@@ -39,3 +39,4 @@ here. One line per entry: date, source project, lesson.
   METHODS/DESIGN_PSYCHOLOGY.md overlap dr-canon principles
   (offer-stack architecture, damaging admission) — fold
   cross-references into dr-canon when it stands up.
+- 2026-07-22 | seo-geo extraction (Vahe Arabian Publisher SEO course, M5-M7) | Knowledge corpora referencing third-party platforms/tools should maintain one shared deprecation/currency ledger rather than independently re-verifying and re-flagging the same stale-tool fact across multiple documents — recurred 3x in this project alone (M5, M6, M7 rollups each separately proposed this).
