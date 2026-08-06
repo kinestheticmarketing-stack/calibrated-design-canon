@@ -39,3 +39,12 @@ here. One line per entry: date, source project, lesson.
   METHODS/DESIGN_PSYCHOLOGY.md overlap dr-canon principles
   (offer-stack architecture, damaging admission) — fold
   cross-references into dr-canon when it stands up.
+- 2026-08-06 | seo-geo sources pipeline | Standing deprecation-ledger
+  proposal — a "retired Google/platform features" ledger, independently
+  raised in Vahe's Practical Implementation, Reporting & Analytics, and
+  Content Distribution rollups but not previously logged to this queue.
+  Parasite-SEO corpus (Floate) closed 2026-08-06 with 39/54 tactics
+  BLOCKED at the skill gate on site-reputation-abuse grounds. Adds a
+  third source to the standing deprecation-ledger case: the ledger
+  should be built once as a standalone corpus artifact at skill-build
+  time rather than re-derived per course. See SKILL_GATE.md.
