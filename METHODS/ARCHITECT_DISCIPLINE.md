@@ -249,6 +249,41 @@ PRACTICAL IMPLEMENTATION
 - Entries are deleted from the queue when promoted, keeping the
   file a live backlog rather than an archive.
 
+
+═══════════════════════════════════════════════════════════════
+SESSION-CLOSE RECEIPTS CHECK
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+Measurable outcomes accrue faster than they get recorded. A lead,
+a citation count, a ranking, a rent check, a build time — surfaced
+in a session, mentioned once, then lost to chat history. An
+unrecorded receipt is a lost asset: it can't feed a case study,
+can't prove the method, can't support the exit valuation.
+
+CANON RULE
+Every session-close paperwork pass MUST include one question: "Did
+any receipt-worthy number surface this session?" A receipt is any
+real outcome with a number — capability (built X in N days),
+performance (N citations, ranking, metric), or revenue (N leads,
+$N/month, closed $N, ticket size). If yes, append the row to
+METHODS/RECEIPTS.md in the same paperwork pass (date, asset, rung,
+receipt, source). If no, state "receipts check: nothing to log" in
+the paperwork summary.
+
+Real numbers only. Projections do not go in the ledger body — they
+live in the RECEIPTS.md PROJECTIONS section and graduate into the
+ledger when they become real. Never inflate a receipt; an
+overstated receipt is worse than none.
+
+PRACTICAL IMPLEMENTATION
+- The Architect runs the check, not the Director. It fires as part
+  of the same response that delivers other paperwork artifacts.
+- Revenue receipts are the highest-value and easiest to lose —
+  capture them the moment they surface.
+- See METHODS/RECEIPTS.md for the ledger, the receipt ladder, and
+  the full capture discipline.
+
 ═══════════════════════════════════════════════════════════════
 END OF DOCUMENT
 ═══════════════════════════════════════════════════════════════
