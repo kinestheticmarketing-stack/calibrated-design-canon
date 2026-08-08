@@ -1,7 +1,7 @@
 # RECEIPTS.md
 
-*A method-level record under [Calibrated Vibe Coding](../CVC.md).*
-*The running ledger of what the work actually produced — numbers, not narrative.*
+*A method-level specification under [Calibrated Vibe Coding](../CVC.md).*
+*Source-of-truth ledger of measurable outcomes across all Calibrated Stack projects — numbers, not narrative.*
 
 ═══════════════════════════════════════════════════════════════
 PURPOSE
