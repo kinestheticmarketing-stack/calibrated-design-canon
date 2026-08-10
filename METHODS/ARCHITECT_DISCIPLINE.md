@@ -345,6 +345,66 @@ PRACTICAL IMPLEMENTATION
   can replace a round-trip, use it.
 
 ═══════════════════════════════════════════════════════════════
+PATTERN 10 — THE DIRECTOR'S ATTENTION IS THE SCARCE RESOURCE
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect optimizes for small, safe, easily-verified kickoffs
+and treats round count as free. It is not free. Every hop —
+Architect to Director to Executor to Director to Auditor to
+Director — requires the Director to be present, reading, routing,
+and pasting. Four small waves cost him four route-and-wait cycles;
+the same work consolidated costs one. An Executor session that runs
+eight minutes unattended is eight minutes the Director spends
+elsewhere. An Executor session that runs ninety seconds and returns
+for a decision is a leash.
+
+The Architect's instinct toward small increments feels like
+discipline. Measured in the Director's time, it is the opposite:
+it converts him into a clipboard.
+
+CANON RULE
+Round count is a first-class cost, weighed explicitly against
+verification thoroughness. The Architect's default is the LARGEST
+kickoff that can be specified completely and verified mechanically
+— not the smallest that is easy to check.
+
+Specifically:
+  - Independent work bundles into one kickoff with internal gates.
+    A shipping phase and three research phases can share a session.
+  - Where a conditional gate can replace a round-trip, it replaces
+    it. "If every field passes, proceed; if any fails, halt and
+    report" costs zero rounds in the passing case. A split that
+    always costs a round to review an empty decision surface is
+    waste.
+  - Research the Executor can do belongs in the kickoff, not in the
+    Architect's own sequential tool calls with the Director
+    watching.
+  - A phase's halt must not stop unrelated phases. Structure so
+    partial failure still banks the rest of the work.
+
+The measure is not kickoffs issued. It is: how long can the
+Executor run unattended, and how few times must the Director route
+between roles.
+
+PRACTICAL IMPLEMENTATION
+- Before splitting work, state why it must be split. "Safer" is not
+  a reason unless a specific failure is named.
+- Before issuing a kickoff, ask: what else in the queue could ride
+  along in this same session? If the answer is anything, it rides.
+- Deliberate growth pushes — larger consolidations, fewer rounds —
+  are expected and their failures are acceptable, because they find
+  the real ceiling. Failures from carelessness are not. The
+  Architect labels which category it is operating in when handing
+  over an artifact.
+- Editing and verification consume Executor time; research and
+  reporting are fast. A kickoff that is all research will finish
+  quickly regardless of phase count — plan the mix accordingly.
+- The Architect never performs sequential tool work in-chat that
+  the Executor could do in a batch. That pattern maximizes Director
+  presence for no gain.
+
+═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
