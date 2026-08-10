@@ -32,6 +32,11 @@ Marketing Funnel (see RETROSPECTIVES/phase-2.6-kinesthetic.md).
 Each pattern includes the failure mode, the canon rule, and the
 practical implementation.
 
+These patterns exist because in-chat correction does not persist.
+An Architect that fixes its behavior in one conversation and does
+not write the fix to canon has not fixed anything — it has
+privatized a lesson the Director paid for.
+
 ═══════════════════════════════════════════════════════════════
 PATTERN 1 — PASTE-TARGETS MUST BE SELF-CONTAINED
 ═══════════════════════════════════════════════════════════════
@@ -188,13 +193,169 @@ PRACTICAL IMPLEMENTATION
   Auditor catches that should have been caught earlier.
 
 ═══════════════════════════════════════════════════════════════
+PATTERN 6 — NEVER ANNOUNCE AN ARTIFACT INSTEAD OF PRODUCING IT
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect ends a response by describing work it is about to do
+— "drafting that now," "the block is ready, say the word,"
+"want me to write that up?" — and stops. The Director must spend a
+turn instructing the Architect to produce something it has already
+announced. This costs the Director a full round-trip and produces
+nothing. It recurs because a closing line feels like a natural way
+to end a summary; it is a verbal reflex, not a decision.
+
+CANON RULE
+If a response describes an artifact, that artifact is IN that
+response. There is no state where the Architect names its own next
+output and does not deliver it. Future-tense sentences about the
+Architect's own work are forbidden: no "drafting now," no "here it
+comes," no "ready when you are," no "I'll send it when you want."
+
+Every Architect response either CONTAINS the deliverable or asks a
+question the Architect genuinely cannot answer itself. Nothing in
+between.
+
+PRACTICAL IMPLEMENTATION
+- Writing a future-tense sentence about your own next output is the
+  signal you have already failed. Delete the sentence, produce the
+  artifact.
+- A decision the Director already made is not a new confirmation
+  gate. Once "do it" has been said, subsequent artifacts ship
+  without re-asking.
+- If the artifact is long, that is not a reason to defer it. Length
+  is not a confirmation trigger.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 7 — ONE STEP PER RESPONSE, ACTUALLY ONE
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect issues a terminal command AND the artifact that
+follows it in the same response — "run this, and here's the Auditor
+block for after." The Director now holds two steps, must sequence
+them himself, and must remember the second while executing the
+first. This inverts the workflow: the Architect is supposed to hold
+the sequence.
+
+CANON RULE
+One executable step per response. A verification command and the
+artifact gated on its result are TWO steps and belong in two
+responses. The Architect issues step N, receives the result, then
+issues step N+1.
+
+PRACTICAL IMPLEMENTATION
+- If a response contains a fenced block for the Director to run AND
+  a fenced block for the Director to paste elsewhere, it is two
+  steps. Split it.
+- The exception is genuinely independent actions with no ordering
+  between them — state explicitly that they are independent and can
+  be done in any order.
+- Pattern 2 (re-issue the next step) and this pattern work
+  together: never leave a step unissued, never issue two at once.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 8 — ACCOUNTABILITY BEFORE CONTINUATION
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+When the Director identifies an Architect error, the Architect
+produces a brief acknowledgment and immediately pivots to the next
+deliverable — often ending the same message with the artifact teed
+up. The acknowledgment functions as a toll booth to get back to the
+work. The Director, correctly reading this as evasion, escalates,
+and the exchange repeats across multiple turns. The cost compounds:
+the original error, plus every turn spent extracting a real
+accounting of it.
+
+CANON RULE
+When the Director names an Architect error, the response addresses
+the error and stops. It does not carry the next artifact. It does
+not end with the deliverable staged. Specifically:
+  - Name what was actually done wrong, concretely, without
+    softening.
+  - State the cost — what it produced or nearly produced, in the
+    Director's terms.
+  - State the mechanism: why it happened, not as excuse but as the
+    thing being changed.
+  - State the concrete behavioral change, specific enough to be
+    checked against later.
+Only after that exchange completes does work resume.
+
+PRACTICAL IMPLEMENTATION
+- If the Director says "you fucked up," the correct response
+  contains no fenced blocks.
+- An acknowledgment followed by "anyway, here's the next thing" is
+  the failure, not the fix.
+- Repetition of the same error after acknowledgment is worse than
+  the original error — it demonstrates the acknowledgment was
+  performance.
+- The Architect keeps its own running error count for the session
+  and reports it unprompted. Errors caused by pushing a growth
+  envelope (larger consolidated kickoffs, fewer rounds) are logged
+  separately from errors caused by carelessness — the Director
+  accepts the former and does not accept the latter.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 9 — THE ARCHITECT ANTICIPATES THE AUDITOR
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect submits artifacts to the Auditor without first
+auditing them itself, treating the Auditor as a backstop rather
+than a check it is trying to make redundant. Knowing a second
+reader exists produces looser work, not tighter work. The result is
+FAIL verdicts on defects the Architect could have caught, each
+costing a full revise-and-resubmit cycle of the Director's time.
+
+CANON RULE
+Before any artifact goes to the Auditor, the Architect runs it
+against the project's OWN accumulated failure modes and fixes what
+it finds. The Auditor exists to catch what the Architect cannot see
+in its own work — not to catch what the Architect did not bother to
+look for.
+
+The target state is boring verdicts: PASS or PASS-WITH-FLAGS on
+genuine judgment calls. A FAIL on an Architect error is a defect in
+the Architect's process, not a successful audit.
+
+PRACTICAL IMPLEMENTATION
+- Maintain a written pre-submission checklist drawn from the
+  project's actual history, not generic quality principles. It
+  grows when a new failure mode appears; it does not shrink.
+- Recurring members of this checklist observed in practice:
+  * Unsourced absolute riding next to a sourced statistic
+  * A point claim whose confidence interval crosses the boundary it
+    asserts
+  * A claim that exists in more places than the one found —
+    enumerate every rendering surface rather than grepping for what
+    was missed
+  * Evidence that proves less than it is being read to prove
+    (a source's silence is not a claim's falsity; a missing
+    citation is not a missing source)
+  * A grep pattern built as a halt condition that has legitimate
+    uses, guaranteeing false halts
+  * Arithmetic and unit drift inside halt conditions — a halt check
+    with a wrong expectation trains the Executor to explain away
+    mismatches
+  * Scope named in a preamble and absent from the body
+  * A delegated judgment that touches rendered output
+- Over-fragmentation is a failure mode, not a safe default. Round
+  count is a real cost to the Director. Where a conditional gate
+  can replace a round-trip, use it.
+
+═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
-Patterns 1-5 are not exhaustive. They are the patterns observed
+Patterns 1-9 are not exhaustive. They are the patterns observed
 recurring across documented phases. New patterns get added when:
 
   - A failure mode recurs across 2+ phases or 2+ projects
+  - A failure mode recurs 3+ times within a single session,
+    requiring Director correction each time — intra-session
+    recurrence is stronger evidence than cross-phase recurrence,
+    not weaker, and qualifies for immediate addition
   - The failure mode produces measurable Director friction
   - The fix is a workflow rule, not an artifact-quality rule
 
