@@ -100,6 +100,25 @@ Methodology metrics:
   catch / Auditor catch / Builder catch); active-phase running
   tallies plus closed-phase finals
 
+Methodology experiments:
+- CROSS_MODEL_AUDITOR_EXPERIMENT.md — evaluate whether running the
+  Auditor role on a different foundation model than the Architect
+  (Claude Architect + GPT-5 Auditor, or Claude Architect + Gemini
+  3.6 Auditor) catches distinct failure modes that same-model
+  Auditor misses. Insight source: LLM Council pattern (Karpathy
+  2026-01) plus Apple reinforced-agents paper (2026-05) both
+  recommend different models for reviewer role. Formalize as
+  canon if experiment shows measurable catch-quality improvement
+  across 5-10 Auditor cycles.
+- DECISION_COUNCIL_PROTOCOL.md — multi-model parallel deliberation
+  for strategic-decision-shaped questions where sycophancy is the
+  primary risk (course positioning, pricing tiers, strategic
+  pivots, product-line calls). Peer to AUDITOR_PROTOCOL.md but for
+  a different question class. Auditor reviews shipping-shaped work
+  against canon; Decision Council reviews decision-shaped
+  questions against cross-model consensus. Distinct tools for
+  distinct problems.
+
 Publishing infrastructure:
 - NEWSLETTER_FORMAT.md — locked structure for the CVC publication;
   4 weekly field notes + 1 monthly synthesis cycle; feeds off
@@ -196,6 +215,13 @@ Why this order:
    position that makes the methodology defensible against
    "just use ChatGPT" competition. Not urgent, but worth
    locking while the framing is fresh from recent sessions.
+
+8. Methodology experiments (CROSS_MODEL_AUDITOR_EXPERIMENT,
+   DECISION_COUNCIL_PROTOCOL) queue at lower priority than
+   playbook canon. They refine the methodology at the margins;
+   playbook canon establishes the methodology's substantive
+   scope. Ship playbooks first, run experiments on top of
+   proven foundations.
 
 ═══════════════════════════════════════════════════════════════
 UPDATE PROTOCOL
