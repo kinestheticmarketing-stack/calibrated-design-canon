@@ -340,6 +340,9 @@ PRACTICAL IMPLEMENTATION
     mismatches
   * Scope named in a preamble and absent from the body
   * A delegated judgment that touches rendered output
+  * A source whose SHAPE matches the output but whose spread MEANS
+    something different — geographic variance cannot stand in for
+    house-to-house variance. Shape includes what the spread means.
 - Over-fragmentation is a failure mode, not a safe default. Round
   count is a real cost to the Director. Where a conditional gate
   can replace a round-trip, use it.
