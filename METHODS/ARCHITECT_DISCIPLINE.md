@@ -343,6 +343,13 @@ PRACTICAL IMPLEMENTATION
   * A source whose SHAPE matches the output but whose spread MEANS
     something different — geographic variance cannot stand in for
     house-to-house variance. Shape includes what the spread means.
+  * A number carried from a prior document, summary, or report
+    rather than re-derived from the source. Every count in an
+    artifact is a claim; carried counts have been wrong four times
+    in one session.
+  * A defect found on one property that renders on another —
+    shared-key defects are portfolio defects, and scoping the fix to
+    the finder leaves the fleet broken.
 - Over-fragmentation is a failure mode, not a safe default. Round
   count is a real cost to the Director. Where a conditional gate
   can replace a round-trip, use it.

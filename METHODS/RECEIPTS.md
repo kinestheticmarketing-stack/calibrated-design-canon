@@ -137,6 +137,30 @@ DCI — denvercoloradoinsulation.com (flagship, only revenue asset)
   line by line). llms.txt created and generator-emitted: 56 URLs, every
   one link-checked live, zero 404s. · repo / commit 9595987
 
+- 2026-08-10/11 · DCI · PERFORMANCE · Dead ENERGY STAR citation
+  (`ENERGYSTAR_R49_R60`, `.../methodology/recommended_levels`, live 404)
+  swapped to a working replacement URL stating the same Climate Zone 5
+  R-49/R-60 figures, verified live post-deploy — 19 rendered pages, zero
+  remaining occurrences of the dead URL sitewide. Same key, same swap
+  applied to Greeley (shared `CITED_SOURCES` render). · repo / commit
+  e8d0e0a, deployed and live-verified same session
+
+- 2026-08-10/11 · DCI · PERFORMANCE · Audit-document accuracy correction:
+  eight verdict lines across VAHE_ALIGNMENT_AUDIT.md and
+  FLOATE_ALIGNMENT_AUDIT.md described tactics (PTE-47, PTE-40/51, PCO-03,
+  PCO-13, PTA-27, PAR-22, PAR-44, PAR-50) as open when the fixes had
+  already shipped to `main` weeks earlier. `vahe-batch-2` re-verified
+  fully merged (`git log main..vahe-batch-2` empty) — it was a stale
+  branch *label* on already-merged work, never an unmerged branch. A
+  downstream audit that read the stale lines had concluded DCI was behind
+  its own Greeley clone; it was not — see the GCI entry below for the
+  matching correction on that side. Same wave, PCO-13 title-length
+  re-measured with HTML entities decoded: **zero** DCI pages exceed 60
+  characters sitewide (63 pages checked), correcting a 2026-08-10 interim
+  check that had flagged 4 pages (62/62/61/64 raw-byte counts, where
+  `&amp;` counted as 5 characters instead of the 1 it renders as) — a
+  measurement artifact, not a regression. · repo / commit e8d0e0a
+
 ───────────────────────────────────────────────────────────────
 GCI — greeleycoloradoinsulation.com (corridor property #2)
 ───────────────────────────────────────────────────────────────
@@ -168,11 +192,63 @@ GCI — greeleycoloradoinsulation.com (corridor property #2)
   b5cdca2
 
 - 2026-08-10 · GCI · PERFORMANCE · llms.txt created and generator-emitted:
-  27 URLs, every one link-checked live, zero 404s. First-ever IndexNow
-  submission for this property: 1 URL (the payback calculator page), HTTP
-  200 — the mechanism built earlier the same day (commit 9b9e7e2, above)
-  had shipped unused; this is its first real call. · repo / commit e13a438
-  + live submission, this session
+  27 URLs, every one link-checked live, zero 404s. · repo / commit e13a438
+
+- ~~2026-08-10 · GCI · PERFORMANCE · First-ever IndexNow submission for
+  this property: 1 URL (the payback calculator page), HTTP 200 — the
+  mechanism built earlier the same day (commit 9b9e7e2, above) had shipped
+  unused; this is its first real call. · repo / commit e13a438 + live
+  submission, this session~~ — **CORRECTED 2026-08-11: this receipt does
+  not hold up and is retracted.** Commit e13a438's own message covers only
+  the llms.txt/sitemap wave and makes no mention of an IndexNow call.
+  Greeley's STATE_OF_PROJECT.md recorded the mechanism as "not yet
+  deployed or submitted" from the moment it was built (commit 9b9e7e2) and
+  was never updated to say otherwise. The next wave to touch this gap
+  (commit 69b56d5, same property) states plainly: "confirmed live via
+  direct GET, HTTP 200, content matches. Closed, **no submission made**."
+  No corroborating evidence of a prior submission exists anywhere in the
+  record — not in either commit message, not in STATE_OF_PROJECT.md, not
+  on the VPS. The real first submission is recorded below.
+
+- 2026-08-10/11 · GCI · PERFORMANCE · Greeley's first three SEO-corpus
+  alignment audits written and committed: Allsopp SB3 (9 modules),
+  Arabian Publisher SEO (7 modules / 240 tactic IDs), Floate Parasite (15
+  ADMIT tactics; the 39 BLOCKED tactics excluded per the corpus gate).
+  Five-verdict vocabulary used, including an APPLIED-UNTRACKED verdict
+  this property needed that the control property's own audits never
+  used. Found and recorded (not fixed, outside that wave's boundary): a
+  duplicate `<title>` defect — homepage and the primary money page shipped
+  byte-identical titles on the market's head term. · repo / commit
+  cd2880e
+
+- 2026-08-10/11 · GCI · PERFORMANCE · Duplicate-title defect (found by the
+  audit above) fixed: homepage `<title>`/`og:title`/`twitter:title`
+  changed to a distinct string (Director-approved), the primary money
+  page's transactional title left unchanged. Same wave, dead ENERGY STAR
+  citation swap applied here too (see the matching DCI receipt for the
+  shared key) — 4 rendered Greeley pages, zero remaining occurrences of
+  the dead URL. Outbound-dead-citation count re-measured fresh at the same
+  time: the "7" on file since 2026-08-09 was already stale (4 of the
+  original 7 had been incidentally removed from `CITED_SOURCES` by an
+  unrelated wave the day the "7" was recorded) — **3 remained**, one
+  swapped (above), one confirmed live with no swap needed (NOAA), one
+  queued (NREL, domain DNS-dead, no replacement source found). Three
+  tactics (PCO-43/44/46) re-categorized out of BLOCKED BY BUILD ORDER into
+  the internal gap list — each was unilateral analysis of this property's
+  own link profile, not gated on another party's cooperation, a
+  platform's approval, or third-party payment, so the BLOCKED label was a
+  mis-filing, not a real external gate. · repo / commit 69b56d5, deployed
+  and live-verified same session
+
+- 2026-08-10/11 · GCI · PERFORMANCE · **Real first-ever IndexNow
+  submission for this property:** 5 URLs (the homepage plus the four
+  citation-swap pages from the gap-fix wave above), HTTP 200. Supersedes
+  the retracted claim above. Derived URL count verified against the
+  commit diff before submission (not assumed), matched the mechanism's
+  own reported count, submitted via the documented bash-array-inside-
+  bash-c pattern (the unquoted form is known to collapse to one URL and
+  return HTTP 400 with success-shaped output — avoided). · repo / commit
+  69b56d5 + live submission, deploy session following it
 
 ───────────────────────────────────────────────────────────────
 CORRIDOR — Northern Colorado (empire infrastructure)

@@ -127,4 +127,56 @@ Sections 2.2.i, 2.4, and 2.5 describe Auditor-gate outcomes and a specific unatt
 
 ---
 
+## Addendum — the session's second half (2026-08-10/11)
+
+Three more waves shipped after Pass 1 closed (commit `aed57e4`): Greeley's first SEO-corpus alignment audits, the resulting gap-fix and DCI-audit-correction wave, and their deploy. This addendum covers them, and — separately — corrects the record where Pass 1's own numbers didn't hold up.
+
+## 3.1 — The error family gained a fifth face
+
+Pass 1 documented four faces of one error: treating one surface's state as a claim's truth value (§2.2). The second half surfaced a fifth: **an audit document's verdict line is a surface too.**
+
+Greeley's first alignment audit (commit `cd2880e`) read DCI's `VAHE_ALIGNMENT_AUDIT.md` and `FLOATE_ALIGNMENT_AUDIT.md`, found five tactics (PTE-47, PTE-40/51, PCO-03, PCO-13, PTA-27) recorded there as open VIOLATION/GAP items "fixed only on an unmerged branch," and concluded — reasonably, given what the surface said — that DCI was behind its own Greeley clone. The verdict lines were stale: the branch in question, `vahe-batch-2`, had been fully merged weeks earlier (independently re-verified this pass: `git log main..vahe-batch-2` returns empty, `git merge-base --is-ancestor vahe-batch-2 main` confirms). DCI's own audit documents corrected eight verdict lines total — the five above plus PAR-22/44/50, a second stale cluster — in commit `e8d0e0a`. The document was the surface; nobody had re-derived from the code it was describing until this wave did.
+
+This is not a new species of error. It is face (ii) and (iv) from Pass 1's own list, wearing a different surface: a verdict line is exactly as capable of going stale as a vendor page or a search result, and an audit-of-an-audit inherits that staleness silently unless it re-derives.
+
+## 3.2 — The re-derivation discipline paid for itself, repeatedly
+
+Every number this pass was told to re-measure rather than carry turned out wrong — independently verified against git and the live repos before being written here:
+
+- **Seven dead citations were three.** Greeley's `STATE_OF_PROJECT.md` recorded 7 dead outbound citations on 2026-08-09; by the time the gap-fix wave re-ran `_check_links.py --check-outbound` (commit `69b56d5`), 4 of the original 7 had already been removed from `CITED_SOURCES` incidentally by the unrelated citation-remediation wave. 3 remained, genuinely.
+- **Four over-length titles were zero.** A 2026-08-10 interim check flagged 4 DCI pages at 62/62/61/64 characters. Those were raw HTML-entity-encoded string lengths (`&amp;` counted as 5 characters, not the 1 it renders as). Re-measured decoded, sitewide, across all 63 DCI pages (commit `e8d0e0a`): zero violations.
+- **A "first-ever" IndexNow submission was a phantom.** Pass 1's own `RECEIPTS.md` recorded a first-ever Greeley IndexNow submission (1 URL, HTTP 200, tied to commit `e13a438`). Re-checked this pass: `e13a438`'s own commit message covers only the llms.txt/sitemap wave and never mentions IndexNow; Greeley's `STATE_OF_PROJECT.md` recorded the mechanism as "not yet deployed or submitted" from the moment it was built and was never updated otherwise; the next wave to touch the gap (`69b56d5`) states plainly "confirmed live via direct GET, HTTP 200, content matches. Closed, **no submission made**." No corroborating evidence exists anywhere. The receipt has been retracted in `RECEIPTS.md` (see this pass's entry there) and replaced with the real first submission — 5 URLs, HTTP 200, made during this wave's own deploy.
+
+**One claimed fourth correction could not be substantiated and is deliberately not repeated here as fact.** This pass's kickoff asserted that "thirteen ENERGY STAR renders were nineteen" — implying some prior record stated 13 rendered pages for the `ENERGYSTAR_R49_R60` citation swap before the real count of 19 was confirmed. A full-text search of both properties' markdown docs and git history (current files and `git log --all -p`) found no occurrence of "13" attached to this citation swap, anywhere, at any point. The verified figure — 19 DCI pages, 4 Greeley pages — appears consistently everywhere it's recorded, including in commit `e8d0e0a`'s own message at the time it shipped. Rather than write a fourth "was 13, now 19" line into canon on the strength of an unverified kickoff assertion, this addendum records three verified corrections and flags the fourth as unconfirmed. This is itself an instance of the discipline in §3.2's own headline: a number arrived carried, and re-deriving it — rather than transcribing it — is what this section exists to model.
+
+## 3.3 — The build-order law caught its first mis-filing
+
+Three tactics (PCO-43/44/46) were labeled BLOCKED BY BUILD ORDER in Greeley's audit and re-categorized to the internal gap list in the same gap-fix wave (`69b56d5`) that fixed the citation and title defects. Each was unilateral analysis of the property's own link profile — gated on tooling, not on another party's cooperation, a platform's approval, or third-party payment — so the BLOCKED label was a mis-filing, not a real external gate.
+
+This tracks cleanly to `ARCHITECT_DISCIPLINE.md` Pattern 11's own auditability requirement: a blocked item must name its specific external dependency in one line, and an item that cannot name one is mis-categorized. `git log` confirms Pattern 11 was committed (`f6540b7`, 2026-08-10 12:31 -0600) before the re-categorization that applied it (`69b56d5`, 2026-08-10 ~17:54 -0600 equivalent) — consistent with this being the law's first real-world catch within these two properties' history, though this addendum cannot rule out an earlier instance elsewhere in the portfolio it has no visibility into.
+
+## 3.4 — A shared-key defect is a portfolio defect
+
+The dead `ENERGYSTAR_R49_R60` citation was found by Greeley's own audit and gap-fix wave. The same key renders on DCI — 19 pages, independently confirmed via `git show --name-status e8d0e0a`, all 19 live-verified post-deploy with zero remaining occurrences of the dead URL. Fixing the property that found the defect without fixing the property that shares its citation pool would have left DCI — the flagship, the only revenue asset — serving a URL its own sibling property had just proven to 404.
+
+This addendum can independently verify the outcome (both properties fixed, same wave, same key) but not the specific claim in this pass's kickoff that the fix was "originally scoped to Greeley alone" before being widened. That framing describes what would have happened at a decision point this Executor has no transcript access to, in the same category as the Auditor-gate content flagged in Pass 1's own honesty note below. The standing lesson stands regardless of how the scope got corrected: a shared-key defect found on one property is a portfolio defect, and the fix set should be derived from which properties share the key, not from which property happened to find it.
+
+## 3.5 — Updated error count
+
+Pass 1 recorded eleven Auditor FAILs landed on Architect errors, categorized (§2.4). This addendum cannot extend that count for the session's second half: there is no accessible record of individual Auditor FAILs from that period — no transcript, no repo file enumerating them — for the same reason Pass 1's own honesty note gives for §2.4 itself: the Auditor is a separate review session this Executor has no visibility into. Supplying a number here without one would be exactly the carried-figure failure this addendum exists to correct, not model.
+
+What this addendum can state from the directly-inspectable record: the second half's own commit messages show zero instances of the two near-miss failure classes from §2.2 (surface-vs-claim collapses that would have removed true copy) recurring, and both live deploys this wave reported zero HALTs against their own verification gates. That is not the same claim as "zero Auditor FAILs in the second half," and should not be read as one.
+
+---
+
+## Honesty note on the addendum
+
+§3.1, §3.2, and the factual core of §3.3 and §3.4 (commit contents, file counts, live-verification results, `git log`/`git merge-base` output) are independently re-derived from the repos and git history in this pass, not carried from the kickoff that requested them — including the retraction in §3.2, which corrects Pass 1's own record, and the deliberate omission in §3.2, which declines to record a claim this pass could not substantiate.
+
+The narrower framing claims in §3.3 ("first" mis-filing, portfolio-wide) and §3.4 ("originally scoped to Greeley alone," "the Auditor caught it") describe process and decision-point history this Executor was not present for and has no transcript access to, in the same category Pass 1's own honesty note already established for its §2.2.i, §2.4, and §2.5. They are recorded because they are consistent with everything independently verified elsewhere in this addendum, not because they were independently confirmed themselves.
+
+§3.5 records an absence rather than a number, on purpose.
+
+---
+
 **End of retrospective.**
