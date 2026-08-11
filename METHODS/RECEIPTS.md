@@ -137,7 +137,7 @@ DCI — denvercoloradoinsulation.com (flagship, only revenue asset)
   line by line). llms.txt created and generator-emitted: 56 URLs, every
   one link-checked live, zero 404s. · repo / commit 9595987
 
-- 2026-08-10/11 · DCI · PERFORMANCE · Dead ENERGY STAR citation
+- 2026-08-10 · DCI · PERFORMANCE · Dead ENERGY STAR citation
   (`ENERGYSTAR_R49_R60`, `.../methodology/recommended_levels`, live 404)
   swapped to a working replacement URL stating the same Climate Zone 5
   R-49/R-60 figures, verified live post-deploy — 19 rendered pages, zero
@@ -145,7 +145,7 @@ DCI — denvercoloradoinsulation.com (flagship, only revenue asset)
   applied to Greeley (shared `CITED_SOURCES` render). · repo / commit
   e8d0e0a, deployed and live-verified same session
 
-- 2026-08-10/11 · DCI · PERFORMANCE · Audit-document accuracy correction:
+- 2026-08-10 · DCI · PERFORMANCE · Audit-document accuracy correction:
   eight verdict lines across VAHE_ALIGNMENT_AUDIT.md and
   FLOATE_ALIGNMENT_AUDIT.md described tactics (PTE-47, PTE-40/51, PCO-03,
   PCO-13, PTA-27, PAR-22, PAR-44, PAR-50) as open when the fixes had
@@ -198,7 +198,7 @@ GCI — greeleycoloradoinsulation.com (corridor property #2)
   this property: 1 URL (the payback calculator page), HTTP 200 — the
   mechanism built earlier the same day (commit 9b9e7e2, above) had shipped
   unused; this is its first real call. · repo / commit e13a438 + live
-  submission, this session~~ — **CORRECTED 2026-08-11: this receipt does
+  submission, this session~~ — **CORRECTED 2026-08-10: this receipt does
   not hold up and is retracted.** Commit e13a438's own message covers only
   the llms.txt/sitemap wave and makes no mention of an IndexNow call.
   Greeley's STATE_OF_PROJECT.md recorded the mechanism as "not yet
@@ -210,7 +210,7 @@ GCI — greeleycoloradoinsulation.com (corridor property #2)
   record — not in either commit message, not in STATE_OF_PROJECT.md, not
   on the VPS. The real first submission is recorded below.
 
-- 2026-08-10/11 · GCI · PERFORMANCE · Greeley's first three SEO-corpus
+- 2026-08-10 · GCI · PERFORMANCE · Greeley's first three SEO-corpus
   alignment audits written and committed: Allsopp SB3 (9 modules),
   Arabian Publisher SEO (7 modules / 240 tactic IDs), Floate Parasite (15
   ADMIT tactics; the 39 BLOCKED tactics excluded per the corpus gate).
@@ -221,7 +221,7 @@ GCI — greeleycoloradoinsulation.com (corridor property #2)
   byte-identical titles on the market's head term. · repo / commit
   cd2880e
 
-- 2026-08-10/11 · GCI · PERFORMANCE · Duplicate-title defect (found by the
+- 2026-08-10 · GCI · PERFORMANCE · Duplicate-title defect (found by the
   audit above) fixed: homepage `<title>`/`og:title`/`twitter:title`
   changed to a distinct string (Director-approved), the primary money
   page's transactional title left unchanged. Same wave, dead ENERGY STAR
@@ -240,7 +240,7 @@ GCI — greeleycoloradoinsulation.com (corridor property #2)
   mis-filing, not a real external gate. · repo / commit 69b56d5, deployed
   and live-verified same session
 
-- 2026-08-10/11 · GCI · PERFORMANCE · **Real first-ever IndexNow
+- 2026-08-10 · GCI · PERFORMANCE · **Real first-ever IndexNow
   submission for this property:** 5 URLs (the homepage plus the four
   citation-swap pages from the gap-fix wave above), HTTP 200. Supersedes
   the retracted claim above. Derived URL count verified against the

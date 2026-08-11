@@ -127,7 +127,7 @@ Sections 2.2.i, 2.4, and 2.5 describe Auditor-gate outcomes and a specific unatt
 
 ---
 
-## Addendum — the session's second half (2026-08-10/11)
+## Addendum — the session's second half (2026-08-10)
 
 Three more waves shipped after Pass 1 closed (commit `aed57e4`): Greeley's first SEO-corpus alignment audits, the resulting gap-fix and DCI-audit-correction wave, and their deploy. This addendum covers them, and — separately — corrects the record where Pass 1's own numbers didn't hold up.
 
