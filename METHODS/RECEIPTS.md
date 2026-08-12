@@ -161,6 +161,45 @@ DCI — denvercoloradoinsulation.com (flagship, only revenue asset)
   `&amp;` counted as 5 characters instead of the 1 it renders as) — a
   measurement artifact, not a regression. · repo / commit e8d0e0a
 
+- 2026-08-11 · DCI · PERFORMANCE · AI citations risen 11 → 16. Top cited
+  pages: attic-insulation-cost-calculator.html 5, r-value-needed-
+  calculator.html 4, xcel-rebate-eligibility-checker.html 3,
+  insulation-wall.html 2, insulation-blown-in.html 2. Three calculators
+  account for 12 of the 16 citations — 75% — with prose service pages
+  accounting for the remainder: tools are the dominant citation surface
+  on this property. · Director-supplied, 2026-08-11, from a search
+  console or analytics surface — the specific surface, measurement
+  method, engine(s) counted, and date range are NOT recorded here and
+  are unknown from what was supplied. PROVENANCE NOTE: the prior
+  11-citation figure above carries a recorded source (Bing Webmaster
+  Tools, AI Performance tracker); this 16 figure carries no equivalent
+  record. Comparability between 11 and 16 is **UNVERIFIED** — this may
+  or may not be the same measurement method, engine, or date range as
+  the prior figure.
+
+  Observation (interpretation, not measurement — kept distinct from the
+  receipt above): the three cited calculators are the cost calculator,
+  the R-value calculator, and the Xcel rebate checker. The cost
+  calculator (attic-insulation-cost-calculator.html) was recalibrated
+  the day before this figure was supplied — commit 90efa47 (2026-08-10,
+  ROI/waste-multiplier re-anchor to ENERGY STAR Climate Zone 5) and its
+  same-day addendum commit 5b437d1 — maintenance on the property's
+  single most-cited asset, though that connection was not known at the
+  time the recalibration was made. Of DCI's six calculators
+  (attic-insulation-cost-calculator, r-value-needed-calculator,
+  xcel-rebate-eligibility-checker, do-i-need-new-insulation-quiz,
+  energy-savings-payback-calculator, spray-foam-vs-blown-in-comparator —
+  per `_generate_calculator_pages.py`), three do not appear in the top
+  five: do-i-need-new-insulation-quiz.html,
+  energy-savings-payback-calculator.html,
+  spray-foam-vs-blown-in-comparator.html. [Kickoff framing assumed two
+  uncited calculators; repo verification finds three — the top five
+  contains two prose service pages, not four calculators, so only 3 of
+  DCI's 6 calculators land in it.] Citation is not uniform across
+  tools. OPEN QUESTION (not a recommendation — one measurement is not a
+  trend): whether calculator depth belongs alongside service-page depth
+  in a future portfolio improvements pass.
+
 ───────────────────────────────────────────────────────────────
 GCI — greeleycoloradoinsulation.com (corridor property #2)
 ───────────────────────────────────────────────────────────────
@@ -332,6 +371,15 @@ OPEN CAPTURE ITEMS (numbers known to exist — go confirm + log)
   highest-value REVENUE receipt available right now (proves the lead → job
   → money chain, not just lead generation).
 - Porter / Don's Garage — revenue terms, go-live date, any usage metrics.
+- 2026-08-11 · Re-measure DCI AI citations at a defined interval — record
+  the surface, engine(s), and method at time of measurement so future
+  figures are comparable to each other. The 11 → 16 comparison logged
+  above is currently method-unverified.
+- 2026-08-11 · Measure whether Greeley's calculators attract citations —
+  Greeley launched 2026-08-06 with a different calculator set. If tools
+  are the dominant citation surface, Greeley should show the same
+  pattern as it matures — the test of whether the DCI pattern
+  generalizes or is DCI-specific.
 
 ═══════════════════════════════════════════════════════════════
 END OF RECEIPTS LEDGER
