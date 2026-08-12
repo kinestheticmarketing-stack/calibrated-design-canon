@@ -307,6 +307,48 @@ explicitly; do the same in the new property's lineage table).
    `.gitignore` and gets silently swallowed, requiring a negation carved
    into the secret block to recover. Name it `env.template` from the
    start and the negation rule is never needed.
+5. **PORT THE BRAND ASSETS. The clone copies code and skips assets.**
+   Cloning a parent brings its generators, its templates, and its
+   `<head>` — every one of which *references* image files that do not
+   come with it. Nothing in the toolchain fails: generators run clean,
+   MD5 manifests match, the deploy verifies, and the site serves 200 on
+   every page. The nav renders a broken image and the first person to
+   find out is whoever opens a browser.
+
+   **Evidence: this has now shipped broken twice.** Greeley launched
+   with no logo and was fixed after the fact; Longmont launched the
+   same way and was fixed on 2026-08-12. Two for two on every property
+   cloned to date. It is not a per-property oversight — it is what the
+   clone step does by construction, and it will do it to Fort Collins
+   and Loveland unless this step runs.
+
+   Do this in the scaffold phase, **before Phase 6 content build**, so
+   no page is ever generated against assets that don't exist:
+
+   1. **Enumerate from the parent's rendered HTML, not from its
+      directory listing.** The authoritative list is what the markup
+      asks for — grep every `src=`, `href=`, and `url()` in the
+      parent's generated pages, plus the absolute URLs in `og:image`
+      and `twitter:image`, which a root-relative grep misses.
+   2. **Port each one.** Byte-copy anything generic (the mark-only
+      favicons transfer untouched — verify with matching MD5s).
+   3. **Adapt property-specific text and nothing else.** Where an SVG
+      carries a city name, change the city name — same typeface, same
+      colors, same dimensions, same layout. Confirm a longer city name
+      still fits the `viewBox` rather than assuming it does.
+   4. **Match the filenames the HTML actually references.** A
+      correctly-made logo at the wrong filename is still a broken
+      image.
+   5. **Verify every reference resolves before generating any page.**
+
+   **An asset carrying rendered marketing copy or factual claims is not
+   portable and must not be faked.** The `og-image` is the known case:
+   the parent's contains a tagline, a utility name, and a local
+   building-code claim. Swapping the city name into it produces a brand
+   asset asserting the wrong utility and an unverified code adoption —
+   silently plausible and wrong, which is worse than the 404 it
+   replaces. Route it to whoever owns copy and record it as a declared
+   gap under Phase 8 rather than authoring it inside a port.
 
 ---
 
@@ -455,6 +497,18 @@ production deploy, not a sample.
   for duplicate `<title>` content across the full page set catches
   this in seconds; run it as a standing gate, not a one-time audit
   finding.
+- **Every asset reference in the rendered HTML resolves to an existing
+  file.** Extract every `src=`, `href=`, and `url()` target from the
+  full generated page set — plus the absolute `og:image` and
+  `twitter:image` URLs, which a root-relative grep silently skips — and
+  confirm each one exists on disk, then again live after deploy with a
+  status check per URL. **This has shipped broken twice** (Greeley and
+  Longmont both launched with no logo; see Phase 4 item 5). Every other
+  gate in this list passes while it is broken: the generators are
+  deterministic, the manifests match, every page returns 200. A missing
+  image is invisible to all of them because the *page* is fine — only
+  the thing it points at is absent. This is the check that catches it,
+  and it belongs at both the scaffold gate and here.
 - **Every function the parent invokes has a call site here, or a
   written deferral reason.** Greeley cloned `jsonld_howto()` and never
   wired it in — not a bug, because wiring it requires `process_steps`
