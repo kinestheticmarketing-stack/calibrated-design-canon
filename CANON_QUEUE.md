@@ -78,3 +78,126 @@ here. One line per entry: date, source project, lesson.
   does "verify critical tools are collecting" mean analytics specifically
   (absent by locked no-tracking policy) or any revenue-critical collection
   (the lead canary qualifies)?
+
+═══════════════════════════════════════════════════════════════
+PREFERENCES-TO-CANON RECONCILIATION (flagged 2026-08-12, highest priority)
+═══════════════════════════════════════════════════════════════
+
+- 2026-08-12 | Architect discipline | **TASK, not yet executed — the
+  Architect cannot perform this from inside a repo session.** The Director
+  maintains a session briefing document in his Claude account settings —
+  not in any repo, not version-controlled, not visible to the Executor or
+  the Auditor, dated 2026-05-11. It contains workflow rules that have never
+  reached canon. Required: read the briefing document against this canon
+  repo (all of `METHODS/`), identify every rule present in one and absent
+  from the other, and migrate what belongs in canon into the appropriate
+  `METHODS/` doc. This is a Director-and-Architect-together task — it needs
+  the briefing's content read out loud into a session, since no repo-side
+  tool can reach it.
+
+- 2026-08-12 | Architect discipline | **Known instance, evidence in hand:**
+  a model-selection ladder exists only in the 2026-05-11 briefing and
+  nowhere in `METHODS/ARCHITECT_DISCIPLINE.md`. It was the direct cause of
+  this session's model-tier miscalibration (Pattern 12 evidence, also
+  `RETROSPECTIVES/2026-08-12-longmont-genesis.md` §3.5: a shared-nginx wave,
+  every step mechanical, routed to a lower tier than its blast radius
+  warranted). Must become its own ARCHITECT_DISCIPLINE pattern with the
+  criterion stated explicitly as **BLAST RADIUS, not step complexity** — a
+  wave that can take down a live, shared property goes to the higher tier
+  even when every individual step is mechanical. The briefing's model names
+  are themselves stale evidence of the drift this reconciliation exists to
+  fix: a document that hasn't been touched since 2026-05-11 cannot name the
+  current model roster accurately, and a ladder keyed to wrong names routes
+  work incorrectly regardless of the tier logic underneath it.
+
+- 2026-08-12 | Architect discipline | **General finding, not specific to
+  the model ladder.** Any rule living only in a private, non-versioned
+  briefing document dies the moment that chat session ends — it never
+  reaches the Executor, never reaches the Auditor, and cannot be checked
+  against by anyone reading this repo. That is the identical failure Patterns
+  6 through 12 were written to fix for repo-state facts (assert-before-read,
+  fail-loud-not-silent, look-it-up-every-time), applied one level up: to the
+  rule document itself. A rule that cannot be audited is a rule that
+  degrades silently. The reconciliation task above is the fix; this line
+  exists so the general principle survives even if that specific task
+  slips.
+
+═══════════════════════════════════════════════════════════════
+OPEN ITEMS ACROSS THE PORTFOLIO (2026-08-12 session paperwork)
+═══════════════════════════════════════════════════════════════
+
+- 2026-08-12 | Portfolio | **UNVERIFIED FROM ANY REPO — Director-reported,
+  same convention as the DCI-second-lead RECEIPTS entry.** Twilio call
+  forwarding: three TwiML bins reportedly built and named, not yet attached
+  to numbers, blocked on a Twilio console outage. No repo (canon or any of
+  the three properties) documents this state — Twilio console
+  configuration is not version-controlled anywhere in this portfolio. Go
+  confirm directly against the Twilio console before treating as fact.
+
+- 2026-08-12 | Longmont | og-image.png missing — **Longmont only**, live
+  404 verified this session. DCI and Greeley both serve their og-image at
+  200; a prior report this session claimed the gap was "on all three
+  properties," which is false and corrected here. Already tracked in
+  Longmont's own `STATE_OF_PROJECT.md` do-next queue (brand-asset section);
+  not duplicated here, flagged only because the "all three" framing was
+  wrong and should not propagate.
+
+- 2026-08-12 | Portfolio | Service page parity: Longmont ships 21 service
+  pages (20 plus hybrid insulation, 2026-08-12). DCI and Greeley each ship
+  **8** — re-counted directly from each property's `SERVICE_PAGES`
+  constant. A prior report this session stated "9," which is wrong by one
+  on both siblings; corrected here. Twelve services need porting to each
+  sibling to reach parity (thirteen once the hybrid page below is included).
+
+- 2026-08-12 | Portfolio | Hybrid Insulation (Flash and Batt) needs a DCI
+  and a Greeley version. Same technique, same IRC Table R702.7.1 Class III
+  condition (both are Zone 5B), but each property's own elevation/design-temp
+  figures, rebate-program disclosure (DCI is Xcel-only; Greeley is Atmos —
+  neither market's rebate exclusion for this measure has been confirmed and
+  must not be carried from Longmont's Xcel/Efficiency Works finding), and
+  each property's own slug convention (DCI: `insulation-<service>.html`;
+  Greeley: `insulation-<service>-greeley.html` — neither is Longmont's
+  `-longmont` pattern) need independent verification per property before
+  either page is authored.
+
+- 2026-08-12 | Portfolio | Zarr audit (Olga Zarr, "SEO Audit Mastery," 50
+  tactics) has not been run on DCI or Greeley — Longmont is the only
+  property with a Zarr baseline. Both siblings have only ever been audited
+  against three corpora (Allsopp, Vahe, Floate); the fourth is a later wave.
+
+- 2026-08-12 | Portfolio | **UNVERIFIED FROM ANY REPO.** Internal link
+  direction and a brand-name first-sentence link, described as improvements
+  from an external transcript ("Theo T3 workflow insights") not yet ported
+  to any of the three properties. The 2026-08-11 ROADMAP commit that queued
+  other Theo T3 items (`HISTORY_AUDIT_TECHNIQUE`, `DIAGNOSTIC_QUESTIONING`,
+  `SKILL_AUTHORING_CONVENTIONS`) does not name either of these two — grepped
+  across every repo in this portfolio, zero hits for either description.
+  Recorded per the kickoff's instruction, flagged exactly as unconfirmed
+  rather than dropped, since the source is plausibly a call transcript that
+  was never committed anywhere readable.
+
+- 2026-08-12 | Portfolio | Pageview query surface — the `pageviews` table
+  is collecting on all three properties (path + timestamp, first-party,
+  bot-filtered) and nothing reads it yet. A query surface (even one
+  committed SQL file answering "views per path, per day, per property") is
+  the next step; already logged in each property's own `STATE_OF_PROJECT.md`
+  do-next queue from the wave that shipped the counter, cross-referenced
+  here for portfolio visibility.
+
+- 2026-08-12 | DCI + Greeley | **PARTIALLY UNVERIFIED FROM ANY REPO.** GSC
+  and Bing report review has never been done on either property — this half
+  is confirmable in principle (no repo doc records such a review ever
+  happening) but was not independently re-verified against either
+  dashboard this session. Greeley reportedly has 12 pages crawled-not-
+  indexed, unexplained — this figure appears nowhere in Greeley's repo or
+  in canon; it is Director-reported dashboard state, not repo-verifiable,
+  and must be confirmed from Search Console directly before being treated
+  as fact.
+
+- 2026-08-12 | Longmont | Rebate hub: `_generate_rebate_hub.py` was never
+  ported, gated on a two-utility (Xcel gas + Efficiency Works electric)
+  rebate architecture decision that has never been made. Already fully
+  documented as a standing Director-decision gate in Longmont's own
+  `STATE_OF_PROJECT.md` (the "DIRECTOR GATE — THE REBATE ARCHITECTURE SPEC"
+  section); not duplicated here, cross-referenced for portfolio visibility
+  only.

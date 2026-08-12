@@ -303,6 +303,111 @@ CORRIDOR — Northern Colorado (empire infrastructure)
   cities where the same machine ranks FASTER. Win-anywhere proof + pick-your-
   battles deployment.
 
+- 2026-08-11/12 · Longmont · CAPABILITY · Third corridor property built and
+  launched from the unified genesis checklist rather than contributing to
+  it — genesis (2026-08-11 08:55) to live VPS (2026-08-12 09:03) in one
+  calendar day. 47 pages live (46 at launch, 47 after the hybrid-insulation
+  page shipped same day). SendGrid domain authentication verified with its
+  own restricted key (`s1._domainkey`/`s2._domainkey`/`em2787` resolving);
+  `CANARY_SECRET` wired and a real end-to-end send proven (`sendgrid_result:
+  accepted HTTP 202`, `leads` row `canary=t delivered=t`, `lead-canary.timer`
+  active); its database (`longmont_insulation`) confirmed inside the shared
+  cluster's dynamic nightly-backup discovery. **Not done, despite an earlier
+  report claiming otherwise: Search Console and Bing Webmaster properties
+  are NOT registered** — deliberately deferred (STATE_OF_PROJECT.md), a DNS
+  TXT verification record exists but its GSC status is unconfirmed. IndexNow:
+  first attempt self-halted pre-submission (phantom `insulation-rebate-hub`
+  sitemap entry, live 404); once removed, 45 URLs submitted, HTTP 202. ·
+  repo / commits `f9b5fc2`..`f6892f43`
+
+- 2026-08-12 · Longmont · PERFORMANCE · First property audited against four
+  SEO/GEO corpora rather than three — Allsopp (9 modules), Vahe (7 modules /
+  240 tactics), Floate (15 ADMIT tactics), and Zarr (50 tactics, first use
+  of this corpus anywhere in the portfolio) — 81 verdicts total (9+7+15+50,
+  re-counted from the four audit tables, not carried from any summary).
+  Read-only: no `public/` file, generator, or rendered string changed.
+  [A prior report characterized this as "Zarr surfaced 19 findings the
+  other three corpora did not" — no such count appears in any of the four
+  audit documents; not carried forward as a receipt. What Zarr's own
+  verdict table does state: 1 APPLIED-TRACKED, 14 APPLIED-UNTRACKED, 14
+  NOT-APPLIED, 3 NOT-APPLICABLE, 18 BLOCKED BY BUILD ORDER, of 50.] · repo /
+  commit `d5c40db`
+
+- 2026-08-12 · Longmont · PERFORMANCE · regen_all.sh corrected: five
+  generators the header claimed were "deliberately not ported" had actually
+  been built during the 2026-08-11 content wave and stayed commented out,
+  so the script silently regenerated only 12 of 46 pages. Uncommented;
+  verified exit 0, 46 pages, deterministic across two runs, byte-identical
+  to deployed state. One generator (`_generate_rebate_hub.py`) remains
+  correctly absent — it needs a two-utility rebate architecture never
+  designed, and the header now says so accurately instead of lumping it
+  with the five that were simply forgotten. · repo / commit `4989baef`
+
+- 2026-08-12 · Longmont · PERFORMANCE · Sitemap phantom-URL defect found
+  and fixed: `_generate_sitemap.py` hardcoded an entry for
+  `insulation-rebate-hub.html`, a page that was never built, returning a
+  live 404. Caught pre-submission by the property's own IndexNow
+  verification step, which halted rather than submitted. [A later commit
+  message on the same fix claimed the dead URL "was submitted to Google
+  and Bing before discovery" — the repo's own record contradicts this: the
+  HALT commit states plainly "No IndexNow submission was made," and no
+  earlier submission of any kind is recorded anywhere in this property's
+  history. Not carried forward as a receipt; whether Google or Bing
+  organically crawled the live sitemap before the fix is unknown and
+  unverifiable from this repo.] Sitemap now lists 45 URLs, all resolving.
+  · repo / commits `e62a1ec`, `0ab8ae2`
+
+- 2026-08-12 · Longmont · PERFORMANCE · dateModified added to three JSON-LD
+  schema functions (`speakable_schema`, `jsonld_faqpage`, `jsonld_howto`)
+  that previously only `jsonld_article` carried; every generator now passes
+  the property's `REVIEWED_ISO`, educational pages keep their own per-page
+  dates. Coverage went from 6/46 to 42/46 pages (later 43/47 once the
+  hybrid page shipped with it from creation). Back-ported same-day to DCI
+  (27→59/63) and Greeley (6→30/34) using the identical function-level
+  pattern. · repo / commits `56c232a` (Longmont), `82471b5` (DCI),
+  `e221bea` (Greeley)
+
+- 2026-08-12 · Portfolio (all three) · CAPABILITY · First-party pageview
+  counter shipped identically on DCI, Greeley, and Longmont — a byte-
+  identical beacon (verified by sha256 of the rendered `<script>` block)
+  posts path + timestamp only to each property's own `/pv` endpoint; no
+  IP, cookie, or identifier stored; three-layer bot filtering (JS-required,
+  a discarded-not-stored UA check, a boot-built path allowlist). Recording
+  shipped with a kill switch defaulted OFF specifically because the
+  mechanism reached production (~13:02–13:08) before the privacy-policy
+  disclosure that describes it did — a real ordering defect, self-caught
+  and self-corrected before any real visitor was recorded (each property's
+  table held exactly one synthetic test row at the time). Recording enabled
+  only after each property's live privacy page was verified to no longer
+  claim "no analytics." All three properties' privacy/about pages revised
+  in the same wave to disclose the count plainly, without overclaiming in
+  either direction. · repo / commits `36db29f`+`4830e0c`+`de1e444` (Longmont),
+  `82471b5`+`b78ae27`+`e2f7fa6` (DCI), `e221bea`+`77ab453`+`3655e4b` (Greeley)
+
+- 2026-08-12 · Longmont · CAPABILITY · Hybrid Insulation (Flash and Batt)
+  service page — page 21, the property's first service page addressing a
+  technique absent from all three properties' service and educational
+  content. The page's central claim is a scoped code condition, not a
+  blanket figure: IRC Table R702.7.1 (reproduced verbatim by the Building
+  America Solution Center, PNNL/DOE contract DE-AC05-076RL01830 — same
+  source class as `BASC_CELLULOSE_SETTLE`) permits a Class III vapor
+  retarder in Climate Zone 5 only where continuous insulation reaches R-7.5
+  over a 2x6 wall; the 1-inch flash the technique is named for falls short
+  of that on the Class III path specifically, and the page states that
+  condition rather than a bare "1 inch is below code." No rebate applies —
+  Xcel excludes new construction, Efficiency Works requires the home be
+  ≥1 year old — stated on the page rather than omitted. Four attempts to
+  reach this: two large multi-phase kickoffs produced nothing verifiable
+  on disk; a data-entry-only task with pasted verification output produced
+  the committed page. · repo / commits `1b98143d`, `f6892f43`
+
+  [NOTE ON EVIDENCE: two prior reports this session described this page as
+  already sourced, committed, and shipped before either was true — one
+  attributed a fabricated R-value and a fabricated finding to a source
+  that had never actually been checked. Recorded here only after the
+  commit and its cited source were independently re-verified against the
+  live repo and a fetched primary source, not from either report.]
+
 ───────────────────────────────────────────────────────────────
 PORTER — talktoporter.com (platform)
 ───────────────────────────────────────────────────────────────
