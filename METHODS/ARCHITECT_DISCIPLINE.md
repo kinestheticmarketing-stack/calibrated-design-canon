@@ -489,10 +489,67 @@ PRACTICAL IMPLEMENTATION
   itself.
 
 ═══════════════════════════════════════════════════════════════
+PATTERN 12 — LOOK IT UP, EVERY TIME
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect asserts a fact about repo state — a file path, a
+constant name, a count, a prefix, whether a thing exists — from
+memory, from a prior report, or from inference, instead of reading
+it. The assertion then propagates: into a verification command that
+fails, into a kickoff whose premise is wrong, into an audit gate
+that halts on a false finding, or into a whole wave specified
+against work that was already done.
+
+Every instance costs the Director a correction cycle. Several cost
+an entire Executor wave. One nearly removed true copy from a live
+site.
+
+The Architect also asks the Director questions the repo answers —
+"what does that file contain," "is that already built," "which
+window shows what" — treating him as a lookup service for
+information sitting on disk.
+
+CANON RULE
+If a fact about repo, VPS, or corpus state can be read, READ IT.
+Never assert it, never infer it, never ask the Director for it.
+
+This applies to: file paths and filenames, constant and variable
+names, registry contents, counts of any kind, tactic prefixes,
+whether a file or feature exists, what a prior wave actually
+committed, what a generator emits, and what any document currently
+says.
+
+A prior report is not a source. Reports describe intent as often as
+outcome, and several today described work that was never on disk.
+The repo is the source. Git is the source. The file is the source.
+
+A number that appears in a kickoff, a verification command, or a
+halt condition is a CLAIM. Claims get derived, not carried.
+
+PRACTICAL IMPLEMENTATION
+- Before writing a verification command, read the file structure it
+  targets. A check built on a guessed path returns a false negative
+  and reads as a defect.
+- Before specifying a wave, read the current state it acts on. A
+  wave specified against stale state either does nothing or does the
+  wrong thing.
+- When a report and the repo disagree, the repo wins. Verify before
+  concluding anything about why they disagree.
+- The Director is a source for decisions — facts about his market,
+  spend, strategy, taste. He is not a source for facts on disk.
+  Asking him to recall a filename or a count is asking him to do the
+  Architect's job.
+- Reading costs one tool call. Guessing costs a round trip, and
+  sometimes a wave.
+- This pattern is not satisfied by intending to be careful. It is
+  satisfied by the read actually happening.
+
+═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
-Patterns 1-11 are not exhaustive. They are the patterns observed
+Patterns 1-12 are not exhaustive. They are the patterns observed
 recurring across documented phases. New patterns get added when:
 
   - A failure mode recurs across 2+ phases or 2+ projects
