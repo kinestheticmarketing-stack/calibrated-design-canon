@@ -87,6 +87,7 @@ Every source gets a unique prefix so an audit verdict stays traceable to its aut
 | LLS | Luther Landro — Local SEO Checklist | Local SEO Checklist, 2024 Edition | LLS-01..110 |
 | GLB | Julian Goldie — Link-Building Mastery | Link Building Mastery (1 FORBIDDEN tactic — see EXTRACTION_LOG.md) | GLB-01..101 |
 | JNP | Jesper Nissen — Parasite SEO 2025 | Parasite SEO 2025 (62 BLOCKED / 24 ADMIT — see SKILL_GATE.md) | JNP-01..86 |
+| LSR | Local SEO Revolution / GBP Next Gen | GBP generative-SEO optimization (agency material excluded — see EXTRACTION_LOG.md) | LSR-01..33 |
 
 Glen's On-Site Blueprint (58 lessons) and Audits Blueprint (13 audits) mint no tactic IDs of their own — On-Site content is folded into the tactic prefixes above via cross-reference, and Audits synthesizes existing tactics rather than minting new ones. seo-jesus-one-page-websites-2025 has no prefix minted yet (see Known gaps — extraction not present on disk).
 
