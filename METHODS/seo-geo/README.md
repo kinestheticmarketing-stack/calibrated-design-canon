@@ -82,10 +82,13 @@ Every source gets a unique prefix so an audit verdict stays traceable to its aut
 | PPI | Vahe Arabian — Publisher SEO | Practical Implementation | PPI-01..22 |
 | PRA | Vahe Arabian — Publisher SEO | Reporting & Analytics | PRA-01..26 |
 | PCD | Vahe Arabian — Publisher SEO | Content Distribution | PCD-01..30 |
+| PAR | Charles Floate — Parasite SEO | Parasite SEO (39 BLOCKED / 15 ADMIT — see SKILL_GATE.md) | PAR-01..54 |
+| OZA | Olga Zarr — SEO Audit Mastery | SEO Audit Mastery (SEOSLY) | OZA-01..50 |
+| LLS | Luther Landro — Local SEO Checklist | Local SEO Checklist, 2024 Edition | LLS-01..110 |
 
 Glen's On-Site Blueprint (58 lessons) and Audits Blueprint (13 audits) mint no tactic IDs of their own — On-Site content is folded into the tactic prefixes above via cross-reference, and Audits synthesizes existing tactics rather than minting new ones. seo-jesus-one-page-websites-2025 has no prefix minted yet (see Known gaps — extraction not present on disk).
 
-Next available prefix for a new source: pick two letters not in the table above, unique to that author. Do not reuse a prefix across sources even if a course is later found to be the "same" material re-packaged.
+Next available prefix for a new source: pick two or three letters not in the table above, unique to that author. Do not reuse a prefix across sources even if a course is later found to be the "same" material re-packaged.
 
 ## Audit usage
 
