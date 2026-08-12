@@ -85,6 +85,7 @@ Every source gets a unique prefix so an audit verdict stays traceable to its aut
 | PAR | Charles Floate — Parasite SEO | Parasite SEO (39 BLOCKED / 15 ADMIT — see SKILL_GATE.md) | PAR-01..54 |
 | OZA | Olga Zarr — SEO Audit Mastery | SEO Audit Mastery (SEOSLY) | OZA-01..50 |
 | LLS | Luther Landro — Local SEO Checklist | Local SEO Checklist, 2024 Edition | LLS-01..110 |
+| GLB | Julian Goldie — Link-Building Mastery | Link Building Mastery (1 FORBIDDEN tactic — see EXTRACTION_LOG.md) | GLB-01..101 |
 
 Glen's On-Site Blueprint (58 lessons) and Audits Blueprint (13 audits) mint no tactic IDs of their own — On-Site content is folded into the tactic prefixes above via cross-reference, and Audits synthesizes existing tactics rather than minting new ones. seo-jesus-one-page-websites-2025 has no prefix minted yet (see Known gaps — extraction not present on disk).
 
