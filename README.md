@@ -87,6 +87,8 @@ Method specs (METHODS/):
   giving as sales discipline
 - [RELATIONSHIP_DISCIPLINE.md](METHODS/RELATIONSHIP_DISCIPLINE.md) —
   solo-operator network-building as canonized discipline
+- [SESSION_CLOSE_PROTOCOL.md](METHODS/SESSION_CLOSE_PROTOCOL.md) —
+  10-item checklist run at every session close
 
 Retrospectives (RETROSPECTIVES/):
 - [phase-2.6-kinesthetic.md](RETROSPECTIVES/phase-2.6-kinesthetic.md) —

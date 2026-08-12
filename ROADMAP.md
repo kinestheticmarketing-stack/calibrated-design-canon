@@ -42,6 +42,13 @@ Method specifications (METHODS/):
 - GIVE_FIRST_DISCIPLINE.md — giving as explicit sales discipline;
   3:1 give-to-promote ratio; conversion mechanism for solo
   operators without paid distribution
+- SESSION_CLOSE_PROTOCOL.md — mechanism that turns "paperwork
+  closes every session" from a rule into an executed checklist;
+  10-item checklist covering canon repo state, ROADMAP
+  verification, canon docs shipped, project canon updates,
+  userPreferences additions, memory edits, external validations,
+  handoffs, insights surfaced, and open loops; prerequisite for
+  future close-paperwork automation
 
 Retrospectives (RETROSPECTIVES/):
 - phase-2.6-kinesthetic.md — first full deployment of four-role
@@ -155,9 +162,6 @@ Publishing infrastructure:
 - NEWSLETTER_VOICE.md — DR-newsletter voice canon; peer to
   COPY_VOICE.md but tuned for editorial register rather than sales
   register
-- SESSION_CLOSE_PROTOCOL.md — canon rule that every working session
-  produces or updates at least one structured artifact; prerequisite
-  substrate for newsletter agent automation and metrics tracking
 
 Meta-canon on the practice itself:
 - THE_DIRECTOR_ROLE.md — explicit definition of the Director role as
