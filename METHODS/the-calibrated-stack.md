@@ -52,6 +52,17 @@ for this method.
 - Full file replacement, never line-by-line edits.
 - For files >50 lines, sed surgical commands; for smaller, full block.
 - Mistakes corrected fully on first response, not iteratively.
+- **RENDER-FORCED GRAMMAR REPAIRS ARE DISCLOSED EXECUTOR SCOPE.** When
+  a Director-approved string cannot be applied literally because the
+  renderer transforms it — a template appending its own punctuation,
+  an article that must agree with a substituted noun — the Executor
+  repairs the input to produce the approved output and discloses the
+  repair with before and after. Approval attaches to what ships, not
+  to the literal input. Anything touching meaning halts instead.
+  Evidence: 2026-08-12, a banked citation stat whose renderer appends
+  its own period would have shipped a visible double period to two
+  live pages; and "a certified lab" → "an accredited lab" required the
+  article to change.
 
 ### Verification
 
@@ -60,6 +71,14 @@ for this method.
 - MD5 hashes on binary outputs to catch silent failures.
 - Smoke tests after every deploy.
 - Human eye-check on visual output.
+- **REGEN EXIT 0 IS A COMMIT PRECONDITION.** No commit may create a
+  state where the project's regeneration script fails. Evidence: on
+  2026-08-12 a DCI commit added two URLs to `SERVICE_PAGES`; the
+  homepage generator hard-fails when a `SERVICE_PAGES` URL has no
+  matching tile, so `regen_all.sh` exited 1 on a committed state and
+  no generator pass succeeded until a follow-up wave. The invariant
+  is committed = regenerable. The check is free — the wave already
+  runs regen; the sequencing just moves ahead of the commit boundary.
 
 ### Documentation
 
