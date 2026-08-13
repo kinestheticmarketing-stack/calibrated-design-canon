@@ -42,6 +42,13 @@ Method specifications (METHODS/):
 - GIVE_FIRST_DISCIPLINE.md — giving as explicit sales discipline;
   3:1 give-to-promote ratio; conversion mechanism for solo
   operators without paid distribution
+- SESSION_CLOSE_PROTOCOL.md — mechanism that turns "paperwork
+  closes every session" from a rule into an executed checklist;
+  10-item checklist covering canon repo state, ROADMAP
+  verification, canon docs shipped, project canon updates,
+  userPreferences additions, memory edits, external validations,
+  handoffs, insights surfaced, and open loops; prerequisite for
+  future close-paperwork automation
 
 Retrospectives (RETROSPECTIVES/):
 - phase-2.6-kinesthetic.md — first full deployment of four-role
@@ -92,6 +99,35 @@ Methodology playbooks (METHODS/):
   audits; chat-side Auditor remains for stakes-bearing audits)
 - POLISH_PROTOCOL.md — Auditor-findings-to-fixes workflow codified
   as a reusable kickoff template
+- HISTORY_AUDIT_TECHNIQUE.md — canonized diagnostic practice of
+  periodically asking an agent to analyze prior conversation
+  history and quantify failure modes by category with real counts
+  (not "how do you think you did" — actual measured stats).
+  Cross-model comparison when applicable. Run at phase boundaries,
+  before canon-tidy sessions, and when a specific failure mode
+  keeps recurring. Findings fold into canon updates: patterns get
+  added to ARCHITECT_DISCIPLINE, corrections get added to
+  userPreferences, incidents get memorialized in retros. Insight
+  source: Theo (T3) 2026-10 workflow demo.
+- DIAGNOSTIC_QUESTIONING.md — formalized practice of asking agents
+  why they made specific decisions when unexpected output ships or
+  canon violations happen. Standard questions: "what gave you
+  indication that direction was right?", "which instructions did
+  you follow?", "which instructions did you interpret as
+  overridable?" Answers fold into canon updates that prevent
+  misreads and priming templates that prevent re-occurrence.
+  Insight source: Theo (T3) 2026-10 workflow demo.
+
+Tooling conventions:
+- SKILL_AUTHORING_CONVENTIONS.md — governance doc for how every
+  future skill in the ecosystem gets written. Rules include:
+  description is trigger-keyword list (not what-it-does),
+  bad-example + good-example pairs are worth the space, metadata
+  for scoping (which projects/roles/contexts should load this
+  skill), one skill per specific job (not one super-skill).
+  Prerequisite for SLASH_COMMAND_LIBRARY.md and
+  CUSTOM_AGENTS_REGISTRY.md — ship this before those. Insight
+  source: Theo (T3) 2026-10 workflow demo.
 
 Methodology metrics:
 - METRICS.md — multi-vertical methodology metrics tracking; per-
@@ -100,6 +136,25 @@ Methodology metrics:
   catch / Auditor catch / Builder catch); active-phase running
   tallies plus closed-phase finals
 
+Methodology experiments:
+- CROSS_MODEL_AUDITOR_EXPERIMENT.md — evaluate whether running the
+  Auditor role on a different foundation model than the Architect
+  (Claude Architect + GPT-5 Auditor, or Claude Architect + Gemini
+  3.6 Auditor) catches distinct failure modes that same-model
+  Auditor misses. Insight source: LLM Council pattern (Karpathy
+  2026-01) plus Apple reinforced-agents paper (2026-05) both
+  recommend different models for reviewer role. Formalize as
+  canon if experiment shows measurable catch-quality improvement
+  across 5-10 Auditor cycles.
+- DECISION_COUNCIL_PROTOCOL.md — multi-model parallel deliberation
+  for strategic-decision-shaped questions where sycophancy is the
+  primary risk (course positioning, pricing tiers, strategic
+  pivots, product-line calls). Peer to AUDITOR_PROTOCOL.md but for
+  a different question class. Auditor reviews shipping-shaped work
+  against canon; Decision Council reviews decision-shaped
+  questions against cross-model consensus. Distinct tools for
+  distinct problems.
+
 Publishing infrastructure:
 - NEWSLETTER_FORMAT.md — locked structure for the CVC publication;
   4 weekly field notes + 1 monthly synthesis cycle; feeds off
@@ -107,9 +162,6 @@ Publishing infrastructure:
 - NEWSLETTER_VOICE.md — DR-newsletter voice canon; peer to
   COPY_VOICE.md but tuned for editorial register rather than sales
   register
-- SESSION_CLOSE_PROTOCOL.md — canon rule that every working session
-  produces or updates at least one structured artifact; prerequisite
-  substrate for newsletter agent automation and metrics tracking
 
 Meta-canon on the practice itself:
 - THE_DIRECTOR_ROLE.md — explicit definition of the Director role as
@@ -196,6 +248,23 @@ Why this order:
    position that makes the methodology defensible against
    "just use ChatGPT" competition. Not urgent, but worth
    locking while the framing is fresh from recent sessions.
+
+8. Methodology experiments (CROSS_MODEL_AUDITOR_EXPERIMENT,
+   DECISION_COUNCIL_PROTOCOL) queue at lower priority than
+   playbook canon. They refine the methodology at the margins;
+   playbook canon establishes the methodology's substantive
+   scope. Ship playbooks first, run experiments on top of
+   proven foundations.
+
+9. SKILL_AUTHORING_CONVENTIONS.md must ship BEFORE
+   SLASH_COMMAND_LIBRARY.md and CUSTOM_AGENTS_REGISTRY.md
+   because the conventions govern how those catalogs get
+   authored. Shipping the catalogs first without conventions
+   locked would produce inconsistent skill quality that has
+   to be retrofitted later. HISTORY_AUDIT_TECHNIQUE.md and
+   DIAGNOSTIC_QUESTIONING.md have no strict dependencies and
+   can ship whenever there's bandwidth — they're peer
+   methodology tools alongside AUDITOR_PROTOCOL.
 
 ═══════════════════════════════════════════════════════════════
 UPDATE PROTOCOL

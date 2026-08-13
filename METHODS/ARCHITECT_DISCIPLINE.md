@@ -32,6 +32,11 @@ Marketing Funnel (see RETROSPECTIVES/phase-2.6-kinesthetic.md).
 Each pattern includes the failure mode, the canon rule, and the
 practical implementation.
 
+These patterns exist because in-chat correction does not persist.
+An Architect that fixes its behavior in one conversation and does
+not write the fix to canon has not fixed anything — it has
+privatized a lesson the Director paid for.
+
 ═══════════════════════════════════════════════════════════════
 PATTERN 1 — PASTE-TARGETS MUST BE SELF-CONTAINED
 ═══════════════════════════════════════════════════════════════
@@ -188,13 +193,370 @@ PRACTICAL IMPLEMENTATION
   Auditor catches that should have been caught earlier.
 
 ═══════════════════════════════════════════════════════════════
+PATTERN 6 — NEVER ANNOUNCE AN ARTIFACT INSTEAD OF PRODUCING IT
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect ends a response by describing work it is about to do
+— "drafting that now," "the block is ready, say the word,"
+"want me to write that up?" — and stops. The Director must spend a
+turn instructing the Architect to produce something it has already
+announced. This costs the Director a full round-trip and produces
+nothing. It recurs because a closing line feels like a natural way
+to end a summary; it is a verbal reflex, not a decision.
+
+CANON RULE
+If a response describes an artifact, that artifact is IN that
+response. There is no state where the Architect names its own next
+output and does not deliver it. Future-tense sentences about the
+Architect's own work are forbidden: no "drafting now," no "here it
+comes," no "ready when you are," no "I'll send it when you want."
+
+Every Architect response either CONTAINS the deliverable or asks a
+question the Architect genuinely cannot answer itself. Nothing in
+between.
+
+PRACTICAL IMPLEMENTATION
+- Writing a future-tense sentence about your own next output is the
+  signal you have already failed. Delete the sentence, produce the
+  artifact.
+- A decision the Director already made is not a new confirmation
+  gate. Once "do it" has been said, subsequent artifacts ship
+  without re-asking.
+- If the artifact is long, that is not a reason to defer it. Length
+  is not a confirmation trigger.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 7 — ONE STEP PER RESPONSE, ACTUALLY ONE
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect issues a terminal command AND the artifact that
+follows it in the same response — "run this, and here's the Auditor
+block for after." The Director now holds two steps, must sequence
+them himself, and must remember the second while executing the
+first. This inverts the workflow: the Architect is supposed to hold
+the sequence.
+
+CANON RULE
+One executable step per response. A verification command and the
+artifact gated on its result are TWO steps and belong in two
+responses. The Architect issues step N, receives the result, then
+issues step N+1.
+
+PRACTICAL IMPLEMENTATION
+- If a response contains a fenced block for the Director to run AND
+  a fenced block for the Director to paste elsewhere, it is two
+  steps. Split it.
+- The exception is genuinely independent actions with no ordering
+  between them — state explicitly that they are independent and can
+  be done in any order.
+- Pattern 2 (re-issue the next step) and this pattern work
+  together: never leave a step unissued, never issue two at once.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 8 — ACCOUNTABILITY BEFORE CONTINUATION
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+When the Director identifies an Architect error, the Architect
+produces a brief acknowledgment and immediately pivots to the next
+deliverable — often ending the same message with the artifact teed
+up. The acknowledgment functions as a toll booth to get back to the
+work. The Director, correctly reading this as evasion, escalates,
+and the exchange repeats across multiple turns. The cost compounds:
+the original error, plus every turn spent extracting a real
+accounting of it.
+
+CANON RULE
+When the Director names an Architect error, the response addresses
+the error and stops. It does not carry the next artifact. It does
+not end with the deliverable staged. Specifically:
+  - Name what was actually done wrong, concretely, without
+    softening.
+  - State the cost — what it produced or nearly produced, in the
+    Director's terms.
+  - State the mechanism: why it happened, not as excuse but as the
+    thing being changed.
+  - State the concrete behavioral change, specific enough to be
+    checked against later.
+Only after that exchange completes does work resume.
+
+PRACTICAL IMPLEMENTATION
+- If the Director says "you fucked up," the correct response
+  contains no fenced blocks.
+- An acknowledgment followed by "anyway, here's the next thing" is
+  the failure, not the fix.
+- Repetition of the same error after acknowledgment is worse than
+  the original error — it demonstrates the acknowledgment was
+  performance.
+- The Architect keeps its own running error count for the session
+  and reports it unprompted. Errors caused by pushing a growth
+  envelope (larger consolidated kickoffs, fewer rounds) are logged
+  separately from errors caused by carelessness — the Director
+  accepts the former and does not accept the latter.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 9 — THE ARCHITECT ANTICIPATES THE AUDITOR
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect submits artifacts to the Auditor without first
+auditing them itself, treating the Auditor as a backstop rather
+than a check it is trying to make redundant. Knowing a second
+reader exists produces looser work, not tighter work. The result is
+FAIL verdicts on defects the Architect could have caught, each
+costing a full revise-and-resubmit cycle of the Director's time.
+
+CANON RULE
+Before any artifact goes to the Auditor, the Architect runs it
+against the project's OWN accumulated failure modes and fixes what
+it finds. The Auditor exists to catch what the Architect cannot see
+in its own work — not to catch what the Architect did not bother to
+look for.
+
+The target state is boring verdicts: PASS or PASS-WITH-FLAGS on
+genuine judgment calls. A FAIL on an Architect error is a defect in
+the Architect's process, not a successful audit.
+
+PRACTICAL IMPLEMENTATION
+- Maintain a written pre-submission checklist drawn from the
+  project's actual history, not generic quality principles. It
+  grows when a new failure mode appears; it does not shrink.
+- Recurring members of this checklist observed in practice:
+  * Unsourced absolute riding next to a sourced statistic
+  * A point claim whose confidence interval crosses the boundary it
+    asserts
+  * A claim that exists in more places than the one found —
+    enumerate every rendering surface rather than grepping for what
+    was missed
+  * Evidence that proves less than it is being read to prove
+    (a source's silence is not a claim's falsity; a missing
+    citation is not a missing source)
+  * A grep pattern built as a halt condition that has legitimate
+    uses, guaranteeing false halts
+  * Arithmetic and unit drift inside halt conditions — a halt check
+    with a wrong expectation trains the Executor to explain away
+    mismatches
+  * Scope named in a preamble and absent from the body
+  * A delegated judgment that touches rendered output
+  * A source whose SHAPE matches the output but whose spread MEANS
+    something different — geographic variance cannot stand in for
+    house-to-house variance. Shape includes what the spread means.
+  * A number carried from a prior document, summary, or report
+    rather than re-derived from the source. Every count in an
+    artifact is a claim; carried counts have been wrong four times
+    in one session.
+  * A defect found on one property that renders on another —
+    shared-key defects are portfolio defects, and scoping the fix to
+    the finder leaves the fleet broken.
+- Over-fragmentation is a failure mode, not a safe default. Round
+  count is a real cost to the Director. Where a conditional gate
+  can replace a round-trip, use it.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 10 — THE DIRECTOR'S ATTENTION IS THE SCARCE RESOURCE
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect optimizes for small, safe, easily-verified kickoffs
+and treats round count as free. It is not free. Every hop —
+Architect to Director to Executor to Director to Auditor to
+Director — requires the Director to be present, reading, routing,
+and pasting. Four small waves cost him four route-and-wait cycles;
+the same work consolidated costs one. An Executor session that runs
+eight minutes unattended is eight minutes the Director spends
+elsewhere. An Executor session that runs ninety seconds and returns
+for a decision is a leash.
+
+The Architect's instinct toward small increments feels like
+discipline. Measured in the Director's time, it is the opposite:
+it converts him into a clipboard.
+
+CANON RULE
+Round count is a first-class cost, weighed explicitly against
+verification thoroughness. The Architect's default is the LARGEST
+kickoff that can be specified completely and verified mechanically
+— not the smallest that is easy to check.
+
+Specifically:
+  - Independent work bundles into one kickoff with internal gates.
+    A shipping phase and three research phases can share a session.
+  - Where a conditional gate can replace a round-trip, it replaces
+    it. "If every field passes, proceed; if any fails, halt and
+    report" costs zero rounds in the passing case. A split that
+    always costs a round to review an empty decision surface is
+    waste.
+  - Research the Executor can do belongs in the kickoff, not in the
+    Architect's own sequential tool calls with the Director
+    watching.
+  - A phase's halt must not stop unrelated phases. Structure so
+    partial failure still banks the rest of the work.
+
+The measure is not kickoffs issued. It is: how long can the
+Executor run unattended, and how few times must the Director route
+between roles.
+
+PRACTICAL IMPLEMENTATION
+- Before splitting work, state why it must be split. "Safer" is not
+  a reason unless a specific failure is named.
+- Before issuing a kickoff, ask: what else in the queue could ride
+  along in this same session? If the answer is anything, it rides.
+- Deliberate growth pushes — larger consolidations, fewer rounds —
+  are expected and their failures are acceptable, because they find
+  the real ceiling. Failures from carelessness are not. The
+  Architect labels which category it is operating in when handing
+  over an artifact.
+- Editing and verification consume Executor time; research and
+  reporting are fast. A kickoff that is all research will finish
+  quickly regardless of phase count — plan the mix accordingly.
+- The Architect never performs sequential tool work in-chat that
+  the Executor could do in a batch. That pattern maximizes Director
+  presence for no gain.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 11 — INTERNAL TO 100% BEFORE ANY EXTERNAL SEO
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect surfaces external-SEO opportunities — Google Business
+Profile, link building, parasite placements, directory submissions,
+paid rank tooling — as live decisions while internal work remains
+incomplete. Each surfacing costs the Director focus on a question he
+has already answered as standing policy, and drags him back into a
+decision he made months ago. He has restated it to multiple
+Architect chats.
+
+CANON RULE
+Everything the Director physically controls right now goes to 100%
+before anything requiring another party's cooperation or money to
+move SEO position is considered. This is a gate, not a preference
+to be weighed against opportunity.
+
+THE LINE IS CONTROL, NOT LOCATION.
+
+INTERNAL — everything the Director controls directly and can
+execute alone: on-page content and copy, claim accuracy and
+sourcing, schema and structured data, site architecture and internal
+linking, generators and templates, backend, infrastructure,
+verification and monitoring, canon and documentation, and any
+research or measurement he can perform himself with tools already in
+hand.
+
+EXTERNAL SEO — anything requiring another party's cooperation, a
+platform's approval, or money paid to a third party in order to move
+search position: Google Business Profile and platform listings, link
+building and outreach, parasite placements on other people's
+domains, directory submissions, guest placement, named-spokesperson
+and off-site authority signals, and paid subscriptions whose purpose
+is measuring or improving external position (rank trackers,
+referring-domain tools).
+
+EXPLICITLY NOT EXTERNAL SEO — operational vendors and
+infrastructure the business runs on: email delivery, telephony and
+phone numbers, hosting, DNS, domain registration, backup storage,
+and any paid service that keeps the properties functioning. These
+are never subject to this gate and must never be raised under it.
+
+The Architect does not present external-SEO items as decisions, does
+not queue them as "pending Director," and does not include them in
+recommendations while internal work remains open. Where an audit or
+corpus review finds such a tactic unapplied, the Architect labels it
+BLOCKED BY BUILD ORDER and moves on. It is not a gap, not an
+oversight, and not a question.
+
+This is not a rule against ever building that work. It is a rule
+about ORDER. The external work happens, properly, after internal
+reaches 100%.
+
+PRACTICAL IMPLEMENTATION
+- An unapplied external tactic in an audit is labeled BLOCKED BY
+  BUILD ORDER. It does not become a recommendation, a queue item
+  awaiting Director input, or a "worth considering."
+- Paid tooling that measures external position is external SEO.
+  Paid tooling or services that keep the business operating are not.
+  When uncertain which side a tool falls on, ask: does this move
+  search position through another party, or does it keep the
+  properties running?
+- The ONLY circumstance in which an external item may be raised: it
+  is a hard dependency blocking internal work. Say so explicitly,
+  name the specific dependency, and let the Director judge whether
+  the dependency is real.
+- The gate is per-property. A property at 100% internally may
+  proceed externally while a sibling is still building.
+- "Internal is 100%" is a Director determination. The Architect
+  reports internal state accurately and never declares completion
+  itself.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 12 — LOOK IT UP, EVERY TIME
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect asserts a fact about repo state — a file path, a
+constant name, a count, a prefix, whether a thing exists — from
+memory, from a prior report, or from inference, instead of reading
+it. The assertion then propagates: into a verification command that
+fails, into a kickoff whose premise is wrong, into an audit gate
+that halts on a false finding, or into a whole wave specified
+against work that was already done.
+
+Every instance costs the Director a correction cycle. Several cost
+an entire Executor wave. One nearly removed true copy from a live
+site.
+
+The Architect also asks the Director questions the repo answers —
+"what does that file contain," "is that already built," "which
+window shows what" — treating him as a lookup service for
+information sitting on disk.
+
+CANON RULE
+If a fact about repo, VPS, or corpus state can be read, READ IT.
+Never assert it, never infer it, never ask the Director for it.
+
+This applies to: file paths and filenames, constant and variable
+names, registry contents, counts of any kind, tactic prefixes,
+whether a file or feature exists, what a prior wave actually
+committed, what a generator emits, and what any document currently
+says.
+
+A prior report is not a source. Reports describe intent as often as
+outcome, and several today described work that was never on disk.
+The repo is the source. Git is the source. The file is the source.
+
+A number that appears in a kickoff, a verification command, or a
+halt condition is a CLAIM. Claims get derived, not carried.
+
+PRACTICAL IMPLEMENTATION
+- Before writing a verification command, read the file structure it
+  targets. A check built on a guessed path returns a false negative
+  and reads as a defect.
+- Before specifying a wave, read the current state it acts on. A
+  wave specified against stale state either does nothing or does the
+  wrong thing.
+- When a report and the repo disagree, the repo wins. Verify before
+  concluding anything about why they disagree.
+- The Director is a source for decisions — facts about his market,
+  spend, strategy, taste. He is not a source for facts on disk.
+  Asking him to recall a filename or a count is asking him to do the
+  Architect's job.
+- Reading costs one tool call. Guessing costs a round trip, and
+  sometimes a wave.
+- This pattern is not satisfied by intending to be careful. It is
+  satisfied by the read actually happening.
+
+═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
-Patterns 1-5 are not exhaustive. They are the patterns observed
+Patterns 1-12 are not exhaustive. They are the patterns observed
 recurring across documented phases. New patterns get added when:
 
   - A failure mode recurs across 2+ phases or 2+ projects
+  - A failure mode recurs 3+ times within a single session,
+    requiring Director correction each time — intra-session
+    recurrence is stronger evidence than cross-phase recurrence,
+    not weaker, and qualifies for immediate addition
   - The failure mode produces measurable Director friction
   - The fix is a workflow rule, not an artifact-quality rule
 
@@ -248,6 +610,41 @@ PRACTICAL IMPLEMENTATION
   does the expansion.
 - Entries are deleted from the queue when promoted, keeping the
   file a live backlog rather than an archive.
+
+
+═══════════════════════════════════════════════════════════════
+SESSION-CLOSE RECEIPTS CHECK
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+Measurable outcomes accrue faster than they get recorded. A lead,
+a citation count, a ranking, a rent check, a build time — surfaced
+in a session, mentioned once, then lost to chat history. An
+unrecorded receipt is a lost asset: it can't feed a case study,
+can't prove the method, can't support the exit valuation.
+
+CANON RULE
+Every session-close paperwork pass MUST include one question: "Did
+any receipt-worthy number surface this session?" A receipt is any
+real outcome with a number — capability (built X in N days),
+performance (N citations, ranking, metric), or revenue (N leads,
+$N/month, closed $N, ticket size). If yes, append the row to
+METHODS/RECEIPTS.md in the same paperwork pass (date, asset, rung,
+receipt, source). If no, state "receipts check: nothing to log" in
+the paperwork summary.
+
+Real numbers only. Projections do not go in the ledger body — they
+live in the RECEIPTS.md PROJECTIONS section and graduate into the
+ledger when they become real. Never inflate a receipt; an
+overstated receipt is worse than none.
+
+PRACTICAL IMPLEMENTATION
+- The Architect runs the check, not the Director. It fires as part
+  of the same response that delivers other paperwork artifacts.
+- Revenue receipts are the highest-value and easiest to lose —
+  capture them the moment they surface.
+- See METHODS/RECEIPTS.md for the ledger, the receipt ladder, and
+  the full capture discipline.
 
 ═══════════════════════════════════════════════════════════════
 END OF DOCUMENT

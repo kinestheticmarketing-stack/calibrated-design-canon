@@ -80,10 +80,15 @@ Method specs (METHODS/):
   design-psychology principles (Jakob's Law and others) with
   per-page audit checklists, applied across every Calibrated
   Stack web property
+- [EXTERNAL_VALIDATION.md](METHODS/EXTERNAL_VALIDATION.md) —
+  independent research and adjacent open-source patterns
+  validating the Calibrated Stack methodology
 - [GIVE_FIRST_DISCIPLINE.md](METHODS/GIVE_FIRST_DISCIPLINE.md) —
   giving as sales discipline
 - [RELATIONSHIP_DISCIPLINE.md](METHODS/RELATIONSHIP_DISCIPLINE.md) —
   solo-operator network-building as canonized discipline
+- [SESSION_CLOSE_PROTOCOL.md](METHODS/SESSION_CLOSE_PROTOCOL.md) —
+  10-item checklist run at every session close
 
 Retrospectives (RETROSPECTIVES/):
 - [phase-2.6-kinesthetic.md](RETROSPECTIVES/phase-2.6-kinesthetic.md) —
