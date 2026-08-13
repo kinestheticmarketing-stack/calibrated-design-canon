@@ -24,9 +24,6 @@ here. One line per entry: date, source project, lesson.
 - 2026-07-08 | roadmap backlog | Stalled canon docs from Section 9
   roadmap: SLASH_COMMAND_LIBRARY.md, CUSTOM_AGENTS_REGISTRY.md,
   SECURITY_PLAYBOOK.md, METRICS.md.
-- 2026-07-08 | roadmap backlog | Architect-discipline patterns 6-11
-  formal canonization (observed in practice, never written into
-  ARCHITECT_DISCIPLINE.md).
 - 2026-07-15 | kinestheticmarketing.com | Source-attribution as a
   universal DR principle: every public link/ad/offer/entry point
   carries a distinct source tag (?source=linkedin, ?source=card,
@@ -79,6 +76,29 @@ here. One line per entry: date, source project, lesson.
   does "verify critical tools are collecting" mean analytics specifically
   (absent by locked no-tracking policy) or any revenue-critical collection
   (the lead canary qualifies)?
+- 2026-08-12 | denvercoloradoinsulation.com | Generator templates
+  hardcoded material/installation vocabulary, producing "Which blower
+  door testing material is right..." and a HowTo node titled "How
+  Blower Door Testing Is Installed" on a diagnostic service. Fixed
+  with per-service override fields defaulting to current wording,
+  proven zero-change on all eight existing pages. Generalizes to any
+  generator whose templates assume one service class.
+- 2026-08-12 | longmontcoloradoinsulation.com | A commit that
+  regenerates only some artifacts leaves the rest stale and
+  invisible: 26 of 47 pages shipped missing a new page's nav link,
+  footer link, and knowsAbout schema. Full regen belongs in the
+  commit that adds a page, not a follow-up.
+- 2026-08-12 | denvercoloradoinsulation.com | Citation-floor
+  exceptions: insulation-wall, insulation-spray-foam, and
+  insulation-removal sit at 2 against a service-page floor of 3
+  because no existing source honestly supports a third sentence.
+  Adjudicated, not missed. Needs a COPY_VOICE recorded-exception note
+  and a pool-expansion decision.
+- 2026-08-12 | denvercoloradoinsulation.com | insulation-removal
+  renders only three citation slots and slot 2 is
+  BARE_DECK_OPERATIONAL_NOTE by design, so it cannot reach the floor
+  without a fourth render call site. Slot architecture is an open
+  decision.
 
 ═══════════════════════════════════════════════════════════════
 PREFERENCES-TO-CANON RECONCILIATION (flagged 2026-08-12, highest priority)

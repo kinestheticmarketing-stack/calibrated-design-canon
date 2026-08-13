@@ -109,6 +109,19 @@ DIMENSION U5 — DOCUMENTATION HYGIENE
   - Are new lessons captured in PROJECT_LESSONS.md (or equivalent)?
   - Are voice/copy rules updated in COPY_VOICE.md if relevant?
 
+DIMENSION U6 — DECOMPOSITION
+  - Does the kickoff fan out? Count the independent work units explicitly.
+  - Two or more independent units with no fan-out and no 
+    NON-PARALLELIZABLE clause is an automatic CRITICAL, not a flag.
+  - If a NON-PARALLELIZABLE clause is present, does the dependency it 
+    names survive inspection? A NON-PARALLELIZABLE clause naming a 
+    dependency that does not survive inspection is a worse CRITICAL 
+    than the omission would have been.
+  - Is the fan-out stated up front, not buried below the first block 
+    of the kickoff? Fan-out buried below the first block is a FLAG — 
+    the Director must not have to search a kickoff to confirm it 
+    decomposes.
+
 ═══════════════════════════════════════════════════════════════
 AUDIT OUTPUT FORMAT — always use this
 ═══════════════════════════════════════════════════════════════
