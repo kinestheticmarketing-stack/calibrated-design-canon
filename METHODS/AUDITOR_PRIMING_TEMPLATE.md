@@ -121,6 +121,18 @@ DIMENSION U6 — DECOMPOSITION
     of the kickoff? Fan-out buried below the first block is a FLAG — 
     the Director must not have to search a kickoff to confirm it 
     decomposes.
+  - Does the kickoff OPEN with a unit ledger — one row per file
+    changed, per page authored, per repo swept, per deploy? A
+    kickoff with no unit ledger is an automatic CRITICAL, not a flag.
+  - Does the declared agent count equal the ledger row count? An
+    agent count below the ledger row count is an automatic CRITICAL.
+  - Count the ledger rows yourself against the files, pages, repos,
+    and deploys the kickoff actually touches. Do not audit the
+    ledger's arithmetic against itself — audit it against the work.
+  - A ledger that under-counts is a CRITICAL carrying the same
+    weight as no ledger at all. An under-counted ledger is worse
+    than useless: it feeds the agent-count check a false row count,
+    so the check passes on work it should have halted.
 
 ═══════════════════════════════════════════════════════════════
 AUDIT OUTPUT FORMAT — always use this

@@ -622,6 +622,23 @@ If this kickoff contains 2 or more independent units and no NON-PARALLELIZABLE c
 - Visibility rule: the fan-out must be legible at a glance — stated
   in the first block of the kickoff, not buried in a later section
   where the Director has to go looking for it.
+- Ledger rule: the kickoff OPENS with a unit ledger — one row per
+  file changed, one row per page authored, one row per repo swept,
+  one row per deploy performed — and the declared agent count equals
+  the ledger row count. The ledger is built BEFORE any prose exists.
+- Decomposition performed after drafting loses to the shape the
+  prose already took. It does not count the units in the work; it
+  counts the units the finished sentences imply, and by then the
+  sentences have decided. That is the mechanism behind every
+  under-decomposed wave on 2026-08-12: the rule was known, it was
+  canonized in this document the same day, and the waves still fired
+  four agents at work containing roughly fourteen independent units.
+  A rule that is read after the drafting decision has already been
+  made does not reach the decision.
+- The ledger is not a summary of the kickoff. The kickoff is
+  generated from the ledger. A ledger written after the prose is a
+  restatement of the defect wearing the shape of the check, and it
+  will always agree with the agent count it was derived from.
 
 ═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
