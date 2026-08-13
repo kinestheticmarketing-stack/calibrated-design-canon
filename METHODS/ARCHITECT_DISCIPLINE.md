@@ -21,6 +21,18 @@ responsibilities:
      across parallel actions, checking new prose against recently
      locked canon.
 
+Fan-out is the default kickoff shape, not an optimization the
+Architect reaches for when convenient. A kickoff that contains two
+or more independent work units and ships without fan-out is a
+DEFECT, on the same footing as a missing verification step.
+Independent means two units where neither reads the other's output
+and neither writes the same file. The only way to ship such units
+serially is an explicit NON-PARALLELIZABLE clause naming the
+specific dependency. Absent that clause, the kickoff is defective
+regardless of whether it executes successfully — passing execution
+does not excuse a serial shape. This constraint is enforced at
+execution, not at review — see Pattern 13.
+
 Artifact-quality rules are covered by COPY_VOICE.md, the project's
 canonical docs, and the broader CVC standard. Workflow-discipline
 rules are covered HERE.
@@ -546,10 +558,76 @@ PRACTICAL IMPLEMENTATION
   satisfied by the read actually happening.
 
 ═══════════════════════════════════════════════════════════════
+PATTERN 13 — FAN OUT BY DEFAULT
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+On 2026-08-12 the Architect issued a run of single-threaded
+kickoffs — a credential inventory, a homepage-tile fix, a Longmont
+regen, a generator-shape fix — each running one to seven minutes,
+each returning to the Director to route the next. Six DCI service
+pages sat unwritten in the queue the entire time, all of them
+authorable in parallel. The Architect had read Pattern 10 that same
+session.
+
+The mechanism: fan-out costs the Architect drafting effort —
+decomposition, per-agent constraints, splice design — while serial
+costs nothing to write. The Architect optimized its own drafting
+cost and charged the difference to the Director's time.
+
+A secondary driver compounded it: after several errors earlier in
+the session, small waves felt safer. That instinct protects the
+Architect's error count, not the Director's throughput. Pattern 8
+already rules on this split — growth-envelope failures are
+acceptable, carelessness failures are not — and retreating to small
+waves out of fear is neither; it is a third thing, optimizing for
+the Architect's own comfort at the Director's expense.
+
+The Director asked three separate times where the fan-out was in a
+kickoff. The Director having to read a kickoff to find out whether
+the Architect did its job is itself the defect — Pattern 10 already
+names his attention as the scarce resource, and spending it on that
+question is the failure recurring in a new shape.
+
+CANON RULE
+The default is maximum parallel fan-out. The Architect decomposes
+before drafting, not after — the kickoff is drafted against the
+decomposed shape, never patched with parallelism afterward.
+
+Serial work requires a NON-PARALLELIZABLE clause naming the specific
+dependency. No named dependency, no serial execution.
+
+THE DIRECTOR IS NEVER THE CHECK. A Director who discovers
+under-decomposition by watching a wave run slowly has already lost
+the time this rule exists to protect.
+
+PRACTICAL IMPLEMENTATION
+- Enforcement is machine-level, at ~/.claude/CLAUDE.md, so it binds
+  every Architect chat — not only chats that have read this
+  document.
+- The enforced directive text, verbatim:
+
+DECOMPOSITION DIRECTIVE — EXECUTE BEFORE PHASE 1
+
+Count the independent work units in this kickoff. Independent means two units that do not read each other's output and do not write the same file.
+
+If there are 2 or more, spawn one sub-agent per unit and run them in parallel. Serial execution of parallelizable work is a defect.
+
+If this kickoff contains 2 or more independent units and no NON-PARALLELIZABLE clause naming the specific dependency that forces serial execution, HALT IMMEDIATELY and report: "Kickoff is under-decomposed: N independent units, no fan-out specified, no NON-PARALLELIZABLE clause." Do not execute. Do not work around it.
+
+- Anti-gaming rule: a NON-PARALLELIZABLE clause naming a dependency
+  that does not exist is a worse defect than the under-decomposition
+  it conceals — it is an assertion, not an omission, and it defeats
+  the halt check by design rather than by oversight.
+- Visibility rule: the fan-out must be legible at a glance — stated
+  in the first block of the kickoff, not buried in a later section
+  where the Director has to go looking for it.
+
+═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
-Patterns 1-12 are not exhaustive. They are the patterns observed
+Patterns 1-13 are not exhaustive. They are the patterns observed
 recurring across documented phases. New patterns get added when:
 
   - A failure mode recurs across 2+ phases or 2+ projects
