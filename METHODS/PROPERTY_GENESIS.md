@@ -200,6 +200,43 @@ can proceed in parallel (see Phase 5's parallelism note, itself drawn
 from `DEPLOYMENT_RUNBOOK.md`'s explicit "run j and k in parallel with
 content work" instruction).
 
+6. **Check the domain's prior life before writing any copy.** Query
+   `web.archive.org/cdx/search/cdx?url={domain}&matchType=domain&output=json`
+   and run `whois` on the apex. Record the result **even when it is clean** —
+   a recorded clean result is what closes the question; an unrecorded one
+   leaves it open forever. Note that WebFetch is blocked from
+   `web.archive.org`; use `curl`.
+
+   This is not hypothetical. `denvercoloradoinsulation.com` is a
+   **re-registered expired domain**: WHOIS Creation Date 2026-05-01, but 43
+   Wayback captures from 2011 of a prior site — Bestway Insulation, a Denver
+   insulation contractor in the same vertical and the same metro. Fifteen
+   years dormant in between. That was discovered on 2026-08-18, months after
+   launch, by an audit looking for something else. It is benign — legitimate
+   contractor content, no spam footprint, all captures HTTP 200, and fifteen
+   years decays any signal in either direction — but nobody knew, and until
+   somebody checked, no ranking anomaly on that property could have been
+   confidently attributed to anything.
+
+   Longmont and Greeley both return **zero captures** and were registered
+   2026-08-05: genuinely fresh domains, now recorded as such.
+
+   Record in `STATE_OF_PROJECT.md`: capture count and date span, what the
+   prior site was if any, WHOIS Creation Date, and an explicit
+   benign/not-benign judgement. If prior use is found, note that checking for
+   surviving legacy inbound links requires backlink tooling and is
+   BLOCKED-BY-BUILD-ORDER under Pattern 11 — flag it for the post-build-order
+   phase rather than skipping it silently.
+
+7. **`COPY_VOICE.md` is authored in this phase, not later.** The market facts
+   verified in steps 1-5 are written into a locked, dated fact set before any
+   generator references it. Longmont shipped with **seven** live code
+   references to a `COPY_VOICE.md` that did not exist — two of them backing
+   hard-fail contract clauses (the atomic-answer word band and the
+   determiner-uniqueness rule) — and authoring it retroactively cost a full
+   ledger row four waves later. Written here it costs one session and no
+   reference is ever dangling.
+
 ---
 
 ## PHASE 2 — PARENT SELECTION
@@ -350,6 +387,39 @@ explicitly; do the same in the new property's lineage table).
    replaces. Route it to whoever owns copy and record it as a declared
    gap under Phase 8 rather than authoring it inside a port.
 
+9. **Output paths derive from the script's own location, never from a
+   hardcoded home-relative string.** Use
+   `os.path.dirname(os.path.abspath(__file__))` as the root; never
+   `os.path.expanduser('~/code/{property}/public')`.
+
+   This is a **portfolio-wide inherited defect**, not a one-property mistake:
+   Denver has 12 such assignments, Longmont 10, Greeley 16 across 14 files —
+   **38 assignments in 36 files**. Every generator in the portfolio writes to
+   a fixed absolute path regardless of the directory it is invoked from, and
+   `_similarity_check.py` additionally hardcodes a **sibling** property's
+   path. A read-only sweep once wrote into a live repo exactly this way and
+   came out clean only because regen is deterministic — the accidental write
+   reproduced byte-identical output. That was luck, not safety.
+
+   **A new property clones whatever pattern the parent has.** If the parent is
+   not fixed first, the new property inherits 10-16 fresh instances on day one.
+
+10. **`STATE_OF_PROJECT.md` opens with the genesis itself as its first dated
+    entry, and every later wave appends in the same commit as the work it
+    describes.** The property-history record is half of the audit-intake
+    artifact (see the standing rulings near the end of this document); a
+    history with holes supplies wrong context to the next audit. All three
+    current properties self-declare undocumented waves, which is why that
+    tactic scores APPLIED-UNTRACKED rather than APPLIED portfolio-wide.
+
+11. **Ship `_postbuild_check.py` with the first regen, canary-proven.** Five
+    validators — `check_interactive_js`, `check_placeholders`,
+    `check_duplicate_labels`, `check_credentials`, `check_jsonld` — wired into
+    `regen_all.sh` and each proven by injecting a violation, confirming the
+    check raises and refuses to write, then restoring. Identical in all three
+    current properties, but each arrived by retrofit after a defect shipped.
+    At genesis it is a file copy.
+
 ---
 
 ## PHASE 5 — INFRASTRUCTURE PROVISIONING
@@ -445,6 +515,54 @@ that have a real dependency (certbot needs DNS to have propagated;
     state; don't assume the tool that's installed is the tool that's
     used.
 
+12. **Create the Search Console and Bing Webmaster properties the day the
+    domain resolves — before content authoring finishes, not after launch.**
+    Verify GSC by DNS TXT, submit the sitemap, import into Bing. **Record the
+    registration date in `STATE_OF_PROJECT.md` at the moment of
+    registration.**
+
+    **This is the highest-value item in this phase and its cost of delay is
+    unrecoverable.** Search Console does not backfill: data from before
+    verification does not exist and cannot be retrieved. Greeley verified on
+    launch day (2026-08-06, DNS TXT transcript on file) and is simply waiting
+    for data to accrue. Longmont launched 2026-08-12 with its runbook reading
+    "Search Console and Bing verification — NOT DONE," and every day between
+    launch and registration is a permanently missing day of history. Denver,
+    verified longest, is the only property that can run the entire drop- and
+    performance-diagnosis block at all.
+
+    Record the date. Two of three current properties cannot say when they
+    registered, because nobody wrote it down.
+
+    Console properties are **instrumentation of a site you already own** and
+    are explicitly **not** external SEO — Pattern 11's build-order block does
+    not apply to them. It applies to GBP, link building, directory submission
+    and paid rank tooling.
+
+13. **Every collection source ships with its read surface in the same wave.**
+    No source is installed collecting until something can read it.
+
+    All three current properties have a `pageviews` table that has collected
+    since 2026-08-12 and a query surface that is still an open queue item. A
+    source nothing reads has not been verified to collect and is
+    indistinguishable from a broken one. Three properties have been accruing
+    data for weeks that nobody can confirm is arriving. The read is trivial to
+    add later; the unverified interval is not recoverable.
+
+    Minimum read surface: collection liveness (row count, most recent
+    timestamp, time since), views per path per day, views per path all time,
+    and the join to `leads.source_page` for conversion per page. Ship it as
+    `ops/pageview_queries.sql` alongside `ops/canary_check.js`.
+
+14. **Read the indexing report the day the console verifies.** Not at first
+    harvest. Indexing data needs no accrual; **performance data does.**
+    Greeley conflated the two — it verified 2026-08-06, deferred everything to
+    a harvest scheduled Oct-Nov 2026, and recorded its 30-page URL submission
+    as "not independently re-verified — recorded as reported." Whether those
+    30 pages actually indexed has been answerable since launch day and, at the
+    time of writing, twelve of its pages sit crawled-currently-not-indexed.
+    Splitting the two reads is free and closes a two-month blind spot.
+
 ---
 
 ## PHASE 6 — CONTENT BUILD
@@ -481,6 +599,22 @@ made.
    other); the lineage relationship is documented in
    `WEBSITE_ARCHITECTURE.md` and `STATE_OF_PROJECT.md` only, never in
    rendered output.
+
+6. **Read the live SERP for each target term before the page is written, and
+   record the read.** Top-3 results, what they are, and a competition
+   assessment of that set — recorded in-repo, gating the term.
+
+   Denver is the only property that has done this and it did so
+   **retroactively**: the vermiculite-removal page exists because a Search
+   Console query read found REMOVAL-intent demand (24 queries, 873
+   impressions, avg pos ~70) landing on an IDENTIFICATION-intent page that had
+   already shipped. That is a page-shaped correction to a mistake a
+   five-minute pre-authoring SERP read would have prevented. Longmont and
+   Greeley author from house convention and have not paid this cost yet only
+   because neither has the data to reveal it.
+
+   This step also prevents the failure Phase 7 catches downstream: authoring
+   two pages against the same head term.
 
 ---
 
@@ -556,6 +690,50 @@ production deploy, not a sample.
   while every individual command appeared to succeed. Diff a local and
   remote MD5 manifest of every deployed file before considering the
   deploy done.
+- **Run the `site:` sweep at launch and fix its cadence.** Query
+  `site:{domain}` against the full page set, record the result in-repo, and
+  set the cadence (per wave, or per N new pages).
+
+  This has been flagged since 2026-08-10, re-affirmed, and is **still unrun on
+  all three properties** — the portfolio's longest-standing open gap. The
+  pre-publish cannibalization gate that does exist is title-level only and
+  self-declares that it "does not catch body-level topical overlap." A cadence
+  set at genesis is kept; one added later competes with work that feels more
+  urgent every wave.
+
+  **Run the internal near-duplicate check in the same pass.** The portfolio
+  ships a shingle-based similarity instrument (`_similarity_check.py`, PASS
+  strictly below 0.30) that exists on **one** property and has only ever
+  compared that property against its parent. Pointed inward at the same
+  threshold, every property fails: Denver 107 page-pairs at or above 0.30
+  (105 of them suburb-vs-suburb, max 0.456), Longmont 21, Greeley 6. The gate
+  that would have caught this exists, works, and had only ever been aimed at
+  the one comparison that passes. Ship it measuring **both** directions.
+- **Every audit artifact opens with a declaration block.** Type, purpose,
+  scope, instrument, date, structure:
+
+      > **AUDIT TYPE:** health | quick-win | drop-diagnosis | strategy | corpus-alignment | remediation
+      > **PURPOSE:** the concrete question this audit answers
+      > **SCOPE:** what was examined, and what was deliberately excluded
+      > **INSTRUMENT:** what did the examining
+      > **DATE:** YYYY-MM-DD
+      > **STRUCTURE:** why the sections are ordered as they are
+
+  Thirteen audit artifacts exist across the three current properties and
+  **none** carries one. Nine of the thirteen portfolio-wide gaps found by the
+  2026-08-18 corpus audit reduce to this single absence: the portfolio has
+  excellent per-defect **gates** and no declared **audits**. A gate fires
+  continuously and automatically; an audit declares what it is and can
+  therefore be judged complete or incomplete.
+
+  Audits typed `health` or `drop-diagnosis` order their technical findings by
+  pipeline stage — **crawl → render → index → rank** — with each stage a
+  heading even when empty. An empty stage is itself a finding: it means that
+  stage was not examined.
+
+  What this does **not** close: a whole-site manual read still has to be
+  performed. The convention ensures that when one happens it is recognisable
+  as an audit; it is not evidence that one happened.
 
 ---
 
@@ -582,6 +760,21 @@ day one. As of this writing, the declared set is:
    real spokesperson, a bio page, `author` on Article schema nodes) that
    gates identically across every property and should be made once, not
    re-litigated at each genesis.
+6. **No internal near-duplicate measurement.** The similarity instrument
+   compares against the parent property only; no property measures its own
+   pages against each other. Measured 2026-08-18: Denver 107 pairs at or above
+   0.30, Longmont 21, Greeley 6.
+7. **The first-party pageview counter has no read surface** on any property —
+   it has collected since 2026-08-12 and nothing queries it.
+8. **No property reads its Search Console indexing report as a cadence.**
+9. **Generator output paths are hardcoded home-relative** on all three
+   properties — 38 assignments across 36 files.
+10. **No audit artifact carries a type/purpose declaration** — 13 of 13.
+
+Pre-declaring this set at genesis is the corpus practice "review past audits
+and reports," implemented ahead of time rather than after. It is the only
+audit practice scored strictly satisfied on all three current properties.
+Keep it.
 
 If a genesis wave's own research surfaces a *new* portfolio-level gap
 not on this list, add it here for the next genesis rather than only
@@ -617,6 +810,40 @@ A genesis wave should produce a runbook of this shape as it executes
 Phase 5 and Phase 7 above — not instead of following this checklist, but
 as the dated, host-verified record of *how* this genesis's version of
 those phases actually went, for the redeploy after this one.
+
+---
+
+## Standing rulings on two recurring audit tactics
+
+Two tactics in the Zarr audit corpus recur on every owned property and were
+left UNRESOLVED through two audit passes, because neither has an obvious
+answer on a rank-and-rent property with no client. Both were settled
+2026-08-18. They are recorded here so each genesis inherits the ruling rather
+than re-litigating it.
+
+**The client questionnaire (OZA-32).** Zarr states the purpose himself: *"the
+client-needs/history dimension the site-side tools can't see."* The tactic is
+about data a crawl cannot infer, not about the existence of a client. On an
+owned property it is satisfied by a maintained **pair**: a locked market-fact
+set (`COPY_VOICE.md`, Phase 1 step 7) plus a current property-history record
+(`STATE_OF_PROJECT.md`, Phase 4 step 10). Scored satisfied when both exist and
+the history covers recent waves; scored satisfied-but-untracked when the fact
+set is current and the history has holes. It is never not-applicable merely
+because there is no client — the rank-and-rent operator *is* the client, and
+the intake becomes a maintained record instead of an interview.
+
+**Verify critical tools are collecting (OZA-39).** Zarr scopes this himself:
+*"Critical sources vary by site (GA, GSC, Bing usually; Merchant Feed for
+e-commerce)."* "Critical" is a per-site determination made by the auditor, not
+a fixed requirement for analytics. For this portfolio the critical set is
+**Search Console, Bing Webmaster, the first-party pageview counter, and the
+lead path**. Google Analytics and Microsoft Clarity are excluded by the locked
+no-third-party-tracking policy and are **not scored as gaps** — scoring them
+would import a tracking policy the corpus does not require and this portfolio
+has deliberately rejected. What scores is **verification, not existence**: a
+source that collects but is never read has not been verified, and an active
+canary (the lead path's daily `lead-canary.timer`) is the strongest available
+evidence.
 
 ---
 

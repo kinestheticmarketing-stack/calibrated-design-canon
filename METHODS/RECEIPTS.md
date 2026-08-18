@@ -413,9 +413,11 @@ CORRIDOR — Northern Colorado (empire infrastructure)
   dimensions each, 518 findings (304 mechanical, 214 judgment). All 304
   mechanical findings applied, across four remediation waves. 100 distinct
   carry-forward items triaged into 15 classes: 11 settled by existing
-  precedent, 14 escalated — all resolved. Six validators installed in
-  `_postbuild_check.py`, every one canary-proven; one canary exposed a real
-  bug in its own check. DCI service pages grown 8 → 18; Longmont's
+  precedent, 14 escalated — all resolved. Five validators installed in
+  `_postbuild_check.py` (check_interactive_js, check_placeholders,
+  check_duplicate_labels, check_credentials, check_jsonld), every one
+  canary-proven; one canary exposed a real bug in its own check. DCI service
+  pages grown 8 → 18; Longmont's
   COPY_VOICE.md authored where none existed, with four dangling references
   resolved; Greeley's Atmos rebate claims narrowed to confirmed towns.
   Deployed and pushed on all three properties, each verified live. · repo /

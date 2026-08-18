@@ -128,6 +128,15 @@ here. One line per entry: date, source project, lesson.
   audit's largest mechanical finding class was 80 false docstrings,
   and three of the top ten findings overall were docstrings promising
   guarantees the underlying code did not actually provide.
+- 2026-08-18 | Architect discipline | A figure asserted in a kickoff is not a
+  verified figure. Kickoff-supplied numbers arrive with the authority of a
+  Director instruction and none of the provenance of one — the drafting agent
+  treats them as established rather than as claims needing a source. RECEIPTS
+  carried "six validators installed in _postbuild_check.py" for a full session
+  when the code contained five, because the one figure that was checkable in a
+  single grep was the one nobody grepped. Rule: any count, amount, or date a
+  kickoff supplies gets verified against the artifact before it is written into
+  canon, and the verification command goes in the commit message.
 
 ═══════════════════════════════════════════════════════════════
 PREFERENCES-TO-CANON RECONCILIATION (flagged 2026-08-12, highest priority)
