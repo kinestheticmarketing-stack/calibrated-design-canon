@@ -641,10 +641,79 @@ If this kickoff contains 2 or more independent units and no NON-PARALLELIZABLE c
   will always agree with the agent count it was derived from.
 
 ═══════════════════════════════════════════════════════════════
+PATTERN 14 — A CHECK THAT PASSES ITS OWN TEST CAN STILL BE BLIND
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+On 2026-08-17, three separate gates passed while the thing they
+were guarding was broken, all in the same shape:
+
+Three Greeley calculators shipped with no JavaScript. Regen exited
+0, two-run determinism passed byte-identical, the MD5 manifest
+matched, and 12 of 13 spot-checks were green — because every one of
+those gates verifies the file that was written, not that the page
+still works. A rewrite had left `return render_page(` above the
+JS-append lines, making them unreachable. Nothing that checked the
+artifact could see that.
+
+A credential validator did not fire on its own canary. An exempted
+match broke out of both loops, so one legitimate "licensed
+electrician" earlier on a page silently suppressed every later
+violation on that same page.
+
+A label-based citation guard, installed and canary-proven in a
+prior wave, was found dead in a later wave — a premature return sat
+above it. The canary that had proven it once tested the function in
+isolation; it never proved the function was still reachable from
+the call site.
+
+The common mechanism: a check that inspects an artifact can only
+see the artifact. It cannot see whether the code path that produces
+the artifact's real behavior actually runs. A gate that is green on
+every one of these can still be guarding nothing.
+
+CANON RULE
+A validator is not installed until it has been shown to fire in the
+real execution path. Proof is a canary: inject a violation, confirm
+the check raises and refuses to write, restore the clean state. A
+canary that only calls the function in isolation proves the
+function; it does not prove the call site runs it. The canary must
+exercise the actual path — the full regen, the full page build —
+not a unit invocation of the check alone.
+
+Separately, and just as binding: verification that inspects a
+written artifact cannot see whether the artifact functions. A
+manifest match, a byte-identical diff, an exit code, a spot-check of
+rendered HTML — all of these confirm what was written, none of them
+confirm what it does. A page that renders is not a page that works.
+
+PRACTICAL IMPLEMENTATION
+- Every check ships with its canary result recorded — not "canary
+  written," but the actual pass/fail from running it, alongside the
+  check.
+- Any check guarding a rendered behavior gets a functional
+  assertion, not a content assertion. A calculator's JS must be
+  present AND parse; a form must be present AND submit; a guard must
+  be present AND unreachable-checked (no dead code above it in the
+  call graph).
+- When a canary does not fire, the first hypothesis is a bug in the
+  check, not a clean repo. Chasing "maybe there's nothing to catch"
+  before "maybe the check can't catch it" reproduces this pattern.
+- Determinism, manifest, and diff checks remain valuable for
+  catching unintended drift — they are not being retired. They are
+  disqualified as the ONLY gate on anything that is supposed to
+  execute, render, or behave, because none of them can observe
+  behavior.
+- A check proven once, in one wave, is not proven forever. A prior
+  canary pass on a guard does not establish that a later rewrite
+  left the guard's call site intact — re-verify reachability after
+  any rewrite that touches the surrounding function.
+
+═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
-Patterns 1-13 are not exhaustive. They are the patterns observed
+Patterns 1-14 are not exhaustive. They are the patterns observed
 recurring across documented phases. New patterns get added when:
 
   - A failure mode recurs across 2+ phases or 2+ projects

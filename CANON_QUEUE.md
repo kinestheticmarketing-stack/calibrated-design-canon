@@ -99,6 +99,35 @@ here. One line per entry: date, source project, lesson.
   BARE_DECK_OPERATIONAL_NOTE by design, so it cannot reach the floor
   without a fourth render call site. Slot architecture is an open
   decision.
+- 2026-08-17 | Architect discipline | Model tier belongs on the ledger
+  row, not the wave: rows that review or enumerate can run cheap, rows
+  that compute, classify, or audit need the stronger tier. A uniform
+  18-agent wave assigned one tier to all 18, burned a full context
+  window, and lost two agents to the agent-count cap — the cost of
+  tiering by wave instead of by row.
+- 2026-08-17 | Architect discipline | Watchdog-agent proposal: a
+  standing agent whose only job is reading every wave's Final Reports
+  and surfacing recurring failure patterns across them. Motivating
+  case — the false-docstring class surfaced four separate times before
+  any agent connected the recurrences and named it as one class.
+- 2026-08-17 | PROPERTY_GENESIS | Needs a porting checklist run before
+  authoring, not after: three genesis-process defects seen this
+  session were all catchable pre-authoring — orphan citations carried
+  over unreviewed, market mechanics ported onto the wrong utility, and
+  one property's climate facts ported onto another's page. Same defect
+  class each time; a pre-authoring checklist stops it at the source
+  instead of catching it downstream.
+- 2026-08-17 | Architect discipline | Integrity-baseline durability
+  gap: the nine-hash baseline held through 30+ agent deaths this
+  session but lived in /tmp, got rotated away mid-session, and forced
+  a substitute check to cover the gap. The baseline needs a durable
+  home outside /tmp before the next long-running wave depends on it.
+- 2026-08-17 | Architect discipline | Codified context is a claim, not
+  a given: docstrings asserting rules or provenance must be verified
+  like any other assertion, not trusted because they're in code. This
+  audit's largest mechanical finding class was 80 false docstrings,
+  and three of the top ten findings overall were docstrings promising
+  guarantees the underlying code did not actually provide.
 
 ═══════════════════════════════════════════════════════════════
 PREFERENCES-TO-CANON RECONCILIATION (flagged 2026-08-12, highest priority)

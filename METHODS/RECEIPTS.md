@@ -408,6 +408,25 @@ CORRIDOR — Northern Colorado (empire infrastructure)
   commit and its cited source were independently re-verified against the
   live repo and a fetched primary source, not from either report.]
 
+- 2026-08-17 · Portfolio (all three) · PERFORMANCE · Full-roster content
+  audit across DCI, Greeley, and Longmont: 151 of 151 pages audited, twelve
+  dimensions each, 518 findings (304 mechanical, 214 judgment). All 304
+  mechanical findings applied, across four remediation waves. 100 distinct
+  carry-forward items triaged into 15 classes: 11 settled by existing
+  precedent, 14 escalated — all resolved. Six validators installed in
+  `_postbuild_check.py`, every one canary-proven; one canary exposed a real
+  bug in its own check. DCI service pages grown 8 → 18; Longmont's
+  COPY_VOICE.md authored where none existed, with four dangling references
+  resolved; Greeley's Atmos rebate claims narrowed to confirmed towns.
+  Deployed and pushed on all three properties, each verified live. · repo /
+  commits DCI `c144ad8`, LGM `795c2ef`, GCI `5b8b4cb`
+
+- 2026-08-17 · Portfolio (all three) · PERFORMANCE · External validation on
+  file: DCI 68 of 73 pages indexed, impressions roughly doubled May to
+  August; Longmont 43 of 46 pages indexed five days after launch. · Search
+  Console [surface and exact date range as supplied — not independently
+  re-verified in this pass]
+
 ───────────────────────────────────────────────────────────────
 PORTER — talktoporter.com (platform)
 ───────────────────────────────────────────────────────────────

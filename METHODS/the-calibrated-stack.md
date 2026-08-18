@@ -63,6 +63,14 @@ for this method.
   its own period would have shipped a visible double period to two
   live pages; and "a certified lab" → "an accredited lab" required the
   article to change.
+- **LOCATE SPLICES BY CONTENT, NOT LINE NUMBER.** An edit is addressed
+  by quoting its surrounding text verbatim, never by a line number
+  reported from a scan. Grep and AST passes drift up to 11 lines apart
+  on concatenated literals, so a line number handed off from one pass
+  does not reliably address the same string in the other. Evidence:
+  2026-08-17, on the same docstring-fix sweep, line numbers for
+  concatenated-literal sites diverged by as much as 11 lines between
+  the grep and AST passes.
 
 ### Verification
 
@@ -79,6 +87,16 @@ for this method.
   no generator pass succeeded until a follow-up wave. The invariant
   is committed = regenerable. The check is free — the wave already
   runs regen; the sequencing just moves ahead of the commit boundary.
+- **NO SINGLE SCANNER IS A CHECK.** Grep and AST inspection each blind
+  the other's coverage: comments are invisible to an AST pass, and
+  implicit string concatenation is invisible to a line-based grep. A
+  phrase check is not complete until both methods have run and both
+  have cleared. Evidence: on 2026-08-17, across 84 docstring fixes, 71
+  sites were visible only to the AST pass and 26 only to grep; a
+  source grep for "licensed abatement" reported zero hits while seven
+  instances had already shipped rendered, split across concatenation,
+  and a false deploy-time claim survived an AST sweep because it lived
+  inside a `#` comment.
 
 ### Documentation
 
