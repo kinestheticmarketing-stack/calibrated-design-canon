@@ -19,3 +19,26 @@ genesis begins: mechanical, uniform, provable by two-run regen determinism
 plus a `public/` hash. Matching cards exist on each property's own board;
 this card is the portfolio-level tracking point so the three don't get
 fixed independently and inconsistently.
+
+---
+
+## Closed — 2026-08-19
+
+**Commit:** `(verified no-op — 0 remaining)`
+
+**Closed as already-satisfied, proved the hard way.** The fix was not accepted
+on a source grep. The property that mattered — and that had been missing — is
+that a generator writes into *its own repo* and leaves the original untouched
+regardless of cwd.
+
+Proved by copying each repo to a scratch location, regenerating **there**, and
+confirming output landed in the copy while the original's `public/` hash was
+unchanged. Zero hardcoded `os.path.expanduser(...)` paths remain across the
+36 files originally cited.
+
+A grep alone would have proved nothing here.
+
+**Verification command:**
+```bash
+grep -rn 'expanduser' /Users/vongimbel/code/{denver,longmont,greeley}coloradoinsulation.com/*.py | wc -l   # expect 0
+```
