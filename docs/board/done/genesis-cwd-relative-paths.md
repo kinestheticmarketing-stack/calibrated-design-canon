@@ -46,3 +46,22 @@ it abstractly:
 ```python
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public')
 ```
+
+---
+
+## Closed — 2026-08-19
+
+**Commit:** `(verified present in canon)`
+
+**Closed as already-satisfied.** `METHODS/PROPERTY_GENESIS.md` already requires
+generators to derive paths from
+`os.path.dirname(os.path.abspath(__file__))` rather than cwd (Phase 4, item 9).
+
+Verified by grep before writing anything. The canon did not need the edit; the
+properties needed to comply with it, which is a separate card
+(`hardcoded-path-defect-portfolio`).
+
+**Verification command:**
+```bash
+grep -c 'os.path.dirname(os.path.abspath(__file__))' METHODS/PROPERTY_GENESIS.md   # expect >=1
+```
