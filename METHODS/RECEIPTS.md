@@ -89,6 +89,41 @@ DCI — denvercoloradoinsulation.com (flagship, only revenue asset)
   (Rob, Simple Home Energy Solutions), commission basis. $0 ad spend —
   pure organic + AI. [2nd lead reported by Director — confirm + log
   separately with date/source.] · lead record
+  **[SUPERSEDED 2026-08-19 — now traceable to specific rows, see the
+  lead-inventory entry below. This entry's "lead record" citation was
+  uncitable for eleven days; it is now closed with ids and timestamps.]**
+
+- 2026-08-19 · Portfolio (all three) · REVENUE · **Lead inventory, queried
+  directly from production Postgres** (`porter-db-1`, `WHERE canary = false`),
+  replacing the previously-uncitable "lead record" claim above with row ids
+  and dates. **DCI — 8 non-canary rows, of which 3 are genuine third-party
+  submissions:** id 5 Shaylin Muhonen, 2026-07-25, from
+  `/insulation-westminster.html`; id 6 Jason Podolnick, 2026-08-05, from
+  `/insulation-removal.html`; id 8 "Jason", 2026-08-08, from
+  `/vermiculite-insulation-denver.html` — **all three `delivered = true`.**
+  The remaining five are internal: ids 1-2 launch tests (2026-05-05), ids 3,
+  4, 7 operator submissions. **DCI id 1 is `delivered = false` — a
+  pre-SendGrid test row, not a delivery failure**; id 2 the same day is
+  `delivered = true`, which dates SendGrid being wired between the two.
+  **GCI — 3 non-canary rows, 1 third-party:** id 3 "Pranab", 2026-08-08, from
+  `/` — the templated-pitch spam that triggered the Lead 3 hardening, external
+  and non-test but not a customer. ids 1-2 are operator submissions.
+  **LGM — 0 non-canary rows. No human has ever submitted that form.** ·
+  production DB query, all three databases
+
+- 2026-08-19 · Portfolio (all three) · PERFORMANCE · Browser-path canary
+  shipped (`ops/browser_canary.js`, `browser-canary.timer`, weekly Mon 10:30
+  America/Denver), closing the gap the same day's canary-validity audit
+  named: the daily canary POSTs from Node and cannot prove the form renders or
+  the client JS runs. Drives real headless Chrome against each live page,
+  asserts the thank-you state, then **independently re-queries Postgres —
+  because three backend branches silently discard a lead while still
+  answering `{success:true}`**. Proven by three deliberate breakages, each
+  confirmed to fire, none touching a live property; the DB-verification proof
+  is the load-bearing one — the DOM showed success and the canary refused to
+  pass. First clean run green on all three: DCI ids 22/23, GCI 16/17, **LGM
+  9/10 — the first time Longmont's form has ever been shown to work end to
+  end.** · repo `ops/browser_canary.js`, journald `browser-canary.service`
 
 - 2026-08-10 · DCI · PERFORMANCE · Xcel blower-door claim corrected to the
   NACH50 metric (was a vaguer "air leakage" framing) and re-cited to EFI,
