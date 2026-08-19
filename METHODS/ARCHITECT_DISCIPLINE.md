@@ -790,10 +790,78 @@ PRACTICAL IMPLEMENTATION
   not on a board anyone was required to read.
 
 ═══════════════════════════════════════════════════════════════
+PATTERN 16 — THE PLANNER MUST BE ABLE TO READ THE STATE
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+2026-08-19. The kanban board was deployed into all four repos
+specifically to end state-from-memory, and Pattern 15 was written the
+same day to make reading it mandatory. Within the hour, the Architect
+was asked "where were we" and answered from conversation memory
+instead of from the board.
+
+This was not disobedience and not an oversight. The Architect is a
+chat session. It has no filesystem access. It could not read the
+board it had just commissioned. Asked a question about state, it had
+exactly one source available — its own recollection — and used it.
+
+That is the whole pattern: **Pattern 15 told the planner to read the
+board and nobody checked whether the planner could.** The board fixed
+state-tracking for the Executor, which runs inside the repo and can
+open files, and left the planner outside the system it governs. A
+rule that requires an ability the bound party does not have is not a
+rule, it is a wish, and it fails silently — the planner keeps
+answering, the answers keep sounding confident, and nothing surfaces
+the gap until an answer turns out to be stale.
+
+The same shape recurs whenever a control is placed where the actor
+cannot reach it: a verification command in a doc the verifier never
+opens, a ground-truth file the deciding session cannot load, a gate
+that runs after the decision it was meant to gate.
+
+CANON RULE
+A planning session that cannot read the state is guessing, no matter
+how good the state-tracking is. Before binding any session to a rule
+about reading something, establish that the session can read it.
+
+Therefore: **the orchestrator runs inside the repo, with the cards in
+front of it.** The session that decides what happens next is a
+filesystem-capable session that opens `docs/board/ground-truth.md`
+and `docs/board/in-flight/` as its first act, every time, and reports
+counts and quotes from files it opened in that session.
+
+**A chat-side Architect that cannot read the board must be handed it
+before drafting.** Not summarized from memory by whoever is talking to
+it — handed the actual current contents. A kickoff drafted against
+remembered state is a kickoff asserting state not present on a board
+and not verified in session, which Pattern 15 already classifies as a
+defect in the kickoff.
+
+PRACTICAL IMPLEMENTATION
+- `/orchestrate` exists to confer the planning role on a session that
+  can read. Its step 1 is the board read, and it is gated: the session
+  must be able to state card counts per column and quote
+  `ground-truth.md` from files opened in that session before it
+  reports anything.
+- When a rule requires reading, name the artifact AND the actor, and
+  check the actor can reach it. "Read the board before drafting" is
+  incomplete; "the drafting session reads the board, and the drafting
+  session is one with filesystem access" is the rule.
+- If the planner genuinely cannot be moved inside the repo, the
+  handoff carries the state: paste the current `ground-truth.md` and
+  the open columns into the planning conversation before asking it to
+  plan. Expensive and manual, which is the argument for moving the
+  planner instead.
+- The general form, worth checking against any new control: **a
+  control placed where the actor cannot reach it does not fail loudly,
+  it fails as confident wrong answers.** Ask where the control lives
+  and whether the party bound by it can get there.
+
+═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
-Patterns 1-15 are not exhaustive. They are the patterns observed
+Patterns 1-16 are not exhaustive. They are the patterns observed
 recurring across documented phases. New patterns get added when:
 
   - A failure mode recurs across 2+ phases or 2+ projects
