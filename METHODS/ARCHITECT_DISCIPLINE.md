@@ -710,10 +710,90 @@ PRACTICAL IMPLEMENTATION
   any rewrite that touches the surrounding function.
 
 ═══════════════════════════════════════════════════════════════
+PATTERN 15 — READ THE BOARD, DON'T REMEMBER THE STATE
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+Five instances, five separate dates, all the same shape: state was
+carried in a kickoff's prose or a session's memory instead of being
+read from a checkable record, and the record drifted out from under
+it without anyone noticing until a later pass happened to check.
+
+2026-08-17 — RECEIPTS.md recorded "six validators installed in
+_postbuild_check.py." The real number was five. The figure arrived
+with a kickoff and was transcribed into canon; nobody ran the one
+grep that would have caught it in a second. It stood as fact in canon
+for a full day.
+
+2026-08-17 through 2026-08-19 — a DCI project-state document carried
+"8 service pages" for days while the live count was 18. Several
+sessions had expanded the site in between; none re-verified the
+headline count against the constant it was supposedly summarizing.
+
+2026-08-17 — Longmont's project-state document and its deployment
+runbook both asserted a reconciliation and a deploy block were
+closed. A later audit found neither had ever existed to close — the
+"closed" claim was written from memory of what should have happened,
+not from a check of what had.
+
+2026-08-19 — a board-seeding pass found a bonus-cap defect that an
+earlier wave's own carryforward note had named at two line numbers.
+The wave fixed one, reported the item closed, and nobody re-checked
+the claim against the second line number. It shipped live, unfixed,
+for two days.
+
+2026-08-19 (this document, prior version) — a candidate-patterns
+section listed Patterns 9, 10, and 11 as "surfaced... pending
+canonization" when all three were already fully written, in this
+same file, with complete FAILURE MODE / CANON RULE / PRACTICAL
+IMPLEMENTATION sections. The roadmap's own account of its own file's
+contents was wrong, and stayed wrong until an unrelated audit
+happened to read both and compare them.
+
+The common mechanism: a document that describes state is not the
+same thing as a document a session is required to open and reconcile
+against before acting. Every one of these was, in principle,
+checkable in seconds. None was checked, because nothing forced the
+check.
+
+CANON RULE
+State lives on the board (docs/board/ in each repo), not in a
+kickoff's prose and not in a session's memory of a prior session. A
+kickoff that asserts state — a count, a status, a "this is closed" —
+that is not present on a board or independently verified in this
+session is a defect in the kickoff, not a fact to carry forward.
+Every wave reads docs/board/ground-truth.md and docs/board/in-flight/
+in full before drafting anything, and updates the board — moving
+cards, writing dated Done entries with verification commands — before
+closing. A card is not evidence a session read the board; the read
+has to have actually happened, the same way a canary has to have
+actually fired.
+
+PRACTICAL IMPLEMENTATION
+- A kickoff opens by reading the board, not by restating what a
+  prior kickoff or a prior session believed to be true. If the
+  kickoff's own claims and the board disagree, the board wins and the
+  kickoff is corrected before work starts, not after.
+- Every Done card carries the verification command that proves it —
+  see the board's own conventions.md Project Rule, which exists
+  specifically because of the five incidents above.
+- A count, a status word, or a "this is closed" claim that appears
+  only in prose — a kickoff, a chat message, a stale document — is
+  not ground truth. Ground truth is a dated bullet in
+  docs/board/ground-truth.md or a check run in this session.
+  Everything else is a claim pending verification.
+- When a wave finds that a prior wave's "closed" was wrong or
+  partial, the correction goes on the board immediately, with the
+  specific gap named — not filed away as a note for someone to find
+  later. The bonus-cap defect above stayed open for two days
+  specifically because its correction lived only in a scratch file,
+  not on a board anyone was required to read.
+
+═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
-Patterns 1-14 are not exhaustive. They are the patterns observed
+Patterns 1-15 are not exhaustive. They are the patterns observed
 recurring across documented phases. New patterns get added when:
 
   - A failure mode recurs across 2+ phases or 2+ projects
