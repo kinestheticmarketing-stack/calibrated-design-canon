@@ -19,3 +19,14 @@ location from day one rather than inheriting the 36-file hardcoded-path
 defect. Recommend the hardcoded-path defect (see that card) lands on the
 three existing properties before this genesis starts, so Fort Collins has a
 clean parent to clone from.
+
+---
+
+## Deferred — 2026-08-19 (HOLD — new property)
+
+Held. Not started. `METHODS/PROPERTY_GENESIS.md` is the procedure and already
+carries the cwd-relative-path requirement (Phase 4, item 9) that the existing
+three properties had to be retrofitted for — so a Fort Collins genesis would
+start compliant rather than needing the same 36-file remediation.
+
+**Card stays open. State above is verified, not assumed.**
