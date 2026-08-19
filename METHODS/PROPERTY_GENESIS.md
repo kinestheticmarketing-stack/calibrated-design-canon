@@ -385,7 +385,7 @@ explicitly; do the same in the new property's lineage table).
    asset asserting the wrong utility and an unverified code adoption —
    silently plausible and wrong, which is worse than the 404 it
    replaces. Route it to whoever owns copy and record it as a declared
-   gap under Phase 8 rather than authoring it inside a port.
+   gap under Phase 9 rather than authoring it inside a port.
 
 9. **Output paths derive from the script's own location, never from a
    hardcoded home-relative string.** Use
@@ -737,7 +737,150 @@ production deploy, not a sample.
 
 ---
 
-## PHASE 8 — KNOWN-INHERITED GAPS DECLARATION
+## PHASE 8 — FUNCTIONAL PROOF (LAUNCH GATE)
+
+Every check in this document up to this point verifies **the artifact
+that was written**. Not one of them verifies that the page **functions**.
+That distinction is not academic. Three Greeley calculator pages once
+shipped with their tool JavaScript missing entirely, and passed
+`regen_all.sh` at exit 0, two-run MD5 determinism, a full deploy manifest
+match, and 12 of 13 live spot-checks — because a file whose JS is gone is
+still a byte-identical, deterministically-generated,
+successfully-transferred file. Every gate in Phase 7 was doing exactly
+what it was built to do; none of them was built to press the button. The repair is on
+the record: `greeleycoloradoinsulation.com` commit `20dcfe0`, "Fix:
+restore calculator tool JS lost in the rebate-note guard rewrite",
+followed by `e3d7243`, which added a post-build functional gate so the
+same loss cannot ship silently again.
+
+This phase cannot live inside Phase 7. Most of it **requires a deployed
+site**: status codes, the `www`→apex redirect, and a real database
+round-trip have no local equivalent, and simulating them locally would
+re-create the exact class of error this phase exists to catch. It is the
+gate between *deployed* and *declared live*. **A property is not live
+until it passes**, and the launch record states the result in measured
+numbers, not checkmarks. The proof pass run on 2026-08-19 across the
+three live properties was the first thing in this portfolio's history to
+test function rather than form.
+
+- **Every URL in the sitemap returns 200, fetched from production.** The
+  sitemap is generated from the generator's own page registry, so a page
+  that was renamed, never transferred, or written to a path nginx does
+  not serve still appears in it, correctly formed and confidently wrong.
+  No earlier gate closes this loop: the MD5 manifest diffs the files that
+  *were* deployed against the local build, which is silent about a URL
+  the sitemap promises and the deploy never produced. The sitemap is a
+  set of claims about the live host; only the live host can answer them.
+- **Every internal link on every page resolves; zero 404s, counted as
+  instances and as distinct targets.** A local link checker resolves
+  hrefs against the build tree on disk, where a target either exists or
+  doesn't. Production adds two failure modes the build tree cannot
+  express — a file that was never transferred, and a path convention
+  (trailing slash, extensionless URL, case) that the server resolves
+  differently than the filesystem did. Report both numbers: total link
+  instances checked and the count of distinct targets they resolve to.
+  One 404 on a target linked from every page is a different-sized defect
+  than one 404 linked once, and only the paired counts distinguish them.
+- **Every calculator loads, ships parseable JavaScript, and produces a
+  correct figure on default inputs — with that figure written into the
+  launch record.** This is the check the Greeley incident demands, and it
+  is the reason "the page returned 200" and "the page works" must be
+  recorded as two different claims. The absence of a console error is not
+  a result; a tool whose script never loaded throws nothing at all,
+  because there is no code present to fail. Recording the computed number
+  is what makes the check falsifiable — it converts the tool from
+  something that was looked at into something that was *run*, and it
+  gives the next wave a value to regress against when the rebate
+  constants change. Phase 7's determinism and manifest gates cannot reach
+  this: they compare bytes, and the byte-level truth about those three
+  pages was that they were perfect copies of files with the tool missing.
+  **Identify tool pages structurally, never by slug.** The first
+  implementation of this gate matched slugs against
+  `calculator|quiz|comparator|checker|payback|r-value` and reported 16
+  calculators where there are 14: `r-value-altitude-denver` and
+  `r-value-altitude-greeley` are educational pages whose slug happens to
+  contain `r-value`. The test that actually separates them is whether the
+  page carries its own input controls **outside** the lead-capture form —
+  a real calculator has them (7 inputs and 3 selects on the Denver
+  r-value tool), an educational page has none. A launch record that
+  overcounts its own tools is the same failure this phase exists to
+  prevent, one level up: a number that was never checked against the
+  thing it claims to describe.
+- **Every form renders and its submit path reaches the database, proven
+  by re-querying for the row.** Never accept the DOM success state as
+  evidence. The backend returns success on discard branches, so **the DOM
+  lies**: a green thank-you panel is a claim the front end makes about a
+  request it dispatched, not a claim about a row that exists. The whole
+  property's economic purpose is the lead path, and it is the one path
+  where the visible signal and the actual outcome are decoupled by
+  design. Proof is a `SELECT` run after the panel has already rendered,
+  returning the specific row with its id and its mail-send result. The
+  daily lead canary (see the standing ruling on OZA-39) is the ongoing
+  form of this check; this is its first execution, at launch, before
+  anyone is invited to the site.
+- **Every JSON-LD block on every page parses, counted.** The post-build
+  `check_jsonld` validator runs against the local build; what a consumer
+  parses is what the host serves. Count the blocks and count the pages
+  carrying them, then reconcile the difference — a page legitimately
+  carrying no JSON-LD (a 404 page) and a page whose schema silently
+  failed to emit are indistinguishable without the count. A schema block
+  is machine-read by exactly the audiences this property is built for,
+  and it is never rendered to a human who could notice it broke.
+- **No page contains an unsubstituted placeholder token — checked
+  against the served bytes from production, not the local build
+  output.** `check_placeholders` proves the *new* build is clean. It says
+  nothing about a stale file left on the server by an earlier partial
+  deploy, which serves its old tokens indefinitely while every local gate
+  passes on a build that never arrived. Greeley's `__PHONE_DISPLAY__`
+  case (Phase 2's table) is the shape of the underlying defect; fetching
+  the served bytes is the only version of the check that cannot be
+  satisfied by a file the visitor will never receive.
+- **`www` 301s to apex on every host.** Phase 5 item 11 warns that
+  certbot's own rewrite adds neither HSTS nor a `www` split; the redirect
+  is a third, hand-authored pass, which is precisely the kind of edit
+  that gets verified by re-reading the config file. `nginx -t` proves the
+  config parses, not that it redirects, and a config that loads cleanly
+  while sending `www` to the same 200 the apex serves is a duplicate-host
+  problem no local artifact can show you. Curl it and read the status
+  line and the `Location` header.
+
+**The 2026-08-19 proof pass, across the three live properties**, as the
+reference shape for what a launch record should contain:
+
+- **151 sitemap URLs** (72 DCI + 46 LGM + 33 GCI), all 200. This is 151,
+  **not 154**. The portfolio has 154 pages; each property's `404.html` is
+  correctly excluded from its own sitemap. A future genesis must expect
+  **sitemap count = page count minus one** and treat an exact match as
+  the anomaly worth investigating.
+- **9,257 internal link instances** resolving across **151 distinct
+  targets**, zero 404s.
+- **14 calculators** (6 DCI + 4 LGM + 4 GCI), all parsing and binding
+  listeners.
+- **1,024 JSON-LD blocks** across 151 pages, zero parse failures. The 3
+  pages carrying none are the three 404 pages — which is the reconciliation
+  the count exists to make.
+- **0 unsubstituted tokens** across 151 served URLs.
+- **3 of 3 hosts** 301 `www`→apex.
+- **Forms: 3 of 3 proven end-to-end to the database** — DCI lead id 24,
+  GCI 18, LGM 11 — each with `sendgrid_result` `"accepted: HTTP 202"`,
+  and each confirmed by an independent Postgres query issued *after* the
+  DOM had already shown success.
+
+**The gate is executable.** It ships as `ops/functional_proof.sh`, taking
+a domain and a repo path and exiting nonzero on any failure, so it can be
+chained ahead of a launch declaration the same way the build and test
+gates are chained. **A gate never shown to fail is not a gate.**
+Negative-control it the way `_postbuild_check.py`'s five validators were
+canary-proven at genesis (Phase 4 item 11): break one thing deliberately
+— unlink a sitemap URL, blank a calculator's script, point a form at a
+dead endpoint — confirm the script exits nonzero and names the specific
+failure, then restore. A functional gate that has only ever printed
+success is indistinguishable from one that cannot fail, and that is the
+same epistemic hole the three green Greeley calculators sat in.
+
+---
+
+## PHASE 9 — KNOWN-INHERITED GAPS DECLARATION
 
 Some gaps are portfolio-level, not genesis-fixable — they exist because
 no property in the portfolio has done the underlying work yet, not
