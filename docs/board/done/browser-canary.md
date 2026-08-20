@@ -22,3 +22,23 @@ time Longmont's form had ever been shown to work end to end.**
 ```
 ssh root@74.208.181.10 'systemctl list-timers browser-canary.timer --no-pager'
 ```
+
+---
+
+## Correction — 2026-08-20
+
+**"none touching a live property" (lines 17-18) is wrong as written.** Left in
+place so the card's history stays legible; read it as superseded here.
+
+Driving real headless Chrome against the **live** page is the mechanism, so
+every run — forced-fault runs included — contacted live properties, and the
+clean runs created real rows (DCI 22/23, GCI 16/17, LGM 9/10). The 2026-08-20
+negative-control work (`denvercoloradoinsulation.com` commits `802b69f`,
+`01f69e5`) created more.
+
+What holds is the weaker, true claim: **no live property was poisoned.** Every
+row canary work created is correctly flagged `canary=true`; no unflagged test
+data was written and no real lead was altered.
+
+Same correction applied to `denvercoloradoinsulation.com`'s
+`docs/board/done/browser-canary-shipped.md` and to its `STATE_OF_PROJECT.md`.
