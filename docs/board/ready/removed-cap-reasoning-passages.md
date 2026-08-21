@@ -16,6 +16,124 @@ handed a conclusion to act on.
 voice-gated wave.** Original text is preserved verbatim below so restoration
 needs no reconstruction.
 
+## CORRECTED 2026-08-21 — the word inventory
+
+**The previously reported total of "420 source words removed" was wrong, and
+wrong in a way that matters to a restoration card: 420 equals exactly the two
+whole-section removals counted raw — 222 (`xcel-insulation-rebate-guide-denver`)
++ 198 (`whole-home-efficiency-bonus-stacking-denver`) — and therefore counted
+NOTHING from `insulation-hybrid-flash-batt`.** The commit message that reported
+it (83d4795, "420 source words removed across two full sections and three inline
+passages") also over-claimed its own scope: the three inline passages are not in
+the 420 either. One of the three pages preserved below was absent from the total
+entirely.
+
+Derived counts (range `239df21..83d4795`, i.e. both wave commits 8e6aacd and
+83d4795, measured on the GENERATOR sources — the pages are regenerated output):
+
+| page | source | gross | re-added | NET |
+|---|---|---|---|---|
+| `insulation-hybrid-flash-batt` | `_generate_service_pages.py` (renders) | 254 | 104 | **150** |
+| `insulation-hybrid-flash-batt` | `_svc_pending_hybrid_flash_batt.py` (does NOT render) | 190 | 52 | **138** |
+| `whole-home-efficiency-bonus-stacking-denver` | `_educational_pages.py` | 182 | 4 | **178** |
+| `xcel-insulation-rebate-guide-denver` | `_educational_pages.py` | 406 | 141 | **265** |
+
+**True totals — rendering generators only: 842 gross, 593 net.**
+Including the non-rendering `_svc_pending_hybrid_flash_batt.py`: 1032 gross, 731 net.
+
+Same measurement under a raw `wc -w` rule (markup and punctuation counted), for
+comparability with the 420: hybrid 267/108/159 rendering + 203/56/147 pending;
+whole-home 209/4/205; xcel 444/145/299. Rendering-only raw total **920 gross,
+663 net**.
+
+### Counting rule
+
+- **Attribution.** A diff hunk counts against a page only if its PRE-IMAGE line
+  range falls inside that page's `slug='…'` block in the 239df21 revision of the
+  generator. `_svc_pending_hybrid_flash_batt.py` is one page whole-file, and is
+  reported on its own line because it is tracked but imported by nothing — those
+  words never reached a rendered page.
+- **Gross** = words on `-` lines in that page's hunks. **Re-added** = words on
+  `+` lines in the same hunks. **NET = gross − re-added.** Net is the honest
+  answer to "how much text did the page lose", because most seams here were
+  rewritten (`"up to $500 for attic work"` → `"against per-measure caps"`), not
+  deleted. Gross alone overstates; the two must be quoted together.
+- **A word** is a whitespace-delimited token containing at least one
+  alphanumeric character, after: unescaping JSON/Python escapes (`\u2014` → em
+  dash, `\"` → `"`) so no escape sequence counts as a word; stripping HTML tags
+  (`<p>`, `</li>`, `<a href="…">`); and stripping Python string-literal
+  delimiters and concatenation syntax. Bare em dashes, lone quotes and commas
+  are therefore NOT words. The raw `wc -w` figures above apply none of this.
+
+### Reproduce
+
+Set `REPO` and run. Standalone, no other files needed; prints the table above.
+
+```python
+import re, subprocess
+REPO, OLD, NEW = "/path/to/denvercoloradoinsulation.com", "239df21", "83d4795"
+TARGETS = [("insulation-hybrid-flash-batt",
+            "_generate_service_pages.py", "hybrid-flash-batt"),
+           ("insulation-hybrid-flash-batt",
+            "_svc_pending_hybrid_flash_batt.py", None),
+           ("whole-home-efficiency-bonus-stacking-denver",
+            "_educational_pages.py", "whole-home-efficiency-bonus-stacking-denver"),
+           ("xcel-insulation-rebate-guide-denver",
+            "_educational_pages.py", "xcel-insulation-rebate-guide-denver")]
+
+def git(*a):
+    return subprocess.run(["git", "-C", REPO, *a],
+                          capture_output=True, text=True, check=True).stdout
+
+def block(path, slug):          # 1-indexed [start, end) of a page's slug block at OLD
+    if slug is None:
+        return 1, 10 ** 9
+    ls = git("show", OLD + ":" + path).splitlines()
+    marks = [(i, m.group(1)) for i, l in enumerate(ls, 1)
+             for m in [re.match(r"\s*slug='([^']+)'\s*,", l)] if m]
+    for j, (st, sl) in enumerate(marks):
+        if sl == slug:
+            return st, (marks[j + 1][0] if j + 1 < len(marks) else len(ls) + 1)
+    raise KeyError(slug)
+
+def words(line, raw=False):     # THE COUNTING RULE
+    if raw:                     # the wc -w rule: markup and punctuation included
+        return len(line.split())
+    t = line
+    for a, b in [(chr(92) + "u2014", "\u2014"), (chr(92) + "n", " "),
+                 (chr(92) + "t", " "), (chr(92) + chr(34), chr(34))]:
+        t = t.replace(a, b)
+    t = re.sub(r"<[^>]*>", " ", t)                          # HTML tags
+    t = re.sub(r"^\s*[rfbu]*[\"']|[\"']\s*$", " ", t, flags=re.M)                      # py literal delimiters
+    t = t.replace(chr(34), " ").replace("'", " ")
+    return len([w for w in t.split() if re.search(r"[0-9A-Za-z]", w)])
+
+for page, path, slug in TARGETS:
+    lo, hi = block(path, slug)
+    g = a = rg = ra = 0
+    inside = False
+    for ln in git("diff", "-U0", OLD + ".." + NEW, "--", path).splitlines():
+        h = re.match(r"^@@ -(\d+)", ln)
+        if h:
+            inside = lo <= int(h.group(1)) < hi
+        elif inside and ln.startswith("-") and not ln.startswith("---"):
+            g += words(ln[1:]); rg += words(ln[1:], raw=True)
+        elif inside and ln.startswith("+") and not ln.startswith("+++"):
+            a += words(ln[1:]); ra += words(ln[1:], raw=True)
+    print(f"{page:45s} {path:34s} prose {g:4d}/{a:4d}/{g-a:4d}  raw {rg:4d}/{ra:4d}/{rg-ra:4d}")
+```
+
+Spot check of the bad number, no script needed — these two commands are the
+whole of the old 420:
+
+```bash
+cd denvercoloradoinsulation.com
+git diff -U0 239df21..83d4795 -- _educational_pages.py \
+  | awk '/^@@ -6195/{f=1;next} /^@@/{f=0} f&&/^-/{sub(/^-/,"");print}' | wc -w   # 222  xcel section
+git diff -U0 239df21..83d4795 -- _educational_pages.py \
+  | awk '/^@@ -6537/{f=1;next} /^@@/{f=0} f&&/^-/{sub(/^-/,"");print}' | wc -w   # 198  WHE section
+```
+
 ## `insulation-hybrid-flash-batt.html`
 
 **Passage 1:**
