@@ -88,3 +88,9 @@ for h in ("denvercoloradoinsulation.com","longmontcoloradoinsulation.com","greel
     print(h,"skipped-heading pages:",bad)   # expect 0
 EOF
 ```
+
+
+**CORRECTION — 2026-08-21.** The claim above that authored duplication is ZERO
+across all three properties is **true only of the pages the gate examined.**
+`_intra_similarity_check.py:67` carries
+`EXCLUDE = {'404.html', 'privacy.html', 'contact.html', 'about.html'}` —\nbyte-identical in all three repos, and exactly the pages ported near-verbatim\nbetween siblings. Measured on AUTHORED content with chrome stripped,\n`privacy.html` shares a **726-word identical run** with both siblings.\nThe original line is left in place so the record stays legible; read it as\nsuperseded by this note. See\n`calibrated-design-canon/docs/board/ready/similarity-gate-excludes-the-shared-pages.md`.\n
