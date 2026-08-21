@@ -81,3 +81,56 @@ Corollary: an instrument added to catch a specific failure must be
 canary-proved AGAINST THAT FAILURE, not against its own happy path. V4 had a
 positive canary for total absence and none for partial loss — the case it
 existed for.
+
+
+## Principle 4 — COMPLEMENT-SCOPED VERIFICATION
+
+Added 2026-08-21. **A verification set must contain at least one instrument
+whose scope is the COMPLEMENT of the change set, measured at OCCURRENCE level
+against a pre-change snapshot.**
+
+The load-bearing fact: V4, V8, V9, V10 and V11 all answer *"what happened to
+the thing we meant to change."* Not one answers *"what happened to everything
+else."* A verification set composed entirely of target-scoped instruments
+**cannot see collateral damage no matter how many instruments are added** —
+which is exactly why V4 through V11 all passed while two separate collateral
+losses were live, and one complement-scoped diff found both.
+
+Removal work is where this binds hardest, but it is **not removal-specific**:
+any edit whose blast radius is wider than its intent has the same hole.
+
+### Relation to Principle 3 — stated explicitly so a later reader cannot collapse them
+
+They are one failure seen from two sides, and each is useless without the other:
+
+- **Principle 3 is about the INSTRUMENT.** A single check must assert the
+  QUANTITY it protects. V4 asserted presence and missed a 5->3 drop.
+- **Principle 4 is about the SET.** The collection of checks must cover the
+  COMPLEMENT of the change. Every V-series instrument was target-scoped, so no
+  amount of sharpening any one of them would have helped.
+
+Sharpening V4 to occurrence level (Principle 3) would have caught the CFM50
+loss. It still would **not** have caught a loss in content nobody thought to
+register as an anchor — that needs Principle 4. Conversely a complement-scoped
+diff at SET granularity (which is what shipped first) misses partial drops —
+that needs Principle 3. **Fixing either alone leaves a live hole.**
+
+## Principle 5 — A PRINCIPLE DERIVED FROM A GENUINE FINDING IS NOT THEREBY TRUE
+
+Added 2026-08-21. K2 retracted a general principle that had been drafted from a
+real finding. The finding was real. The mechanism was real and correctly
+diagnosed. The investigation was competent. **The principle was still false** —
+because the model that supposedly "failed" had predicted 7, and the true
+post-repair answer was 7. It was one turn from being written into canon.
+
+**The test is not whether the investigation was rigorous. The test is whether
+the CORRECTED STATE MATCHES THE MODEL'S PREDICTION.**
+
+Operationally: **a number that should have moved and did not is the signal.**
+The wrong lesson survived a competent investigation and died the moment someone
+asked why the count was still 8 after the fix that should have made it 7.
+
+Corollary for review: when a wave proposes a new general principle, require the
+post-remediation measurement that the principle predicts. A principle whose
+predicted state was never measured is a hypothesis wearing a conclusion's
+clothes.
