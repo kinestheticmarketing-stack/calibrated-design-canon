@@ -66,3 +66,18 @@ decide whether a *sentence* does.
 disturbed by this wave — no EFFICIENCY_WORKS key was removed — so it is
 reported rather than changed. DCI and GCI have zero instances of the pattern;
 it is LGM-only.
+
+
+## Principle 3 — a presence check must assert the QUANTITY it protects
+
+Added 2026-08-21. V4 is the sixth blind instrument: it counted PAGES CONTAINING
+an anchor, not OCCURRENCES, and passed (`CFM50 17->17`) while three pages lost
+two-thirds of their instances. It was the check added specifically to catch
+content vanishing beside a removal target, and it was blind to exactly that.
+
+Full detail: `presence-check-must-assert-quantity.md`.
+
+Corollary: an instrument added to catch a specific failure must be
+canary-proved AGAINST THAT FAILURE, not against its own happy path. V4 had a
+positive canary for total absence and none for partial loss — the case it
+existed for.
