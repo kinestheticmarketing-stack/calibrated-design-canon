@@ -134,3 +134,57 @@ Corollary for review: when a wave proposes a new general principle, require the
 post-remediation measurement that the principle predicts. A principle whose
 predicted state was never measured is a hypothesis wearing a conclusion's
 clothes.
+
+
+## Principle 5, operational form — added 2026-08-21
+
+**A CLAIM ABOUT AN INSTRUMENT'S GRANULARITY MUST TRAVEL WITH ITS
+DEMONSTRATION, IN THE SAME BREATH.**
+
+Not a canary run at some point before. A proof attached to the claim itself,
+in the sentence that makes it — **because the claim is what gets believed
+downstream**, and a claim without its demonstration is indistinguishable from
+a correct one until something fails.
+
+Three times in one wave an instrument's reach was overstated:
+
+1. **V4 called adequate** — it counted pages, not occurrences, and passed
+   (`CFM50 17->17`) while three pages lost two-thirds of their instances.
+2. **The sentence-inventory diff called occurrence-level** — it was a SET
+   difference. Proven blind to a 3->1 drop: `before=3, after=1,
+   set-difference returns False`.
+3. **D3 asserted clean** — reported as clearing DCI with no demonstration, in
+   the same section that cleared it. When finally canaried it passed, but the
+   claim had already been believed for a full turn on no evidence.
+
+**Every one of those corrections came from being asked for the INVOCATION
+rather than the CONCLUSION.** The failure is not incompetence at building
+instruments; it is reporting an instrument's reach without proving it in the
+same breath.
+
+## Principle 6 — SCOPE BARS AND THE ONE-TO-MANY MAPPING
+
+Added 2026-08-21, generalized from the V9 finding.
+
+**FILE-SCOPED PERMISSION GRANTS PAGE-SCOPED ACCESS IT WAS NEVER ASKED TO
+GRANT, wherever the mapping is one-to-many.**
+
+A ledger that lists FILES cannot enforce a bar that names PAGES. In a
+generator-driven codebase one source file renders many pages, so authorizing
+the file silently authorizes every page it renders — including pages the
+kickoff explicitly barred. The reconciling instrument (V9) asks "was every
+changed FILE on the ledger" and is structurally incapable of asking "was any
+forbidden PAGE changed."
+
+This is not portfolio-specific. It holds for any build where the unit of
+permission and the unit of prohibition differ and the mapping between them is
+one-to-many: source file to rendered page, template to instance, migration to
+row, config to environment.
+
+**Proposed rule:** when a scope bar names units of type B and the ledger
+authorizes units of type A, the gate must derive the A->B mapping and either
+mark the covering A units no-touch, or record explicitly that the bar is
+superseded and have the Director rule on it at the gate. Silence is not a
+ruling.
+
+Detail: `v9-cannot-see-page-scoped-bars.md`.
