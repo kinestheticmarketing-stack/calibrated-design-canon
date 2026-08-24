@@ -149,23 +149,54 @@ running a single generator, before touching `COPY_VOICE.md`.**
    one Xcel-adjacent disclosure it carries). When the administrator is a
    third party, the authoritative program terms may live on the
    administrator's site and never appear on the utility's own
-   consumer-facing pages at all — Greeley already hit a version of this
-   with EFI: the blower-door NACH50 threshold for Xcel's program is
-   published only on `poweredbyefi.org`, never on `xcelenergy.com`.
+   consumer-facing pages at all.
+   ~~Greeley already hit a version of this with EFI: the blower-door
+   NACH50 threshold for Xcel's program is published only on
+   `poweredbyefi.org`, never on `xcelenergy.com`.~~
+   **[SUPERSEDED 2026-08-24 — this worked example is false in both of its
+   claims. Xcel does not state the requirement in NACH50, and the
+   threshold *is* published on `xcelenergy.com`, on Xcel's own first-party
+   rebate sheet. See the correction note at the end of this phase. The
+   general point this example was attached to still stands — a
+   third-party administrator's site can carry terms the utility's own
+   pages omit — but EFI/Xcel is not a demonstration of it, and Longmont's
+   Efficiency Works administrator must be checked on its own evidence,
+   not on this precedent.]**
    Check every surface a claim could render on before concluding a
    number is unsourceable.
 
 6. **Verify the blower-door metric and threshold from a primary
    source, per utility.** Metrics are utility-specific, not
-   niche-specific, and they do not convert 1:1. Xcel states its
-   requirement in **NACH50** (normalized air changes per hour at 50
-   pascals). Atmos states its requirement in **CFM(50)** (cubic feet
-   per minute at 50 pascals). Both are air-leakage metrics; neither
-   converts trivially to the other, and "20% reduction" on one utility
-   is not evidence of "20% reduction" on another. **Never carry one
-   market's metric into another market's copy** — this is a locked rule
-   in both existing properties' `COPY_VOICE.md` files and should be
-   treated as load-bearing, not stylistic.
+   niche-specific, and they do not convert 1:1.
+   ~~Xcel states its requirement in **NACH50** (normalized air changes
+   per hour at 50 pascals).~~
+   **[SUPERSEDED 2026-08-24 — Xcel states its requirement in `CFM 50`,
+   verbatim `20% Reduction in CFM 50`. See the correction note at the end
+   of this phase.]**
+   Atmos states its requirement in **CFM(50)** (cubic feet per minute at
+   50 pascals). NACH50 (normalized air changes per hour at 50 pascals)
+   and CFM50 are both air-leakage metrics; neither converts trivially to
+   the other, and "20% reduction" on one utility is not evidence of "20%
+   reduction" on another. **Never carry one market's metric into another
+   market's copy** — this is a locked rule in both existing properties'
+   `COPY_VOICE.md` files and should be treated as load-bearing, not
+   stylistic. **The rule is unchanged by the 2026-08-24 correction; only
+   its illustration was wrong.** Note also that Xcel and Atmos landing on
+   the *same* metric is a coincidence of these two markets, not a
+   portfolio fact — treat it exactly as Phase 1 item 8 treats Denver and
+   Greeley sharing Climate Zone 5B: a lucky match at genesis N is not an
+   assumption at genesis N+1.
+
+   **Verify which rebate row the threshold attaches to, too.** A
+   blower-door threshold is not automatically a condition on the whole
+   weatherization offer. On Xcel's residential rebate sheet the `20%
+   Reduction in CFM 50` requirement attaches to the **air sealing** row
+   only; the **insulation** rebates are qualified by post-job R-value,
+   not by leakage reduction. Copy that binds the threshold to "the
+   insulation and air sealing rebate" as a single unit states a
+   requirement the utility does not impose on insulation, and is a false
+   claim even when the number itself is right. Record metric, threshold,
+   *and* the specific rebate row each one governs.
 
 7. **Verify federal and state program status fresh, at genesis time,**
    not by inheriting the control property's most recent quarterly
@@ -185,6 +216,54 @@ running a single generator, before touching `COPY_VOICE.md`.**
    undetected into a document like this one. Check it explicitly every
    time; do not let a lucky match at genesis N become an assumption at
    genesis N+1.
+
+**CORRECTION — 2026-08-24 — Xcel blower-door metric (supersedes the
+NACH50 wording in items 5 and 6 above).**
+
+The Xcel worked example used in items 5 and 6 was verified against Xcel's
+own first-party document today and found false in both of its claims. The
+original wording is left in place above, struck and bracketed, so the
+error stays legible; read it as superseded by this note.
+
+- **Document:** `24-02-205 CO Res Rebate Summary Information Sheet.pdf`,
+  served from Xcel's own `xcelenergy.com` staticfiles host — a
+  first-party utility surface, not an administrator's.
+- **Retrieval:** fetched live on 2026-08-24, HTTP 200, text extracted
+  with `pdftotext`.
+- **What it says, verbatim:** `20% Reduction in CFM 50` — CFM 50, with a
+  space. The string `NACH` **appears nowhere in the document.**
+- **Therefore:** (a) Xcel does **not** state its requirement in NACH50;
+  it states it in **CFM50**. (b) The threshold is **not** "published only
+  on `poweredbyefi.org`" — it is published on `xcelenergy.com`, on
+  Xcel's own sheet.
+- **Scope of the requirement:** the `20% Reduction in CFM 50` line
+  qualifies the **air sealing** rebate row. Xcel's **insulation** rebates
+  are qualified by post-job R-value, not by leakage reduction. The two
+  are separate rows with separate qualifying conditions, and a genesis
+  instruction that binds the blower-door threshold to "the insulation and
+  air sealing rebate" as one unit would seed a false claim at the next
+  property. Item 6 above now says so explicitly.
+- **Corroboration:** this matches the 2026-08-10 CFM50 correction already
+  recorded in the DCI repo at `COPY_VOICE.md:152` and
+  `_shared_components.py:256-278`. DCI's shipped copy was corrected; this
+  canon document was not, and stayed stale for two weeks. The canon was
+  the wrong surface, not the property.
+
+**What survives unchanged:** the locked rule itself — *verify the
+blower-door metric and threshold from a primary source, per utility;
+never carry one market's metric into another market's copy.* Nothing in
+this correction weakens it. The rule is, if anything, better evidenced
+now than before, because **the rule was broken by its own illustration**:
+a canon document teaching per-utility primary-source verification carried
+an unverified, second-hand metric for one utility, and asserted a
+negative about a first-party surface ("never on `xcelenergy.com`") that
+nobody had checked. A worked example is a claim and needs a citation like
+any other claim. Cite the document, quote the string, and date the fetch.
+
+**Still open (not fixed by this row):** `NACH50` remains in
+`METHODS/RECEIPTS.md` and `RETROSPECTIVES/2026-08-10-citation-integrity.md`.
+Those are historical-record surfaces and need their own supersession
+pass; they are not corrected here.
 
 **Reconciliation note:** DCI's 20-step checklist has no equivalent to
 this phase — market facts are swapped as checklist item 11
