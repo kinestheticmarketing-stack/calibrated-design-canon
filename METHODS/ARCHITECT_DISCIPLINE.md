@@ -1084,8 +1084,9 @@ PRACTICAL IMPLEMENTATION
   ledger only has rows for one phase, the kickoff is scoped wrong
   before a single agent is dispatched.
 - Combine with Pattern 20: the single kickoff states its round
-  budget, so "one kickoff" does not silently become one kickoff
-  plus five corrective turns.
+  budget AND its deadline, so "one kickoff" does not silently become
+  one kickoff plus five corrective turns, or one kickoff stretched
+  across a week.
 
 ═══════════════════════════════════════════════════════════════
 PATTERN 20 — REMEDIATION TERMINATES
@@ -1097,15 +1098,41 @@ pass, which finds something. The work never lands. The defects
 found in round five are real but cost more to find than they cost
 to ship, and the unlanded work is itself an accumulating risk.
 
+And the round count HIDES the cost. Three rounds reads as a tight
+budget on paper, and then each round burns a session limit and waits
+for a human to come back. The same three rounds are a WEEK of wall
+clock — spent on work that was correct on day one. Nobody overran
+the budget; the budget was measuring the wrong thing.
+
 CANON RULE
 ONE fix pass. ONE full re-read by non-editing agents. ONE
-corrective pass maximum. Then SHIP. State the round budget IN THE
-KICKOFF. Exceeding it is a process failure to ESCALATE, not to
-absorb silently.
+corrective pass maximum — AND a WALL-CLOCK deadline stated
+alongside them. Then SHIP. The budget names BOTH conditions, HOW
+MANY ROUNDS and BY WHEN, and WHICHEVER BINDS FIRST ends the
+remediation. State both IN THE KICKOFF. Exceeding EITHER is a
+process failure to ESCALATE, not to absorb silently.
+
+A budget counted only in rounds is not a budget, because the rounds
+are not the cost — the ELAPSED TIME is. Rounds that each consume a
+session limit still take a week. This pattern is where the opening
+directive of this document gets enforced: every wave states what
+closes it AND WHEN, and the "and when" lives HERE.
 
 PRACTICAL IMPLEMENTATION
-- Past the budget, the marginal defect costs less than the marginal
-  round. Card it and land.
+- Past EITHER limit, the marginal defect costs less than the
+  marginal round. Card it and land.
+- The deadline is a DATE, not a duration. "By Thursday" binds;
+  "within two days" restarts every time someone reads it, which is
+  how a two-day budget becomes a fortnight without a single
+  explicit extension.
+- Budget the CALENDAR, not the turn count. A round that will cross
+  a session limit or wait on a human to return is a round that
+  costs a day, and it must be priced that way when the deadline is
+  set. If three rounds cannot fit inside the deadline, the scope is
+  wrong, not the deadline.
+- The deadline binding first is the NORMAL case, not the failure
+  case. Reaching the date with rounds unspent means SHIP and card
+  the remainder — an unspent round is not a reason to stay open.
 - Do NOT verify incrementally between fixes. Fix the whole scope,
   then verify once. Incremental verification is what generates the
   rounds.
@@ -1114,6 +1141,9 @@ PRACTICAL IMPLEMENTATION
 - If the corrective pass surfaces something that genuinely cannot
   ship, card it and land everything else. A fourth round is a
   decision made explicitly and reported, never a drift.
+- Report BOTH numbers when the remediation closes: rounds used and
+  days elapsed. A close that reports only rounds cannot be audited
+  against the condition that actually binds most often.
 
 ═══════════════════════════════════════════════════════════════
 PATTERN 21 — APPLY EVERY PRINCIPLE TO THE PROCESS THAT PRODUCED IT
@@ -1177,6 +1207,68 @@ PRACTICAL IMPLEMENTATION
 - Watch for this in remediation specifically: the pressure to show
   a fix makes reversal feel like progress where silence looks like
   inaction.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 23 — READY/ GETS DRAINED OR DATED
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+Nine drafted principles sat in this canon repo's
+`docs/board/ready/` across multiple sessions with no date and no
+wave. Every session that opened the board saw them, read them as
+queued, and worked on something else. They were promoted only when
+the Director noticed the pile and ordered it by hand — which is the
+one motion the board exists to make unnecessary.
+
+Nothing about the cards was wrong. The column was. `ready/` had
+become indistinguishable from `later/` — same absence of a
+commitment, same absence of a date — while still being READ as the
+queue that feeds the next wave. So sessions kept pulling from it,
+kept finding it full, and nothing in the process forced anything
+out. A queue that is never drained does not announce itself as
+broken; it announces itself as busy.
+
+CANON RULE
+EVERY CARD IS EITHER IN THE CURRENT WAVE OR CARRIES A DATE. A card
+in `ready/` with NEITHER is a DEFECT — not a low priority, a defect,
+on the same footing as a card with no verification command. A board
+that only accumulates is a BACKLOG WEARING A QUEUE'S NAME, and the
+cost is paid by every session that scopes its next wave from it.
+
+The date is a COMMITMENT, not a timestamp. It is the wave the card
+is committed to, or the date the card gets RE-TRIAGED. It is never
+the date the card was written.
+
+PRACTICAL IMPLEMENTATION
+- A date on a card answers "when is this next FORCED to be looked
+  at." A creation date answers nothing and satisfies nothing; a card
+  carrying only the day it was captured is an undated card.
+- Grooming ENFORCES the rule, it does not observe it. Every groom
+  pass walks `ready/` card by card and takes one of four actions on
+  each: pull it into the current wave, stamp a re-triage date, move
+  it to `later/`, or kill it. A groom that reports `ready/` as
+  healthy without having moved or dated anything has surveyed the
+  board, not groomed it.
+- `ready/` GROWING BETWEEN TWO CONSECUTIVE GROOMS IS THE SIGNAL,
+  independent of any individual card. Record the column count at
+  each groom (`ls docs/board/ready | wc -l`) and compare. If the
+  later count is not lower, the queue is not draining and the next
+  wave is being scoped from a fiction, no matter how defensible each
+  card looks one at a time.
+- A re-triage date that passes without action is an escalation, not
+  a renewal. Re-date a card once; the second pass moves it to
+  `later/` or kills it. Cards do not earn tenure by surviving
+  grooms.
+- Moving a card to `later/` is not a demotion, it is HONEST
+  LABELLING. The damage in the nine-card pile was never that the
+  work was deferred — it was that the deferral was invisible to the
+  next session's planning.
+- This is Pattern 15 applied to the queue itself: an undated card in
+  `ready/` asserts "soon" — a claim about state that is present on
+  no board and verified in no session. And it is the top of this
+  document applied to the card: every wave states what closes it AND
+  WHEN, so every card that claims to feed a wave carries the WHEN
+  too.
 
 ═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
