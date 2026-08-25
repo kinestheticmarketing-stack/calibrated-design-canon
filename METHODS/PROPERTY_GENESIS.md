@@ -955,7 +955,12 @@ canary-proven at genesis (Phase 4 item 11): break one thing deliberately
 dead endpoint — confirm the script exits nonzero and names the specific
 failure, then restore. A functional gate that has only ever printed
 success is indistinguishable from one that cannot fail, and that is the
-same epistemic hole the three green Greeley calculators sat in.
+same epistemic hole the three green Greeley calculators sat in. The
+general form of that hole — the check that does run, exits clean, and
+still cannot see the thing it certifies — is *What a green gate does
+not prove*, below, which also records the open question of whether this
+phase's calculator criterion is met by the gate that claims to satisfy
+it.
 
 ---
 
@@ -1002,6 +1007,545 @@ If a genesis wave's own research surfaces a *new* portfolio-level gap
 not on this list, add it here for the next genesis rather than only
 recording it in the new property's own `STATE_OF_PROJECT.md` — this list
 is the point of continuity between genesis waves.
+
+---
+
+## What a green gate does not prove
+
+Phase 8 ends on a sentence this section exists to generalize: *a gate
+never shown to fail is not a gate.* That rule covers the check that
+cannot fire. It does not cover the check that fires, exits clean, and
+was never able to see the thing it certified.
+
+Over 2026-08-20 and 2026-08-21, during the rebate-figure remediation
+wave across the three properties, the running tally reached **seven
+blind instruments in two days** — instruments that reported clean, or
+governed behavior, while never examining what they claimed to govern: a
+duplication gate whose exclusion list named exactly the pages the
+duplication lives on; a Search Console check that measured a
+verification tag's presence and never its value; a `FORCE_STEP` guard
+placed below its own `require('puppeteer-core')`, so on any host
+without that dependency it exited before it ran; a documented citation
+floor with no counter in any repo; a rendered sentence gated on the
+shape of a citation list; a presence check that counted pages while
+pages were losing two-thirds of their occurrences; and a ledger that
+reconciles files against a scope bar written in pages. Two more from
+the same two days were carded separately and belong to the same class:
+a schema gate that parses JSON and cannot ask whether the JSON is true,
+and a verification built from the same needle as the edit it was
+verifying. Every one of them was correctly implemented. Every one of
+them ran. Several had canaries.
+
+**The organizing idea: an instrument answers a narrower question than
+the claim that gets made from its result, and the blind spot is exactly
+the gap between the two sentences.** The similarity gate proves *"no
+two non-excluded pages score above the floor"* and was cited for
+*"authored duplication is zero."* `check_jsonld` proves *"every block
+is well-formed JSON"* and was cited for *"the structured data is
+sound."* V3 proved *"the string `$400 for air sealing` does not appear"*
+and was cited for *"the false figure is gone."* Nothing in those pairs
+is a bug. The defect is the substitution of the second sentence for the
+first.
+
+**The diagnostic is mechanical, and it is one line of writing.** Before
+an instrument's result is allowed to close anything, write down, *in
+the instrument's own units*, the sentence it actually proves. Then
+write the sentence being claimed. If they differ, the difference is
+what ships broken. Every rule below is a place that gap opens: in the
+**corpus** the instrument reads, in the **unit** it counts, in the
+**predicate** it tests, in the **provenance** of the instrument itself,
+and in the case where there is no instrument at all.
+
+This is the companion to `ARCHITECT_DISCIPLINE.md` PATTERN 14 (*a check
+that passes its own test can still be blind*), not a restatement of it.
+Pattern 14 is about the check that never runs in the real path, and
+about verification that inspects an artifact rather than its behavior.
+These twelve rules are about the check that does run, is reachable, is
+honest about its own result, and still cannot see the thing it
+certifies.
+
+Figures below are dated. Where the wave's original measurement was
+re-run against the live repos on 2026-08-25 before promotion, both
+numbers are given — per rule 9, and per the correction at the end of
+Phase 1: a worked example is a claim and needs a citation like any
+other claim.
+
+---
+
+**Where the gap opens, first: in the CORPUS the instrument reads.**
+
+1. **An exclusion list is scoped to the question the gate was built
+   for. Cited for a different question, it excludes exactly the
+   evidence.** `_intra_similarity_check.py:67` reads
+   `EXCLUDE = {'404.html', 'privacy.html', 'contact.html',
+   'about.html'}` — **byte-identical in all three property repos**
+   (re-verified 2026-08-25). Those four are the pages ported
+   near-verbatim between siblings. The gate skips them, then reports
+   zero.
+
+   The exclusion is defensible for *intra-property* scoring: a privacy
+   page and a contact page should not flag as duplicates of each other.
+   It is exactly backwards for *cross-property* scoring, which is the
+   risk this portfolio actually carries — three geo-cloned sites in one
+   vertical. The gate was built for one question and cited as answering
+   the other.
+
+   Measured on authored content with chrome stripped, 2026-08-20:
+   `privacy.html` shared a **726-word identical run** with both
+   siblings (1046 / 1031 / 989 words). Re-measured 2026-08-25, after
+   the privacy pages were rewritten in a later wave: DCI↔GCI **1001
+   words** of 1321 / 1264, DCI↔LGM 256. The number moved; the blindness
+   did not.
+
+   **The blast radius is the part that matters.** "Authored duplication
+   is ZERO on all three properties" was asserted repeatedly, including
+   in `docs/board/ground-truth.md` on all three properties during the
+   corpus re-score wave. That claim was true of the non-excluded pages
+   and was never true of the corpus. Every verdict resting on the
+   instrument is affected: DCI and GCI both scored two audit tactics
+   APPLIED from it and both are now RETRACTED; LGM scored NOT-APPLIED
+   because that agent had stopped trusting the gate — the only correct
+   duplication verdict on the board, correct for the right reason.
+
+   **Rule:** split the exclusion by axis. Keep it for the
+   intra-property run; include the four in the cross-property run and
+   treat a high score there as expected-and-accepted or as a finding —
+   but **measure it**, and let the number be visible rather than
+   absent. Canary it: plant a known duplicate pair inside an excluded
+   file and confirm the cross-property run reports it. The current gate
+   reports zero.
+
+   **Correction owed elsewhere in this document:** Phase 9 item 6
+   declares "no internal near-duplicate measurement" as a
+   portfolio-level inherited gap, and Phase 7 says the shingle
+   instrument "exists on one property." Both predate
+   `_intra_similarity_check.py`, which exists on **all three** (the
+   parent-comparison `_similarity_check.py` is GCI-only — verified
+   2026-08-25). The honest statement of the gap is not that intra
+   measurement is absent; it is that it ships on every property and is
+   blind on the four pages that carry the duplication. Phase 9 item 6
+   needs its own supersession pass and does not get one here.
+
+2. **A verification SET must contain at least one instrument whose
+   scope is the COMPLEMENT of the change set, measured at occurrence
+   level against a pre-change snapshot.** The load-bearing fact from
+   the 2026-08-21 wave: V4, V8, V9, V10 and V11 all answer *"what
+   happened to the thing we meant to change."* Not one answers *"what
+   happened to everything else."* A verification set composed entirely
+   of target-scoped instruments **cannot see collateral damage no
+   matter how many instruments are added** — which is why V4 through
+   V11 all passed while two separate collateral losses were live, and
+   why one complement-scoped diff found both.
+
+   Removal work is where this binds hardest, but it is **not
+   removal-specific**: any edit whose blast radius is wider than its
+   intent has the same hole. At a genesis this is the rule that governs
+   the first sweeping regeneration — a constant swap or a template edit
+   touches every page, and every gate in Phase 7 is pointed at the
+   pages you meant to change.
+
+---
+
+**Second: in the UNIT the instrument counts.**
+
+3. **A presence check must assert the QUANTITY it protects, not merely
+   non-zero presence.** V4 was added specifically to catch content
+   vanishing beside a removal target. It reported `CFM50 S0=17 now=17
+   OK` on all three properties. At that moment three LGM area pages had
+   lost two-thirds of their occurrences — `insulation-lafayette` 5→3,
+   `insulation-louisville` 3→1, `insulation-niwot` 3→1, with
+   "participating contractor" and "reduced tier" dropping in the same
+   proportions on the same pages. No page fell to zero, so no page left
+   the *contains-the-anchor* set, so V4 saw 17 both times and passed.
+   It was blind to exactly the failure it was built for. The loss was
+   caught instead by an occurrence-level sentence-inventory diff the
+   Auditor demanded *after the count in the report failed to move.*
+
+   If the risk is partial loss, page-level membership is the wrong
+   unit: count occurrences, compare against the pre-change snapshot,
+   and fail on any decrease that is not an enumerated target.
+
+   **Corollary, and the reason this recurs:** an instrument added to
+   catch a specific failure must be **canary-proved against that
+   failure**, not against its own happy path. V4 had a positive canary
+   — delete an anchor entirely, prove it flags — and none for partial
+   loss, which is the case it existed for.
+
+   **Rules 2 and 3 are one failure seen from two sides and must not be
+   collapsed.** Rule 3 is about the INSTRUMENT: a single check must
+   assert the quantity it protects. Rule 2 is about the SET: the
+   collection must cover the complement of the change. Sharpening V4 to
+   occurrence level would have caught the CFM50 loss and still would
+   not have caught a loss in content nobody thought to register as an
+   anchor — that needs rule 2. A complement-scoped diff at SET
+   granularity (which is what shipped first) misses partial drops —
+   that needs rule 3. **Fixing either alone leaves a live hole.**
+
+4. **Where the unit of permission and the unit of prohibition differ
+   and the mapping is one-to-many, the gate must derive the mapping.**
+   The 2026-08-21 kickoff's OUT OF SCOPE list read *"DO NOT TOUCH: the
+   two LGM doorway pages (lafayette 37.1%, niwot 39.3%)."* R2's edits
+   changed both pages. V9 reported "LGM 27 files, every rendering
+   instance accounted for" and did not halt — **correctly**, because
+   the S-GATE ledger is file-scoped and listed `_area_pages.py`, which
+   renders both of those pages among others. No file was unlisted, so
+   V9's halt condition never fired.
+
+   The defect is not a missed halt. It is that **the ledger silently
+   superseded the kickoff's own page-scoped scope bar and the Final
+   Report never said so.** V9 answers "was every changed FILE on the
+   ledger"; the bar asks "was any forbidden PAGE changed." Different
+   questions over different units. A file-scoped permission grants
+   page-scoped access it was never asked to grant. (`git show 00b2d56
+   --name-only` on LGM shows both pages; the ledger named
+   `_area_pages.py`.) Content impact was neutral — both pages carried
+   only the legitimate change, restored byte-identical — which is the
+   point: the finding is about the instrument, not the outcome.
+
+   This is not portfolio-specific. It holds for any build where
+   permission and prohibition are expressed in different units with a
+   one-to-many mapping between them: source file to rendered page,
+   template to instance, migration to row, config to environment. A
+   generator-driven property is the one-to-many case by construction,
+   which is why it belongs in this document.
+
+   **Rule:** when a scope bar names units of type B and the ledger
+   authorizes units of type A, the gate derives the A→B mapping and
+   either marks the covering A units no-touch, or records explicitly
+   that the bar is superseded and has the Director rule on it at the
+   gate. **Silence is not a ruling.**
+
+---
+
+**Third: in the PREDICATE the instrument tests.**
+
+5. **Validate schema as TRUE OF THE PAGE, not merely parseable.**
+   `check_jsonld` confirms every structured-data block is well-formed
+   JSON. It structurally cannot know whether the block's claims match
+   the document. LGM ships `SpeakableSpecification.cssSelector` naming
+   `.quick-facts` on `public/index.html` and `public/resources.html`
+   where the markup count is **zero** — selector 1 / markup 0 on both,
+   re-verified 2026-08-25 and still live. The JSON parses perfectly, so
+   the gate is green. GCI is 1 / 1 by luck of authoring, not by gate.
+
+   DCI shipped the identical defect, found it only by hand-running
+   Google's Schema.org validator, fixed it, and added `check_speakable`
+   so that class fails the build. **DCI has six postbuild validators;
+   LGM and GCI have five** — `grep -c "def check_"` returns 6 / 5 / 5
+   and `check_speakable` exists only on DCI, re-verified 2026-08-25.
+   The hardening did not propagate, which is its own genesis lesson:
+   Phase 2's lineage table records what was forked at genesis, not what
+   the parent fixed afterwards. A fix landed on one sibling is not a
+   fix landed on the portfolio.
+
+   **Rule:** for every assertion a schema block makes about the
+   document — a selector, an image URL, a price, a `dateModified` —
+   assert the referent exists. This **extends** Phase 8's "every
+   JSON-LD block on every page parses, counted"; it does not retire it.
+   Parseability and truth are two claims and need two checks. Canary
+   the new one by planting a selector that matches nothing and
+   confirming the build reds.
+
+6. **A conditional that governs whether PROSE renders must read a fact
+   about the subject, never the membership or shape of a citation
+   list.** This is the subtype that is not a check at all: rendered
+   copy silently gated on a data-structure side effect. LGM's
+   `_generate_service_pages.py` read
+
+   ```python
+   xcel_relevant = any('XCEL' in k for k in rebate_cite_keys)
+   ```
+
+   which made *"is this page Xcel-relevant"* and *"does this page cite
+   Xcel"* the same question. They are not: the first is a fact about
+   the market's utility structure, the second an artifact of which
+   citation keys survive an edit. Removing one false citation flipped
+   the flag on 4 pages and deleted the wayfinding sentence pointing
+   readers at Xcel's own live page — the honest sentence, and exactly
+   what must survive when a stale figure is removed.
+
+   Decoupled 2026-08-21 to `xcel_relevant =
+   bool(service.get('xcel_applicable')) or
+   _asserts_xcel_applies(service)`, with the old line preserved as a
+   comment directly above it, and proven immune: stripping a different
+   `XCEL`-prefixed key from 8 services on a scratch copy left the
+   sentence rendering on all 13 pages. **`ew_relevant` on the next line
+   is still the raw pattern** (`any('EFFICIENCY_WORKS' in k for k in
+   rebate_cite_keys)`, re-verified 2026-08-25) — reported rather than
+   changed, because no `EFFICIENCY_WORKS` key was disturbed by that
+   wave. DCI and GCI have zero instances; it is LGM-only.
+
+   **Rule:** citation bookkeeping may decide whether a *citation*
+   renders. It must never decide whether a *sentence* does. At a
+   genesis, audit every generator conditional that wraps prose and ask
+   which fact it is standing in for.
+
+7. **A skipped check is not a passed check.** `ops/functional_proof.sh`
+   gives two different answers to what a skip scores. At `:215-217`,
+   when `node` is unavailable, check 3 is skipped and recorded **FAIL**
+   with its reasoning stated in the message itself — *"a skipped check
+   is a hole in the gate, not a pass."* At `:365`, in LOCAL_MODE, check
+   7 (`www`→apex) is skipped and recorded **PASS**. Both cannot be
+   right, and the script has already written down which one is.
+   (Verified in the DCI copy, 2026-08-25: the two branches still
+   disagree.)
+
+   The practical risk is a LOCAL_MODE run reporting **7/7 PASS** having
+   executed six checks — precisely the "green means nothing" failure
+   this gate exists to prevent, and a launch record that overstates its
+   own coverage.
+
+   **Rule:** a third outcome. `SKIP` is neither PASS nor FAIL, prints
+   distinctly, and the summary states `N passed / M skipped` rather
+   than folding skips into either bucket. Exit non-zero only on real
+   failures, but never let a skip read as coverage.
+
+---
+
+**Fourth: in the PROVENANCE of the instrument itself.**
+
+8. **A verification instrument must be constructed INDEPENDENTLY of the
+   edit instrument. Derive the check from the target CONCEPT, never
+   from the edit's matcher.** This was the wave's worst defect and it
+   survived six Auditor gates. R3 removed the false `$400` air-sealing
+   figure using the needle `$400 for air sealing`. V3 then verified the
+   removal **using the same needle** and reported `DCI $400 = 0`.
+
+   That result was true of the needle and false of the figure.
+   `xcel-insulation-rebate-guide-denver.html` phrased it *"…attic
+   insulation at 30% of project cost up to $500, wall insulation at 30%
+   up to $350, and air sealing at 30% up to $400"* — a complete,
+   correct enumeration carrying the false figure in a phrasing the
+   needle never matched. It was live through every prior gate and every
+   gate reported clean, because the check inherited the edit's blind
+   spot exactly. **A check constructed from the edit's own matcher is
+   not measuring the world; it is measuring the edit's assumptions back
+   to itself and returning them as confirmation.**
+
+   No other instrument could reach it either, and the reasons are worth
+   keeping: the complement-scoped occurrence diff hunts content that
+   *decreased*, and this content never changed; the positive-presence
+   check asserts anchors *survive*, and this survived — that was the
+   problem; ledger reconciliation checks *changed files*, and the file
+   was never changed. The defect lived in the complement of the change
+   set **and did not move**, which makes it invisible to a diff by
+   construction.
+
+   Derived from the concept instead — *"a dollar figure asserted as a
+   rebate amount"*, so sweep bare `$400`, `$500` and `$350` in any
+   phrasing and classify each occurrence as rebate-figure or cost-range
+   — the same corpus that had reported `0` reported **9 surviving
+   figure instances on DCI**, including three malformed sentences the
+   removals themselves had produced. Re-run 2026-08-25: the sweep
+   prints 21 instances and every one is the tail of a `$200-$500` or
+   `$100-$500` cost range, because the range guard only looks *forward*
+   of the match. Zero rebate-asserted figures survive; the removal
+   holds — and the concept-derived instrument needs the same
+   granularity discipline it teaches.
+
+   **Corollary:** the edit's matcher and the check's matcher should be
+   written by different reasoning, ideally at different times. An
+   instrument authored immediately after an edit, by the reasoning that
+   produced it, is co-extensive with that edit's blast radius.
+
+9. **A claim about an instrument's reach must travel with its
+   demonstration, in the same breath — and a principle derived from a
+   genuine finding is not thereby true.** Not a canary run at some
+   point before; a proof attached to the claim in the sentence that
+   makes it, **because the claim is what gets believed downstream.**
+   Three times in one wave an instrument's reach was overstated: V4 was
+   called adequate (it counted pages); the sentence-inventory diff was
+   called occurrence-level when it was a SET difference (proven blind —
+   `before=3, after=1, set-difference returns False`); and D3 was
+   asserted clean with no demonstration, in the same section that
+   cleared it — it passed when finally canaried, but the claim had
+   already been believed for a full turn on no evidence. **Every one of
+   those corrections came from being asked for the INVOCATION rather
+   than the CONCLUSION.**
+
+   The harder half is about the lesson rather than the instrument. In
+   the same wave a general principle was drafted from a real finding,
+   correctly diagnosed, competently investigated — and **retracted as
+   false**, because the model that supposedly failed had predicted 7
+   and the true post-repair answer was 7. It was one turn from being
+   written into canon. **The test is not whether the investigation was
+   rigorous. The test is whether the CORRECTED STATE MATCHES THE
+   MODEL'S PREDICTION**, and operationally, *a number that should have
+   moved and did not is the signal.* The wrong lesson survived a
+   competent investigation and died the moment someone asked why the
+   count was still 8 after the fix that should have made it 7.
+
+   **Rule for review:** when a wave proposes a new general principle,
+   require the post-remediation measurement that the principle
+   predicts. A principle whose predicted state was never measured is a
+   hypothesis wearing a conclusion's clothes. This section was written
+   under that rule: every figure above that could be re-measured was
+   re-measured on 2026-08-25 before promotion, and two of them had
+   moved.
+
+---
+
+**Fifth: where there is no instrument at all.**
+
+10. **A documented standard with no validator is not a standard. It is
+    a preference.** The seven blind instruments above are the visible
+    half of the problem; the invisible half is the standard nothing
+    ever checked. From the same two days:
+
+    - **The GSC verification check** measured the *presence* of a
+      `google-site-verification` tag, never its validity. A
+      `REPLACE_WITH_…` placeholder served in production and scored as
+      verified. (Phase 7's own bullet — "confirm GSC's HTML
+      verification tag actually shipped in the generated `<head>`" — is
+      satisfied by a placeholder as written, and should be read as
+      requiring the value, not the tag.)
+    - **The FORCE_STEP guard** sat below `require('puppeteer-core')`,
+      so on any host without that dependency it exited at
+      MODULE_NOT_FOUND and never ran. **A non-zero exit for the wrong
+      reason is indistinguishable from success.**
+    - **The citation floor.** `COPY_VOICE.md:104` on LGM (`:66` on GCI)
+      documents 2-3 external citations per page.
+      `validate_citation_set` checks duplicate keys and duplicate
+      labels only. **No count check exists in any repo** — re-verified
+      2026-08-25: the only length comparisons in all three copies are
+      the duplicate tests.
+
+    **Rule:** every standard stated in prose names the validator that
+    enforces it, or is explicitly marked UNENFORCED. A standard whose
+    enforcement cannot be pointed at is a preference. And each
+    validator carries a canary result proving it fails when it should —
+    a check that has only ever printed success is indistinguishable
+    from one that cannot fail.
+
+    **A live instance inside this document.** Phase 8 requires that
+    every calculator "produce a correct figure on default inputs — with
+    that figure written into the launch record," and argues explicitly
+    that recording the number is what makes the check falsifiable.
+    `ops/functional_proof.sh` CHECK 3 proves the page returns 200, that
+    its inline JS parses under `node --check`, and that
+    `addEventListener > 0`. **It never runs a calculation and never
+    records a figure.** So the shipped gate satisfies the weaker of the
+    two claims Phase 8 says must be kept separate: it proves "the page
+    returned 200," not "the page works." This is not a regression — the
+    gate was always this. The defect is that Phase 8 asserts a
+    criterion the gate does not implement, so a genesis reading Phase 8
+    would believe its calculators were proven functional when only
+    their syntax was. Two honest options, Architect's call: implement
+    it (drive each calculator headlessly, read the computed figure out
+    of the DOM, write it into the launch record — at the cost of a
+    browser dependency in a script that is currently pure fetch+parse),
+    or weaken Phase 8's wording to what the gate proves and move the
+    figure-recording requirement to the browser canary, which already
+    drives real Chrome. **Do not close it by quietly editing Phase 8 to
+    match the code** — that is the direction that loses information.
+    Tracked at `docs/board/ready/phase8-calculator-criterion-unmet.md`
+    and deliberately left open here.
+
+11. **A procedure with the authority of a ruling and no execution is
+    untested code.** At the 2026-08-21 S-GATE the Director ruled that a
+    removal target inside a JSON-LD string means removing the whole
+    property or Answer object — not halting; that the block must remain
+    valid JSON and still parse as valid schema.org; that this is
+    verified **by parse, not by grep**; and that if removal would leave
+    malformed JSON or an invalid block, the instance escalates and
+    halts.
+
+    **It was never exercised.** LGM's 4 target-carrying JSON-LD blocks
+    went 4→0, but as a *side effect*: FAQ answers are generated from
+    the same source strings as the prose, so editing the prose removed
+    both surfaces in one edit. No property or Answer object was ever
+    removed as a distinct action. DCI's target-carrying blocks at S0
+    were 0. **Zero removals performed; zero parse-validations run
+    against a post-removal block.**
+
+    The procedure now has the authority of a Director ruling and the
+    reliability of untested code. The first wave that genuinely needs
+    it — a defect living in structured data but *not* in the prose that
+    generates it — will run an unproven procedure under remediation
+    pressure, on the surface AI engines read most literally. The
+    generator coupling that made it unnecessary is not guaranteed: any
+    hand-authored JSON-LD, or any block whose text diverges from its
+    prose source, breaks it.
+
+    **Rule:** a canon-adjacent procedure gets exercised once against a
+    scratch copy before it is needed — here, plant a defect in an
+    escaped, minified FAQPage answer, remove the Answer object per the
+    ruling, prove with `json.loads` plus a schema.org validity check
+    that the block still parses, and record the transcript. **So that
+    the first real use is the second use.**
+
+12. **Grammar is not truth: removing a false member from a true set
+    creates a false set.** The most generalizable finding of the wave,
+    and the one no instrument in the portfolio could have caught,
+    because nothing evaluated meaning. R3 removed `$400 for air
+    sealing` from enumerations reading *"pays 30% of project cost, up
+    to $500 for attic insulation, $350 for wall insulation, **and $400
+    for air sealing**."* The figure was false — Xcel's own sheet states
+    $200. But **air sealing is a covered measure**: the program is
+    literally named the *Xcel Energy Insulation and **Air Sealing**
+    Rebate*, recorded 2026-08-21 as 72 DCI pages carrying 296 surviving
+    mentions tying air sealing to rebate eligibility. (A looser
+    `grep -c "air sealing"` on 2026-08-25 returns 71 pages and 881
+    occurrences — a different measure, quoted only to show the fact did
+    not go anywhere.)
+
+    So the corrected sentence enumerated **two** covered measures where
+    **three** exist. It read perfectly. Every grammar check passed.
+    **And it asserted, by omission, that air sealing is not covered —
+    which is also false.** Two instances refuted themselves inside a
+    single sentence: `insulation-duct-sealing.html` — *"…up to $500 for
+    attic insulation and $350 for wall insulation, by check after
+    application, and its named measures are insulation and air
+    sealing"*; `insulation-radiant-barrier.html` — *"…caps of $500 for
+    attic insulation and $350 for wall insulation — and a radiant
+    barrier is not one of the measures it names."* The second had been
+    cleared one turn earlier as "no meaning added," on a check of the
+    anaphor's grammar. The grammar was fine. The enumeration was a lie.
+
+    **Why every instrument was green:** each of them hunts content that
+    *disappeared*. A truncated enumeration is content that **remained**
+    and became false by losing a neighbour — invisible to occurrence
+    diffs, presence checks, ledger reconciliation and grammatical
+    certification alike.
+
+    **Rule:** after any removal, the containing sentence is evaluated
+    for what it now **ASSERTS**, not merely whether it reads. If
+    removal leaves a different claim, remove the whole claim. If
+    removal drops a member from an enumeration that is still a member,
+    the enumeration now lies by omission and the instance **HALTS**.
+
+    **The remedy is the shape to copy.** Director ruling: drop the
+    enumeration, keep the program. Not "restore the true figure" — $200
+    is unsourced in-repo exactly as $400 was, so that fixes an
+    unsourced-figure violation by committing another. Not "a separate
+    cap for air sealing" — a phrase no source supports. **Dissolve the
+    truncation rather than completing it: with no enumeration there is
+    no omission.** What shipped is the claim the repo can support — the
+    program exists, pays 30% of project cost against per-measure caps,
+    by check after application. Verified 2026-08-25 on DCI:
+    `grep -rn 'up to \$500 for attic insulation, \$350' public/*.html`
+    returns nothing.
+
+---
+
+**What this binds at a genesis.** Every gate installed in Phases 4, 6,
+7 and 8 gets the two sentences of the diagnostic written into the
+launch record beside its result — what the instrument proves in its own
+units, and what is being claimed from it. A new property inherits its
+parents' gates *and their blind spots*, byte-identical, which is how one
+`EXCLUDE` line reached three repos and how `check_speakable` reached
+only one.
+
+**Still open as of 2026-08-25, carried rather than closed** — each is a
+live instance of a rule above, and none is fixed by promoting these
+rules: the `EXCLUDE` blindness on all three properties (rule 1) and the
+unqualified "zero authored duplication" line in three
+`ground-truth.md` files; Phase 9 item 6's superseded wording (rule 1);
+`check_speakable` on DCI only, with LGM's two live selector defects
+(rule 5); `ew_relevant` on LGM (rule 6); the two skip policies in
+`functional_proof.sh` (rule 7); Phase 8's calculator criterion versus
+CHECK 3 (rule 10); and the unexercised JSON-LD removal procedure
+(rule 11).
 
 ---
 
