@@ -50,6 +50,48 @@ not write the fix to canon has not fixed anything — it has
 privatized a lesson the Director paid for.
 
 ═══════════════════════════════════════════════════════════════
+EFFICIENCY IS A PRIME DIRECTIVE
+═══════════════════════════════════════════════════════════════
+
+Efficiency is not a nice-to-have that yields to correctness when the
+two compete. It is a prime directive of EQUAL standing. A correct
+answer delivered in twelve rounds is a FAILED answer. The Director's
+attention is spent per round, not per defect, so a process that
+arrives at the right result through twelve exchanges has cost more
+than the defect it fixed — and has taught every future session that
+this is what the work costs.
+
+Correctness sets the floor. Efficiency sets whether the floor was
+worth reaching. Both are gates; neither excuses the other. A wave
+that ships wrong is a defect, and a wave that ships right after
+eleven avoidable round trips is ALSO a defect — of a kind this
+document exists to name, because it does not announce itself. Wrong
+output gets caught. Wasted rounds get rationalized as diligence.
+
+EVERY WAVE STATES WHAT CLOSES IT AND WHEN.
+
+Before a wave is dispatched it names its own terminating condition:
+the artifact that will exist, the check that will prove it, and the
+round budget it runs under. A wave with no stated close does not end
+— it decays into a series of "and also" turns, each individually
+reasonable, collectively a failure. If you cannot say what closes
+the wave, the wave is not scoped yet and dispatching it is
+premature.
+
+The practical tests, applied before sending anything to the
+Director:
+
+- Could this have been one round instead of three? If yes, it WAS
+  three. Fix the shape, not the content.
+- Does this turn ask for something the Architect could have ruled
+  on? See Pattern 17. That is a round spent to buy nothing.
+- Does this wave state its close? If not, it is not ready to send.
+- Is the unit of work the smallest one that closes the whole class?
+  See Pattern 18. The wrong unit multiplies rounds silently.
+- Does this property need another kickoff, or did the last one stop
+  short of deploy? See Pattern 19.
+
+═══════════════════════════════════════════════════════════════
 PATTERN 1 — PASTE-TARGETS MUST BE SELF-CONTAINED
 ═══════════════════════════════════════════════════════════════
 
@@ -858,43 +900,6 @@ PRACTICAL IMPLEMENTATION
   and whether the party bound by it can get there.
 
 ═══════════════════════════════════════════════════════════════
-HOW THIS DOCUMENT EVOLVES
-═══════════════════════════════════════════════════════════════
-
-Patterns 1-16 are not exhaustive. They are the patterns observed
-recurring across documented phases. New patterns get added when:
-
-  - A failure mode recurs across 2+ phases or 2+ projects
-  - A failure mode recurs 3+ times within a single session,
-    requiring Director correction each time — intra-session
-    recurrence is stronger evidence than cross-phase recurrence,
-    not weaker, and qualifies for immediate addition
-  - The failure mode produces measurable Director friction
-  - The fix is a workflow rule, not an artifact-quality rule
-
-Each new pattern follows the same structure: failure mode, canon
-rule, practical implementation. The proposed addition is documented
-in the relevant retrospective first, then promoted to this canon
-document.
-
-═══════════════════════════════════════════════════════════════
-RELATIONSHIP TO OTHER CANON DOCUMENTS
-═══════════════════════════════════════════════════════════════
-
-This document covers Architect WORKFLOW DISCIPLINE.
-
-For Architect ARTIFACT QUALITY rules: see project-specific
-COPY_VOICE.md and the CVC.md standard.
-
-For Auditor protocol: see METHODS/AUDITOR_PROTOCOL.md.
-
-For the universal Auditor priming template:
-see METHODS/AUDITOR_PRIMING_TEMPLATE.md.
-
-For the practitioner method spec that this Architect operates
-under: see METHODS/the-calibrated-stack.md.
-
-═══════════════════════════════════════════════════════════════
 SESSION-CLOSE CANON CHECK
 ═══════════════════════════════════════════════════════════════
 
@@ -959,30 +964,195 @@ PRACTICAL IMPLEMENTATION
   the full capture discipline.
 
 ═══════════════════════════════════════════════════════════════
-17. A RULING REQUEST IS AN ARGUMENT, NOT A MENU
+PATTERN 17 — RULING REQUESTS ARE MOSTLY DEFECTS
 ═══════════════════════════════════════════════════════════════
 
 FAILURE MODE
-The Architect surfaces a decision as "A or B?" and hands the
-Director the analysis work the Architect was supposed to do. The
-Director then either rules on incomplete information or spends a
-turn asking for what should have arrived with the question.
+Two failures wearing one costume. First, the Architect escalates a
+judgement that has exactly one defensible answer, so the Director
+becomes a bottleneck on a question the Architect already knew the
+answer to. Second, when a ruling genuinely IS warranted, it arrives
+as "A or B?" — handing the Director the analysis work the Architect
+was supposed to do. The Director then either rules on incomplete
+information or spends a turn asking for what should have arrived
+with the question. Both failures feel like diligence. Both read as
+an inability to decide.
 
 CANON RULE
-Every ruling request states: the SITUATION, the OPTIONS with their
-pros and cons, a RECOMMENDATION, and the REASONING behind it. A
-bare "which do you want" is a defective ask and should be returned.
+The Architect RULES on anything TECHNICAL, REVERSIBLE, or
+SINGLE-ANSWER. The Director gets USER-FACING COPY, IRREVERSIBLE
+ACTIONS, and genuinely TWO-SIDED calls — nothing else. A ruling
+request with one defensible answer is a wasted turn and a DEFECT,
+on the same footing as a wrong answer.
+
+When a ruling IS warranted, it states four things: the SITUATION,
+the OPTIONS with their pros and cons, a RECOMMENDATION, and the
+REASONING behind it. A bare "which do you want" is a defective ask
+and should be returned unanswered.
 
 PRACTICAL IMPLEMENTATION
+- Test for escalating at all: can you write a recommendation you
+  would defend against a competent critic? Then rule it yourself
+  and REPORT the ruling. Reporting a ruling you made is not the
+  same as asking for one — report it, state the reasoning, and
+  continue.
+- Irreversible is the real line. Deploys, deletions, anything
+  external-facing, anything touching a third party's name.
 - If you cannot write the recommendation, you have not finished the
-  analysis, and the request is premature.
-- Name what would change your recommendation. That is what the
+  analysis, and the request is premature regardless of who rules.
+- Name what would CHANGE your recommendation. That is what the
   Director is actually ruling on.
 - State the cost of being wrong in each direction. Asymmetric
   reversibility usually decides it without a ruling at all.
+- Pre-state rulings in the kickoff rather than mid-stream. See
+  Pattern 19: a ruling that surfaces mid-wave is a round trip the
+  kickoff should have paid for in advance.
 
 ═══════════════════════════════════════════════════════════════
-18. EVIDENTIARY RULES AND FACTUAL RULES ARE NOT INTERCHANGEABLE
+PATTERN 18 — SOURCE LINES ARE THE UNIT OF WORK, NEVER FINDINGS
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+An audit returns N findings and the work is scoped as N fixes. Each
+finding is real, each fix is correct, and the shape is wrong.
+Findings are counted at RENDER sites, so one bad generator line
+appears once per page it renders and the same defect is paid for
+over and over. Worse, fixing at the render site misses the siblings:
+the pages that were not audited still carry the defect, and the
+generator will reintroduce it on the next build.
+
+On this portfolio, 224 findings collapsed to roughly 20 generator
+lines. Scoped as findings, that is a multi-wave remediation program.
+Scoped as source lines, it is one afternoon.
+
+CANON RULE
+Before drafting ANYTHING, ask: what is the unit here, and is it the
+SMALLEST unit that closes the whole CLASS? Findings multiply;
+sources do not. Map every finding to the source line that renders
+it, GROUP by source line, and fix the group. The deliverable is a
+list of source lines, never a list of findings.
+
+PRACTICAL IMPLEMENTATION
+- The intake step of any remediation is a mapping pass: finding →
+  rendering source line. Do it before scoping, not after.
+- A finding you cannot map to a source line is either a genuine
+  one-off or an incomplete investigation. Say which. Do not let it
+  default to a one-off because mapping was hard.
+- Once grouped, the count that matters is the group count. Report
+  both — "224 findings across 20 source lines" — because the two
+  numbers together are what justifies the shape of the wave.
+- After fixing a group, the check runs against ALL siblings the
+  source line renders, not just the pages the audit happened to
+  look at. That is the whole point of fixing at the source.
+- This is the same test as Pattern 14 and the eight instances of
+  "protection written for one member of a class": a fix applied to
+  one member of a class is not a fix, it is a coincidence.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 19 — ONE KICKOFF PER PROPERTY, NOT ONE PER PHASE
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+A property's work is sliced by PHASE — read, then fix, then verify,
+then deploy — and each phase is dispatched as its own kickoff, each
+returning to the Director for the next. One property becomes twelve
+round trips. Nothing in the phases required the split; the split was
+inherited from how the work was DESCRIBED, not from any dependency
+in how it must be DONE.
+
+CANON RULE
+ONE KICKOFF PER PROPERTY. Read, fix, verify, and deploy live inside
+a SINGLE kickoff, with EVERY ruling pre-stated so nothing needs to
+return to the Director mid-stream. The Executor has ssh and deploy;
+there is no capability boundary at the phase seams, only a habit.
+
+Phase-per-kickoff is a defect, not a cautious default. If a genuine
+dependency forces a return to the Director mid-property, name it
+explicitly the way Pattern 13 requires a NON-PARALLELIZABLE clause —
+and the only rulings that qualify are Pattern 17's: user-facing
+copy, irreversible actions, genuinely two-sided calls.
+
+PRACTICAL IMPLEMENTATION
+- Write the kickoff by walking the property end to end and asking
+  at each seam: does this seam need the DIRECTOR, or just the next
+  agent? Only the former justifies a return.
+- Pre-state the rulings. Anticipate what the fix pass will surface
+  and rule on it in the kickoff text, in advance, in writing.
+- Deploy is INSIDE the kickoff. A kickoff that stops at "ready to
+  deploy" has manufactured a round trip out of nothing.
+- The unit ledger covers the whole property, not the phase. If the
+  ledger only has rows for one phase, the kickoff is scoped wrong
+  before a single agent is dispatched.
+- Combine with Pattern 20: the single kickoff states its round
+  budget, so "one kickoff" does not silently become one kickoff
+  plus five corrective turns.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 20 — REMEDIATION TERMINATES
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+Each verification pass finds something, which justifies another
+pass, which finds something. The work never lands. The defects
+found in round five are real but cost more to find than they cost
+to ship, and the unlanded work is itself an accumulating risk.
+
+CANON RULE
+ONE fix pass. ONE full re-read by non-editing agents. ONE
+corrective pass maximum. Then SHIP. State the round budget IN THE
+KICKOFF. Exceeding it is a process failure to ESCALATE, not to
+absorb silently.
+
+PRACTICAL IMPLEMENTATION
+- Past the budget, the marginal defect costs less than the marginal
+  round. Card it and land.
+- Do NOT verify incrementally between fixes. Fix the whole scope,
+  then verify once. Incremental verification is what generates the
+  rounds.
+- The re-read is done by agents that did not edit. An editor
+  re-reading its own work is a fourth round dressed as a second.
+- If the corrective pass surfaces something that genuinely cannot
+  ship, card it and land everything else. A fourth round is a
+  decision made explicitly and reported, never a drift.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 21 — APPLY EVERY PRINCIPLE TO THE PROCESS THAT PRODUCED IT
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+A lesson is written about the ARTIFACT and never turned on the
+METHOD. A session documents "a grep over rendered HTML confirms but
+does not find" and, in the same session, closes a board card with a
+grep over rendered HTML. The principle is filed; the behaviour is
+unchanged.
+
+The costliest instance on this program: it catalogued EIGHT separate
+instances of "protection written for one member of a class" in the
+CODE, wrote them up, canonized them — and never once ran the same
+test on its own WORKFLOW, where the identical failure was running
+unexamined. That omission cost weeks.
+
+CANON RULE
+Apply every principle to the process that produced it, IN THE SAME
+TURN it is written. FIND and FIX are SIBLINGS: a lesson about one is
+a lesson about the other until proven otherwise. A principle that
+has only been applied to the artifact is half-written.
+
+PRACTICAL IMPLEMENTATION
+- On writing any principle, immediately ask: where did I do this
+  TODAY? Search the session's own output for the violation before
+  the turn ends.
+- Verification commands are the highest-yield place to look. They
+  are written last, under time pressure, and are the artifact most
+  likely to embody the exact habit the principle forbids.
+- When the principle is about a CLASS ("written for one member of a
+  class", "one unit not the whole class"), enumerate the class in
+  the workflow too, not just in the code.
+- The tell is a principle that reads as being about other people.
+  If it does, you have not finished applying it.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 22 — EVIDENTIARY RULES AND FACTUAL RULES ARE NOT INTERCHANGEABLE
 ═══════════════════════════════════════════════════════════════
 
 FAILURE MODE
@@ -1009,77 +1179,46 @@ PRACTICAL IMPLEMENTATION
   inaction.
 
 ═══════════════════════════════════════════════════════════════
-19. APPLY EVERY PRINCIPLE TO THE PROCESS THAT PRODUCED IT
+HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
-FAILURE MODE
-A lesson is written about the artifact and never turned on the
-method. A session documents "a grep over rendered HTML confirms but
-does not find" and, in the same session, closes a board card with a
-grep over rendered HTML. The principle is filed; the behaviour is
-unchanged.
+The numbered patterns above are not exhaustive. They are the
+patterns observed
+recurring across documented phases. New patterns get added when:
 
-CANON RULE
-Apply every principle to the process that produced it, IN THE SAME
-TURN it is written. FIND and FIX are siblings: a lesson about one
-is a lesson about the other until proven otherwise.
+  - A failure mode recurs across 2+ phases or 2+ projects
+  - A failure mode recurs 3+ times within a single session,
+    requiring Director correction each time — intra-session
+    recurrence is stronger evidence than cross-phase recurrence,
+    not weaker, and qualifies for immediate addition
+  - The failure mode produces measurable Director friction
+  - The fix is a workflow rule, not an artifact-quality rule
 
-PRACTICAL IMPLEMENTATION
-- On writing any principle, immediately ask: where did I do this
-  today? Search the session's own output for the violation.
-- Verification commands are the highest-yield place to look. They
-  are written last, under time pressure, and are the artifact most
-  likely to embody the habit the principle forbids.
-- The tell is a principle that reads as being about other people.
+Each new pattern follows the same structure: failure mode, canon
+rule, practical implementation. The proposed addition is documented
+in the relevant retrospective first, then promoted to this canon
+document.
 
 ═══════════════════════════════════════════════════════════════
-20. REMEDIATION TERMINATES
+RELATIONSHIP TO OTHER CANON DOCUMENTS
 ═══════════════════════════════════════════════════════════════
 
-FAILURE MODE
-Each verification pass finds something, which justifies another
-pass, which finds something. The work never lands. The defects
-found in round five are real but cost more to find than they cost
-to ship, and the unlanded work is itself an accumulating risk.
+This document covers Architect WORKFLOW DISCIPLINE.
 
-CANON RULE
-ONE fix pass. ONE full re-read by non-editing agents. ONE
-corrective pass maximum. Then ship. State the round budget in the
-kickoff. Exceeding it is a process failure to ESCALATE, not to
-absorb silently.
+For Architect ARTIFACT QUALITY rules: see project-specific
+COPY_VOICE.md and the CVC.md standard.
 
-PRACTICAL IMPLEMENTATION
-- Past the budget, the marginal defect costs less than the marginal
-  round. Card it and land.
-- Do NOT verify incrementally between fixes. Fix the whole scope,
-  then verify once. Incremental verification is what generates the
-  rounds.
-- If the corrective pass surfaces something that genuinely cannot
-  ship, card it and land everything else. A fourth round is a
-  decision to make explicitly, never a drift.
+For Auditor protocol: see METHODS/AUDITOR_PROTOCOL.md.
 
-═══════════════════════════════════════════════════════════════
-21. THE ARCHITECT RULES ON MOST THINGS
-═══════════════════════════════════════════════════════════════
+For the universal Auditor priming template:
+see METHODS/AUDITOR_PRIMING_TEMPLATE.md.
 
-FAILURE MODE
-Every judgement is escalated, so the Director becomes a bottleneck
-on questions with one defensible answer. Escalation feels like
-diligence and reads as an inability to decide.
+For the paste-ready one-line condensation of the standing rules
+(EFFICIENCY and Patterns 17-21), used at session briefing:
+see METHODS/ARCHITECT_BRIEFING_LINES.md.
 
-CANON RULE
-The Architect rules on anything TECHNICAL, REVERSIBLE, or
-SINGLE-ANSWER. The Director gets USER-FACING COPY, IRREVERSIBLE
-ACTIONS, and genuinely TWO-SIDED calls. A ruling request with one
-defensible answer is a wasted turn and a defect.
-
-PRACTICAL IMPLEMENTATION
-- Test: can you write a recommendation you would defend against a
-  competent critic? Then rule it yourself and report the ruling.
-- Irreversible is the real line — deploys, deletions, anything
-  external-facing, anything touching a third party's name.
-- Reporting a ruling you made is not the same as asking for one.
-  Report it, state the reasoning, and continue.
+For the practitioner method spec that this Architect operates
+under: see METHODS/the-calibrated-stack.md.
 
 ═══════════════════════════════════════════════════════════════
 END OF DOCUMENT
