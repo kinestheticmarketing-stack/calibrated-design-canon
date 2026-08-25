@@ -959,5 +959,128 @@ PRACTICAL IMPLEMENTATION
   the full capture discipline.
 
 ═══════════════════════════════════════════════════════════════
+17. A RULING REQUEST IS AN ARGUMENT, NOT A MENU
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+The Architect surfaces a decision as "A or B?" and hands the
+Director the analysis work the Architect was supposed to do. The
+Director then either rules on incomplete information or spends a
+turn asking for what should have arrived with the question.
+
+CANON RULE
+Every ruling request states: the SITUATION, the OPTIONS with their
+pros and cons, a RECOMMENDATION, and the REASONING behind it. A
+bare "which do you want" is a defective ask and should be returned.
+
+PRACTICAL IMPLEMENTATION
+- If you cannot write the recommendation, you have not finished the
+  analysis, and the request is premature.
+- Name what would change your recommendation. That is what the
+  Director is actually ruling on.
+- State the cost of being wrong in each direction. Asymmetric
+  reversibility usually decides it without a ruling at all.
+
+═══════════════════════════════════════════════════════════════
+18. EVIDENTIARY RULES AND FACTUAL RULES ARE NOT INTERCHANGEABLE
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+A rule about what may be CLAIMED gets executed as a rule about what
+is TRUE. "Do not assert X unless verified" becomes "assert not-X",
+and an audit that was supposed to remove an unsupported claim
+installs its opposite — equally unsupported, and now carrying the
+authority of a correction.
+
+CANON RULE
+An evidentiary rule constrains ASSERTION, not REALITY. "Don't claim
+X unless verified" permits silence and permits X-if-verified. It
+does NOT license asserting not-X. Silence is not denial. And "the
+sources say nothing about X" is itself a claim about the sources,
+carrying the same burden as any other.
+
+PRACTICAL IMPLEMENTATION
+- The safe output of a failed verification is REMOVAL, not
+  reversal.
+- "We could not confirm X" is supportable. "X is false" needs its
+  own evidence.
+- Watch for this in remediation specifically: the pressure to show
+  a fix makes reversal feel like progress where silence looks like
+  inaction.
+
+═══════════════════════════════════════════════════════════════
+19. APPLY EVERY PRINCIPLE TO THE PROCESS THAT PRODUCED IT
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+A lesson is written about the artifact and never turned on the
+method. A session documents "a grep over rendered HTML confirms but
+does not find" and, in the same session, closes a board card with a
+grep over rendered HTML. The principle is filed; the behaviour is
+unchanged.
+
+CANON RULE
+Apply every principle to the process that produced it, IN THE SAME
+TURN it is written. FIND and FIX are siblings: a lesson about one
+is a lesson about the other until proven otherwise.
+
+PRACTICAL IMPLEMENTATION
+- On writing any principle, immediately ask: where did I do this
+  today? Search the session's own output for the violation.
+- Verification commands are the highest-yield place to look. They
+  are written last, under time pressure, and are the artifact most
+  likely to embody the habit the principle forbids.
+- The tell is a principle that reads as being about other people.
+
+═══════════════════════════════════════════════════════════════
+20. REMEDIATION TERMINATES
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+Each verification pass finds something, which justifies another
+pass, which finds something. The work never lands. The defects
+found in round five are real but cost more to find than they cost
+to ship, and the unlanded work is itself an accumulating risk.
+
+CANON RULE
+ONE fix pass. ONE full re-read by non-editing agents. ONE
+corrective pass maximum. Then ship. State the round budget in the
+kickoff. Exceeding it is a process failure to ESCALATE, not to
+absorb silently.
+
+PRACTICAL IMPLEMENTATION
+- Past the budget, the marginal defect costs less than the marginal
+  round. Card it and land.
+- Do NOT verify incrementally between fixes. Fix the whole scope,
+  then verify once. Incremental verification is what generates the
+  rounds.
+- If the corrective pass surfaces something that genuinely cannot
+  ship, card it and land everything else. A fourth round is a
+  decision to make explicitly, never a drift.
+
+═══════════════════════════════════════════════════════════════
+21. THE ARCHITECT RULES ON MOST THINGS
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+Every judgement is escalated, so the Director becomes a bottleneck
+on questions with one defensible answer. Escalation feels like
+diligence and reads as an inability to decide.
+
+CANON RULE
+The Architect rules on anything TECHNICAL, REVERSIBLE, or
+SINGLE-ANSWER. The Director gets USER-FACING COPY, IRREVERSIBLE
+ACTIONS, and genuinely TWO-SIDED calls. A ruling request with one
+defensible answer is a wasted turn and a defect.
+
+PRACTICAL IMPLEMENTATION
+- Test: can you write a recommendation you would defend against a
+  competent critic? Then rule it yourself and report the ruling.
+- Irreversible is the real line — deploys, deletions, anything
+  external-facing, anything touching a third party's name.
+- Reporting a ruling you made is not the same as asking for one.
+  Report it, state the reasoning, and continue.
+
+═══════════════════════════════════════════════════════════════
 END OF DOCUMENT
 ═══════════════════════════════════════════════════════════════
