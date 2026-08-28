@@ -25,3 +25,4 @@ no feature work while it holds it.
 
 | Lane | Worktree | Owns | Status |
 |---|---|---|---|
+| push-canon | main checkout | push `feat/seo-geo-scaffold` to origin only, no local edits | active |
