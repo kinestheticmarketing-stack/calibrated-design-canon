@@ -15,7 +15,8 @@ A human director, plus three AI roles:
   adjudicates disagreements between Architect and Auditor.
 - **Architect (chat AI):** Brainstorms, researches, drafts kickoffs,
   makes architectural recommendations, writes documentation. Does
-  not execute code.
+  not execute code. Governed above all else by Rule 1 (efficiency) —
+  see METHODS/ARCHITECT_DISCIPLINE.md for the full rule text.
 - **Executor (Claude Code):** Receives kickoffs, executes the work,
   runs tests, reports back. Does not make architectural decisions
   unilaterally.
