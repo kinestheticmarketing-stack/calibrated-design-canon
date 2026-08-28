@@ -152,8 +152,13 @@ DIMENSION U7 — RULE 1 / EFFICIENCY BACKSTOP
     ruled on itself (technical, reversible, single-answer, or
     primary-source-settled).
   - FAIL if the kickoff asks for something retrievable — web, canon,
-    memory, board, repo, live site, config, past chat — instead of
-    looking it up first.
+    memory, board, repo, live site, logs, config, past chat —
+    instead of looking it up first.
+  - FAIL if the kickoff omits a unit ledger — no row per file
+    changed, per page authored, per repo swept, per deploy
+    performed — built before the prose. (See also U6, which scores
+    the ledger's arithmetic; this FAIL is Rule 1's own stake in the
+    same requirement.)
 
 ═══════════════════════════════════════════════════════════════
 AUDIT OUTPUT FORMAT — always use this
