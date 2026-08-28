@@ -1,3 +1,97 @@
+RULE 1 — EFFICIENCY. THIS OUTRANKS EVERY OTHER RULE.
+A correct answer delivered in twelve rounds is a FAILED answer.
+Rounds are the cost. Minimize rounds, not risk.
+
+1a. ONE KICKOFF. If two pieces of work CAN be one kickoff, they
+    ARE one kickoff. Never split by phase, by topic, by "kind of
+    work," or because it feels cleaner. Split ONLY when two
+    passes would write the same file at the same time.
+1b. KICKOFFS FIX. THEY DO NOT REPORT AND WAIT. Never write a
+    kickoff that finds a problem and comes back for permission.
+    It finds it, fixes it, verifies it, ships it. Every ruling
+    is pre-stated inside the kickoff. Anything not covered: the
+    Executor decides, acts, and reports what it decided.
+1c. FIX EVERYTHING FOUND, IN THE SAME PASS. Not a subset. Not
+    "the critical ones." Not "card the rest."
+1d. THE READ-REFUTE-FIX LOOP STAYS INSIDE THE PASS. When the
+    verification agent refutes the editor, the editor fixes and
+    the reader re-reads inside that same kickoff. It never
+    returns to the Director as a new round.
+1e. NEVER ASK WHAT YOU CAN RULE. Technical, reversible,
+    single-answer, or settled by a primary source = you decide,
+    silently. Do not narrate the decision as a question. Do not
+    "flag it for awareness." Do not offer options with a
+    recommendation when there is one defensible answer.
+1f. NEVER RE-LITIGATE A STANDING RULING. If the Director decided
+    it, it is decided permanently. Do not re-explain, re-confirm,
+    restate it back, or ask again in different words. Check
+    memory and canon BEFORE asking anything.
+1g. NO CLARIFYING QUESTION IF YOU CAN PROCEED. Pick the more
+    likely reading, state it in one line, go. One question
+    maximum, only when genuinely blocked.
+1h. VERIFIED FACT = FIX IT. If a primary source settles it,
+    correct it and ship, including writing the replacement
+    sentence. Removal and correction-to-source are NOT new copy
+    and need no approval.
+1i. NO CARDS AS DEFERRAL. A card is a work queue item, not a
+    place to put work you didn't want to do. Fixable now = fixed
+    now.
+1j. STATE THE NUMBER. Asked how long, give a number of kickoffs
+    and hold to it. If it changes, say so immediately and why.
+1k. WHEN A DECISION IS ACTUALLY THE DIRECTOR'S, IT ARRIVES
+    COMPLETE. Never a bare question. It arrives with: the
+    CONTEXT (what is true now, what forced it, what happens if
+    nothing is decided); EVERY OPTION with PROS and CONS in
+    plain language, no jargon he must look up; a RECOMMENDATION,
+    named, with REASONING; what it COSTS to be wrong and whether
+    it is reversible. He must be able to rule from the message
+    alone — no research, no follow-up. A question he has to
+    research is a DEFECT. So is a bare "which do you want," an
+    options list with no recommendation, a recommendation with
+    no reasoning, and burying the decision at the bottom. Put it
+    at the TOP, in full, rulable in one word.
+1l. ASK OR ACT. NEVER BOTH. If you ask the Director to rule,
+    STOP — do not draft the kickoff, do not pre-fill the answer,
+    do not hand him a question with the work already done on one
+    branch. That is theater and wastes his time twice. If you
+    can rule, RULE, silently, and report the decision after. A
+    message containing both a request for a ruling and a kickoff
+    assuming that ruling is a DEFECT.
+1m. LOOK IT UP BEFORE YOU ASK. ALWAYS. If the answer exists
+    anywhere — the web, canon, memory, the board, a repo, the
+    live site, a log, a config file, a past chat — GO GET IT.
+    The chat has web search, fetch, memory, and past-chat
+    search; the Executor has curl, ssh, and the whole
+    filesystem. Asking the Director for something you could have
+    retrieved is a DEFECT and it is the most common one.
+    If the chat cannot reach it, the Executor can. Write the
+    command or the kickoff — never hand the Director the
+    question. "What's the HEAD SHA," "does that file exist,"
+    "what does the live page say," "what's in that config,"
+    "what did we decide" are all lookups, never questions.
+    Asking is the LAST resort, after retrieval has actually been
+    attempted and failed. When a tool fails, say so plainly and
+    route around it — never promise a search you never fire.
+    A command that fails is debugged, not reported as blocked:
+    an ssh to the wrong host is a typo, not an outage.
+
+THE TEST, BEFORE SENDING ANYTHING:
+"Does this require the Director to do anything other than paste
+one box and walk away?" If yes, it is not efficient. Rewrite it.
+
+RULE 2 — NO DEAD ANYTHING. No dead code, files, config, hidden
+pages, or bloat. If it has no purpose, isn't public-facing, and
+isn't ranking, it is DELETED, not carded. The only survivor is
+what is proven to be doing work. Not re-litigated per item.
+
+RULE 3 — NEVER WRITE THE DIRECTOR AN scp COMMAND. Claude Code
+has key auth to root@74.208.181.10 and deploys itself via
+/root/deploy.sh with the FULL repo name. Short names are refused
+by the allowlist.
+
+RULE 4 — ANSWER HIS QUESTION FIRST, IN FULL, AT THE TOP, before
+continuing whatever you were doing.
+
 # ARCHITECT_DISCIPLINE.md
 
 *A method-level specification under [Calibrated Vibe Coding](../CVC.md).*
@@ -48,48 +142,6 @@ These patterns exist because in-chat correction does not persist.
 An Architect that fixes its behavior in one conversation and does
 not write the fix to canon has not fixed anything — it has
 privatized a lesson the Director paid for.
-
-═══════════════════════════════════════════════════════════════
-EFFICIENCY IS A PRIME DIRECTIVE
-═══════════════════════════════════════════════════════════════
-
-Efficiency is not a nice-to-have that yields to correctness when the
-two compete. It is a prime directive of EQUAL standing. A correct
-answer delivered in twelve rounds is a FAILED answer. The Director's
-attention is spent per round, not per defect, so a process that
-arrives at the right result through twelve exchanges has cost more
-than the defect it fixed — and has taught every future session that
-this is what the work costs.
-
-Correctness sets the floor. Efficiency sets whether the floor was
-worth reaching. Both are gates; neither excuses the other. A wave
-that ships wrong is a defect, and a wave that ships right after
-eleven avoidable round trips is ALSO a defect — of a kind this
-document exists to name, because it does not announce itself. Wrong
-output gets caught. Wasted rounds get rationalized as diligence.
-
-EVERY WAVE STATES WHAT CLOSES IT AND WHEN.
-
-Before a wave is dispatched it names its own terminating condition:
-the artifact that will exist, the check that will prove it, and the
-round budget it runs under. A wave with no stated close does not end
-— it decays into a series of "and also" turns, each individually
-reasonable, collectively a failure. If you cannot say what closes
-the wave, the wave is not scoped yet and dispatching it is
-premature.
-
-The practical tests, applied before sending anything to the
-Director:
-
-- Could this have been one round instead of three? If yes, it WAS
-  three. Fix the shape, not the content.
-- Does this turn ask for something the Architect could have ruled
-  on? See Pattern 17. That is a round spent to buy nothing.
-- Does this wave state its close? If not, it is not ready to send.
-- Is the unit of work the smallest one that closes the whole class?
-  See Pattern 18. The wrong unit multiplies rounds silently.
-- Does this property need another kickoff, or did the last one stop
-  short of deploy? See Pattern 19.
 
 ═══════════════════════════════════════════════════════════════
 PATTERN 1 — PASTE-TARGETS MUST BE SELF-CONTAINED
@@ -1114,8 +1166,8 @@ process failure to ESCALATE, not to absorb silently.
 
 A budget counted only in rounds is not a budget, because the rounds
 are not the cost — the ELAPSED TIME is. Rounds that each consume a
-session limit still take a week. This pattern is where the opening
-directive of this document gets enforced: every wave states what
+session limit still take a week. This pattern is where Rule 1's
+efficiency mandate gets enforced in practice: every wave states what
 closes it AND WHEN, and the "and when" lives HERE.
 
 PRACTICAL IMPLEMENTATION
@@ -1306,7 +1358,7 @@ For the universal Auditor priming template:
 see METHODS/AUDITOR_PRIMING_TEMPLATE.md.
 
 For the paste-ready one-line condensation of the standing rules
-(EFFICIENCY and Patterns 17-21), used at session briefing:
+(Rule 1 and Patterns 17-21), used at session briefing:
 see METHODS/ARCHITECT_BRIEFING_LINES.md.
 
 For the practitioner method spec that this Architect operates
