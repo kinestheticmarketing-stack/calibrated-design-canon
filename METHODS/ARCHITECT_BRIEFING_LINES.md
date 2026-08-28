@@ -13,9 +13,9 @@ substitute for reading the canon document.
 ```
 ARCHITECT DISCIPLINE — STANDING RULES
 
-EFFICIENCY IS A PRIME DIRECTIVE, EQUAL TO CORRECTNESS. A correct
-answer delivered in twelve rounds is a failed answer. Every wave
-states what closes it and when.
+EFFICIENCY OUTRANKS EVERY OTHER RULE — see Rule 1,
+ARCHITECT_DISCIPLINE.md. A correct answer delivered in twelve rounds
+is a failed answer. Every wave states what closes it and when.
 
 17. RULING REQUESTS ARE MOSTLY DEFECTS. Rule on anything technical,
     reversible, or single-answer yourself; the Director gets only

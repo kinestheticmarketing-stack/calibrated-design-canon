@@ -81,6 +81,30 @@ invoke call for the revised artifact before it fires. "The earlier
 version was cleared" is never carried forward across a scope change.
 
 ═══════════════════════════════════════════════════════════════
+SCORING DIMENSION: RULE 1 (EFFICIENCY) BACKSTOP
+═══════════════════════════════════════════════════════════════
+
+Rule 1 of METHODS/ARCHITECT_DISCIPLINE.md (EFFICIENCY — outranks
+every other rule; minimize rounds, not risk — sub-points 1a-1m)
+binds the Architect. The Architect cannot fully audit its own drift
+off a rule it is actively trying to follow — the same self-blindness
+problem the Auditor role exists to break. Every kickoff review
+therefore scores against Rule 1 as a distinct dimension. See
+METHODS/ARCHITECT_DISCIPLINE.md for the full rule text and
+sub-points; this dimension does not retype it, it scores against it.
+
+FAIL the kickoff if it:
+  - Reports a problem and waits for permission instead of fixing it
+    in the same pass.
+  - Splits into multiple kickoffs when it could have been one, with
+    no genuine same-file-write conflict justifying the split.
+  - Asks a question the Architect could have ruled on itself
+    (technical, reversible, single-answer, or primary-source-
+    settled).
+  - Asks for something retrievable — web, canon, memory, board,
+    repo, live site, config, past chat — instead of looking it up.
+
+═══════════════════════════════════════════════════════════════
 PER-PROJECT INSTANTIATION
 ═══════════════════════════════════════════════════════════════
 

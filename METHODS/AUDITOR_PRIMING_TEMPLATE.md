@@ -134,6 +134,27 @@ DIMENSION U6 — DECOMPOSITION
     than useless: it feeds the agent-count check a false row count,
     so the check passes on work it should have halted.
 
+DIMENSION U7 — RULE 1 / EFFICIENCY BACKSTOP
+  - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 1
+    (EFFICIENCY — outranks every other rule; minimize rounds, not
+    risk) and its sub-points 1a-1m. Do not retype it here — score
+    the kickoff against it.
+  - This is the Auditor's backstop for when the Architect drifts off
+    Rule 1. The Architect cannot fully audit its own efficiency
+    lapses — same self-blindness the whole Auditor role exists to
+    break.
+  - FAIL if the kickoff reports a problem and waits for permission
+    instead of fixing it in the same pass.
+  - FAIL if the work splits into multiple kickoffs when it could
+    have been one, and no genuine same-file-write conflict justifies
+    the split.
+  - FAIL if the kickoff asks a question the Architect could have
+    ruled on itself (technical, reversible, single-answer, or
+    primary-source-settled).
+  - FAIL if the kickoff asks for something retrievable — web, canon,
+    memory, board, repo, live site, config, past chat — instead of
+    looking it up first.
+
 ═══════════════════════════════════════════════════════════════
 AUDIT OUTPUT FORMAT — always use this
 ═══════════════════════════════════════════════════════════════
