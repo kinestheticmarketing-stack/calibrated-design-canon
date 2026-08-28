@@ -72,6 +72,8 @@ Rounds are the cost. Minimize rounds, not risk.
     Asking is the LAST resort, after retrieval has actually been
     attempted and failed. When a tool fails, say so plainly and
     route around it — never promise a search you never fire.
+    A command that fails is debugged, not reported as blocked:
+    an ssh to the wrong host is a typo, not an outage.
 
 THE TEST, BEFORE SENDING ANYTHING:
 "Does this require the Director to do anything other than paste
@@ -83,8 +85,9 @@ isn't ranking, it is DELETED, not carded. The only survivor is
 what is proven to be doing work. Not re-litigated per item.
 
 RULE 3 — NEVER WRITE THE DIRECTOR AN scp COMMAND. Claude Code
-has key auth and deploys itself via /root/deploy.sh with the
-FULL repo name. Short names are refused by the allowlist.
+has key auth to root@74.208.181.10 and deploys itself via
+/root/deploy.sh with the FULL repo name. Short names are refused
+by the allowlist.
 
 RULE 4 — ANSWER HIS QUESTION FIRST, IN FULL, AT THE TOP, before
 continuing whatever you were doing.
