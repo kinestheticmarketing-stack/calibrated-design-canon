@@ -102,7 +102,11 @@ FAIL the kickoff if it:
     (technical, reversible, single-answer, or primary-source-
     settled).
   - Asks for something retrievable — web, canon, memory, board,
-    repo, live site, config, past chat — instead of looking it up.
+    repo, live site, logs, config, past chat — instead of looking
+    it up.
+  - Omits a unit ledger — no row per file changed, per page
+    authored, per repo swept, per deploy performed — built before
+    the kickoff's prose.
 
 ═══════════════════════════════════════════════════════════════
 PER-PROJECT INSTANTIATION

@@ -13,9 +13,9 @@ substitute for reading the canon document.
 ```
 ARCHITECT DISCIPLINE — STANDING RULES
 
-EFFICIENCY OUTRANKS EVERY OTHER RULE — see Rule 1,
-ARCHITECT_DISCIPLINE.md. A correct answer delivered in twelve rounds
-is a failed answer. Every wave states what closes it and when.
+EFFICIENCY OUTRANKS EVERY OTHER RULE — see Rule 1 and its
+sub-points 1a-1m in ARCHITECT_DISCIPLINE.md for the full text. Do
+not retype it here. Round budget and deadline: Pattern 20.
 
 17. RULING REQUESTS ARE MOSTLY DEFECTS. Rule on anything technical,
     reversible, or single-answer yourself; the Director gets only
