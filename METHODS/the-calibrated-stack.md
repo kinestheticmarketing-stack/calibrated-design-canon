@@ -15,7 +15,8 @@ A human director, plus three AI roles:
   adjudicates disagreements between Architect and Auditor.
 - **Architect (chat AI):** Brainstorms, researches, drafts kickoffs,
   makes architectural recommendations, writes documentation. Does
-  not execute code.
+  not execute code. Governed above all else by Rule 1 (efficiency) —
+  see METHODS/ARCHITECT_DISCIPLINE.md for the full rule text.
 - **Executor (Claude Code):** Receives kickoffs, executes the work,
   runs tests, reports back. Does not make architectural decisions
   unilaterally.
@@ -52,6 +53,25 @@ for this method.
 - Full file replacement, never line-by-line edits.
 - For files >50 lines, sed surgical commands; for smaller, full block.
 - Mistakes corrected fully on first response, not iteratively.
+- **RENDER-FORCED GRAMMAR REPAIRS ARE DISCLOSED EXECUTOR SCOPE.** When
+  a Director-approved string cannot be applied literally because the
+  renderer transforms it — a template appending its own punctuation,
+  an article that must agree with a substituted noun — the Executor
+  repairs the input to produce the approved output and discloses the
+  repair with before and after. Approval attaches to what ships, not
+  to the literal input. Anything touching meaning halts instead.
+  Evidence: 2026-08-12, a banked citation stat whose renderer appends
+  its own period would have shipped a visible double period to two
+  live pages; and "a certified lab" → "an accredited lab" required the
+  article to change.
+- **LOCATE SPLICES BY CONTENT, NOT LINE NUMBER.** An edit is addressed
+  by quoting its surrounding text verbatim, never by a line number
+  reported from a scan. Grep and AST passes drift up to 11 lines apart
+  on concatenated literals, so a line number handed off from one pass
+  does not reliably address the same string in the other. Evidence:
+  2026-08-17, on the same docstring-fix sweep, line numbers for
+  concatenated-literal sites diverged by as much as 11 lines between
+  the grep and AST passes.
 
 ### Verification
 
@@ -60,6 +80,24 @@ for this method.
 - MD5 hashes on binary outputs to catch silent failures.
 - Smoke tests after every deploy.
 - Human eye-check on visual output.
+- **REGEN EXIT 0 IS A COMMIT PRECONDITION.** No commit may create a
+  state where the project's regeneration script fails. Evidence: on
+  2026-08-12 a DCI commit added two URLs to `SERVICE_PAGES`; the
+  homepage generator hard-fails when a `SERVICE_PAGES` URL has no
+  matching tile, so `regen_all.sh` exited 1 on a committed state and
+  no generator pass succeeded until a follow-up wave. The invariant
+  is committed = regenerable. The check is free — the wave already
+  runs regen; the sequencing just moves ahead of the commit boundary.
+- **NO SINGLE SCANNER IS A CHECK.** Grep and AST inspection each blind
+  the other's coverage: comments are invisible to an AST pass, and
+  implicit string concatenation is invisible to a line-based grep. A
+  phrase check is not complete until both methods have run and both
+  have cleared. Evidence: on 2026-08-17, across 84 docstring fixes, 71
+  sites were visible only to the AST pass and 26 only to grep; a
+  source grep for "licensed abatement" reported zero hits while seven
+  instances had already shipped rendered, split across concatenation,
+  and a false deploy-time claim survived an AST sweep because it lived
+  inside a `#` comment.
 
 ### Documentation
 

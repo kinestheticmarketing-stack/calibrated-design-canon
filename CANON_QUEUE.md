@@ -24,9 +24,6 @@ here. One line per entry: date, source project, lesson.
 - 2026-07-08 | roadmap backlog | Stalled canon docs from Section 9
   roadmap: SLASH_COMMAND_LIBRARY.md, CUSTOM_AGENTS_REGISTRY.md,
   SECURITY_PLAYBOOK.md, METRICS.md.
-- 2026-07-08 | roadmap backlog | Architect-discipline patterns 6-11
-  formal canonization (observed in practice, never written into
-  ARCHITECT_DISCIPLINE.md).
 - 2026-07-15 | kinestheticmarketing.com | Source-attribution as a
   universal DR principle: every public link/ad/offer/entry point
   carries a distinct source tag (?source=linkedin, ?source=card,
@@ -39,6 +36,7 @@ here. One line per entry: date, source project, lesson.
   METHODS/DESIGN_PSYCHOLOGY.md overlap dr-canon principles
   (offer-stack architecture, damaging admission) — fold
   cross-references into dr-canon when it stands up.
+- 2026-07-22 | seo-geo extraction (Vahe Arabian Publisher SEO course, M5-M7) | Knowledge corpora referencing third-party platforms/tools should maintain one shared deprecation/currency ledger rather than independently re-verifying and re-flagging the same stale-tool fact across multiple documents — recurred 3x in this project alone (M5, M6, M7 rollups each separately proposed this).
 - 2026-08-06 | seo-geo sources pipeline | Standing deprecation-ledger
   proposal — a "retired Google/platform features" ledger, independently
   raised in Vahe's Practical Implementation, Reporting & Analytics, and
@@ -78,6 +76,67 @@ here. One line per entry: date, source project, lesson.
   does "verify critical tools are collecting" mean analytics specifically
   (absent by locked no-tracking policy) or any revenue-critical collection
   (the lead canary qualifies)?
+- 2026-08-12 | denvercoloradoinsulation.com | Generator templates
+  hardcoded material/installation vocabulary, producing "Which blower
+  door testing material is right..." and a HowTo node titled "How
+  Blower Door Testing Is Installed" on a diagnostic service. Fixed
+  with per-service override fields defaulting to current wording,
+  proven zero-change on all eight existing pages. Generalizes to any
+  generator whose templates assume one service class.
+- 2026-08-12 | longmontcoloradoinsulation.com | A commit that
+  regenerates only some artifacts leaves the rest stale and
+  invisible: 26 of 47 pages shipped missing a new page's nav link,
+  footer link, and knowsAbout schema. Full regen belongs in the
+  commit that adds a page, not a follow-up.
+- 2026-08-12 | denvercoloradoinsulation.com | Citation-floor
+  exceptions: insulation-wall, insulation-spray-foam, and
+  insulation-removal sit at 2 against a service-page floor of 3
+  because no existing source honestly supports a third sentence.
+  Adjudicated, not missed. Needs a COPY_VOICE recorded-exception note
+  and a pool-expansion decision.
+- 2026-08-12 | denvercoloradoinsulation.com | insulation-removal
+  renders only three citation slots and slot 2 is
+  BARE_DECK_OPERATIONAL_NOTE by design, so it cannot reach the floor
+  without a fourth render call site. Slot architecture is an open
+  decision.
+- 2026-08-17 | Architect discipline | Model tier belongs on the ledger
+  row, not the wave: rows that review or enumerate can run cheap, rows
+  that compute, classify, or audit need the stronger tier. A uniform
+  18-agent wave assigned one tier to all 18, burned a full context
+  window, and lost two agents to the agent-count cap — the cost of
+  tiering by wave instead of by row.
+- 2026-08-17 | Architect discipline | Watchdog-agent proposal: a
+  standing agent whose only job is reading every wave's Final Reports
+  and surfacing recurring failure patterns across them. Motivating
+  case — the false-docstring class surfaced four separate times before
+  any agent connected the recurrences and named it as one class.
+- 2026-08-17 | PROPERTY_GENESIS | Needs a porting checklist run before
+  authoring, not after: three genesis-process defects seen this
+  session were all catchable pre-authoring — orphan citations carried
+  over unreviewed, market mechanics ported onto the wrong utility, and
+  one property's climate facts ported onto another's page. Same defect
+  class each time; a pre-authoring checklist stops it at the source
+  instead of catching it downstream.
+- 2026-08-17 | Architect discipline | Integrity-baseline durability
+  gap: the nine-hash baseline held through 30+ agent deaths this
+  session but lived in /tmp, got rotated away mid-session, and forced
+  a substitute check to cover the gap. The baseline needs a durable
+  home outside /tmp before the next long-running wave depends on it.
+- 2026-08-17 | Architect discipline | Codified context is a claim, not
+  a given: docstrings asserting rules or provenance must be verified
+  like any other assertion, not trusted because they're in code. This
+  audit's largest mechanical finding class was 80 false docstrings,
+  and three of the top ten findings overall were docstrings promising
+  guarantees the underlying code did not actually provide.
+- 2026-08-18 | Architect discipline | A figure asserted in a kickoff is not a
+  verified figure. Kickoff-supplied numbers arrive with the authority of a
+  Director instruction and none of the provenance of one — the drafting agent
+  treats them as established rather than as claims needing a source. RECEIPTS
+  carried "six validators installed in _postbuild_check.py" for a full session
+  when the code contained five, because the one figure that was checkable in a
+  single grep was the one nobody grepped. Rule: any count, amount, or date a
+  kickoff supplies gets verified against the artifact before it is written into
+  canon, and the verification command goes in the commit message.
 
 ═══════════════════════════════════════════════════════════════
 PREFERENCES-TO-CANON RECONCILIATION (flagged 2026-08-12, highest priority)

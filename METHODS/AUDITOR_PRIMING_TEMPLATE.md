@@ -109,6 +109,57 @@ DIMENSION U5 — DOCUMENTATION HYGIENE
   - Are new lessons captured in PROJECT_LESSONS.md (or equivalent)?
   - Are voice/copy rules updated in COPY_VOICE.md if relevant?
 
+DIMENSION U6 — DECOMPOSITION
+  - Does the kickoff fan out? Count the independent work units explicitly.
+  - Two or more independent units with no fan-out and no 
+    NON-PARALLELIZABLE clause is an automatic CRITICAL, not a flag.
+  - If a NON-PARALLELIZABLE clause is present, does the dependency it 
+    names survive inspection? A NON-PARALLELIZABLE clause naming a 
+    dependency that does not survive inspection is a worse CRITICAL 
+    than the omission would have been.
+  - Is the fan-out stated up front, not buried below the first block 
+    of the kickoff? Fan-out buried below the first block is a FLAG — 
+    the Director must not have to search a kickoff to confirm it 
+    decomposes.
+  - Does the kickoff OPEN with a unit ledger — one row per file
+    changed, per page authored, per repo swept, per deploy? A
+    kickoff with no unit ledger is an automatic CRITICAL, not a flag.
+  - Does the declared agent count equal the ledger row count? An
+    agent count below the ledger row count is an automatic CRITICAL.
+  - Count the ledger rows yourself against the files, pages, repos,
+    and deploys the kickoff actually touches. Do not audit the
+    ledger's arithmetic against itself — audit it against the work.
+  - A ledger that under-counts is a CRITICAL carrying the same
+    weight as no ledger at all. An under-counted ledger is worse
+    than useless: it feeds the agent-count check a false row count,
+    so the check passes on work it should have halted.
+
+DIMENSION U7 — RULE 1 / EFFICIENCY BACKSTOP
+  - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 1
+    (EFFICIENCY — outranks every other rule; minimize rounds, not
+    risk) and its sub-points 1a-1m. Do not retype it here — score
+    the kickoff against it.
+  - This is the Auditor's backstop for when the Architect drifts off
+    Rule 1. The Architect cannot fully audit its own efficiency
+    lapses — same self-blindness the whole Auditor role exists to
+    break.
+  - FAIL if the kickoff reports a problem and waits for permission
+    instead of fixing it in the same pass.
+  - FAIL if the work splits into multiple kickoffs when it could
+    have been one, and no genuine same-file-write conflict justifies
+    the split.
+  - FAIL if the kickoff asks a question the Architect could have
+    ruled on itself (technical, reversible, single-answer, or
+    primary-source-settled).
+  - FAIL if the kickoff asks for something retrievable — web, canon,
+    memory, board, repo, live site, logs, config, past chat —
+    instead of looking it up first.
+  - FAIL if the kickoff omits a unit ledger — no row per file
+    changed, per page authored, per repo swept, per deploy
+    performed — built before the prose. (See also U6, which scores
+    the ledger's arithmetic; this FAIL is Rule 1's own stake in the
+    same requirement.)
+
 ═══════════════════════════════════════════════════════════════
 AUDIT OUTPUT FORMAT — always use this
 ═══════════════════════════════════════════════════════════════
