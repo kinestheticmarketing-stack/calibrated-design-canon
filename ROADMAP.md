@@ -29,12 +29,38 @@ Core philosophy and standards:
 
 Method specifications (METHODS/):
 - the-calibrated-stack.md — the practitioner's method (four-role
-  architecture)
+  architecture), including four workflow rules: two from 2026-08-12
+  — RENDER-FORCED GRAMMAR REPAIRS ARE DISCLOSED EXECUTOR SCOPE
+  (renderer-forced literal-text repairs are executed and disclosed
+  with before/after; approval attaches to what ships, not the
+  literal input) and REGEN EXIT 0 IS A COMMIT PRECONDITION (no
+  commit may leave the project's regeneration script failing) —
+  and two from 2026-08-17 — scanner pairing (grep and AST scanners
+  must both run on any code-pattern check; each catches matches the
+  other misses) and content-anchor splicing (edits are located by
+  surrounding content, never by line number)
 - AUDITOR_PROTOCOL.md — Auditor role specification
 - AUDITOR_PRIMING_TEMPLATE.md — universal Layer 1 priming for the
-  Auditor
+  Auditor, including Dimension U6 (Decomposition): fan-out check
+  with automatic CRITICAL on two-or-more independent units shipped
+  serially with no NON-PARALLELIZABLE clause, inspection of any
+  NON-PARALLELIZABLE clause's named dependency, up-front visibility
+  requirement, and the unit-ledger check (open-with-ledger and
+  agent-count-equals-row-count, each an automatic CRITICAL on
+  failure)
 - ARCHITECT_DISCIPLINE.md — Architect workflow-discipline rules
-  (patterns 1-5 currently canonized)
+  (patterns 1-14 currently canonized). Pattern 13 — Fan Out By
+  Default (2026-08-12): default is maximum parallel fan-out,
+  decomposed before drafting; serial execution requires a named
+  NON-PARALLELIZABLE dependency; enforced machine-level via the
+  ~/.claude/CLAUDE.md decomposition directive; kickoff must open
+  with a unit ledger (one row per file changed/page authored/
+  repo swept/deploy performed), built before any prose, with
+  declared agent count equal to ledger row count. Pattern 14 —
+  a check is not installed until proven to fire in the real
+  execution path (canary-proven), covering three 2026-08-17
+  instances of gates that verified an artifact was written but
+  not that it functioned.
 - RELATIONSHIP_DISCIPLINE.md — solo-operator network-building as
   canonized sales discipline; four mechanisms (substantive
   engagement, public canon, useful introductions, shared ideas);
@@ -55,6 +81,12 @@ Retrospectives (RETROSPECTIVES/):
   Calibrated Stack on the Kinesthetic Marketing Funnel; 9 audit
   gates; 20-60x ROI on API-equivalent cost math; 5 friction patterns
   surfaced
+
+Cross-property infrastructure (canary-proven):
+- Validator layer — six validators installed in _postbuild_check.py
+  across the three insulation-contractor properties (DCI, Greeley,
+  Longmont), each canary-proven: verified to fire in the real
+  execution path, not merely that the artifact it checks was written.
 
 ═══════════════════════════════════════════════════════════════
 IN-PROGRESS CANON

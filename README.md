@@ -55,6 +55,15 @@ their own design without an external check.
   [RETROSPECTIVES/phase-2.6-kinesthetic.md](RETROSPECTIVES/phase-2.6-kinesthetic.md) —
   real numbers, real catches, real cost analysis.
 
+## Standing rules
+
+The four rules opening
+[METHODS/ARCHITECT_DISCIPLINE.md](METHODS/ARCHITECT_DISCIPLINE.md) —
+efficiency (outranks every other rule), no dead anything, never write
+the Director an scp command, and answer his question first — are the
+entry point to this canon. Any new canon doc that touches these
+topics points back to them rather than restating their text.
+
 ## Canon contents
 
 Meta-canon:

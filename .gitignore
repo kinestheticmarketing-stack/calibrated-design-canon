@@ -1,2 +1,9 @@
-# Local-only extracted source material (paid content — never commit)
+data/board.port
+
+# Paid third-party course corpora. Every EXTRACTION_LOG in here states
+# "sources/ is gitignored — local-only, never committed, never public,
+# never free." That was true as policy and false as configuration: the
+# directory was merely untracked, so a single `git add -A` at repo root
+# would have staged 342 files of watermarked, licensed course material.
+# Verified 2026-08-19. The rule is now enforced, not just documented.
 METHODS/seo-geo/sources/
