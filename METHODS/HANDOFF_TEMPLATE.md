@@ -74,6 +74,8 @@ Rounds are the cost. Minimize rounds, not risk.
     route around it — never promise a search you never fire.
     A command that fails is debugged, not reported as blocked:
     an ssh to the wrong host is a typo, not an outage.
+    RULE 6 COVERS THE GUESSING SIDE OF THIS IN FULL — this point
+    rules on not asking; Rule 6 rules on not guessing.
 
 THE TEST, BEFORE SENDING ANYTHING:
 "Does this require the Director to do anything other than paste
@@ -177,6 +179,10 @@ ASK PERMISSION TO RETRIEVE.
     retrieval trail is honest. An unverified answer stated as
     fact is a defect, and so is a shrug given instead of doing
     the search.
+
+RULE 1M COVERS THE NOT-ASKING SIDE OF THIS IN FULL. Retrieval as
+the last resort after asking is ruled out lives there; this rule
+governs never guessing once you are already looking.
 
 ═══════════════════════════════════════════════════════════════
 VERBATIM RULES NOTICE
