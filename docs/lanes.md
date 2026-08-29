@@ -28,3 +28,4 @@ no feature work while it holds it.
 | push-canon | main checkout | push `feat/seo-geo-scaffold` to origin only, no local edits | released — pushed prior pass |
 | merge-canon-main | main checkout | merge `feat/seo-geo-scaffold` into `main`, push, verify /main/ URLs | released — merged d4eb6d3, pushed, verified |
 | staleness-watcher | main checkout | build citation staleness watcher (scripts/), no site-repo page edits | released — built 6bff91e, proven both directions + UNREACHABLE |
+| secrets-rule-5 | main checkout | add Rule 5 to ARCHITECT_DISCIPLINE.md/HANDOFF_TEMPLATE.md/AUDITOR docs, merge+push main | claimed |
