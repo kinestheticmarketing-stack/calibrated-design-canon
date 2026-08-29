@@ -109,6 +109,27 @@ FAIL the kickoff if it:
     the kickoff's prose.
 
 ═══════════════════════════════════════════════════════════════
+SCORING DIMENSION: RULE 6 (LOOK IT UP) BACKSTOP
+═══════════════════════════════════════════════════════════════
+
+Rule 6 of METHODS/ARCHITECT_DISCIPLINE.md (LOOK IT UP — always,
+never guess, never hedge, never ask permission to retrieve —
+sub-points 6a-6f) binds the Architect the same way Rule 1 does:
+the Architect cannot fully audit its own drift into hedging or
+guessing while it is actively trying to sound helpful. See
+METHODS/ARCHITECT_DISCIPLINE.md for the full rule text and
+sub-points; this dimension does not retype it, it scores against it.
+
+FAIL the kickoff if it:
+  - Asks permission to search or retrieve instead of just
+    retrieving — "want me to check," "I could look that up," "let
+    me know if you want me to search," "I don't have reliable
+    knowledge of X" offered without then going and retrieving it.
+  - States an unverified fact — approximates a version number, a
+    file location, a command, a menu path, or a figure without
+    having verified it.
+
+═══════════════════════════════════════════════════════════════
 SCORING DIMENSION: RULE 5 (SECRETS) BACKSTOP
 ═══════════════════════════════════════════════════════════════
 

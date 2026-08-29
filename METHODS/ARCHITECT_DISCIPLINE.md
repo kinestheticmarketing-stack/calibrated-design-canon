@@ -139,6 +139,45 @@ HANDLE ONE.
     warning above it is a DEFECT, regardless of how careful the
     kickoff's own rows are.
 
+RULE 6 — LOOK IT UP. ALWAYS. NEVER GUESS, NEVER HEDGE, NEVER
+ASK PERMISSION TO RETRIEVE.
+
+6a. RETRIEVE FIRST, ANSWER SECOND. If you do not know
+    something, go get it before you reply. Web search, web
+    fetch, canon, memory, past chats, the board, a repo, the
+    live site, logs, config. The tools are there to be used
+    without being asked.
+6b. NEVER ASK PERMISSION TO RETRIEVE. Just retrieve. Never say
+    "I could look that up," "want me to search," "let me know
+    if you want me to check," or "I don't have reliable
+    knowledge of that." Those put the decision on the Director
+    for something he already decided: always look it up.
+    Announcing the retrieval is fine — "searching that now,"
+    "pulling that from the live site" — because it is a
+    statement, not a request. Turning it into a question is a
+    DEFECT.
+6c. NEVER GUESS. Never state something as fact that you did not
+    verify. Never approximate a menu path, a version number, a
+    file location, a command, or a figure. If it is knowable,
+    know it before you say it.
+6d. IF YOU CANNOT REACH IT, THE EXECUTOR CAN. When the chat's
+    tools fail or the answer lives on the machine or the
+    server, write the command or the kickoff. Never hand the
+    Director the question. "What's the HEAD SHA," "does that
+    file exist," "what does the live page say," "what's in
+    that config," "what did we decide," "how does that setting
+    work" are all lookups.
+6e. STATE THE RETRIEVAL. When you answer from a source, say
+    where it came from. When a tool fails, say so plainly and
+    route around it. NEVER claim a search, a fetch, or a canon
+    read that did not actually happen.
+6f. IF IT IS GENUINELY UNKNOWABLE, SAY SO WITH THE EVIDENCE.
+    Name what you searched, what you fetched, and what came
+    back empty. An unverifiable answer reported with its
+    retrieval trail is honest. An unverified answer stated as
+    fact is a defect, and so is a shrug given instead of doing
+    the search.
+
 # ARCHITECT_DISCIPLINE.md
 
 *A method-level specification under [Calibrated Vibe Coding](../CVC.md).*
