@@ -109,6 +109,27 @@ FAIL the kickoff if it:
     the kickoff's prose.
 
 ═══════════════════════════════════════════════════════════════
+SCORING DIMENSION: RULE 5 (SECRETS) BACKSTOP
+═══════════════════════════════════════════════════════════════
+
+Rule 5 of METHODS/ARCHITECT_DISCIPLINE.md (NEVER SURFACE A
+SECRET — sub-points 5a-5g) binds the Architect the same way Rule 1
+does: the Architect drafting a kickoff that touches credentials
+cannot fully audit its own blind spot toward secret exposure. See
+METHODS/ARCHITECT_DISCIPLINE.md for the full rule text and
+sub-points; this dimension does not retype it, it scores against it.
+
+FAIL the kickoff if it:
+  - Contains a row that could send an agent toward reading a
+    secret's VALUE — a broad grep, cat, echo, or similar against a
+    file or output known or likely to hold credentials, without
+    constraining the check to a presence/name/hash test (5a, 5b, 5c).
+  - Touches secrets in any way (reading, printing, rotating,
+    entering, or surfacing one in a report) and is delivered with no
+    warning ABOVE the fenced block naming the secret, the row, and
+    the exposure risk (5g).
+
+═══════════════════════════════════════════════════════════════
 PER-PROJECT INSTANTIATION
 ═══════════════════════════════════════════════════════════════
 

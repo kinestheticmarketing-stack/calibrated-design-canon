@@ -160,6 +160,22 @@ DIMENSION U7 — RULE 1 / EFFICIENCY BACKSTOP
     the ledger's arithmetic; this FAIL is Rule 1's own stake in the
     same requirement.)
 
+DIMENSION U8 — RULE 5 / SECRETS BACKSTOP
+  - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 5
+    (NEVER SURFACE A SECRET) and its sub-points 5a-5g. Do not retype
+    it here — score the kickoff against it.
+  - This is the Auditor's backstop for when the Architect drifts off
+    Rule 5 while drafting a kickoff that touches credentials — the
+    same self-blindness the whole Auditor role exists to break.
+  - FAIL if any row could send an agent toward reading a secret's
+    VALUE — a broad grep, cat, echo, or similar against a file or
+    output known or likely to hold credentials — without
+    constraining the check to a presence/name/hash test.
+  - FAIL if the kickoff touches secrets in any way (reading,
+    printing, rotating, entering, or surfacing one in a report) and
+    is delivered with no warning ABOVE the fenced block naming the
+    secret, the row, and the exposure risk.
+
 ═══════════════════════════════════════════════════════════════
 AUDIT OUTPUT FORMAT — always use this
 ═══════════════════════════════════════════════════════════════
