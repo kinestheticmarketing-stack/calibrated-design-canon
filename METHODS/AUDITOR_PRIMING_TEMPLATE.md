@@ -160,7 +160,7 @@ DIMENSION U7 — RULE 1 / EFFICIENCY BACKSTOP
     the ledger's arithmetic; this FAIL is Rule 1's own stake in the
     same requirement.)
 
-DIMENSION U9 — RULE 6 / LOOK IT UP BACKSTOP
+DIMENSION U8 — RULE 6 / LOOK IT UP BACKSTOP
   - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 6
     (LOOK IT UP — always, never guess, never hedge, never ask
     permission to retrieve) and its sub-points 6a-6f. Do not retype
@@ -176,7 +176,7 @@ DIMENSION U9 — RULE 6 / LOOK IT UP BACKSTOP
     version number, a file location, a command, a menu path, or a
     figure without having verified it.
 
-DIMENSION U8 — RULE 5 / SECRETS BACKSTOP
+DIMENSION U9 — RULE 5 / SECRETS BACKSTOP
   - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 5
     (NEVER SURFACE A SECRET) and its sub-points 5a-5g. Do not retype
     it here — score the kickoff against it.
