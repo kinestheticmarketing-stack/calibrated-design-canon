@@ -1,4 +1,6 @@
 data/board.port
+__pycache__/
+*.pyc
 
 # Paid third-party course corpora. Every EXTRACTION_LOG in here states
 # "sources/ is gitignored — local-only, never committed, never public,
