@@ -74,6 +74,8 @@ Rounds are the cost. Minimize rounds, not risk.
     route around it — never promise a search you never fire.
     A command that fails is debugged, not reported as blocked:
     an ssh to the wrong host is a typo, not an outage.
+    RULE 6 COVERS THE GUESSING SIDE OF THIS IN FULL — this point
+    rules on not asking; Rule 6 rules on not guessing.
 
 THE TEST, BEFORE SENDING ANYTHING:
 "Does this require the Director to do anything other than paste
@@ -177,6 +179,10 @@ ASK PERMISSION TO RETRIEVE.
     retrieval trail is honest. An unverified answer stated as
     fact is a defect, and so is a shrug given instead of doing
     the search.
+
+RULE 1M COVERS THE NOT-ASKING SIDE OF THIS IN FULL. Retrieval as
+the last resort after asking is ruled out lives there; this rule
+governs never guessing once you are already looking.
 
 # ARCHITECT_DISCIPLINE.md
 
@@ -718,6 +724,10 @@ The repo is the source. Git is the source. The file is the source.
 
 A number that appears in a kickoff, a verification command, or a
 halt condition is a CLAIM. Claims get derived, not carried.
+
+See Rule 6 (LOOK IT UP) for the general form of this discipline
+across every domain, not only repo/VPS/corpus state — this pattern
+is that rule's repo-state-specific case study.
 
 PRACTICAL IMPLEMENTATION
 - Before writing a verification command, read the file structure it
