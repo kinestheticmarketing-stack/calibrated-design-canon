@@ -29,3 +29,4 @@ no feature work while it holds it.
 | merge-canon-main | main checkout | merge `feat/seo-geo-scaffold` into `main`, push, verify /main/ URLs | released — merged d4eb6d3, pushed, verified |
 | staleness-watcher | main checkout | build citation staleness watcher (scripts/), no site-repo page edits | released — built 6bff91e, proven both directions + UNREACHABLE |
 | secrets-rule-5 | main checkout | add Rule 5 to ARCHITECT_DISCIPLINE.md/HANDOFF_TEMPLATE.md/AUDITOR docs, merge+push main | released — Rule 5 landed f9f9a68, pushed, raw /main/ URL verified byte-identical via cmp |
+| r2-monitoring-checks | main checkout | scripts/monitoring/ (deploy-drift, uptime, TLS, page-200 checks) — landed on behalf of the agent that wrote them, which built the files but didn't claim/commit | released — committing now |
