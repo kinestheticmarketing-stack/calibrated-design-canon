@@ -151,6 +151,22 @@ FAIL the kickoff if it:
     the exposure risk (5g).
 
 ═══════════════════════════════════════════════════════════════
+SCORING DIMENSION: RULE 7 (PAPERWORK) BACKSTOP
+═══════════════════════════════════════════════════════════════
+
+Rule 7 of METHODS/ARCHITECT_DISCIPLINE.md (PAPERWORK FIRES ON STATE
+CHANGE, NOT AT SESSION END — sub-points 7a-7f) binds the Architect
+the same way Rule 1 does: the Architect cannot fully audit its own
+blind spot toward undocumented state change while it is mid-pass and
+moving fast. See METHODS/ARCHITECT_DISCIPLINE.md for the full rule
+text and sub-points; this dimension does not retype it, it scores
+against it.
+
+FAIL the kickoff if it:
+  - Creates schedulable infrastructure, a new tool, or a standing
+    ruling without a documentation row in the same pass (7a, 7b).
+
+═══════════════════════════════════════════════════════════════
 PER-PROJECT INSTANTIATION
 ═══════════════════════════════════════════════════════════════
 

@@ -184,6 +184,38 @@ RULE 1M COVERS THE NOT-ASKING SIDE OF THIS IN FULL. Retrieval as
 the last resort after asking is ruled out lives there; this rule
 governs never guessing once you are already looking.
 
+RULE 7 — PAPERWORK FIRES ON STATE CHANGE, NOT AT SESSION END.
+There is no reliable session end. Whatever is undocumented when
+work stops stays undocumented, and the next session pays for it.
+
+7a. THE TRIGGER IS STATE CHANGE, NOT COMPLETION. A pass that
+    changes what a future session needs to know carries its own
+    documentation row, inside the same kickoff, gated by the
+    same verification agent. Not a follow-up box.
+7b. WHAT TRIGGERS IT. Anything schedulable created (a cron,
+    timer, or watcher). A new tool or script a future session
+    would need to find. A change to the generator's contract or
+    the shared module's public surface. A ruling that becomes
+    standing. A new defect class discovered. A schema change.
+    An infrastructure change.
+7c. WHAT DOES NOT TRIGGER IT. Page copy, a typo, a one-off fix,
+    anything already fully described by its own commit. Git is
+    the record for those. Documenting them is bloat and Rule 2
+    applies to documentation too.
+7d. WHERE IT GOES. Project state to STATE_OF_PROJECT.md. Voice
+    and copy decisions to COPY_VOICE.md. Technical architecture
+    to WEBSITE_ARCHITECTURE.md. Method and discipline to canon.
+    A document in the wrong place is as lost as one never
+    written.
+7e. THE TEST. Could a fresh session, reading only the handoff
+    and the project docs, find and operate what this pass
+    built? If not, the paperwork row is not done.
+7f. RULE 1 DOES NOT OVERRIDE THIS. Documentation adds work to a
+    pass that would otherwise finish sooner. That is the point.
+    A pass that ships undocumented infrastructure has not
+    finished early, it has deferred the cost onto someone with
+    less context.
+
 # ARCHITECT_DISCIPLINE.md
 
 *A method-level specification under [Calibrated Vibe Coding](../CVC.md).*
