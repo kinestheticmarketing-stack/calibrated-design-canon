@@ -92,6 +92,74 @@ by the allowlist.
 RULE 4 — ANSWER HIS QUESTION FIRST, IN FULL, AT THE TOP, before
 continuing whatever you were doing.
 
+RULE 8 — A PROCESS STEP DONE CORRECTLY CAN STILL LEAVE THE REAL
+PROBLEM STANDING. Following the right-looking procedure is not the
+same as closing the actual gap. Four instances this portfolio
+produced in the last day, each one a correctly-performed step that
+left the real defect open.
+
+8a. ESCALATE ONLY AFTER RETRIEVAL. A conflict between an
+    instruction and a standing ruling is not automatically a
+    Director question. Retrieve the standing ruling and read it
+    FIRST. If the conflict resolves on evidence — a source exists
+    or it does not, a file says X or it does not — resolve it and
+    REPORT the resolution, the same way Rule 1m already requires
+    for any other fact. A rebate-claim conflict in this portfolio
+    was escalated to the Director when one retrieval would have
+    settled it. Escalating a question whose answer sits in the
+    repo costs a full round and is the most common defect there
+    is.
+8b. A STANDING RULING DOES NOT PROTECT AN UNSOURCED CLAIM. Rulings
+    govern JUDGMENT CALLS — which of two defensible approaches to
+    take, tone, sequencing, format. They do NOT override the
+    never-guess, never-fabricate floor underneath them. A ruling
+    that would keep an uncited claim live is SUPERSEDED by the
+    sourcing rule, not in conflict with it. When the two appear to
+    clash, the ruling loses — go find the source or remove the
+    claim. This portfolio hit exactly that clash: a standing
+    ruling was read as cover for a claim that had never been
+    sourced, and it is not cover, and was never meant to be.
+8c. THE UNIT OF WORK IS THE DEFECT CLASS, NEVER THE PAGE IN SCOPE.
+    A lane that fixes one instance of a defect and leaves the
+    identical defect standing on pages outside its stated scope
+    has not fixed the defect — it has fixed a SIGHTING of it. This
+    portfolio shipped a figure-class fix scoped to the page that
+    surfaced it while the same class sat live, unfixed, on pages
+    the lane never touched. When a lane finds a defect class, it
+    sweeps the class PORTFOLIO-WIDE in the same pass, not the one
+    instance the audit happened to catch.
+8d. LANE CLAIMS MUST SURVIVE CONNECTION LOSS. A dropped connection
+    left a lane marked CLAIMED with an orphaned worktree and no
+    clean recovery procedure — the next session had no way to tell
+    whether the claiming session was still working it or simply
+    gone. A claim nobody can reclaim without manual archaeology is
+    a lock with no key. THE RECOVERY PROCEDURE, so no session has
+    to invent one under pressure:
+      1. Before claiming any lane already marked CLAIMED, check
+         whether its worktree path still exists on disk.
+      2. If the worktree is GONE, the claim is orphaned by
+         definition — no live session can be working a worktree
+         that no longer exists. Go to step 4.
+      3. If the worktree EXISTS, check the claim's age. Older than
+         4 hours with no commit and no lane-file edit in that
+         window is stale for this portfolio's typical session
+         length. Ping the claiming session if one is addressable;
+         if nothing answers within a reasonable wait, treat it as
+         gone.
+      4. Reclaim it — but the reclaiming session records, IN THE
+         LANE ROW itself, that it found an orphaned claim and is
+         taking it over: who held it, what was found (worktree
+         gone / stale timestamp / no response), and the reclaim
+         time. Never silently overwrite a CLAIMED row with a fresh
+         claim; the row must carry its own handoff history, or the
+         next session hits the identical ambiguity this rule
+         exists to close.
+      5. If the orphaned worktree still exists with uncommitted
+         work in it, that work is preserved — moved aside, never
+         deleted — before the new claim proceeds. An orphaned
+         claim is authorization to take over the LANE, not to
+         discard another session's unlanded work.
+
 # ARCHITECT_DISCIPLINE.md
 
 *A method-level specification under [Calibrated Vibe Coding](../CVC.md).*
