@@ -30,3 +30,4 @@ no feature work while it holds it.
 | staleness-watcher | main checkout | build citation staleness watcher (scripts/), no site-repo page edits | released — built 6bff91e, proven both directions + UNREACHABLE |
 | secrets-rule-5 | main checkout | add Rule 5 to ARCHITECT_DISCIPLINE.md/HANDOFF_TEMPLATE.md/AUDITOR docs, merge+push main | released — Rule 5 landed f9f9a68, pushed, raw /main/ URL verified byte-identical via cmp |
 | r2-monitoring-checks | main checkout | scripts/monitoring/ (deploy-drift, uptime, TLS, page-200 checks) — landed on behalf of the agent that wrote them, which built the files but didn't claim/commit | released — committing now |
+| paperwork-rule-7 | main checkout | add Rule 7 to ARCHITECT_DISCIPLINE.md/HANDOFF_TEMPLATE.md, matching auditor-failure clause to AUDITOR_PROTOCOL.md/AUDITOR_PRIMING_TEMPLATE.md, merge+push main | claimed |
