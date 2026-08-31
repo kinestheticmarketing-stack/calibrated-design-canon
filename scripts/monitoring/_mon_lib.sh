@@ -11,6 +11,18 @@
 
 set -uo pipefail
 
+# launchd LaunchAgents run with a bare PATH (/usr/bin:/bin:/usr/sbin:/sbin --
+# confirmed via `launchctl print gui/$(id -u)/com.vongimbel.r2daily`), which
+# does not include Homebrew's /opt/homebrew/bin. GNU `timeout` (used by
+# tls_expiry_check.sh to bound the openssl s_client handshake) only exists
+# there -- under the bare launchd PATH it's "command not found" (exit 127),
+# the openssl pipeline never runs, enddate comes back empty, and the check
+# alerts a false "could not read certificate" even though the cert is fine.
+# Reproduced directly: `env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin bash -c
+# "timeout 5 echo hi"` -> "timeout: command not found". Prepending Homebrew's
+# bin dirs here (sourced by every check) fixes this for all of them.
+export PATH="/opt/homebrew/bin:/usr/local/bin:${PATH}"
+
 VPS_HOST="root@74.208.181.10"
 STATE_DIR="${HOME}/.claude/hooks/monitoring-state"
 mkdir -p "$STATE_DIR"
@@ -19,10 +31,20 @@ mkdir -p "$STATE_DIR"
 # (pipe-delimited deliberately -- the URL field itself contains colons, which
 # broke an earlier colon-delimited version of this file: cut -d: on a field
 # containing "https://..." silently split the URL apart too.)
+#
+# property_key is the FULL domain label (matching what stale_site_check.js /
+# unhandled_lead_check.js already pass on the VPS), not a short code. VPS-side
+# send_alert.js resolves the mail-sending property config via
+# `property.includes(k)` against keys like "denvercoloradoinsulation" -- a
+# short key like "dci" never matches any of them, so every alert from these
+# checks was silently falling through to send_alert.js's DCI default
+# (propDirs.denvercoloradoinsulation), meaning a GCI or LGM failure would
+# alert using DCI's SendGrid `from` address/env. The full label makes the
+# substring match succeed and routes to the right property.
 PROPERTIES=(
-  "dci|https://denvercoloradoinsulation.com|/Users/vongimbel/code/denvercoloradoinsulation.com|/root/denvercoloradoinsulation.com"
-  "lgm|https://longmontcoloradoinsulation.com|/Users/vongimbel/code/longmontcoloradoinsulation.com|/root/longmontcoloradoinsulation.com"
-  "gci|https://greeleycoloradoinsulation.com|/Users/vongimbel/code/greeleycoloradoinsulation.com|/root/greeleycoloradoinsulation.com"
+  "denvercoloradoinsulation.com|https://denvercoloradoinsulation.com|/Users/vongimbel/code/denvercoloradoinsulation.com|/root/denvercoloradoinsulation.com"
+  "longmontcoloradoinsulation.com|https://longmontcoloradoinsulation.com|/Users/vongimbel/code/longmontcoloradoinsulation.com|/root/longmontcoloradoinsulation.com"
+  "greeleycoloradoinsulation.com|https://greeleycoloradoinsulation.com|/Users/vongimbel/code/greeleycoloradoinsulation.com|/root/greeleycoloradoinsulation.com"
 )
 
 prop_field() {
@@ -69,5 +91,13 @@ clear_failure_state() {
 send_alert() {
   # send_alert <property_key> <subject> <body>
   local prop="$1" subject="$2" body="$3"
-  ssh "$VPS_HOST" "/root/ops/scripts/send_alert.sh '$prop' '$subject' '$body'" 2>&1
+  # printf %q shell-quotes each arg for safe re-parsing by the remote bash --
+  # naive '$var' wrapping breaks (and silently drops the whole alert with a
+  # remote "unexpected EOF" parse error) the moment any arg contains an
+  # apostrophe, which several of these subject/body strings do (e.g.
+  # "$prop's homepage check failed..."). Confirmed in
+  # ~/.claude/hooks/monitoring-state/r2uptime.log: repeated
+  # "bash: -c: line 1: unexpected EOF while looking for matching `''" entries
+  # from exactly this.
+  ssh "$VPS_HOST" "/root/ops/scripts/send_alert.sh $(printf '%q' "$prop") $(printf '%q' "$subject") $(printf '%q' "$body")" 2>&1
 }
