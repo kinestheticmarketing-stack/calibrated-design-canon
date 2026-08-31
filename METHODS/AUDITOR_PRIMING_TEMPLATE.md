@@ -192,6 +192,17 @@ DIMENSION U9 — RULE 5 / SECRETS BACKSTOP
     is delivered with no warning ABOVE the fenced block naming the
     secret, the row, and the exposure risk.
 
+DIMENSION U10 — RULE 7 / PAPERWORK BACKSTOP
+  - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 7
+    (PAPERWORK FIRES ON STATE CHANGE, NOT AT SESSION END) and its
+    sub-points 7a-7f. Do not retype it here — score the kickoff
+    against it.
+  - This is the Auditor's backstop for when the Architect drifts off
+    Rule 7 while moving fast mid-pass — the same self-blindness the
+    whole Auditor role exists to break.
+  - FAIL if the kickoff creates schedulable infrastructure, a new
+    tool, or a standing ruling without a documentation row.
+
 ═══════════════════════════════════════════════════════════════
 AUDIT OUTPUT FORMAT — always use this
 ═══════════════════════════════════════════════════════════════
