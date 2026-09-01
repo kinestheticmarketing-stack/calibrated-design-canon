@@ -8,6 +8,11 @@ set -uo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$DIR/_mon_lib.sh"
 
+if ! check_local_connectivity; then
+  echo "$(date -Iseconds) [page200_check] SKIPPED -- local connectivity check failed, cannot trust results this run" >&2
+  exit 0
+fi
+
 for propline in "${PROPERTIES[@]}"; do
   prop=$(prop_field "$propline" 1)
   url=$(prop_field "$propline" 2)
@@ -27,14 +32,11 @@ for propline in "${PROPERTIES[@]}"; do
     else
       detail="the following URL(s) did not return 200 on $prop: $failing"
     fi
-    if should_alert_failure "page200" "$prop"; then
-      send_alert "$prop" "Page check failed on $prop" "$detail"
-      record_failure_alert "page200" "$prop"
-    fi
+    handle_check_result "page200" "$prop" 1 \
+      "Page check failed on $prop" "$detail" "" ""
   else
-    if should_alert_recovery "page200" "$prop"; then
-      send_alert "$prop" "Page check recovered on $prop" "All sitemap pages on $prop are returning 200 again."
-      clear_failure_state "page200" "$prop"
-    fi
+    handle_check_result "page200" "$prop" 0 "" "" \
+      "Page check recovered on $prop" \
+      "All sitemap pages on $prop are returning 200 again."
   fi
 done

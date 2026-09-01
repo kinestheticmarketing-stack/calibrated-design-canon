@@ -7,6 +7,11 @@ set -uo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$DIR/_mon_lib.sh"
 
+if ! check_local_connectivity; then
+  echo "$(date -Iseconds) [deploy_drift_check] SKIPPED -- local connectivity check failed, cannot trust results this run" >&2
+  exit 0
+fi
+
 for propline in "${PROPERTIES[@]}"; do
   prop=$(prop_field "$propline" 1)
   repo=$(prop_field "$propline" 3)
@@ -39,16 +44,13 @@ for propline in "${PROPERTIES[@]}"; do
   rm -rf "$tmp"
 
   if [ "${#diffs[@]}" -gt 0 ]; then
-    if should_alert_failure "deploy_drift" "$prop"; then
-      subject="Deploy drift on $prop: live does not match repo"
-      body="The following file(s) differ between what's deployed and what's in the repo for $prop: ${diffs[*]}. This usually means a commit was made but never deployed — the live site is running older or different code than what's checked in."
-      send_alert "$prop" "$subject" "$body"
-      record_failure_alert "deploy_drift" "$prop"
-    fi
+    handle_check_result "deploy_drift" "$prop" 1 \
+      "Deploy drift on $prop: live does not match repo" \
+      "The following file(s) differ between what's deployed and what's in the repo for $prop: ${diffs[*]}. This usually means a commit was made but never deployed — the live site is running older or different code than what's checked in." \
+      "" ""
   else
-    if should_alert_recovery "deploy_drift" "$prop"; then
-      send_alert "$prop" "Deploy drift on $prop: resolved" "Live now matches the repo again for $prop."
-      clear_failure_state "deploy_drift" "$prop"
-    fi
+    handle_check_result "deploy_drift" "$prop" 0 "" "" \
+      "Deploy drift on $prop: resolved" \
+      "Live now matches the repo again for $prop."
   fi
 done
