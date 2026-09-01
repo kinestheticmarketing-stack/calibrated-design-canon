@@ -5,6 +5,11 @@ set -uo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$DIR/_mon_lib.sh"
 
+if ! check_local_connectivity; then
+  echo "$(date -Iseconds) [uptime_check] SKIPPED -- local connectivity check failed, cannot trust results this run" >&2
+  exit 0
+fi
+
 for propline in "${PROPERTIES[@]}"; do
   prop=$(prop_field "$propline" 1)
   url=$(prop_field "$propline" 2)
@@ -18,14 +23,13 @@ for propline in "${PROPERTIES[@]}"; do
     else
       detail="the homepage returned HTTP $code instead of 200"
     fi
-    if should_alert_failure "uptime" "$prop"; then
-      send_alert "$prop" "Uptime check failed: $prop is not responding normally" "$prop's homepage check failed: $detail. The site may be down or unreachable."
-      record_failure_alert "uptime" "$prop"
-    fi
+    handle_check_result "uptime" "$prop" 1 \
+      "Uptime check failed: $prop is not responding normally" \
+      "$prop's homepage check failed: $detail. The site may be down or unreachable." \
+      "" ""
   else
-    if should_alert_recovery "uptime" "$prop"; then
-      send_alert "$prop" "Uptime recovered: $prop is back up" "$prop's homepage is responding with 200 again."
-      clear_failure_state "uptime" "$prop"
-    fi
+    handle_check_result "uptime" "$prop" 0 "" "" \
+      "Uptime recovered: $prop is back up" \
+      "$prop's homepage is responding with 200 again."
   fi
 done

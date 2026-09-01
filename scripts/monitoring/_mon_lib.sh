@@ -52,12 +52,69 @@ prop_field() {
   echo "$1" | cut -d'|' -f"$2"
 }
 
+# --- Local-connectivity gate. 2026-08-31: a single curl/ssh failure from
+# this Mac used to be trusted as a real site-side signal, so a Wi-Fi drop,
+# sleep/wake, or VPN toggle produced a real "down" email and a real
+# "recovered" email for sites that were never actually down (all three
+# properties fired the same day from one shared blip -- see
+# TOOLING_RUNBOOK.md). Every check must call this ONCE per run, before
+# touching any per-property failure state, and skip the whole run (no
+# alerts, no state writes) if it fails -- a result gathered while this
+# Mac itself can't reach the internet cannot be trusted either way.
+# Two independent probes, both against a stable endpoint that is never
+# one of the monitored properties: a raw-IP HTTPS reach (Cloudflare's
+# 1.1.1.1, sidesteps DNS so a DNS-only outage doesn't get missed by using
+# an IP that still resolves through some other path) and a normal
+# domain fetch (exercises DNS resolution specifically, so a DNS-only
+# outage -- routing fine, resolver dead -- still fails this gate even
+# though the raw-IP probe alone would pass).
+check_local_connectivity() {
+  curl -s -o /dev/null --max-time 5 "https://1.1.1.1/cdn-cgi/trace" \
+    && curl -s -o /dev/null --max-time 5 "https://cloudflare.com"
+}
+
 # --- Suppression: one alert per failure-key per day, then a recovery notice
 # on the next healthy run after a failure was recorded. State file per
 # check+property, holding the date of the last alert sent (empty = healthy).
 check_state_path() {
   local check="$1" prop="$2"
   echo "${STATE_DIR}/${check}.${prop}.state"
+}
+
+# --- Consecutive-failure counter, separate from the alert-suppression
+# state above. A failure only reaches should_alert_failure's gate once it
+# has happened CONSECUTIVE_FAILURE_THRESHOLD times in a row, each time
+# with check_local_connectivity passing -- a single bad run (real or a
+# connectivity-gate skip) can never alone produce a "down" email.
+CONSECUTIVE_FAILURE_THRESHOLD=2
+
+failure_count_path() {
+  local check="$1" prop="$2"
+  echo "${STATE_DIR}/${check}.${prop}.count"
+}
+
+# Increments and returns this check+property's consecutive-failure count.
+# Only call after check_local_connectivity has already passed for this run
+# -- incrementing on a connectivity-gate skip would let two separate,
+# unrelated Mac-offline blips add up to a false "down" alert once the
+# network returns, which is the exact failure mode this counter exists to
+# prevent.
+record_check_failure() {
+  local check="$1" prop="$2"
+  local f; f=$(failure_count_path "$check" "$prop")
+  local n=0
+  if [ -f "$f" ]; then
+    n=$(cat "$f" 2>/dev/null)
+    [[ "$n" =~ ^[0-9]+$ ]] || n=0
+  fi
+  n=$((n + 1))
+  echo "$n" > "$f"
+  echo "$n"
+}
+
+record_check_success() {
+  local check="$1" prop="$2"
+  rm -f "$(failure_count_path "$check" "$prop")"
 }
 
 # Returns 0 (true) if we should send a NEW failure alert right now.
@@ -76,11 +133,23 @@ record_failure_alert() {
   date +%F > "$(check_state_path "$check" "$prop")"
 }
 
-# Returns 0 (true) if a recovery notice should fire (state file exists,
-# meaning we'd previously alerted a failure that hasn't been cleared yet).
+# Returns 0 (true) if a recovery notice should fire: a state file exists
+# AND it holds a value should_alert_failure actually wrote (a YYYY-MM-DD
+# date), meaning a "down" alert was genuinely dispatched and not yet
+# cleared. A stray/malformed/old-format state file is NOT treated as "was
+# down" -- it's removed silently here (self-healing) so it can never
+# produce a false recovery notice for a failure that was never actually
+# communicated.
 should_alert_recovery() {
   local check="$1" prop="$2"
-  [ -f "$(check_state_path "$check" "$prop")" ]
+  local f; f=$(check_state_path "$check" "$prop")
+  [ -f "$f" ] || return 1
+  local content; content=$(cat "$f" 2>/dev/null)
+  if [[ "$content" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    return 0
+  fi
+  rm -f "$f"
+  return 1
 }
 
 clear_failure_state() {
@@ -100,4 +169,32 @@ send_alert() {
   # "bash: -c: line 1: unexpected EOF while looking for matching `''" entries
   # from exactly this.
   ssh "$VPS_HOST" "/root/ops/scripts/send_alert.sh $(printf '%q' "$prop") $(printf '%q' "$subject") $(printf '%q' "$body")" 2>&1
+}
+
+# --- Centralizes the failure/recovery decision every check in this
+# directory makes: consecutive-failure counting, per-day suppression, and
+# -- the other bug R1 found -- never writing/clearing failure state unless
+# send_alert actually succeeded (previously state updated unconditionally
+# right after send_alert was invoked, so a failed SSH send could silently
+# desync state from what was actually communicated).
+# handle_check_result <check> <prop> <is_failure 0|1> <fail_subject> <fail_body> <recover_subject> <recover_body>
+# Caller must have already confirmed check_local_connectivity for this run
+# before calling this for a failure case (is_failure=1).
+handle_check_result() {
+  local check="$1" prop="$2" is_failure="$3" fail_subject="$4" fail_body="$5" recover_subject="$6" recover_body="$7"
+  if [ "$is_failure" -eq 1 ]; then
+    local n; n=$(record_check_failure "$check" "$prop")
+    if [ "$n" -ge "$CONSECUTIVE_FAILURE_THRESHOLD" ] && should_alert_failure "$check" "$prop"; then
+      if send_alert "$prop" "$fail_subject" "$fail_body"; then
+        record_failure_alert "$check" "$prop"
+      fi
+    fi
+  else
+    record_check_success "$check" "$prop"
+    if should_alert_recovery "$check" "$prop"; then
+      if send_alert "$prop" "$recover_subject" "$recover_body"; then
+        clear_failure_state "$check" "$prop"
+      fi
+    fi
+  fi
 }

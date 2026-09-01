@@ -15,6 +15,11 @@ set -uo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$DIR/_mon_lib.sh"
 
+if ! check_local_connectivity; then
+  echo "$(date -Iseconds) [ops_drift_check] SKIPPED -- local connectivity check failed, cannot trust results this run" >&2
+  exit 0
+fi
+
 CANON_OPS_DIR="$(cd "$DIR/../../ops" && pwd)"
 VPS_OPS_DIR="/root/ops/scripts"
 ALERT_PROP="denvercoloradoinsulation.com" # routing key only -- this check is
@@ -52,15 +57,12 @@ for f in "${FILES[@]}"; do
 done
 
 if [ "${#diffs[@]}" -gt 0 ]; then
-  if should_alert_failure "ops_drift" "$ALERT_PROP"; then
-    subject="Ops layer drift: VPS does not match canon"
-    body="The following file(s) in /root/ops/scripts/ on the VPS differ from canon's ops/: ${diffs[*]}. This usually means a live edit was made directly on the VPS and never brought back into canon, or a canon change was never deployed with scripts/deploy_ops_to_vps.sh. Run that script from canon to reconcile, after checking which side is correct."
-    send_alert "$ALERT_PROP" "$subject" "$body"
-    record_failure_alert "ops_drift" "$ALERT_PROP"
-  fi
+  handle_check_result "ops_drift" "$ALERT_PROP" 1 \
+    "Ops layer drift: VPS does not match canon" \
+    "The following file(s) in /root/ops/scripts/ on the VPS differ from canon's ops/: ${diffs[*]}. This usually means a live edit was made directly on the VPS and never brought back into canon, or a canon change was never deployed with scripts/deploy_ops_to_vps.sh. Run that script from canon to reconcile, after checking which side is correct." \
+    "" ""
 else
-  if should_alert_recovery "ops_drift" "$ALERT_PROP"; then
-    send_alert "$ALERT_PROP" "Ops layer drift: resolved" "The VPS's /root/ops/scripts/ now matches canon's ops/ again."
-    clear_failure_state "ops_drift" "$ALERT_PROP"
-  fi
+  handle_check_result "ops_drift" "$ALERT_PROP" 0 "" "" \
+    "Ops layer drift: resolved" \
+    "The VPS's /root/ops/scripts/ now matches canon's ops/ again."
 fi

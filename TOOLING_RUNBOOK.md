@@ -71,19 +71,67 @@ already local because of that host setting):**
 | `com.vongimbel.r2uptime` | every 600s (10 min), `RunAtLoad=false` | `scripts/monitoring/uptime_check.sh` |
 | `com.vongimbel.r2daily` | daily, 07:00 | `scripts/monitoring/daily_checks.sh` → `deploy_drift_check.sh`, `tls_expiry_check.sh`, `page200_check.sh`, `ops_drift_check.sh` |
 
-**Historical note, relevant if "Uptime recovered" emails ever look
-unexplained again:** `r2uptime` polls each property's homepage directly
-from this Mac every 10 minutes with `curl --max-time 15 --connect-timeout
-10`. A local network hiccup on this machine (sleep/wake, wifi drop, VPN
-toggle) can make curl fail from here even when the site is perfectly
-healthy, writing a local failure-state file
-(`~/.claude/hooks/monitoring-state/uptime.<property>.state`) that the next
-successful run — routinely, ~10 minutes later — clears with a genuine
-`"Uptime recovered"` notice. That notice is the script working correctly;
-the false reading was on the failure side, not the recovery side. This is
-a real, known limitation, not fixed as part of this pass (no behavior
-changes were in scope) — a future pass could add a retry-before-declaring-
-failure step to `uptime_check.sh` to reduce false positives.
+**Historical note — FIXED 2026-08-31 (lane `uptime-false-alert-fix`).** The
+limitation described below was real and did fire: three false "Uptime
+recovered" emails for DCI on 2026-08-31 (14:25, 18:21, 19:52), and R1's
+investigation of that incident found the same blip hit LGM and GCI too
+(their alerts just weren't noticed) — DCI's nginx access log had zero
+requests in the ~10-minute window before each false recovery while the
+backend itself never restarted (`NRestarts=0`, continuously active), which
+is the signature of the *request never leaving this Mac*, not a site
+outage. Root cause, read from the code: every check in this directory did
+one `curl`/`ssh`, no retry, no local-connectivity check, and wrote/cleared
+alert state unconditionally regardless of whether `send_alert` actually
+succeeded — a single bad network moment here was, by design, sufficient to
+send both a real "down" and a real "recovered" email for a site that was
+never down.
+
+Fix, in `_mon_lib.sh`, applied to all five checks in this directory
+(`uptime_check.sh`, `deploy_drift_check.sh`, `tls_expiry_check.sh`,
+`page200_check.sh`, `ops_drift_check.sh`):
+- `check_local_connectivity()` — two independent probes against a stable,
+  non-monitored endpoint (raw-IP HTTPS to `1.1.1.1`, plus a normal fetch of
+  `cloudflare.com` to exercise DNS specifically). Every check calls this
+  once, before touching any per-property state, and skips the whole run
+  (zero alerts, zero state writes, one line to stderr) if it fails — a
+  result gathered while this Mac can't reach the internet is never
+  trusted either way.
+- `record_check_failure()` / `record_check_success()` — a per-check/
+  per-property consecutive-failure counter (`<check>.<prop>.count` in
+  `~/.claude/hooks/monitoring-state/`, separate from the existing
+  per-day-suppression `.state` file). `CONSECUTIVE_FAILURE_THRESHOLD=2`:
+  a "down" alert only fires on the second consecutive real failure (i.e.
+  connectivity gate passed both times), so one bad run — real or a
+  connectivity-gate skip — can never alone trigger an alert. Counter only
+  increments on a connectivity-gate PASS, so two separate offline blips
+  can't add up across a gate skip.
+- `should_alert_recovery()` now validates the `.state` file actually holds
+  a date `should_alert_failure` wrote it — a stray/malformed/old-format
+  file is deleted silently and never treated as "was down," so it can't
+  produce a false recovery.
+- `handle_check_result()` centralizes all of the above and — the other bug
+  R1 found — only calls `record_failure_alert`/`clear_failure_state` when
+  `send_alert` actually returned success, so a failed SSH send can no
+  longer desync local state from what was actually communicated.
+
+Verified by this pass (R2): simulated total local-connectivity loss (all
+HTTPS routed through an unreachable bogus proxy, real network untouched)
+produced zero alerts and zero state writes across all five checks, each
+logging its one-line SKIPPED notice to stderr and exiting 0. An isolated
+threshold/state-integrity test (fake check+prop key, stubbed `send_alert`,
+never touches real alert state) confirmed: failure 1 → count=1, no send;
+failure 2 → threshold met, alert sent, state written; failure 3 same day →
+suppressed; next healthy run → recovery sent, state+count cleared; a
+`send_alert` that reports failure never writes state even after 2
+failures; a malformed/stray `.state` file self-heals silently instead of
+firing a false recovery. All five checks also run manually against the
+live, healthy portfolio and stayed silent (one incidental transient
+VPS-scp hiccup on `deploy_drift_check.sh`/LGM landed at count=1, no alert —
+confirmed LGM's live `index.js` and `public/` are byte-identical to the
+repo, not a real drift). Live, real-alert-fires-on-a-genuinely-bad-host
+end-to-end proof (actual SSH send, not stubbed) is R3's independent
+verification pass, by design — see lane `uptime-false-alert-fix` in
+`docs/lanes.md` for its result once landed.
 
 ## How to change `ops/` code
 
