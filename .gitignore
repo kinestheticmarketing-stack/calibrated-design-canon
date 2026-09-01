@@ -2,6 +2,17 @@ data/board.port
 __pycache__/
 *.pyc
 
+# ops/ (VPS alerting layer, imported 2026-08-31 from /root/ops/scripts/ on
+# the VPS) — CODE only is tracked. Runtime data — state files, logs, and
+# pre-edit backup snapshots — is never committed, matching the convention
+# already in place on the VPS itself (.bak-* files, /root/ops/state/).
+ops/state/
+ops/**/*.bak
+ops/**/*.bak-*
+ops/**/*.bak.*
+ops/**/*.log
+ops/backups/
+
 # Paid third-party course corpora. Every EXTRACTION_LOG in here states
 # "sources/ is gitignored — local-only, never committed, never public,
 # never free." That was true as policy and false as configuration: the
