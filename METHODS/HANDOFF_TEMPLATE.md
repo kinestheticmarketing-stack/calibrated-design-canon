@@ -445,7 +445,10 @@ reads as forgotten, not as empty.
 HANDOFF — [date] — [outgoing role] → [incoming role]
 
 ## Rules
-[verbatim block, or "see METHODS/ARCHITECT_DISCIPLINE.md opening — paste that first"]
+[verbatim block, required in full — see RULE 9 (METHODS/ARCHITECT_DISCIPLINE.md):
+the final report is the complete record, and "see METHODS/ARCHITECT_DISCIPLINE.md
+opening — paste that first" is exactly the pointer 9b forbids. Copy the rules text
+in, do not point at it.]
 
 ## State
 [board state, branch/SHA, working tree, in-progress kickoffs]
