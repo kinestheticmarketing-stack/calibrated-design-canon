@@ -179,4 +179,20 @@ The narrower framing claims in §3.3 ("first" mis-filing, portfolio-wide) and §
 
 ---
 
+## Correction — 2026-09-02, the NACH50 metric this retrospective treated as verified-true was itself false
+
+This document's §2.1 (line 25: "corrected... to NACH50, re-cited to the program source that actually states it"), §2.1 (line 31: "23 DCI pages: rebate bullet sharpened with the NACH50 metric"), and §2.2.ii (line 47: "The Xcel NACH50 blower-door requirement was reported as fabricated... It was true") all name "NACH50" as the Xcel blower-door metric. There is no such metric. Xcel's actual first-party figure, confirmed against the primary source, is **"20% Reduction in CFM 50"** — a different unit entirely (a percentage reduction in cubic-feet-per-minute-at-50-pascals, not a named "NACH50" standard). The string `NACH` appears nowhere in Xcel's source documentation.
+
+This was caught and corrected at the `METHODS/PROPERTY_GENESIS.md` surface in canon commit `5265f69`. It was not, at that time, traced back to this retrospective, where the same false metric appears in three more places (the two listed above plus this note). `METHODS/RECEIPTS.md:129,151` carries the same false metric and remains uncorrected as of this note — out of scope for the session that wrote this correction, which was not permitted to touch `METHODS/` this pass. See `denvercoloradoinsulation.com/docs/board/ready/canon-nach50-remaining-surfaces.md` for the full remaining-surfaces list.
+
+**What does NOT survive this correction: the word "NACH50" as a real metric, everywhere it appears above.** The two rebate-copy mentions (§2.1) simply named the wrong metric string for a real, correctly-shipped rebate-copy fix; nothing about that correction's substance changes.
+
+**What DOES survive this correction, deliberately preserved rather than retracted: the epistemic principle §2.2.ii illustrates.** The principle — "a surface's silence is not a claim's falsity," i.e., that a fact absent from one surface (Xcel's consumer-facing page) can still be true and documented elsewhere (per the original investigation, a fulfillment-administrator surface) — is a real, sound, and separately-useful methodological finding, independent of which metric name was the illustration's subject. §2.2.ii's *illustration* used a metric name that does not exist; its *point* does not depend on that name being right, and this note does not touch the point. Readers should treat "NACH50" wherever it appears above as a name error in an otherwise-real finding, not as evidence the finding itself was fabricated.
+
+Per this document's own §2.2 framing: this is a sixth face of the same error family, and a pointed one — a document that exists specifically to document "surface is not claim, in both directions" itself carried an uncaught surface error (a wrong metric name, repeated three times, in the very passage making that argument) for over three weeks before an unrelated remaining-surfaces sweep caught it. The gate that should have caught this (checking the illustration's own factual content, not just its shape) did not exist at the time this document was written.
+
+This correction is appended, not merged into the original prose above, consistent with this document's own established convention (see the Addendum's retraction-and-replacement of the phantom IndexNow receipt in §3.2, and the corrected-verdict-lines finding in §3.1) of recording corrections as dated additions rather than silently rewriting history that already shipped as a session record.
+
+---
+
 **End of retrospective.**
