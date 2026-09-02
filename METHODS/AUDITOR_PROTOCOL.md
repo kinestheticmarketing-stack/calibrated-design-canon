@@ -131,6 +131,12 @@ FAIL the kickoff if it:
     returned — or that was written while any dispatched agent or
     shell was still confirmed running, "status: completed" from a
     subagent notwithstanding (Rule 9j).
+  - Cards something the same pass could have fixed instead of
+    fixing it in the pass (Rule 10b).
+  - Delivers a Final Report that does not state the repo's open
+    card count before and after the pass (Rule 10i).
+  - Leaves a card with an expired re-triage date untouched — not
+    closed, fixed, or re-dated with a stated reason (Rule 10d).
 
 ═══════════════════════════════════════════════════════════════
 SCORING DIMENSION: RULE 6 (LOOK IT UP) BACKSTOP
