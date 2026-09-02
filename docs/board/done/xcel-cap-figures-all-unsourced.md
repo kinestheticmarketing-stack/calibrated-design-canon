@@ -63,3 +63,39 @@ Enumerations removed. **Two classes remain and are NOT enumerations:**
 
 Restoring them is a **separate voice-gated wave**. Xcel's program pages return
 empty SPA shells to a fetcher; the PDFs are the working path.
+
+## R2 outcome note — 2026-09-02
+
+Re-verified independently. The card's own DCI-INCOMPLETE section names two
+open classes; both are closed:
+
+1. **Worked calculations that reason with the cap** — resolved by the same
+   Director ruling (M3 Option 2) recorded in DCI commit `83d4795`
+   ("Remove the unsourced cap figures and the arguments built on them",
+   2026-08-21 15:53:31 -0600), which removed all three passages this
+   card's class 1 names (`insulation-hybrid-flash-batt`,
+   `xcel-insulation-rebate-guide-denver`,
+   `whole-home-efficiency-bonus-stacking-denver`) whole. This is also the
+   ruling closing the sibling card `removed-cap-reasoning-passages.md`
+   (same commit, same three pages) — confirmed by cross-reading both cards
+   against the same DCI commit range, not by trusting either card's text
+   alone.
+2. **The missed `$400` variant phrasing** — the card's own text already
+   marks this "now fixed"; folded into the same `83d4795` removal.
+3. **LGM** — the card already records this complete at commit `25c82b7`.
+   Re-verified directly: `25c82b7`'s message states "Director ruling M3
+   Option 2," and no `$400`/`$500`/`$350` rebate-cap figure is present in
+   LGM's current rendered `public/*.html`.
+
+No open DCI or LGM work remains under this card. GCI is out of scope for
+this card (it never had the porting exposure — see `ported-xcel-content-audit.md`).
+
+**Verify:**
+```bash
+cd /Users/vongimbel/code/denvercoloradoinsulation.com
+git show -s --format=%B 83d4795 | grep -q "Director ruling M3 Option 2" && echo RULING_CONFIRMED
+cd /Users/vongimbel/code/longmontcoloradoinsulation.com
+git show -s --format=%B 25c82b7 | grep -q "Director ruling M3 Option 2" && echo RULING_CONFIRMED
+grep -rc "effectively a flat \$500\|30%-of-cost-capped-at-\$500" public/*.html | grep -v ':0$'
+# no output = zero rendered occurrences of the retired cap phrasing on LGM
+```
