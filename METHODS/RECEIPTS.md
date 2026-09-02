@@ -126,12 +126,23 @@ DCI — denvercoloradoinsulation.com (flagship, only revenue asset)
   end.** · repo `ops/browser_canary.js`, journald `browser-canary.service`
 
 - 2026-08-10 · DCI · PERFORMANCE · Xcel blower-door claim corrected to the
-  NACH50 metric (was a vaguer "air leakage" framing) and re-cited to EFI,
+  ~~NACH50~~ **"20% Reduction in CFM 50"** metric (was a vaguer "air leakage" framing) and re-cited to EFI,
   Xcel's rebate fulfillment administrator — the requirement lives there,
   not on Xcel's consumer page. Sharpened across 11 pages. Renter-eligibility
   FAQ reversed in the same pass: Xcel's program does cover rental
   properties (previously shipped as "Xcel is silent on this"). · repo /
   commit 40d2571
+  **[CORRECTED 2026-09-02 — "NACH50" was never a real Xcel metric; there is
+  no such standard and the string "NACH" appears nowhere in Xcel's source
+  documentation. Xcel's actual first-party figure is "20% Reduction in CFM
+  50." First caught at the `METHODS/PROPERTY_GENESIS.md` surface (commit
+  `5265f69`); this receipt and the one below were two of the three
+  remaining false-metric surfaces (the third, `RETROSPECTIVES/
+  2026-08-10-citation-integrity.md`, was corrected 2026-09-02 by a prior
+  pass this same day). This correction does not change what the
+  underlying fix accomplished — the sourcing and page-sharpening work
+  described above is real and unaffected; only the metric's name was
+  wrong.]**
 
 - 2026-08-10 · DCI · PERFORMANCE · Cellulose settling claim (10-20%)
   re-sourced from a DOE page deleted in DOE's ~2026-07-03 mass removal to
@@ -148,8 +159,12 @@ DCI — denvercoloradoinsulation.com (flagship, only revenue asset)
   count corrected 9→8 across meta tags, JSON-LD, and body copy. Seven
   pages backfilled to hold the 2-citation floor (six suburb pages plus one
   page discovered mid-wave carrying two simultaneous cuts at once). 23
-  pages' rebate bullet sharpened with the NACH50 metric. · repo / commit
-  40b7245
+  pages' rebate bullet sharpened with the ~~NACH50~~ **"20% Reduction in
+  CFM 50"** metric. · repo / commit 40b7245
+  **[CORRECTED 2026-09-02 — see the correction note on the "Xcel
+  blower-door claim corrected" entry above (same date, same commit wave):
+  "NACH50" was never a real Xcel metric; the real figure is "20%
+  Reduction in CFM 50."]**
 
 - 2026-08-10 · DCI · PERFORMANCE · Citation rendering template fixed: a
   hardcoded "the " before every source name (wrong for brand names like
