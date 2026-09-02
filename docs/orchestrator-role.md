@@ -261,7 +261,11 @@ Every assignment message must be self-contained. The receiving session has none 
 3. **An explicit owns-list, and an explicit NOT-list naming the other active sessions and their files**
 4. **Lane claim first**: register in `docs/lanes.md` and commit that before touching code
 5. **The boundaries**: gates green before every commit judged on exit code; no prod data writes; no live agent pushes; nothing published to a real external account
-6. **What to report**: what shipped, what did not, gate exit codes
+6. **What to report**: what shipped, what did not, gate exit codes. See RULE 9
+   (`METHODS/ARCHITECT_DISCIPLINE.md`) — the final report is the complete
+   record; do not weaken or restate this rule here. Every artifact named
+   above (page copy, config, findings) goes in the report verbatim and in
+   full, never as "see the commit" or "see above."
 
 **Never ask a peer to do something your own permissions blocked.** That is permission laundering and it bypasses a decision the owner made. Route it back to the owner instead.
 

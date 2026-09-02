@@ -67,6 +67,14 @@ For a top-tier model dispatch, include the premium-model gate result (or written
 
 ## Report contract
 
+See RULE 9 (`METHODS/ARCHITECT_DISCIPLINE.md`) — the final report is the
+complete record; do not weaken or restate this rule here. Every item below
+is delivered verbatim and in full inside the report itself, never as a
+pointer ("see the commit," "see above," "in the committed file") and never
+with an escape hatch ("if applicable," "X verbatim, OR Y"). A null or
+negative result (nothing to report on an item) gets the same full
+treatment as a positive one, not a thin summary.
+
 Return:
 
 - Branch, worktree, and current commit
