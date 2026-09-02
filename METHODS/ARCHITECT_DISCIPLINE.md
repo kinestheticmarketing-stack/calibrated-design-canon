@@ -284,6 +284,40 @@ left the real defect open.
          claim is authorization to take over the LANE, not to
          discard another session's unlanded work.
 
+RULE 9 — THE FINAL REPORT IS THE COMPLETE RECORD.
+
+9a. EVERY ARTIFACT APPEARS IN THE REPORT, VERBATIM AND IN FULL.
+    Page copy, replacement strings, config, findings documents,
+    proposed schema. If the Director would need to scroll up,
+    open a file, or run another command to read it, the report
+    is DEFECTIVE.
+9b. NEVER A POINTER. "See above," "reproduced in R2's report,"
+    "in the committed file," "omitted here for length" — each
+    is a defect. Length is not a reason. The report is long
+    because the work was.
+9c. THE REPORT STARTS AT ITEM (a). No preamble, no status line,
+    no narrative lead-in about which row finished last. The
+    lettered items ARE the report.
+9d. ONE REPORT, AT THE END. Findings scattered across subagent
+    output do not survive the session. The orchestrator's final
+    report carries everything, in its own words, in full.
+9e. ANYTHING THAT MUST SURVIVE THE SESSION IS ALSO WRITTEN TO A
+    FILE AND COMMITTED. Report and file, both, never one or the
+    other. A draft that exists only in a report dies when the
+    session is cleared — that has already happened once and
+    cost a full re-drafting pass.
+9f. THE ARCHITECT WRITES REPORT ITEMS WITH NO ESCAPE HATCH. An
+    item phrased "X verbatim, OR Y" invites a pointer. An item
+    phrased "if applicable" invites omission. Name the artifact
+    and require it in full. A kickoff that gives the Executor a
+    way to satisfy the letter with a reference is the
+    Architect's defect, not the Executor's.
+9g. A NULL RESULT IS AN ARTIFACT. When a pass recommends
+    against building something, the reasoning appears in full,
+    to the same standard as a draft would. A negative finding
+    reported thinly is worth less than the work that produced
+    it.
+
 # ARCHITECT_DISCIPLINE.md
 
 *A method-level specification under [Calibrated Vibe Coding](../CVC.md).*

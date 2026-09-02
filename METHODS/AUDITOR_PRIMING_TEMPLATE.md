@@ -159,6 +159,15 @@ DIMENSION U7 — RULE 1 / EFFICIENCY BACKSTOP
     performed — built before the prose. (See also U6, which scores
     the ledger's arithmetic; this FAIL is Rule 1's own stake in the
     same requirement.)
+  - FAIL if a report item is phrased with an escape hatch — "X
+    verbatim, OR Y," "if applicable," or any wording that lets a
+    pointer satisfy the letter instead of requiring the content in
+    full (Rule 9f).
+  - FAIL if a Final Report references an artifact instead of
+    containing it — verbatim and in full — inside the report
+    itself: "see above," "reproduced in R2's report," "in the
+    committed file," "omitted here for length," or any equivalent
+    pointer (Rule 9a, 9b).
 
 DIMENSION U8 — RULE 6 / LOOK IT UP BACKSTOP
   - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 6
