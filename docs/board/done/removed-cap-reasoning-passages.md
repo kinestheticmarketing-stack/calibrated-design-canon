@@ -177,3 +177,34 @@ git diff -U0 239df21..83d4795 -- _educational_pages.py \
   the stack, sequencing and bonus-eligibility content remain.
 - `xcel-insulation-rebate-guide-denver` — the rebate-calculation section is gone; the
   program still names its three measures (attic, wall, air sealing) with no figures.
+
+## R2 outcome note — 2026-09-02
+
+Re-verified independently (not from R1's classification alone). Confirmed
+directly in `denvercoloradoinsulation.com`'s git history:
+
+- Commit `8e6aacd` ("Remove the unsourced $400 air-sealing rebate figure",
+  2026-08-21 09:43) — R3, needle-scoped.
+- Commit `83d4795` ("Remove the unsourced cap figures and the arguments
+  built on them", 2026-08-21 15:53) — commit message states explicitly:
+  *"Director ruling M3 Option 2 plus the Q1 passage removals... Three
+  reasoning passages removed whole, not merely stripped of their figures."*
+  This is the Director ruling the card text refers to, and it resolves
+  exactly what the card asks (the three reasoning passages preserved above
+  are the ones this commit removed).
+- Confirmed live: none of the three preserved passages exist in DCI's
+  current rendered output (`grep -q "attic cap is reached on essentially
+  every hybrid" public/insulation-hybrid-flash-batt.html` → no match).
+
+This card is correctly ALREADY-DONE: the removal shipped, is Director-ruled,
+and the card's only remaining function is as preserved text for a future
+restoration wave if Xcel's own PDF later sources $500/$350/$400 — not open
+work.
+
+**Verify:**
+```bash
+cd /Users/vongimbel/code/denvercoloradoinsulation.com
+git show --stat 83d4795 | head -5   # commit exists, message cites "Director ruling M3 Option 2"
+grep -q "attic cap is reached on essentially every hybrid" public/insulation-hybrid-flash-batt.html && echo STILL_PRESENT || echo ABSENT
+# ABSENT confirms the removal held in the currently rendered page
+```
