@@ -6,6 +6,7 @@ created: 2026-08-19
 size: L
 lane: genesis
 after: [hardcoded-path-defect-portfolio]
+retriage: 2026-10-02
 ---
 # Fort Collins — the fourth property, not yet started
 

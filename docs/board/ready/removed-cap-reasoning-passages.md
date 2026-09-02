@@ -4,6 +4,7 @@ owner: director
 type: record
 created: 2026-08-21
 priority: 30
+retriage: 2026-10-02
 ---
 # The three reasoning passages removed 2026-08-21 — full text preserved for restoration
 

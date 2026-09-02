@@ -4,6 +4,7 @@ owner: architect
 type: chore
 created: 2026-08-21
 priority: 45
+retriage: 2026-10-02
 ---
 # R8 — if an Xcel multiplier could port onto an Atmos property, what else ported?
 
