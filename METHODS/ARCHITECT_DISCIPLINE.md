@@ -284,39 +284,53 @@ left the real defect open.
          claim is authorization to take over the LANE, not to
          discard another session's unlanded work.
 
-RULE 9 — THE FINAL REPORT IS THE COMPLETE RECORD.
+RULE 9 — THE FINAL REPORT. WRITTEN FOR SOMEONE WHO KNOWS
+NOTHING. NEVER A POINTER. NEVER A DEFECT THE DIRECTOR HAS TO
+CATCH.
 
-9a. EVERY ARTIFACT APPEARS IN THE REPORT, VERBATIM AND IN FULL.
-    Page copy, replacement strings, config, findings documents,
-    proposed schema. If the Director would need to scroll up,
-    open a file, or run another command to read it, the report
-    is DEFECTIVE.
-9b. NEVER A POINTER. "See above," "reproduced in R2's report,"
-    "in the committed file," "omitted here for length" — each
-    is a defect. Length is not a reason. The report is long
-    because the work was.
-9c. THE REPORT STARTS AT ITEM (a). No preamble, no status line,
-    no narrative lead-in about which row finished last. The
-    lettered items ARE the report.
-9d. ONE REPORT, AT THE END. Findings scattered across subagent
-    output do not survive the session. The orchestrator's final
-    report carries everything, in its own words, in full.
-9e. ANYTHING THAT MUST SURVIVE THE SESSION IS ALSO WRITTEN TO A
+9a. IT OPENS WITH A HEADLINE. The literal words FINAL REPORT on
+    their own line. Everything the pass produced appears UNDER
+    that headline. Nothing above it, nothing outside it.
+9b. ONE REPORT, WRITTEN ONCE, AT THE END, BY THE ORCHESTRATOR,
+    IN ITS OWN WORDS. Commentary earlier in the session is not
+    reporting. A subagent's output is not the report. Findings
+    scattered through a session die with the session.
+9c. WRITTEN FOR A READER WITH NO CONTEXT. Assume they have
+    never seen this project, did not read the kickoff, and
+    cannot scroll up. Under the headline, before the lettered
+    items, state in plain prose: what this pass was asked to
+    do, what it actually did, and what the outcome was. Then
+    the lettered items.
+9d. EVERY ARTIFACT IN FULL, VERBATIM, INSIDE THE REPORT. Page
+    copy, drafts, findings documents, quoted sources, measured
+    counts, commit SHAs, file paths. If the reader would have
+    to open a file, run a command, or scroll up to see it, the
+    report FAILED.
+9e. NEVER A POINTER. "See above," "reproduced in R2's report,"
+    "in the committed file," "omitted here for length,"
+    "detailed elsewhere" — each one is a DEFECT. Length is
+    never a reason. The report is long because the work was.
+9f. NO META-COMMENTARY. Do not describe the report. Do not
+    assess how well the rules were followed. Do not narrate
+    your own diligence, coordination, or dispatch difficulties
+    unless they changed the work's outcome. Report the WORK,
+    not the reporting.
+9g. EVERY ROW'S WORK APPEARS, whether or not it produced an
+    artifact. A row that found nothing states what it looked
+    for and what it found. A NULL RESULT IS AN ARTIFACT and
+    gets the same full treatment as a draft would.
+9h. ANYTHING THAT MUST SURVIVE THE SESSION IS ALSO WRITTEN TO A
     FILE AND COMMITTED. Report and file, both, never one or the
     other. A draft that exists only in a report dies when the
-    session is cleared — that has already happened once and
-    cost a full re-drafting pass.
-9f. THE ARCHITECT WRITES REPORT ITEMS WITH NO ESCAPE HATCH. An
-    item phrased "X verbatim, OR Y" invites a pointer. An item
-    phrased "if applicable" invites omission. Name the artifact
-    and require it in full. A kickoff that gives the Executor a
-    way to satisfy the letter with a reference is the
-    Architect's defect, not the Executor's.
-9g. A NULL RESULT IS AN ARTIFACT. When a pass recommends
-    against building something, the reasoning appears in full,
-    to the same standard as a draft would. A negative finding
-    reported thinly is worth less than the work that produced
-    it.
+    session is cleared — that has already happened and cost a
+    full re-drafting pass.
+9i. THE ARCHITECT WRITES REPORT ITEMS WITH NO ESCAPE HATCH. An
+    item phrased "X verbatim, OR Y" invites a pointer. "If
+    applicable" invites omission. "Anything else worth noting"
+    invites commentary. Name the artifact, require it in full,
+    and require decisions rather than reflections. A kickoff
+    that lets the Executor satisfy the letter with a reference
+    is the Architect's defect, not the Executor's.
 
 # ARCHITECT_DISCIPLINE.md
 
