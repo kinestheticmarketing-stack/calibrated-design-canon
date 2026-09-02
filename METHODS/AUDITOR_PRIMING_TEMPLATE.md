@@ -177,6 +177,12 @@ DIMENSION U7 — RULE 1 / EFFICIENCY BACKSTOP
     the rules were followed, or narrating dispatch or coordination
     difficulties that did not change the work's outcome — instead
     of reporting the work (Rule 9f).
+  - FAIL if a Final Report's first line under the headline is not
+    an explicit liveness confirmation — stating what
+    process/agent-liveness check was performed and what it
+    returned — or if the report was written while any dispatched
+    agent or shell was still confirmed running, "status: completed"
+    from a subagent notwithstanding (Rule 9j).
 
 DIMENSION U8 — RULE 6 / LOOK IT UP BACKSTOP
   - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 6
