@@ -1,5 +1,19 @@
 # Rule 9 landing — final report and independent verification
 
+**SUPERSEDED 2026-09-02, eleven minutes after this file was committed.**
+Everything below verified the FIRST version of Rule 9 (headline "THE
+FINAL REPORT IS THE COMPLETE RECORD," sub-points 9a-9g). That version was
+judged incomplete and fully replaced — not merged, not amended — at
+commit `352249b`, then swept again at `2c2813d`. Rule 9's live headline,
+text, and sub-point lettering (now 9a-9i) are in `METHODS/ARCHITECT_DISCIPLINE.md`
+and `METHODS/HANDOFF_TEMPLATE.md` — read them there, not here. Every
+sub-point letter cited below (9b, 9e) refers to the OLD lettering and is
+wrong against current canon. This file is kept as the historical record
+of what the first version said and how it was verified, not as a
+description of what Rule 9 currently requires. See
+`RETROSPECTIVES/2026-09-02-rule-9-replacement-verification.md` for the
+replacement's own verification record.
+
 **2026-09-02.** This is the orchestrator's final report for the Rule 9
 kickoff (landing RULE 9 — THE FINAL REPORT IS THE COMPLETE RECORD into
 canon, then sweeping for weaker duplicate statements, then independent
