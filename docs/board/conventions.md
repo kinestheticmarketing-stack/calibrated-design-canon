@@ -14,6 +14,10 @@ id: example-card-id          # equals the filename stem
 owner: director               # director | architect | executor | auditor -- see "Owner set" below
 type: bug                    # OPTIONAL: bug | feature | decision | idea | chore | watch
 created: 2026-01-01
+retriage: 2026-01-08          # REQUIRED -- re-triage date, no exceptions (Rule 10c):
+                               # 7 days for a live defect, 14 for a Director decision,
+                               # 30 for everything else. An expired date is a
+                               # halt-level finding (Rule 10d), not a note.
 size: S                      # OPTIONAL: XS | S | M | L
 lane: area/subarea           # OPTIONAL
 priority: 20                 # sparse int, lower sorts higher; Ready only
@@ -26,6 +30,9 @@ after: [some-other-card-id]  # OPTIONAL dependency ids
 doc: docs/some-spec-2026-01-01.md
 ```
 
+- `retriage` is the only frontmatter field that is never optional. A card
+  with no re-triage date never expires and never gets reviewed -- see
+  METHODS/ARCHITECT_DISCIPLINE.md Rule 10c-10d.
 - `type` is optional and is OMITTED when unclear. A guessed type is worse than no type.
 - Only the keys above are known; anything else is a note wearing a costume, so put it in the body. If the project has installed the board-doctor test (`src/__tests__/board-registry.test.ts` or equivalent), it enforces this, plus unique ids, a title line, and the owner/type enums.
 

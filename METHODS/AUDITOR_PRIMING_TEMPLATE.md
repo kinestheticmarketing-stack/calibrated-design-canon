@@ -183,6 +183,13 @@ DIMENSION U7 — RULE 1 / EFFICIENCY BACKSTOP
     returned — or if the report was written while any dispatched
     agent or shell was still confirmed running, "status: completed"
     from a subagent notwithstanding (Rule 9j).
+  - FAIL if the kickoff cards something the same pass could have
+    fixed instead of fixing it in the pass (Rule 10b).
+  - FAIL if a Final Report does not state the repo's open card
+    count before and after the pass (Rule 10i).
+  - FAIL if a pass leaves a card with an expired re-triage date
+    untouched — not closed, fixed, or re-dated with a stated
+    reason (Rule 10d).
 
 DIMENSION U8 — RULE 6 / LOOK IT UP BACKSTOP
   - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 6
