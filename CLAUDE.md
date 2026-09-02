@@ -30,6 +30,10 @@
   operations.
 - Capture freely (fragments are fine); run `/groom-board` to consolidate,
   right-size, and sequence the board. Do not edit cards in the board UI.
+  A card is a debt, not a destination (METHODS/ARCHITECT_DISCIPLINE.md
+  Rule 10): fix what a pass can fix in the same pass, carry a re-triage
+  date on everything else, and report the repo's open card count before
+  and after any pass that touches it.
 
 
 ## Working model
