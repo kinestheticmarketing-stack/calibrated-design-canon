@@ -108,14 +108,23 @@ FAIL the kickoff if it:
     authored, per repo swept, per deploy performed — built before
     the kickoff's prose.
   - Phrases a report item with an escape hatch — "X verbatim, OR
-    Y," "if applicable," or any wording that lets a pointer
-    satisfy the letter instead of requiring the content in full
-    (Rule 9f).
+    Y," "if applicable," "anything else worth noting," or any
+    other wording that lets a pointer or a reflection satisfy the
+    letter instead of requiring the artifact and a decision in
+    full (Rule 9i).
   - Delivers a Final Report that references an artifact instead
     of containing it — verbatim and in full — inside the report
     itself: "see above," "reproduced in R2's report," "in the
-    committed file," "omitted here for length," or any equivalent
-    pointer (Rule 9a, 9b).
+    committed file," "omitted here for length," "detailed
+    elsewhere," or any equivalent pointer (Rule 9e).
+  - Delivers a Final Report with no literal "FINAL REPORT"
+    headline on its own line, or with any content appearing above
+    it or outside it (Rule 9a).
+  - Delivers a Final Report containing self-assessment or
+    meta-commentary about the report itself — describing how well
+    the rules were followed, or narrating dispatch or coordination
+    difficulties that did not change the work's outcome — instead
+    of reporting the work (Rule 9f).
 
 ═══════════════════════════════════════════════════════════════
 SCORING DIMENSION: RULE 6 (LOOK IT UP) BACKSTOP
