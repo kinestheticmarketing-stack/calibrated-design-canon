@@ -216,17 +216,122 @@ work stops stays undocumented, and the next session pays for it.
     finished early, it has deferred the cost onto someone with
     less context.
 
+RULE 8 — A PROCESS STEP DONE CORRECTLY CAN STILL LEAVE THE REAL
+PROBLEM STANDING. Following the right-looking procedure is not the
+same as closing the actual gap. Four instances this portfolio
+produced in the last day, each one a correctly-performed step that
+left the real defect open.
+
+8a. ESCALATE ONLY AFTER RETRIEVAL. A conflict between an
+    instruction and a standing ruling is not automatically a
+    Director question. Retrieve the standing ruling and read it
+    FIRST. If the conflict resolves on evidence — a source exists
+    or it does not, a file says X or it does not — resolve it and
+    REPORT the resolution, the same way Rule 1m already requires
+    for any other fact. A rebate-claim conflict in this portfolio
+    was escalated to the Director when one retrieval would have
+    settled it. Escalating a question whose answer sits in the
+    repo costs a full round and is the most common defect there
+    is.
+8b. A STANDING RULING DOES NOT PROTECT AN UNSOURCED CLAIM. Rulings
+    govern JUDGMENT CALLS — which of two defensible approaches to
+    take, tone, sequencing, format. They do NOT override the
+    never-guess, never-fabricate floor underneath them. A ruling
+    that would keep an uncited claim live is SUPERSEDED by the
+    sourcing rule, not in conflict with it. When the two appear to
+    clash, the ruling loses — go find the source or remove the
+    claim. This portfolio hit exactly that clash: a standing
+    ruling was read as cover for a claim that had never been
+    sourced, and it is not cover, and was never meant to be.
+8c. THE UNIT OF WORK IS THE DEFECT CLASS, NEVER THE PAGE IN SCOPE.
+    A lane that fixes one instance of a defect and leaves the
+    identical defect standing on pages outside its stated scope
+    has not fixed the defect — it has fixed a SIGHTING of it. This
+    portfolio shipped a figure-class fix scoped to the page that
+    surfaced it while the same class sat live, unfixed, on pages
+    the lane never touched. When a lane finds a defect class, it
+    sweeps the class PORTFOLIO-WIDE in the same pass, not the one
+    instance the audit happened to catch.
+8d. LANE CLAIMS MUST SURVIVE CONNECTION LOSS. A dropped connection
+    left a lane marked CLAIMED with an orphaned worktree and no
+    clean recovery procedure — the next session had no way to tell
+    whether the claiming session was still working it or simply
+    gone. A claim nobody can reclaim without manual archaeology is
+    a lock with no key. THE RECOVERY PROCEDURE, so no session has
+    to invent one under pressure:
+      1. Before claiming any lane already marked CLAIMED, check
+         whether its worktree path still exists on disk.
+      2. If the worktree is GONE, the claim is orphaned by
+         definition — no live session can be working a worktree
+         that no longer exists. Go to step 4.
+      3. If the worktree EXISTS, check the claim's age. Older than
+         4 hours with no commit and no lane-file edit in that
+         window is stale for this portfolio's typical session
+         length. Ping the claiming session if one is addressable;
+         if nothing answers within a reasonable wait, treat it as
+         gone.
+      4. Reclaim it — but the reclaiming session records, IN THE
+         LANE ROW itself, that it found an orphaned claim and is
+         taking it over: who held it, what was found (worktree
+         gone / stale timestamp / no response), and the reclaim
+         time. Never silently overwrite a CLAIMED row with a fresh
+         claim; the row must carry its own handoff history, or the
+         next session hits the identical ambiguity this rule
+         exists to close.
+      5. If the orphaned worktree still exists with uncommitted
+         work in it, that work is preserved — moved aside, never
+         deleted — before the new claim proceeds. An orphaned
+         claim is authorization to take over the LANE, not to
+         discard another session's unlanded work.
+
+RULE 9 — THE FINAL REPORT IS THE COMPLETE RECORD.
+
+9a. EVERY ARTIFACT APPEARS IN THE REPORT, VERBATIM AND IN FULL.
+    Page copy, replacement strings, config, findings documents,
+    proposed schema. If the Director would need to scroll up,
+    open a file, or run another command to read it, the report
+    is DEFECTIVE.
+9b. NEVER A POINTER. "See above," "reproduced in R2's report,"
+    "in the committed file," "omitted here for length" — each
+    is a defect. Length is not a reason. The report is long
+    because the work was.
+9c. THE REPORT STARTS AT ITEM (a). No preamble, no status line,
+    no narrative lead-in about which row finished last. The
+    lettered items ARE the report.
+9d. ONE REPORT, AT THE END. Findings scattered across subagent
+    output do not survive the session. The orchestrator's final
+    report carries everything, in its own words, in full.
+9e. ANYTHING THAT MUST SURVIVE THE SESSION IS ALSO WRITTEN TO A
+    FILE AND COMMITTED. Report and file, both, never one or the
+    other. A draft that exists only in a report dies when the
+    session is cleared — that has already happened once and
+    cost a full re-drafting pass.
+9f. THE ARCHITECT WRITES REPORT ITEMS WITH NO ESCAPE HATCH. An
+    item phrased "X verbatim, OR Y" invites a pointer. An item
+    phrased "if applicable" invites omission. Name the artifact
+    and require it in full. A kickoff that gives the Executor a
+    way to satisfy the letter with a reference is the
+    Architect's defect, not the Executor's.
+9g. A NULL RESULT IS AN ARTIFACT. When a pass recommends
+    against building something, the reasoning appears in full,
+    to the same standard as a draft would. A negative finding
+    reported thinly is worth less than the work that produced
+    it.
+
 ═══════════════════════════════════════════════════════════════
 VERBATIM RULES NOTICE
 ═══════════════════════════════════════════════════════════════
 
-The seven rules above are copied VERBATIM from the opening of
+The nine rules above are copied VERBATIM from the opening of
 METHODS/ARCHITECT_DISCIPLINE.md (Rule 1 — Efficiency, including
 sub-points 1a-1m; Rule 2 — No Dead Anything; Rule 3 — the scp
 prohibition; Rule 4 — answer the question first; Rule 5 — never
 surface a secret, including sub-points 5a-5g; Rule 6 — look it
 up, including sub-points 6a-6f; Rule 7 — paperwork fires on state
-change, including sub-points 7a-7f). They are never summarized,
+change, including sub-points 7a-7f; Rule 8 — a process step done
+correctly can still leave the real problem standing, including
+sub-points 8a-8d; Rule 9 — the final report is the complete
+record, including sub-points 9a-9g). They are never summarized,
 paraphrased, or shortened when this template is used. A fresh
 Architect session reads the real rule text above, not someone's
 gloss of it. If ARCHITECT_DISCIPLINE.md's opening ever changes,

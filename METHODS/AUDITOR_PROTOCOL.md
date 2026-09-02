@@ -107,6 +107,15 @@ FAIL the kickoff if it:
   - Omits a unit ledger — no row per file changed, per page
     authored, per repo swept, per deploy performed — built before
     the kickoff's prose.
+  - Phrases a report item with an escape hatch — "X verbatim, OR
+    Y," "if applicable," or any wording that lets a pointer
+    satisfy the letter instead of requiring the content in full
+    (Rule 9f).
+  - Delivers a Final Report that references an artifact instead
+    of containing it — verbatim and in full — inside the report
+    itself: "see above," "reproduced in R2's report," "in the
+    committed file," "omitted here for length," or any equivalent
+    pointer (Rule 9a, 9b).
 
 ═══════════════════════════════════════════════════════════════
 SCORING DIMENSION: RULE 6 (LOOK IT UP) BACKSTOP
