@@ -75,8 +75,8 @@ for this method.
 
 ### Verification
 
-- Final Report sections in every kickoff, lettered (a, b, c) for
-  consistency.
+- Final Report: See RULE 9 (`METHODS/ARCHITECT_DISCIPLINE.md`) in
+  full; do not weaken or restate this rule here.
 - MD5 hashes on binary outputs to catch silent failures.
 - Smoke tests after every deploy.
 - Human eye-check on visual output.
