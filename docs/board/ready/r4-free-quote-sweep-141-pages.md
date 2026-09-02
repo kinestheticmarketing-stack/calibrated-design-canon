@@ -4,6 +4,7 @@ owner: director
 type: decision
 created: 2026-08-21
 priority: 40
+retriage: 2026-09-16
 ---
 # R4 — the quote-phrase sweep is 141 pages and needs its own wave
 

@@ -4,6 +4,7 @@ owner: director
 type: decision
 created: 2026-08-21
 priority: 10
+retriage: 2026-09-16
 ---
 # $400, $500 and $350 are all unsourced — all removed, restoration is a separate wave
 

@@ -5,6 +5,7 @@ type: decision
 created: 2026-08-19
 priority: 20
 doc: METHODS/seo-geo/cr_voice_gated_drafts.md
+retriage: 2026-09-16
 ---
 # Three copy decisions the corpus re-score surfaced and could not make
 

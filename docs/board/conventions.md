@@ -17,6 +17,10 @@ created: 2026-01-01
 size: S                      # OPTIONAL: XS | S | M | L
 lane: area/subarea           # OPTIONAL
 priority: 20                 # sparse int, lower sorts higher; Ready only
+retriage: 2026-01-08          # every open card (not done/): next re-check date.
+                              # 7d out = live defect; 14d out = director-decision
+                              # ruling needed; 30d out = everything else (chores,
+                              # later/, deferred-pending-data, architecture Qs)
 tags: [parallel-safe, verify-prod, time-gated, discussion]
 after: [some-other-card-id]  # OPTIONAL dependency ids
 doc: docs/some-spec-2026-01-01.md
