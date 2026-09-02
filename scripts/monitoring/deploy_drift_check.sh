@@ -29,6 +29,24 @@ for propline in "${PROPERTIES[@]}"; do
     diffs+=("index.js (could not fetch live copy)")
   fi
 
+  # package.json — the other file ops/push-backend.sh ships (added
+  # 2026-09-02 alongside push-backend.sh itself, closing the same silent-
+  # miss gap index.js had: a dependency-manifest edit committed to the repo
+  # but never deployed is invisible without this). node_modules/ itself is
+  # deliberately NOT compared here — it's never shipped by push-backend.sh
+  # (installing packages is a separate, deliberate, manual step; see
+  # TOOLING_RUNBOOK.md), so comparing it would just alert on an expected,
+  # permanent difference (a dev machine plus a VPS never carry identical
+  # node_modules/ trees) rather than a real drift.
+  scp -q "root@74.208.181.10:${backend}/package.json" "$tmp/package.json.live" 2>/dev/null
+  if [ -f "$tmp/package.json.live" ]; then
+    if ! cmp -s "$tmp/package.json.live" "$repo/package.json"; then
+      diffs+=("package.json")
+    fi
+  else
+    diffs+=("package.json (could not fetch live copy)")
+  fi
+
   # public/ — compare every file that exists in the repo's public dir
   mkdir -p "$tmp/public_live"
   scp -rq "root@74.208.181.10:${backend}/public/." "$tmp/public_live/" 2>/dev/null

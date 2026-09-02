@@ -177,6 +177,162 @@ sequence: a real trivial change was introduced, drift alerted, deployed,
 drift cleared and recovered, then reverted and deployed again with the
 same result both ways).
 
+## The backend-code deploy pipeline (`ops/push-backend.sh`, per site repo)
+
+**Gap found and fixed 2026-09-02.** Each property's `ops/push-to-staging.sh`
+(site repo) + `/root/deploy.sh` (VPS) two-hop pipeline only ever syncs
+`public/`. The VPS's running `index.js` for all three properties had always
+been whatever was last hand-`scp`'d there, completely independent of what
+was committed in each repo — discovered when a committed `/contact` route
+fix went through the full `public/`-only pipeline successfully and still
+404'd live, because the pipeline never touched the actual running backend.
+That specific incident was fixed by hand, outside any pipeline
+(`index.js.bak-pre-contact-route-20260902*` on the VPS is that manual fix's
+backup trail). This section documents the general fix: a real pipeline for
+backend code, going forward.
+
+**What ships now, per property, and how:**
+
+| What | Mechanism | Where |
+|---|---|---|
+| `public/` (many files, `--delete` matters) | `ops/push-to-staging.sh <domain>` (repo → VPS staging) then `ssh root@74.208.181.10 '/root/deploy.sh <domain>'` (VPS staging → VPS live) | Each site repo's own `ops/` |
+| `index.js`, `package.json` (fixed two-file list, no `--delete`, no staging hop) | `ops/push-backend.sh <domain>` — straight to the VPS live directory | Each site repo's own `ops/`, identical copy in DCI/GCI/LGM (confirmed byte-identical across all three 2026-09-02), same per-property-copy convention `push-to-staging.sh` already uses |
+
+**Why `push-backend.sh` doesn't reuse the `public/` two-hop shape:**
+`public/` is dozens of files where `--delete` matters (a retired page must
+vanish live) and a staging look-before-mirror step earns its keep. Backend
+code here is a fixed two-file allowlist — `--delete` is meaningless on a
+named-file list, and the equivalent "look before you leap" property comes
+from a per-file md5 diff (nothing touches the VPS unless it actually
+changed) plus a mandatory `node --check` syntax gate before any restart.
+Modeled directly on `scripts/deploy_ops_to_vps.sh`'s per-file
+backup+scp+md5-verify pattern instead — that script's shape fits a small
+fixed file list going straight to a live path, which is exactly this
+problem; `push-to-staging.sh`'s shape does not.
+
+**What `push-backend.sh <domain> [--dry-run]` does, per file (`index.js`,
+`package.json`):**
+1. Refuses outright if its own fixed file list ever contains `.env` or any
+   other name on an explicit denylist — checked before anything else runs,
+   so a future edit to the file list can't silently start shipping secrets
+   (Rule 5 territory: shipping the `.env` FILE isn't quite "reading a
+   secret's value," but is treated with the same seriousness).
+2. `md5` (local) vs `md5sum` (VPS) each file — skips it entirely if they
+   already match. No needless restarts on a no-op run.
+3. For `index.js` only, if it differs: `node --check` on the local file
+   first. A broken file must never overwrite a running service. (Verified
+   this actually catches a broken file, not just assumed the flag works:
+   `node --check` on a deliberately truncated fixture exits 1 with a
+   `SyntaxError`; on a valid file it exits 0.)
+4. Backs up the VPS copy before overwriting — `<file>.bak-pre-deploy-<full
+   timestamp>`, this portfolio's established `.bak-<reason>-<date>`
+   convention, same as `deploy_ops_to_vps.sh`.
+5. `scp`s the file over, then re-`md5sum`s the VPS copy and refuses (exits
+   nonzero, already-written backup still in place) if it doesn't match the
+   local file exactly.
+6. Restarts `<domain>.service` via `systemctl restart` **only if `index.js`
+   was in the changed set** — a `package.json`-only change never restarts
+   anything, since `node_modules/` isn't touched by this script and the
+   running process already has whatever it loaded at last start. Confirms
+   `systemctl is-active` after restarting and fails loudly if it isn't.
+
+**What this deliberately still does NOT ship, and why:**
+- **`.env` / any secrets file** — never, by explicit denylist (see step 1
+  above), not merely by omission from an inclusion list.
+- **`node_modules/`** — confirmed 2026-09-02: every package all three
+  properties' `index.js` actually `require()`s (`express`, `pg`, `dotenv`,
+  `express-rate-limit`, `@sendgrid/mail`) was already installed on the VPS
+  at a version satisfying that property's own `package.json` semver range —
+  no missing dependency, no live risk today. Installing packages is a
+  separate, materially riskier, network-dependent operation (can fail
+  non-atomically mid-install, needs VPS internet egress, isn't reversible
+  by a simple file restore) that this script deliberately does not
+  automate. If a future `index.js` adds a genuinely new dependency,
+  `npm install <pkg>` on the VPS stays a manual, deliberate step — this
+  script only keeps `index.js` and `package.json` themselves in sync with
+  the repo. (One real, harmless finding from the same 2026-09-02 audit: the
+  VPS's DCI `package.json` had accumulated a `puppeteer-core` entry — and a
+  matching installed package — never present in the DCI repo's own
+  `package.json`; not required by `index.js`'s `require()` list, so
+  orphaned but inert. `push-backend.sh`'s `package.json` sync overwrites the
+  VPS's manifest text to match the repo exactly; it does not touch
+  `node_modules/`, so the orphaned package is simply no longer *declared*,
+  not uninstalled.)
+- **Any other per-repo `ops/` script** (`functional_proof.sh`,
+  `live_token_check.sh`, `similarity_canary.sh`, plus DCI-only
+  `browser_canary.js`/`canary_check.js`/`retention_cleanup.js`) — none of
+  these are `require()`d by any property's `index.js` at runtime (confirmed
+  by reading each `index.js`'s requires directly), so none is a deploy gap
+  in the sense this pipeline closes. DCI's canary scripts already have a
+  live VPS copy (deployed by hand at some point — VPS-side `.bak.<date>`
+  files use a different naming convention than this pipeline's
+  `.bak-pre-deploy-<timestamp>`, evidence of an earlier ad hoc `scp`); GCI's
+  and LGM's equivalents have never been deployed to the VPS at all. Neither
+  gap blocks the running Express service, so both are out of this pass's
+  scope — flagged here for whoever picks up VPS-side canary tooling next.
+- **The systemd unit files themselves**
+  (`/etc/systemd/system/<domain>.service`) — not version-controlled in any
+  repo, not touched by any deploy pipeline, set up once per property at
+  initial VPS provisioning. `greeleycoloradoinsulation.com.service` is
+  structurally different from DCI's/LGM's (no `Type=simple`/`User=root`, no
+  `docker.service` dependency, `Restart=always` vs `on-failure`,
+  `--env-file=.env` on the `ExecStart` line instead of `dotenv` doing it in
+  code) — a pre-existing inconsistency, not something this pass introduced
+  or needed to resolve to ship `index.js`/`package.json` correctly.
+
+**How to deploy a backend change, going forward:**
+```bash
+cd <site-repo>                                    # DCI, GCI, or LGM
+bash ops/push-backend.sh <full-domain> --dry-run   # inspect the plan first
+bash ops/push-backend.sh <full-domain>             # backs up, syntax-checks
+                                                    # index.js, deploys,
+                                                    # md5-verifies, restarts
+                                                    # only if index.js changed
+```
+
+**Live-proven 2026-09-02** (lane `backend-deploy-pipeline-gci`, full detail
+in GCI's `docs/lanes.md`): closed real, pre-existing `package.json` drift on
+all three properties (a `scripts`-field mismatch on all three, plus DCI's
+orphaned `puppeteer-core` entry) with zero restarts (`index.js` unchanged on
+that run, confirmed by `ActiveEnterTimestamp` unchanged before/after on
+GCI/DCI/LGM). Then, on GCI only, a trivial one-line comment added to
+`index.js`, deployed for real (backup written, `node --check` passed,
+`scp`+md5-verify passed, `systemctl restart` fired, `is-active` confirmed,
+clean `journalctl` boot, live homepage `200`), then reverted to the exact
+original file (confirmed byte-identical to the pre-change committed
+`index.js` via `git diff` before redeploying) and deployed again through the
+same mechanism — final live `index.js` md5 matches the original committed
+file exactly, service healthy, homepage `200`. GCI ends this pass
+byte-identical to how it started on `index.js`; `package.json` on all three
+properties is now a deliberate, permanent sync (real drift closed, not a
+test artifact).
+
+## The extended deploy-drift check
+
+`scripts/monitoring/deploy_drift_check.sh` (per-property, wired into
+`daily_checks.sh`, 07:00 daily via `r2daily`) already compared live
+`index.js` and `public/` against each property's repo — it did **not** yet
+know about `package.json`, the second file `push-backend.sh` ships. Extended
+2026-09-02 with the identical `scp`+`cmp` pattern already used for
+`index.js` (fetch the live copy, `cmp -s` against the repo, append to
+`diffs` on mismatch or missing), through the same `_mon_lib.sh`
+`handle_check_result`/`send_alert` machinery every check in this directory
+uses — same per-property consecutive-failure counting
+(`CONSECUTIVE_FAILURE_THRESHOLD=2`), same per-day suppression, same
+recovery-on-next-clean-run, same VPS-side sender (`send_alert.sh` →
+`send_alert.js` → `DIRECTOR_ALERT_EMAIL`), never a new alert channel.
+`node_modules/` is deliberately NOT compared — it's never shipped by
+`push-backend.sh` (see above), so comparing it would alert on an expected,
+permanent difference between a dev machine and the VPS, not a real drift.
+
+**Verified live, 2026-09-02, before the fix above:** the extended check
+correctly detected the real `package.json` drift then still live on DCI and
+LGM (failure count went to 1 for each — below the 2-run alert threshold, by
+design, so no alert fired on a single run) while reporting GCI clean (GCI's
+`package.json` had already been synced). After deploying the fix to DCI and
+LGM, a re-run left zero drift-check state files for any property — fully
+clean across all three.
+
 ## The rules pipeline (`~/.claude/context/rules.md`)
 
 **Gap found and fixed 2026-09-02.** `~/.claude/context/rules.md` — the file
