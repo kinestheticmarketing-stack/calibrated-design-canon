@@ -331,6 +331,17 @@ CATCH.
     and require decisions rather than reflections. A kickoff
     that lets the Executor satisfy the letter with a reference
     is the Architect's defect, not the Executor's.
+9j. CONFIRM EVERY AGENT AND SHELL HAS RETURNED BEFORE WRITING
+    THE REPORT. Not "the last message read as complete" — check
+    process state directly, as its own gate, with the same
+    standing as a build exit code. "Status: completed" is NOT
+    sufficient: a completed turn can leave an idle, resumable
+    process alive and visible to the Director. Any task not
+    fully torn down gets an explicit stop call before the report
+    is compiled. State the confirmation as the first line under
+    the headline, citing what you checked and what it returned.
+    A report written while anything is still running is a
+    DEFECT even when its numbers happen to hold up.
 
 ═══════════════════════════════════════════════════════════════
 VERBATIM RULES NOTICE
@@ -345,7 +356,7 @@ up, including sub-points 6a-6f; Rule 7 — paperwork fires on state
 change, including sub-points 7a-7f; Rule 8 — a process step done
 correctly can still leave the real problem standing, including
 sub-points 8a-8d; Rule 9 — the final report, written for someone
-who knows nothing, never a pointer, including sub-points 9a-9i).
+who knows nothing, never a pointer, including sub-points 9a-9j).
 They are never summarized, paraphrased, or shortened when this
 template is used. A fresh
 Architect session reads the real rule text above, not someone's
