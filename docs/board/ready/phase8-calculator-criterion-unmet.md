@@ -6,7 +6,10 @@ created: 2026-08-20
 priority: 30
 doc: METHODS/PROPERTY_GENESIS.md
 retriage: 2026-10-02
+classification: ARCHITECT
 ---
+**Classification reasoning (2026-09-02):** A technical, reversible choice between two implementation paths for a documentation/gate mismatch — the card itself already frames it as "Architect's call" and already carries `owner: architect`; no tradeoff requires Director judgment.
+
 # PHASE 8's calculator criterion is not met by the gate that claims to satisfy it
 
 `METHODS/PROPERTY_GENESIS.md` PHASE 8 requires that a calculator

@@ -5,7 +5,10 @@ type: record
 created: 2026-08-21
 priority: 30
 retriage: 2026-10-02
+classification: ALREADY-DONE
 ---
+**Classification reasoning (2026-09-02):** The removal already shipped (Director ruling applied, word-inventory verified against the real diffs, commit range documented in-card) — the card now exists only as a preserved-text reference for a hypothetical future restoration, not open work.
+
 # The three reasoning passages removed 2026-08-21 — full text preserved for restoration
 
 Director ruling: these are ARGUMENTS whose load-bearing premise is an unsourced

@@ -5,7 +5,10 @@ type: decision
 created: 2026-08-21
 priority: 10
 retriage: 2026-09-16
+classification: ALREADY-DONE
 ---
+**Classification reasoning (2026-09-02):** Both flagged DCI-incomplete items are resolved — the "worked calculations" class was closed by the Director ruling recorded ~12 minutes later the same day in `removed-cap-reasoning-passages.md` (same three pages, same commit range), and the card's own text marks the missed `$400` variant "now fixed"; LGM is already marked complete.
+
 # $400, $500 and $350 are all unsourced — all removed, restoration is a separate wave
 
 ## The finding
