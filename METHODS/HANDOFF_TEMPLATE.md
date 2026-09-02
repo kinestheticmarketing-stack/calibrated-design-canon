@@ -343,11 +343,55 @@ CATCH.
     A report written while anything is still running is a
     DEFECT even when its numbers happen to hold up.
 
+RULE 10 — A CARD IS A DEBT, NOT A DESTINATION. THE WORK IS NOT
+DONE WHILE CARDS ARE OPEN.
+
+10a. A CARD IS A TEMPORARY POSITION. Never permanent, never
+     ignored, never a place to put work nobody wanted to do.
+     Its existence means the work is unfinished. "The board is
+     clear" is only true when someone has actually read the
+     boards.
+10b. FIXABLE NOW IS FIXED NOW. If a pass can close it, it
+     closes it. Carding something the same pass could have
+     fixed is a DEFECT, not triage. This restates Rule 1i and
+     it is restated because it kept being ignored.
+10c. EVERY CARD CARRIES A RE-TRIAGE DATE. No exceptions. A live
+     defect gets 7 days, a Director decision 14, everything
+     else 30. A card with no date never expires and never gets
+     reviewed, which is how 65 accumulated.
+10d. AN EXPIRED RE-TRIAGE DATE IS A HALT-LEVEL FINDING. Not a
+     note. When a card's date passes, it gets closed, fixed, or
+     re-dated with a stated reason — never silently carried.
+10e. READ THE BOARD, DO NOT REMEMBER IT. The Architect reads
+     docs/board/ in every repo before claiming any state about
+     what is open. Card knowledge reconstructed from past
+     reports is not knowledge. This is Rule 6 applied to the
+     board.
+10f. EVERY PASS CLOSES CARDS IT TOUCHES. A pass working in an
+     area checks that area's open cards and closes what it can
+     while it is already there. Leaving a closeable card open
+     because it was not in the kickoff is a defect.
+10g. A CARD LABELED "DIRECTOR" IS NOT AUTOMATICALLY THE
+     DIRECTOR'S. Re-test it against Rule 1e every time it is
+     read. Technical, reversible, single-answer, or settled by
+     a primary source is the Architect's to decide and close.
+     Most cards labeled DIRECTOR were labeled before that rule
+     existed.
+10h. A CARD WHOSE SUBJECT NO LONGER EXISTS IS DELETED, NOT
+     CLOSED. Rule 2. Verify against the live site or the repo
+     first — a card describing something already fixed is
+     bloat, and a card describing something still broken is a
+     live defect wearing a card as a disguise.
+10i. THE BOARD IS REPORTED, NOT ASSUMED. Any pass that touches
+     a repo states that repo's open card count in its Final
+     Report, before and after. A rising count with no stated
+     reason is a defect.
+
 ═══════════════════════════════════════════════════════════════
 VERBATIM RULES NOTICE
 ═══════════════════════════════════════════════════════════════
 
-The nine rules above are copied VERBATIM from the opening of
+The ten rules above are copied VERBATIM from the opening of
 METHODS/ARCHITECT_DISCIPLINE.md (Rule 1 — Efficiency, including
 sub-points 1a-1m; Rule 2 — No Dead Anything; Rule 3 — the scp
 prohibition; Rule 4 — answer the question first; Rule 5 — never
@@ -356,8 +400,10 @@ up, including sub-points 6a-6f; Rule 7 — paperwork fires on state
 change, including sub-points 7a-7f; Rule 8 — a process step done
 correctly can still leave the real problem standing, including
 sub-points 8a-8d; Rule 9 — the final report, written for someone
-who knows nothing, never a pointer, including sub-points 9a-9j).
-They are never summarized, paraphrased, or shortened when this
+who knows nothing, never a pointer, including sub-points 9a-9j;
+Rule 10 — a card is a debt, not a destination, including
+sub-points 10a-10i). They are never summarized, paraphrased, or
+shortened when this
 template is used. A fresh
 Architect session reads the real rule text above, not someone's
 gloss of it. If ARCHITECT_DISCIPLINE.md's opening ever changes,
