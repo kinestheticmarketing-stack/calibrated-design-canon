@@ -331,6 +331,17 @@ CATCH.
     and require decisions rather than reflections. A kickoff
     that lets the Executor satisfy the letter with a reference
     is the Architect's defect, not the Executor's.
+9j. CONFIRM EVERY AGENT AND SHELL HAS RETURNED BEFORE WRITING
+    THE REPORT. Not "the last message read as complete" — check
+    process state directly, as its own gate, with the same
+    standing as a build exit code. "Status: completed" is NOT
+    sufficient: a completed turn can leave an idle, resumable
+    process alive and visible to the Director. Any task not
+    fully torn down gets an explicit stop call before the report
+    is compiled. State the confirmation as the first line under
+    the headline, citing what you checked and what it returned.
+    A report written while anything is still running is a
+    DEFECT even when its numbers happen to hold up.
 
 # ARCHITECT_DISCIPLINE.md
 
