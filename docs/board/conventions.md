@@ -15,16 +15,14 @@ owner: director               # director | architect | executor | auditor -- see
 type: bug                    # OPTIONAL: bug | feature | decision | idea | chore | watch
 created: 2026-01-01
 retriage: 2026-01-08          # REQUIRED -- re-triage date, no exceptions (Rule 10c):
-                               # 7 days for a live defect, 14 for a Director decision,
-                               # 30 for everything else. An expired date is a
-                               # halt-level finding (Rule 10d), not a note.
+                               # 7d out for a live defect, 14d for a Director-decision
+                               # ruling, 30d for everything else (chores, later/,
+                               # deferred-pending-data, architecture questions). An
+                               # expired date is a halt-level finding (Rule 10d), not
+                               # a note.
 size: S                      # OPTIONAL: XS | S | M | L
 lane: area/subarea           # OPTIONAL
 priority: 20                 # sparse int, lower sorts higher; Ready only
-retriage: 2026-01-08          # every open card (not done/): next re-check date.
-                              # 7d out = live defect; 14d out = director-decision
-                              # ruling needed; 30d out = everything else (chores,
-                              # later/, deferred-pending-data, architecture Qs)
 tags: [parallel-safe, verify-prod, time-gated, discussion]
 after: [some-other-card-id]  # OPTIONAL dependency ids
 doc: docs/some-spec-2026-01-01.md
