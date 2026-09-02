@@ -5,7 +5,10 @@ type: decision
 created: 2026-08-21
 priority: 40
 retriage: 2026-09-16
+classification: DIRECTOR
 ---
+**Classification reasoning (2026-09-02):** Genuine scope/risk tradeoff (how large a voice-gated rendered-copy batch to authorize) with no single correct cap, plus the replacement copy itself is user-facing and voice-gated under standing portfolio rule — correctly Director's call.
+
 # R4 — the quote-phrase sweep is 141 pages and needs its own wave
 
 R4 was chartered HELD, DRAFT ONLY, with the Director capping the batch. This

@@ -6,7 +6,10 @@ created: 2026-08-19
 priority: 20
 doc: METHODS/seo-geo/cr_voice_gated_drafts.md
 retriage: 2026-09-16
+classification: DIRECTOR
 ---
+**Classification reasoning (2026-09-02):** All three items are rendered, user-facing copy/policy calls with real tradeoffs (accuracy-vs-length on live meta descriptions, whether 154 titles are worth shortening for a brand suffix, and an AI-disclosure policy gated on the still-open named-spokesperson ruling) — none is settled by a single primary-source check.
+
 # Three copy decisions the corpus re-score surfaced and could not make
 
 Every mechanical finding from the Allsopp/Vahe/Floate re-score is fixed and

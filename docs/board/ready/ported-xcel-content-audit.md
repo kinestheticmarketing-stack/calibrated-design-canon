@@ -5,7 +5,10 @@ type: chore
 created: 2026-08-21
 priority: 45
 retriage: 2026-10-02
+classification: ARCHITECT
 ---
+**Classification reasoning (2026-09-02):** A technical source-diffing audit (what DCI/LGM inherited from a shared parent) with a single defensible methodology and no rendered-copy decision attached — already correctly `owner: architect`.
+
 # R8 — if an Xcel multiplier could port onto an Atmos property, what else ported?
 
 The porting argument justified widening S1-S3 across all three properties. It

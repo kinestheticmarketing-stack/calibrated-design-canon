@@ -7,7 +7,10 @@ size: L
 lane: genesis
 after: [hardcoded-path-defect-portfolio]
 retriage: 2026-10-02
+classification: BLOCKED
 ---
+**Classification reasoning (2026-09-02):** Waiting on an external, undated event (a Fort Collins domain/client and the Director's go-ahead to start a fourth-property genesis) that does not exist yet — nothing for Architect or Director to rule on until then.
+
 # Fort Collins — the fourth property, not yet started
 
 `METHODS/PROPERTY_GENESIS.md` now carries 10 Zarr-derived genesis steps

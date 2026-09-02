@@ -5,7 +5,10 @@ type: watch
 created: 2026-08
 priority: 20
 retriage: 2026-10-02
+classification: BLOCKED
 ---
+**Classification reasoning (2026-09-02):** The card's own text confirms zero non-canary lead rows exist to trace to a closed job — this is waiting on real-world contractor data that does not exist yet, no known ETA, not a ruling Architect or Director can make in its absence.
+
 # Lead-to-job-to-ticket-size — still OPEN, no closed job on record
 
 Three real, non-canary leads are now traceable by id (DCI 5/6/8, GCI 3;
