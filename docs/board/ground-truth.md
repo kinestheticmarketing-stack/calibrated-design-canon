@@ -41,3 +41,19 @@ These decisions are settled. If your context disagrees, your context is stale.
 - **Standing — Pattern 14 (2026-08-17).** A validator is not installed
   until shown to fire in the real execution path. Verification that
   inspects a written artifact cannot see whether the artifact functions.
+- **Standing ruling — 2026-09-02 — NO NAMED SPOKESPERSON ON
+  RANK-AND-RENT PROPERTIES. STANDING, SCOPED.** Scope: the rank-and-rent
+  lead-gen portfolio only — DCI, LGM, GCI, and any future property built
+  on the same model. These sites are deliberately neutral: leads route to
+  a contractor partner who must be switchable on a dime, so no page may
+  carry a human byline, persona, or named author. Publisher-level
+  attribution only. This ruling does NOT apply to the Director's other
+  ventures — agency work, SaaS, or any property with a real operating
+  business behind it. Those are separate and unaffected. Within the
+  rank-and-rent scope this is settled and not revisited. It closes the
+  AI-content supervision disclosure question, Vahe PCO-02, and the
+  author-identity gap. Recorded portfolio-wide, same ruling, same
+  wording: `denvercoloradoinsulation.com/docs/board/ground-truth.md`,
+  `longmontcoloradoinsulation.com/docs/board/ground-truth.md`,
+  `greeleycoloradoinsulation.com/docs/board/ground-truth.md`. This is the
+  canon home for the ruling; the property files cross-reference back here.
