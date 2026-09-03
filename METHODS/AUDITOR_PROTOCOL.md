@@ -137,6 +137,9 @@ FAIL the kickoff if it:
     card count before and after the pass (Rule 10i).
   - Leaves a card with an expired re-triage date untouched — not
     closed, fixed, or re-dated with a stated reason (Rule 10d).
+  - Asks permission to retrieve, narrates a knowledge gap without
+    closing it, or repeats an untested "blocked" label instead of
+    retrieving and answering (Rule 11).
 
 ═══════════════════════════════════════════════════════════════
 SCORING DIMENSION: RULE 6 (LOOK IT UP) BACKSTOP

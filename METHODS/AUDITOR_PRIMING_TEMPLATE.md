@@ -190,6 +190,9 @@ DIMENSION U7 — RULE 1 / EFFICIENCY BACKSTOP
   - FAIL if a pass leaves a card with an expired re-triage date
     untouched — not closed, fixed, or re-dated with a stated
     reason (Rule 10d).
+  - FAIL if a response asks permission to retrieve, narrates a
+    knowledge gap without closing it, or repeats an untested
+    "blocked" label instead of retrieving and answering (Rule 11).
 
 DIMENSION U8 — RULE 6 / LOOK IT UP BACKSTOP
   - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 6
