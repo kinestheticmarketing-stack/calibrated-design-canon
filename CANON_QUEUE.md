@@ -260,3 +260,5 @@ OPEN ITEMS ACROSS THE PORTFOLIO (2026-08-12 session paperwork)
   `STATE_OF_PROJECT.md` (the "DIRECTOR GATE — THE REBATE ARCHITECTURE SPEC"
   section); not duplicated here, cross-referenced for portfolio visibility
   only.
+
+- 2026-09-03 | portfolio | De-duplicate the three properties' _shared_components.py into one shared parent; absorbs the DCI↔LGM shared-parent inheritance audit (what else crossed from the unverifiable royalcomforths.com source beyond the $400 figure) — closed as duplicate 2026-09-03.
