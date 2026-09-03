@@ -63,3 +63,41 @@ canary-proven instrument: S5 detects 3 occurrences in the known-present GCI
 title and returns 0 on a scrubbed copy.
 
 **Not drafted, per the charter.** Set the cap and the drafts follow.
+
+## CLOSED — 2026-09-02 — Ruling 4: CAP AT ZERO
+
+Director ruling: cap this batch at **zero**. "Free quote" is not false and is
+not costing anything measurable — no evidence in this card or elsewhere in
+the portfolio shows it costing CTR, rankings, or trust. It became a card only
+because a sweep found it, not because it was flagged as broken. Drafting 141
+pages of voice-gated replacement copy against a phrase that isn't demonstrably
+hurting anything is not warranted; that effort is better spent on findings
+with an actual defect behind them.
+
+This closes as a **decision not to act**, not an edit. No copy changed on any
+of the three properties as a result of this card. D-3 (the one line R4 was
+originally chartered to fix,
+`greeleycoloradoinsulation.com/insulation-greeley.html`'s `<title>`) is
+included in the zero cap — it is not carved out and drafted separately, since
+carving out one line while ruling the other 140 not worth drafting would
+contradict the "not costing anything measurable" reasoning for the one line
+that happens to be a title tag rather than body copy.
+
+If future evidence shows "free quote" measurably underperforming an
+alternative (a CTR drop, a competitor pattern, a Director-supplied test),
+re-open with that evidence attached — this closure does not forbid a future
+card, it just closes this one with the cap recorded.
+
+**Verify:**
+```
+grep -c "CAP AT ZERO" docs/board/done/r4-free-quote-sweep-141-pages.md
+# -> 1
+
+# No property repo touched by this closure -- decision-not-to-act, no edit:
+for repo in greeleycoloradoinsulation.com denvercoloradoinsulation.com longmontcoloradoinsulation.com; do
+  cd /Users/vongimbel/code/$repo && git status --short -- public/ '*.py' | wc -l
+done
+# -> 0, 0, 0 (no generator or public/ file touched in any property by this card's closure)
+```
+Commit: see `docs/lanes.md` lane `director-rulings-close-r4-canon` for the
+exact hash landing this closure.
