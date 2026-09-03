@@ -24,7 +24,7 @@ property. Shared infrastructure belongs in canon.
 | VPS-side systemd timers | `/etc/systemd/system/*.timer` on the VPS only — no copy in any repo (confirmed 2026-08-30, still true) | Schedule the checks in `ops/` |
 | Deploy path | `scripts/deploy_ops_to_vps.sh` | The **only** sanctioned way a canon change to `ops/` reaches the VPS |
 | Drift check | `scripts/monitoring/ops_drift_check.sh`, wired into `scripts/monitoring/daily_checks.sh` | Alerts if the VPS ever diverges from canon again |
-| Rules pipeline (code) | `~/.claude/hooks/sync_rules_from_canon.sh` — **not in this repo**, local-machine config | Regenerates `~/.claude/context/rules.md` from this repo's `METHODS/ARCHITECT_DISCIPLINE.md` (Rules 1-9 block) plus `~/.claude/CLAUDE.md`'s kickoff-decomposition section, every session, before `~/.claude/hooks/h01_session_start.sh` injects it |
+| Rules pipeline (code) | `~/.claude/hooks/sync_rules_from_canon.sh` — **not in this repo**, local-machine config | Regenerates `~/.claude/context/rules.md` from this repo's `METHODS/ARCHITECT_DISCIPLINE.md` (Rules 1-11 block) plus `~/.claude/CLAUDE.md`'s kickoff-decomposition section, every session, before `~/.claude/hooks/h01_session_start.sh` injects it |
 | Rules pipeline drift check | `scripts/monitoring/rules_drift_check.sh`, wired into `scripts/monitoring/daily_checks.sh` | Alerts if `rules.md` ever diverges from canon's `ARCHITECT_DISCIPLINE.md`, or if the local canon checkout falls behind `origin/main` |
 | Mac-side monitoring layer | `scripts/monitoring/` in this repo | Uptime, TLS expiry, deploy drift (per-site), page-200, ops drift, and rules drift — see below |
 | Mac-side scheduling | `~/Library/LaunchAgents/com.vongimbel.r2uptime.plist` and `com.vongimbel.r2daily.plist` — **not in this repo**, local-machine config | Run the checks in `scripts/monitoring/` |
@@ -337,23 +337,23 @@ clean across all three.
 
 **Gap found and fixed 2026-09-02.** `~/.claude/context/rules.md` — the file
 `~/.claude/hooks/h01_session_start.sh`'s `SessionStart` hook tells every
-Claude Code session to load — was copied from this file's Rules 1-9 block
-once, early on, and never kept in sync. It held only Rules 1-4 (plus the
-kickoff-decomposition block sourced from `~/.claude/CLAUDE.md`). Rules 5
-(secrets), 6 (look-it-up), 7 (this paperwork rule), 8 (process-vs-problem),
-and 9 (the Final Report rule) had been added to this file's Rules 1-9 block
-and never once reached any session on this machine. Rule 1's own copy had
-also drifted: canon's 1m had grown a trailing cross-reference sentence
-("RULE 6 COVERS THE GUESSING SIDE OF THIS IN FULL...") that rules.md's copy
-lacked.
+Claude Code session to load — was copied from this file's top-level rules
+block (Rules 1-9 at the time; Rules 1-11 now) once, early on, and never
+kept in sync. It held only Rules 1-4 (plus the kickoff-decomposition block
+sourced from `~/.claude/CLAUDE.md`). Rules 5 (secrets), 6 (look-it-up),
+7 (this paperwork rule), 8 (process-vs-problem), and 9 (the Final Report
+rule) had been added to this file's rules block and never once reached any
+session on this machine. Rule 1's own copy had also drifted: canon's 1m had
+grown a trailing cross-reference sentence ("RULE 6 COVERS THE GUESSING SIDE
+OF THIS IN FULL...") that rules.md's copy lacked.
 
 **Fix — two pieces, mirroring the `ops/` pattern above:**
 
 | Component | Location | What it is |
 |---|---|---|
-| Sync script | `~/.claude/hooks/sync_rules_from_canon.sh` — **not in this repo**, local-machine config | Regenerates `~/.claude/context/rules.md` from this file's Rules 1-9 block (everything above the `# ARCHITECT_DISCIPLINE.md` header, located by grep, never hardcoded) plus `~/.claude/CLAUDE.md`'s kickoff-decomposition section. Idempotent (no-op, no write, no backup file if content is already byte-identical); backs up the prior `rules.md` to `rules.md.bak-pre-sync-<date>` only when it actually changes something; fails loudly (stderr + exit 1) and leaves the existing `rules.md` completely untouched if canon's file is missing/unreadable or its expected structure isn't found. Deliberately never runs `git pull` — a `SessionStart` hook must not perform a network git operation that could hang or conflict; catching a stale local canon checkout is `rules_drift_check.sh`'s job below. |
+| Sync script | `~/.claude/hooks/sync_rules_from_canon.sh` — **not in this repo**, local-machine config | Regenerates `~/.claude/context/rules.md` from this file's Rules 1-11 block (everything above the `# ARCHITECT_DISCIPLINE.md` header, located by grep, never hardcoded) plus `~/.claude/CLAUDE.md`'s kickoff-decomposition section. Idempotent (no-op, no write, no backup file if content is already byte-identical); backs up the prior `rules.md` to `rules.md.bak-pre-sync-<date>` only when it actually changes something; fails loudly (stderr + exit 1) and leaves the existing `rules.md` completely untouched if canon's file is missing/unreadable or its expected structure isn't found. Deliberately never runs `git pull` — a `SessionStart` hook must not perform a network git operation that could hang or conflict; catching a stale local canon checkout is `rules_drift_check.sh`'s job below. |
 | Hook wiring | `~/.claude/hooks/h01_session_start.sh` | Calls the sync script as its first step, before reading and injecting `rules.md`, so the file can never be stale at the moment it's loaded. On a sync failure it logs a `WARN` to `~/.claude/hooks/hook.log` and falls through to whatever `rules.md` already holds (last-known-good) — a session is never left with zero rules loaded. |
-| Drift check | `scripts/monitoring/rules_drift_check.sh`, wired into `daily_checks.sh` (07:00 daily via `r2daily`) | Two checks in one: (1) is the local canon checkout behind `origin/main` (`git fetch` + `git rev-list --count HEAD..origin/main`); (2) does `~/.claude/context/rules.md` still contain canon's current Rules 1-9 text verbatim, independently re-derived from `ARCHITECT_DISCIPLINE.md` using the same header-boundary logic as the sync script (a separate re-implementation, so this check can catch the sync script itself being broken or bypassed, not just canon having moved). Routes through the same `_mon_lib.sh` `handle_check_result`/`send_alert` machinery as every other check here — same per-day suppression, same recovery-on-clean-run, same VPS-side sender (`send_alert.js` → `DIRECTOR_ALERT_EMAIL`), never a new alert channel. |
+| Drift check | `scripts/monitoring/rules_drift_check.sh`, wired into `daily_checks.sh` (07:00 daily via `r2daily`) | Two checks in one: (1) is the local canon checkout behind `origin/main` (`git fetch` + `git rev-list --count HEAD..origin/main`); (2) does `~/.claude/context/rules.md` still contain canon's current Rules 1-11 text verbatim, independently re-derived from `ARCHITECT_DISCIPLINE.md` using the same header-boundary logic as the sync script (a separate re-implementation, so this check can catch the sync script itself being broken or bypassed, not just canon having moved). Routes through the same `_mon_lib.sh` `handle_check_result`/`send_alert` machinery as every other check here — same per-day suppression, same recovery-on-clean-run, same VPS-side sender (`send_alert.js` → `DIRECTOR_ALERT_EMAIL`), never a new alert channel. |
 
 **Why a session-start regenerate instead of a git hook or a manual step:**
 `~/.claude` is not a git repo (no post-merge/post-checkout hook is available

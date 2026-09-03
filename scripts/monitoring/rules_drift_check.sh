@@ -80,11 +80,18 @@ else
   else
     RULES_END=$((HEADER_LINE - 2))
     EXPECTED_RULES_BLOCK="$(sed -n "1,${RULES_END}p" "$CANON_FILE")"
-    if ! grep -qF -- "$EXPECTED_RULES_BLOCK" "$RULES_FILE"; then
-      diffs+=("rules.md does not contain canon's current Rules 1-9 text verbatim -- sync is stale or was bypassed")
+    # Highest-numbered "RULE N" header in the canon file -- derived, never
+    # hardcoded, so adding a Rule 12 to canon can never leave this check
+    # silently testing for a stale count.
+    LAST_RULE="$(grep -oE '^RULE [0-9]+' "$CANON_FILE" | awk '{print $2}' | sort -n | tail -1)"
+    if [ -z "$LAST_RULE" ]; then
+      diffs+=("could not find any '^RULE N' header in $CANON_FILE -- canon structure changed unexpectedly")
     fi
-    if ! grep -q "^RULE 9 " "$RULES_FILE"; then
-      diffs+=("rules.md is missing RULE 9 (the Final Report rule)")
+    if ! grep -qF -- "$EXPECTED_RULES_BLOCK" "$RULES_FILE"; then
+      diffs+=("rules.md does not contain canon's current Rules 1-${LAST_RULE:-?} text verbatim -- sync is stale or was bypassed")
+    fi
+    if [ -n "$LAST_RULE" ] && ! grep -q "^RULE ${LAST_RULE} " "$RULES_FILE"; then
+      diffs+=("rules.md is missing RULE ${LAST_RULE} (canon's newest rule)")
     fi
   fi
 fi
