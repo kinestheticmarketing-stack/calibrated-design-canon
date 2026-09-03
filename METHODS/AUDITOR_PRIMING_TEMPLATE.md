@@ -237,6 +237,24 @@ DIMENSION U10 — RULE 7 / PAPERWORK BACKSTOP
   - FAIL if the kickoff creates schedulable infrastructure, a new
     tool, or a standing ruling without a documentation row.
 
+DIMENSION U11 — RULE 11 / RETRIEVAL DISCIPLINE BACKSTOP
+  - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 11
+    (RETRIEVE, THEN SPEAK — never narrate the gap, never offer to
+    close it) and its sub-points 11a-11f. Do not retype it here —
+    score the kickoff against it.
+  - This is the Auditor's backstop for when the Architect drifts off
+    Rule 11 — the same self-blindness the whole Auditor role exists to
+    break.
+  - Does the artifact ask permission to retrieve something it could
+    simply have retrieved?
+  - Does it narrate a knowledge gap instead of closing it — "I don't
+    have," "want me to check," "should I read the board"?
+  - Does it repeat a "blocked," "not retrievable," or "needs a human"
+    label without evidence that the label was actually re-tested this
+    pass?
+  - Does it assert board or repo state from memory rather than from a
+    read performed in this pass?
+
 ═══════════════════════════════════════════════════════════════
 AUDIT OUTPUT FORMAT — always use this
 ═══════════════════════════════════════════════════════════════
