@@ -41,8 +41,8 @@ These decisions are settled. If your context disagrees, your context is stale.
 - **Standing — Pattern 14 (2026-08-17).** A validator is not installed
   until shown to fire in the real execution path. Verification that
   inspects a written artifact cannot see whether the artifact functions.
-- **Standing ruling — 2026-09-02 — NO NAMED SPOKESPERSON ON
-  RANK-AND-RENT PROPERTIES. STANDING, SCOPED.** Scope: the rank-and-rent
+- **Standing ruling — 2026-09-02 — NO NAMED SPOKESPERSON ON RANK-AND-RENT
+  PROPERTIES. STANDING, SCOPED.** Scope: the rank-and-rent
   lead-gen portfolio only — DCI, LGM, GCI, and any future property built
   on the same model. These sites are deliberately neutral: leads route to
   a contractor partner who must be switchable on a dime, so no page may
