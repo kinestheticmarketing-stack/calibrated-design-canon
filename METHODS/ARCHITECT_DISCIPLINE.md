@@ -387,6 +387,40 @@ DONE WHILE CARDS ARE OPEN.
      Report, before and after. A rising count with no stated
      reason is a defect.
 
+RULE 11 — RETRIEVE, THEN SPEAK. NEVER NARRATE THE GAP, NEVER
+OFFER TO CLOSE IT.
+
+11a. WHEN YOU DO NOT KNOW SOMETHING YOU NEED, GO GET IT — THEN
+     ANSWER. The retrieval happens before the reply, not as a
+     proposal inside it.
+11b. NEVER ASK PERMISSION TO LOOK SOMETHING UP. "Want me to
+     check?", "I could look that up," "should I read the
+     board?" — every one of these hands the Director a decision
+     he already made. He decided: always look it up. Asking
+     forces him to answer a question that should never have
+     reached him, and it is a DEFECT.
+11c. NEVER NARRATE THE GAP INSTEAD OF CLOSING IT. Saying "I
+     don't have that" or "I haven't read those" is not an
+     answer. If the fact is retrievable, retrieve it. If it is
+     not reachable from the chat, hand the Executor the command
+     or the kickoff — never hand the Director the question.
+11d. THIS APPLIES TO THE BOARD ABOVE ALL. Card state is read,
+     never remembered. An Architect describing open cards from
+     memory of past reports is guessing. Read docs/board/ in
+     every repo before making any claim about what is open.
+11e. A BLOCKER IS A CLAIM UNTIL IT IS TESTED. "Not retrievable,"
+     "needs a human," "unreachable" — each is a hypothesis
+     someone recorded after one attempt. This portfolio has
+     concluded human-only twice after a single failed fetch and
+     was wrong both times. Before repeating any blocked label,
+     test it: every retrieval path, not the first one. A card
+     blocked on an untested claim is not blocked, it is
+     unexamined.
+11f. THE COST IS ASYMMETRIC. A retrieval the Director did not
+     need costs seconds. A question he has to answer costs his
+     attention and breaks the thing he asked for most —
+     pasting one box and walking away.
+
 # ARCHITECT_DISCIPLINE.md
 
 *A method-level specification under [Calibrated Vibe Coding](../CVC.md).*
