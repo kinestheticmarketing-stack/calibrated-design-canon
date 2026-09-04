@@ -387,3 +387,64 @@ site's own directory), `RESEND_API_KEY`/`ALERT_FROM`/`ALERT_TO` from
 `/root/.config/porter-backup/alert.env`, `BACKUP_RO_PASSWORD` and friends
 from `/root/ops/.backup.env` — none of these env files are in `ops/`, in
 canon, or in any site repo, and none should ever be.
+
+## Search Console access (read-only)
+
+**First documented 2026-09-04.** A read-only path into Google Search
+Console for all three properties has existed on the owner's Mac since
+2026-08-29/30 and was recorded in no repo until this section. Two board
+cards had, in the meantime, classified themselves BLOCKED on "Search
+Console access that does not exist" (GCI `first-indexing-report-read`,
+closed 2026-09-04; LGM `rework-educational-topics`, premise corrected
+2026-09-04). Rule 6: the access existed; the cards were written from
+memory.
+
+| Component | Location | What it is |
+|---|---|---|
+| Tool directory | `~/.config/gsc-tool/` — **not in any repo**, local-machine config | Service-account key, helper scripts, and their venv. Created 2026-08-29/30. |
+| Identity | Service account `gsc-reader@insulation-gsc.iam.gserviceaccount.com`, Google Cloud project `insulation-gsc` | Added as a user on each Search Console property. Key file `~/.config/gsc-tool/service-account.json` — its contents are never printed, quoted, or copied into a repo (Rule 5). |
+| Scope | `https://www.googleapis.com/auth/webmasters.readonly` | Read-only. The tool cannot submit sitemaps, request indexing, or change property settings. |
+| Properties (all `permissionLevel: siteFullUser`) | `sc-domain:greeleycoloradoinsulation.com`, `sc-domain:longmontcoloradoinsulation.com`, `https://denvercoloradoinsulation.com/` (URL-prefix, not domain, property) | Exactly three; `sites().list()` returns nothing else. |
+| Runtime | `~/.config/gsc-tool/venv/bin/python` (Python 3.14.5), `google-api-python-client` 2.199.0 | Own venv; nothing system-wide. No MCP connector, no `gcloud`. |
+| Scripts | `list_sites.py`, `pull_search_console.py`, `gci_inspect.py`, `lgm_inspect.py`, `dci_inspect.py`, `lgm_sitemap_urls.txt`, `data/` | `list_sites.py` — the three properties and permission levels. `pull_search_console.py` — Search Analytics (performance) pull by page/query over a date window. `<site>_inspect.py` — URL Inspection API over that property's sitemap URLs, tallied by indexing state. `data/` — the tool's own local output. |
+
+**Running a pull.** Always the venv interpreter, never the system Python:
+
+```bash
+~/.config/gsc-tool/venv/bin/python ~/.config/gsc-tool/list_sites.py
+~/.config/gsc-tool/venv/bin/python ~/.config/gsc-tool/pull_search_console.py   # performance, by page / query
+~/.config/gsc-tool/venv/bin/python ~/.config/gsc-tool/gci_inspect.py           # or lgm_inspect.py / dci_inspect.py — indexing state per sitemap URL
+```
+
+Read each script's header for its arguments before running it; this
+section records that they exist and what they do, not their flags.
+
+**Scratch convention.** Raw pulls that need to sit next to a repo go in
+`<repo>/scratch-gsc/` (GCI, LGM, DCI each have one), excluded through
+`.git/info/exclude` — **not** `.gitignore`, so the exclusion itself is
+never committed. Never `git add` it; `git ls-files | grep -c scratch-gsc`
+must stay `0` in every repo. Figures that matter go into the board card or
+`STATE_OF_PROJECT.md` as numbers with a date and window, not as attached
+exports.
+
+**Data lag.** Search Analytics data is final roughly two days behind
+today; a pull on 2026-09-04 ends at 2026-09-02. Always state the window
+(start..end) with any figure, and take the end date from the data, not
+from the calendar. URL Inspection is point-in-time and has no lag.
+
+**Verification** (re-derives the property list; prints URLs and
+permission levels only, never key contents):
+```bash
+~/.config/gsc-tool/venv/bin/python - <<'PY'
+import os
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+c = service_account.Credentials.from_service_account_file(
+    os.path.expanduser('~/.config/gsc-tool/service-account.json'),
+    scopes=['https://www.googleapis.com/auth/webmasters.readonly'])
+for s in build('searchconsole', 'v1', credentials=c).sites().list().execute()['siteEntry']:
+    print(s['siteUrl'], s['permissionLevel'])
+PY
+# -> exactly three lines, all siteFullUser
+ls ~/.config/gsc-tool/*.py | wc -l   # -> 5
+```
