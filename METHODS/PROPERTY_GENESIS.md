@@ -860,19 +860,33 @@ test function rather than form.
   instances checked and the count of distinct targets they resolve to.
   One 404 on a target linked from every page is a different-sized defect
   than one 404 linked once, and only the paired counts distinguish them.
-- **Every calculator loads, ships parseable JavaScript, and produces a
-  correct figure on default inputs — with that figure written into the
-  launch record.** This is the check the Greeley incident demands, and it
-  is the reason "the page returned 200" and "the page works" must be
-  recorded as two different claims. The absence of a console error is not
-  a result; a tool whose script never loaded throws nothing at all,
-  because there is no code present to fail. Recording the computed number
-  is what makes the check falsifiable — it converts the tool from
-  something that was looked at into something that was *run*, and it
-  gives the next wave a value to regress against when the rebate
-  constants change. Phase 7's determinism and manifest gates cannot reach
-  this: they compare bytes, and the byte-level truth about those three
-  pages was that they were perfect copies of files with the tool missing.
+- **Every calculator loads, ships parseable JavaScript, and binds its
+  listeners — proven from production by `ops/functional_proof.sh` CHECK 3:
+  the page returns 200, every inline script parses under `node --check`,
+  and `addEventListener > 0`.** That is exactly what the launch gate
+  proves, and no more: it does not press the button. The stronger claim —
+  **each calculator produces a figure on default inputs, with that figure
+  recorded** — is the browser canary's job
+  (`denvercoloradoinsulation.com/ops/browser_canary.js`, weekly systemd
+  timer on the VPS, all three properties, DCI commit `3254647`): it drives
+  real Chrome to each tool page, clicks the tool's own button, reads the
+  result the page's JS wrote into the DOM, and records it in the journal
+  and as one JSON `figures` line, which the launch record cites. A tool
+  whose default inputs are deliberately empty is recorded as `needs-input`,
+  not as a figure, and the launch record says which. This is the check the
+  Greeley incident demands, and it is the reason "the page returned 200"
+  and "the page works" must be recorded as two different claims: the gate
+  above proves the first, the canary's recorded figure proves the second.
+  The absence of a console error is not a result; a tool whose script
+  never loaded throws nothing at all, because there is no code present to
+  fail. Recording the computed number is what makes the check falsifiable
+  — it converts the tool from something that was looked at into something
+  that was *run*, and it gives the next wave a value to regress against
+  when the rebate constants change. Phase 7's determinism and manifest
+  gates cannot reach either claim: they compare bytes, and the byte-level
+  truth about those three pages was that they were perfect copies of files
+  with the tool missing. (Wording aligned to the gate 2026-09-03, Option 2
+  of `docs/board/done/phase8-calculator-criterion-unmet.md`.)
   **Identify tool pages structurally, never by slug.** The first
   implementation of this gate matched slugs against
   `calculator|quiz|comparator|checker|payback|r-value` and reported 16
@@ -1440,6 +1454,14 @@ other claim.
     match the code** — that is the direction that loses information.
     Tracked at `docs/board/ready/phase8-calculator-criterion-unmet.md`
     and deliberately left open here.
+    **Resolved 2026-09-03 via Option 2:** PHASE 8's bullet now claims
+    exactly what `functional_proof.sh` proves, and the
+    figure-on-default-inputs requirement, with the figure recorded,
+    relocated to `ops/browser_canary.js` (DCI commit `3254647`, proven in
+    the real execution path the same day — 14 tool pages across three
+    properties, figures in `journalctl -u browser-canary.service`); card
+    closed at `docs/board/done/phase8-calculator-criterion-unmet.md`. This
+    paragraph stays as the record of the defect and of how it was closed.
 
 11. **A procedure with the authority of a ruling and no execution is
     untested code.** At the 2026-08-21 S-GATE the Director ruled that a

@@ -94,3 +94,56 @@ row's instructions rather than touching either.** Card stays in `ready/`,
 `classification: ARCHITECT` unchanged, with the decision now on record so a
 future row that can touch `METHODS/` and/or the DCI repo does not have to
 re-derive it.
+
+## Outcome — 2026-09-03 — CLOSED, Option 2 executed
+
+**Wording changed (`METHODS/PROPERTY_GENESIS.md`, canon commit below).**
+The PHASE 8 calculator bullet no longer claims the launch gate proves a
+computed figure. It now opens "Every calculator loads, ships parseable
+JavaScript, and binds its listeners — proven from production by
+`ops/functional_proof.sh` CHECK 3: the page returns 200, every inline
+script parses under `node --check`, and `addEventListener > 0`," states
+that this is exactly what the gate proves and no more, and assigns the
+figure-on-default-inputs-with-the-figure-recorded claim to the browser
+canary (`ops/browser_canary.js`, weekly, all three properties). The
+"200 vs works" reasoning, the Greeley incident, and the "identify tool
+pages structurally, never by slug" content are all kept. The Rule-10
+"live instance inside this document" paragraph is kept as the record and
+now ends with a dated resolution sentence.
+
+**Code changed (`denvercoloradoinsulation.com` commit `3254647`).**
+`ops/browser_canary.js` gained `runCalculators()` — tool pages identified
+structurally (sitemap slug narrows, out-of-form `<input>`/`<select>`
+controls decide, exactly as `functional_proof.sh` does), trigger = the
+out-of-form button nearest the controls, result = the innermost `[id]`
+element whose text the click changed, figure = numeric tokens in it.
+Statuses `ok` / `verdict` (qualitative tool, all defaults set) /
+`needs-input` (the page's own validation asked for input); anything else
+is `calculator-no-figure` and alerts like every other step. Figures are
+logged per page and as one JSON `[browser-canary] figures {...}` line.
+
+**Proven in the real execution path (canon Pattern 14), 2026-09-03.**
+Deployed to `/root/denvercoloradoinsulation.com/ops/browser_canary.js`
+(md5 `1d2262ca1146247400aaf86366d503e4` local == VPS, backup
+`browser_canary.js.bak.20260903-pre-phase8` left beside it),
+`systemctl start browser-canary.service` exit 0, `ExecMainStatus=0`.
+Recorded: DCI 6 tools (4 figures, 1 verdict, 1 needs-input — the rebate
+checker requires a service to be ticked), Greeley 4 tools (all
+needs-input — every Greeley tool opens on an empty placeholder option;
+confirmed by reading their JS), Longmont 4 tools (2 figures, 2 verdicts).
+The failure branch fired for real during local testing (before the
+`verdict` status existed it flagged the quiz), so it is known to alert.
+
+**Verification commands**
+```bash
+grep -c 'runCalculators' /Users/vongimbel/code/denvercoloradoinsulation.com/ops/browser_canary.js   # -> 3
+grep -c 'figure' /Users/vongimbel/code/denvercoloradoinsulation.com/ops/browser_canary.js           # -> 20 or more
+grep -n 'binds its' /Users/vongimbel/code/calibrated-design-canon/METHODS/PROPERTY_GENESIS.md      # -> the PHASE 8 bullet, one hit
+grep -n 'Resolved 2026-09-03 via Option 2' /Users/vongimbel/code/calibrated-design-canon/METHODS/PROPERTY_GENESIS.md   # -> the live-instance paragraph
+ssh root@74.208.181.10 'journalctl -u browser-canary.service --since 2026-09-03 --no-pager | grep -c "calculator "'   # -> 14 per run
+```
+
+**Commits.** DCI `3254647` (canary). Canon: this card's move and the
+PROPERTY_GENESIS edit land together in the commit recorded in
+`docs/lanes.md` row `board-drain-2026-09-03-canon`.
+
