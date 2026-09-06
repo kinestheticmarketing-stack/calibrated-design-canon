@@ -52,7 +52,36 @@
 //     much organic traffic yet. Reworded to lead with that and treat a
 //     DNS/CDN check as a secondary step, only worth it if the pattern is
 //     unusual for that property's own recent history.
+//
+// --- 2026-09-06 revision: nightly re-alerting -> state-transition alerting ---
+//   The isStale computation above was and remains CORRECT (Director
+//   ruling): a property can genuinely have zero human visitors for 7+
+//   straight days while its canary keeps proving the submission path
+//   works, and that is worth surfacing. The DEFECT was cadence, not
+//   correctness: this script runs once a night, and every night the
+//   streak continued it re-sent the IDENTICAL alert, because
+//   send_alert.js's own suppression is keyed on calendar date ("already
+//   alerted TODAY?") and a new night is always a new "today" -- a no-op
+//   gate for a once-daily caller. Fixed by giving this script its OWN
+//   per-property streak state (independent of send_alert.js's internal
+//   per-day state, which is still written as a side effect but no longer
+//   read as a gate for this check): a JSON file per property under
+//   /root/ops/state/ recording whether that property is currently inside
+//   a qualifying streak and the Denver date it began. Alerts now fire
+//   exactly twice per real event -- once on ENTRY (the night the 7-day
+//   zero window first completes) and once on RECOVERY (the first night
+//   real traffic reappears) -- and stay silent every night in between,
+//   however long the streak runs. Every call into send_alert.js now
+//   passes --force, since this script's own transition-gate is the sole
+//   authority on whether tonight's run should send anything; depending on
+//   send_alert.js's per-day gate as well would be redundant at best and
+//   silently wrong at worst (it would even let a same-day duplicate CLI
+//   invocation slip through unsuppressed on the entry/recovery nights,
+//   since --force skips that gate entirely by design -- acceptable here
+//   because this script only ever calls send_alert.js once per property
+//   per run, and at most once per night).
 'use strict';
+const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
@@ -88,59 +117,241 @@ function psqlDataRows(db, sql) {
 const WINDOW_WHERE = (col) =>
   `${col}::date >= current_date - interval '${STALE_DAYS_THRESHOLD} days' AND ${col}::date < current_date`;
 
-for (const prop of PROPERTIES) {
-  let canaryOkDays, leadsDaysWithActivity, pageviewsDaysWithActivity;
-  try {
-    // One row per distinct day the canary succeeded in the window --
-    // must equal STALE_DAYS_THRESHOLD (every single day covered) for the
-    // "site is technically up throughout" precondition to hold.
-    canaryOkDays = psqlDataRows(
-      prop.db,
-      `SELECT created_at::date, count(*) FROM lead_submissions_log
-         WHERE canary = TRUE AND sendgrid_result LIKE 'accepted:%' AND ${WINDOW_WHERE('created_at')}
-         GROUP BY 1 ORDER BY 1;`
-    );
-    // Any row here means at least one real lead landed on that day --
-    // for a stale alert we need ZERO rows across the whole window.
-    leadsDaysWithActivity = psqlDataRows(
-      prop.db,
-      `SELECT created_at::date, count(*) FROM leads
-         WHERE canary = FALSE AND ${WINDOW_WHERE('created_at')}
-         GROUP BY 1 ORDER BY 1;`
-    );
-    pageviewsDaysWithActivity = psqlDataRows(
-      prop.db,
-      `SELECT viewed_at::date, count(*) FROM pageviews
-         WHERE ${WINDOW_WHERE('viewed_at')}
-         GROUP BY 1 ORDER BY 1;`
-    );
-  } catch (e) {
-    console.error(`[stale-site] query failed for ${prop.label}:`, e.message);
-    continue;
-  }
-
-  const alertScript = path.join(__dirname, 'send_alert.js');
-  const isStale =
-    canaryOkDays.length === STALE_DAYS_THRESHOLD &&
-    leadsDaysWithActivity.length === 0 &&
-    pageviewsDaysWithActivity.length === 0;
-
-  if (!isStale) {
-    execFileSync('node', [
-      alertScript, prop.label, `no human traffic for ${STALE_DAYS_THRESHOLD}+ days`, 'recovered', 'stale-site', '--recovery',
-    ], { stdio: 'ignore' });
-    continue;
-  }
-
-  const body =
-    `${prop.label}'s automated lead-path canary succeeded every day for the last ${STALE_DAYS_THRESHOLD} ` +
-    `complete days (the submission path works), but zero real leads and zero real pageviews were recorded ` +
-    `on any of those ${STALE_DAYS_THRESHOLD} days. For a brand-new site like this, the most likely explanation ` +
-    `is simply that it doesn't have much organic/search traffic yet, not a technical failure -- these are new ` +
-    `sites still building search visibility, not established sites that suddenly went dark. A DNS, CDN, or ` +
-    `search-visibility check is worth doing as a secondary step, mainly if this pattern is unusual compared to ` +
-    `the property's own recent traffic history rather than the default explanation.`;
-  execFileSync('node', [
-    alertScript, prop.label, `no human traffic for ${STALE_DAYS_THRESHOLD}+ days`, body, 'stale-site',
-  ], { stdio: 'inherit' });
+// --- Denver calendar-date helpers (matching send_alert.js's own convention:
+// America/Denver, not UTC, and not the VPS's ambient tz assumption, so this
+// keeps working correctly even if that ever changes) ---
+function denverDateString(d) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Denver' }).format(d); // en-CA -> YYYY-MM-DD
 }
+
+// Pure calendar-date arithmetic on a YYYY-MM-DD string -- deliberately NOT
+// timezone-aware (parses/formats as UTC internally) because at this point
+// we already have a Denver-local date STRING; shifting it by N days is a
+// calendar operation, not a moment-in-time conversion, so re-involving a
+// timezone here would be a category error, not extra correctness.
+function shiftDateString(dateStr, days) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function daysBetweenDateStrings(startStr, endStr) {
+  const start = new Date(startStr + 'T00:00:00Z');
+  const end = new Date(endStr + 'T00:00:00Z');
+  return Math.round((end - start) / 86400000);
+}
+
+// psqlDataRows rows are "date|count" strings; sums the count column across
+// all rows (used for the recovery notice's concrete traffic figures).
+function sumCounts(rows) {
+  return rows.reduce((sum, row) => {
+    const n = parseInt(row.split('|')[1], 10);
+    return sum + (Number.isFinite(n) ? n : 0);
+  }, 0);
+}
+
+// --- Per-property streak state ---
+// One JSON file per property, keyed by the property's `db` value (stable,
+// dot-free, already unique -- unlike `label`, which contains dots). Lives
+// under /root/ops/state/, the existing convention for this portfolio's
+// runtime alerting state (gitignored, VPS-only -- see TOOLING_RUNBOOK.md).
+// Overridable via STALE_SITE_STATE_DIR so tests never touch real state.
+function stateDirFor() {
+  return process.env.STALE_SITE_STATE_DIR || '/root/ops/state';
+}
+
+function statePathFor(dbKey, stateDir) {
+  return path.join(stateDir || stateDirFor(), `stale-site-streak-${dbKey}.json`);
+}
+
+// Missing or unparseable state file -> "not in streak", never a crash. This
+// is the deliberate safe default: a freshly-initialized or corrupted state
+// file must never itself be mistaken for an active streak.
+function loadStreakState(statePath) {
+  try {
+    const raw = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    return { inStreak: !!raw.inStreak, since: raw.since || null, lastAlerted: raw.lastAlerted || null };
+  } catch (_) {
+    return { inStreak: false, since: null, lastAlerted: null };
+  }
+}
+
+function saveStreakState(statePath, state) {
+  fs.mkdirSync(path.dirname(statePath), { recursive: true });
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
+}
+
+// The testable core: given isStale, the day-bucketed activity rows, a state
+// file path, and an alert-invoker function, decides whether tonight's run
+// for ONE property is an ENTRY, a CONTINUING (silent) night, a RECOVERY, or
+// a quiet no-op -- and performs exactly that action. Takes no dependency on
+// Postgres or the real send_alert.js call, so it can be exercised directly
+// with fabricated inputs and a capturing invokeAlert.
+//
+// invokeAlert({ label, isRecovery, subjectFragment, body }) is the sole
+// side-effecting call this function makes when it decides to send.
+function decideStreakTransition({
+  label,
+  isStale,
+  today,
+  streakDaysThreshold,
+  leadsDaysWithActivity,
+  pageviewsDaysWithActivity,
+  statePath,
+  invokeAlert,
+}) {
+  const prior = loadStreakState(statePath);
+
+  if (isStale) {
+    if (prior.inStreak) {
+      // CONTINUING: already alerted on entry, streak hasn't broken yet.
+      // Deliberately silent -- no send_alert.js call at all. Logged so a
+      // silent night has an explanation somewhere in the journal.
+      console.log(
+        `[stale-site] ${label}: still in zero-traffic streak since ${prior.since} -- ` +
+          `suppressing repeat alert by design (state-transition alerting, not a bug).`
+      );
+      return { action: 'continuing', since: prior.since };
+    }
+    // ENTRY: streak just started as of tonight's run. The streak's start
+    // date is the first day of the currently-detected zero window (today
+    // minus the threshold), not the run date -- matching WINDOW_WHERE's own
+    // date arithmetic.
+    const since = shiftDateString(today, -streakDaysThreshold);
+    const body =
+      `${label}'s automated lead-path canary succeeded every day for the last ${streakDaysThreshold} ` +
+      `complete days (the submission path works), but zero real leads and zero real pageviews were recorded ` +
+      `on any of those ${streakDaysThreshold} days. For a brand-new site like this, the most likely explanation ` +
+      `is simply that it doesn't have much organic/search traffic yet, not a technical failure -- these are new ` +
+      `sites still building search visibility, not established sites that suddenly went dark. A DNS, CDN, or ` +
+      `search-visibility check is worth doing as a secondary step, mainly if this pattern is unusual compared to ` +
+      `the property's own recent traffic history rather than the default explanation. This is a one-time entry ` +
+      `notice for this streak (began ${since}); it will stay silent while the streak continues and send exactly ` +
+      `one recovery notice when real traffic returns.`;
+    invokeAlert({
+      label,
+      isRecovery: false,
+      subjectFragment: `no human traffic for ${streakDaysThreshold}+ days`,
+      body,
+    });
+    saveStreakState(statePath, { inStreak: true, since, lastAlerted: today });
+    return { action: 'entry', since };
+  }
+
+  if (!prior.inStreak) {
+    // Healthy, and no streak was ever in progress -- nothing to do, nothing
+    // to send. (Behavior change from the old unconditional recovery call:
+    // now the caller itself is the gate, so a no-op stays a true no-op.)
+    return { action: 'none' };
+  }
+
+  // RECOVERY: a streak was in progress and tonight it's no longer stale.
+  const durationDays = daysBetweenDateStrings(prior.since, today);
+  const leadDayCount = leadsDaysWithActivity.length;
+  const pageviewDayCount = pageviewsDaysWithActivity.length;
+  const leadTotal = sumCounts(leadsDaysWithActivity);
+  const pageviewTotal = sumCounts(pageviewsDaysWithActivity);
+  const body =
+    `${label}'s zero-human-traffic streak has ended. It began ${prior.since} and ran ${durationDays} ` +
+    `complete day(s) before recovering. In the current ${streakDaysThreshold}-day window, real traffic ` +
+    `returned: ${leadDayCount} day(s) had lead activity (${leadTotal} real lead(s) total), and ` +
+    `${pageviewDayCount} day(s) had pageview activity (${pageviewTotal} pageview(s) total).`;
+  invokeAlert({
+    label,
+    isRecovery: true,
+    subjectFragment: `no human traffic for ${streakDaysThreshold}+ days`,
+    body,
+  });
+  saveStreakState(statePath, { inStreak: false, since: null, lastAlerted: today });
+  return { action: 'recovery', since: prior.since, durationDays };
+}
+
+// Real alert-invoker: the only place this file shells out to send_alert.js.
+// Always --force, since decideStreakTransition is now the sole authority on
+// whether to send -- see the 2026-09-06 revision note at the top of this
+// file for why depending on send_alert.js's own per-day gate as well would
+// be redundant/wrong for a once-daily caller.
+function realInvokeAlert({ label, isRecovery, subjectFragment, body }) {
+  const alertScript = path.join(__dirname, 'send_alert.js');
+  const args = [alertScript, label, subjectFragment, body, 'stale-site'];
+  if (isRecovery) args.push('--recovery');
+  args.push('--force');
+  execFileSync('node', args, { stdio: 'inherit' });
+}
+
+// Real path: queries Postgres for each property, then hands the results to
+// decideStreakTransition with the real state dir and the real alert
+// invoker. Only runs when this file is executed directly (`node
+// stale_site_check.js`), not when required by a test harness.
+function main() {
+  const stateDir = stateDirFor();
+  const today = denverDateString(new Date());
+
+  for (const prop of PROPERTIES) {
+    let canaryOkDays, leadsDaysWithActivity, pageviewsDaysWithActivity;
+    try {
+      // One row per distinct day the canary succeeded in the window --
+      // must equal STALE_DAYS_THRESHOLD (every single day covered) for the
+      // "site is technically up throughout" precondition to hold.
+      canaryOkDays = psqlDataRows(
+        prop.db,
+        `SELECT created_at::date, count(*) FROM lead_submissions_log
+           WHERE canary = TRUE AND sendgrid_result LIKE 'accepted:%' AND ${WINDOW_WHERE('created_at')}
+           GROUP BY 1 ORDER BY 1;`
+      );
+      // Any row here means at least one real lead landed on that day --
+      // for a stale alert we need ZERO rows across the whole window.
+      leadsDaysWithActivity = psqlDataRows(
+        prop.db,
+        `SELECT created_at::date, count(*) FROM leads
+           WHERE canary = FALSE AND ${WINDOW_WHERE('created_at')}
+           GROUP BY 1 ORDER BY 1;`
+      );
+      pageviewsDaysWithActivity = psqlDataRows(
+        prop.db,
+        `SELECT viewed_at::date, count(*) FROM pageviews
+           WHERE ${WINDOW_WHERE('viewed_at')}
+           GROUP BY 1 ORDER BY 1;`
+      );
+    } catch (e) {
+      console.error(`[stale-site] query failed for ${prop.label}:`, e.message);
+      continue;
+    }
+
+    const isStale =
+      canaryOkDays.length === STALE_DAYS_THRESHOLD &&
+      leadsDaysWithActivity.length === 0 &&
+      pageviewsDaysWithActivity.length === 0;
+
+    decideStreakTransition({
+      label: prop.label,
+      isStale,
+      today,
+      streakDaysThreshold: STALE_DAYS_THRESHOLD,
+      leadsDaysWithActivity,
+      pageviewsDaysWithActivity,
+      statePath: statePathFor(prop.db, stateDir),
+      invokeAlert: realInvokeAlert,
+    });
+  }
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  PROPERTIES,
+  STALE_DAYS_THRESHOLD,
+  WINDOW_WHERE,
+  denverDateString,
+  shiftDateString,
+  daysBetweenDateStrings,
+  sumCounts,
+  statePathFor,
+  loadStreakState,
+  saveStreakState,
+  decideStreakTransition,
+  realInvokeAlert,
+  main,
+};
