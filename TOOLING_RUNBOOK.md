@@ -37,6 +37,7 @@ property. Shared infrastructure belongs in canon.
 | `send_alert.sh` | 3-positional-arg bridge to `send_alert.js --force`, for callers that keep their own suppression state and just want an unconditional send. **Not orphaned** — despite having zero callers anywhere under `/root/`, it is the sole path `scripts/monitoring/_mon_lib.sh`'s `send_alert()` uses, invoked over SSH from this Mac. A 2026-08-31 pass on this file nearly deleted it as an orphan based on a VPS-only `grep`; corrected before anything was removed. | `_mon_lib.sh` (in this repo), via `ssh root@74.208.181.10` |
 | `test_send_alert.js` | Manual verification harness for `send_alert.js`'s test-mode and placeholder-refusal logic (poisons `@sendgrid/mail` in `require.cache` before `send_alert.js` loads, so a structural bug in the short-circuit throws instead of silently passing). Not scheduled — run by hand when verifying a change to `send_alert.js`. | Nothing automatic — manual only |
 | `stale_site_check.js` | Daily: alerts if a property's canary succeeded every day for 7 complete days but zero real leads/pageviews landed in that window. | `stale-site-check.timer` |
+| `test_stale_site_check.js` | Manual verification harness for `stale_site_check.js`'s streak-decision logic (fabricated activity rows, a scratch state dir, a capturing alert-invoker — never Postgres, never a real send). Not scheduled — run by hand when verifying a change to `stale_site_check.js`. | Nothing automatic — manual only |
 | `unhandled_lead_check.js` | Every 15 min: closes any real lead older than 30 days and never delivered as `closed_reason='stale-30d'`, then alerts on any real, undelivered lead older than 15 minutes. | `unhandled-lead-check.timer` |
 | `backup_heartbeat_check.sh` | Daily: dead-man switch reading a B2 heartbeat object `db_backup.sh` writes on a fully clean run. Deliberately decoupled scheduler/hour/config from the thing it watches. | `backup-heartbeat-check.timer` |
 | `db_backup.sh` | Daily (cron, not systemd): backs up every Postgres database (docker + host clusters) to B2, writes the heartbeat object above. | root's crontab, `30 3 * * *` |
@@ -47,6 +48,51 @@ property. Shared infrastructure belongs in canon.
 pass's ruling says not to repeat for *new* shared code, but migrating
 *already-shipped* shared code out of DCI was not what this pass was asked
 to do. A future pass could extend this same import pattern to them.
+
+## `stale_site_check.js` cadence: state-transition alerting (2026-09-06)
+
+The zero-human-traffic condition itself (canary OK every day for 7 complete
+days, zero real leads, zero real pageviews) was and remains correct — see
+the file's own header comment for the full history of how that threshold
+and definition were derived. What changed 2026-09-06 was cadence: the
+script used to re-run the same isStale check every night and call
+`send_alert.js` unconditionally either way, relying on `send_alert.js`'s
+own per-calendar-day suppression to keep it quiet — which is a no-op for a
+once-daily caller, since every night is a new "today." That made a single
+real zero-traffic event re-alert identically, forever, for as long as it
+lasted.
+
+`stale_site_check.js` now tracks its own per-property streak state,
+independent of `send_alert.js`'s internal state, and only calls
+`send_alert.js` (always with `--force`, since this script's own
+transition-gate is now the sole authority) when it decides a transition
+actually occurred:
+
+- **Entry** — the property just became stale (was not in a streak, is now)
+  — sends one alert, records the streak's start date (the first day of the
+  7-day zero window, not the run date).
+- **Continuing** — still stale, streak already recorded — silent, no
+  `send_alert.js` call at all. Logged to stdout so a silent night has an
+  explanation in the journal.
+- **Recovery** — was stale, isn't anymore — sends one recovery notice
+  naming the streak's duration, start date, and the concrete traffic
+  figures that returned (day counts and totals for both leads and
+  pageviews), then clears the streak state.
+- **Still healthy** — was never in a streak, still isn't — silent, no call
+  at all (a behavior change from the old unconditional recovery-call/
+  suppress pattern: the caller is now the gate, so a true no-op is a true
+  no-op).
+
+State lives at `/root/ops/state/stale-site-streak-<db>.json`, one file per
+property keyed by that property's `db` value (`insulation`,
+`longmont_insulation`, `greeley_insulation` — stable and dot-free, unlike
+`label`). Same runtime-state convention as everything else in this
+section: VPS-only, gitignored, never committed. A missing or corrupt state
+file is treated as "not in streak," never a crash — the safe default for a
+property that has never yet had a state file written. `test_stale_site_check.js`
+(see table above) exercises the full entry/continuing/recovery sequencing
+and cross-property independence against a scratch state directory, never
+Postgres and never a real send.
 
 ## Every timer, with its schedule
 
