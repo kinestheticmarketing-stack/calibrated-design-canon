@@ -543,9 +543,21 @@ OPEN CAPTURE ITEMS (numbers known to exist — go confirm + log)
 
 - DCI 2nd lead — Director reported two leads total; only first is
   detailed in record. Confirm date + source page + disposition, log it.
-- Rob lead dispositions — did any DCI lead close? Ticket size? That's the
-  highest-value REVENUE receipt available right now (proves the lead → job
-  → money chain, not just lead generation).
+- 2026-09-06 · Rob lead dispositions — did any DCI lead close? Ticket size?
+  That's the highest-value REVENUE receipt available right now (proves the
+  lead → job → money chain, not just lead generation). **State as of
+  2026-09-06: still open, nothing confirmed, no ETA.** The three genuine
+  third-party DCI leads are ids 5, 6 and 8 (2026-07-25, 2026-08-05,
+  2026-08-08, all `delivered = true` — see the 2026-08-19 lead-inventory
+  entry above); whether any of them became a paid job, and at what ticket
+  size, is on record nowhere in this portfolio. **There is no online
+  retrieval path for this one** — the answer exists only with the named
+  contractor (Rob, Simple Home Energy Solutions) and has to be asked for
+  directly, which is why it is a capture item and not a work item. This
+  line is now the sole home of the watch: the canon board card
+  `lead-to-job-receipt`, which duplicated it, was deleted 2026-09-06 as a
+  duplicate of this entry — deleted, not closed, and nothing about the
+  underlying question was answered.
 - Porter / Don's Garage — revenue terms, go-live date, any usage metrics.
 - 2026-08-11 · Re-measure DCI AI citations at a defined interval — record
   the surface, engine(s), and method at time of measurement so future
