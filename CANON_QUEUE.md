@@ -262,3 +262,5 @@ OPEN ITEMS ACROSS THE PORTFOLIO (2026-08-12 session paperwork)
   only.
 
 - 2026-09-03 | portfolio | De-duplicate the three properties' _shared_components.py into one shared parent; absorbs the DCI↔LGM shared-parent inheritance audit (what else crossed from the unverifiable royalcomforths.com source beyond the $400 figure) — closed as duplicate 2026-09-03.
+
+- 2026-09-06 | portfolio | Fort Collins: `fortcollinscoloradoinsulation.com` is registered (IONOS, 2026-08-05) and its A record resolves to the portfolio VPS at 74.208.181.10, with no nginx vhost, no TLS certificate and no site content behind it; a fourth property was DECLINED on 2026-09-06 pending the remaining corpus SEO audits (Zarr has never been run on DCI or Greeley), which are themselves gated on an empty board — the `fort-collins-genesis` board card was deleted rather than carried, because it was blocked on a gate rather than on any work. No genesis plan drafted, no genesis work begun.
