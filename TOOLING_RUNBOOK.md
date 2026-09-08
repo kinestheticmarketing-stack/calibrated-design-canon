@@ -264,6 +264,42 @@ it. Add `-I` to skip binaries. The `Grep` *tool* (ripgrep-backed) has the same
 class of behavior and is fine for navigation; it is not fine as the source of
 a number in a Final Report.
 
+### The bigger version of the same mistake: sweep for the CLAIM, not the identifier
+
+**Found 2026-09-07, the same day, by adversarial review — and this one had
+shipped.** A correct, exhaustive, `/usr/bin/grep`-based census for the string
+`24-02-205` across all four repos returned zero hits on
+`greeleycoloradoinsulation.com/public/`. The repo was declared clean. It was
+not: `insulation-rebate-hub.html` was live, HTTP 200, in the sitemap, telling
+readers
+
+> "the newest rebate schedule that could be retrieved is effective January 1,
+> 2024 … so the current-year wording could not be confirmed"
+
+which is exactly the superseded document (filename `24-02-205`, internal print
+code `23-11-205`) — **stated as a proposition, in prose, carrying no print
+code, no filename, and no identifier of any kind.** No string sweep for the
+identifier could ever have found it. A second page carried the same
+proposition and was itself missed on the first corrective pass, because that
+pass fixed the page it had been handed rather than the claim.
+
+**The rule this establishes:**
+
+1. **A citation sweep has two halves.** Sweep the IDENTIFIER (`24-02-205`,
+   `23-11-205`, the URL) *and* sweep the CLAIM — the proposition the document
+   supports, in the words the copy would actually use. Here that meant
+   `January 1, 2024`, `could not be verified`, `could not be confirmed`,
+   `newest.*retrieved`, `effective January`.
+2. **Derive the claim-side patterns from the document's own content**, not
+   from the identifier. Ask "what would a page say if it were relying on the
+   stale version of this fact?" and grep for that.
+3. **When a claim-shaped hit is found, re-sweep the whole property before
+   declaring done.** Rule 8c: the unit of work is the defect class, not the
+   page that surfaced it. The second GCI page was found only because the
+   sweep was repeated after the first fix.
+4. **`public/` is the surface that matters.** A generator comment is a record;
+   a rendered page is a claim to a customer. Sweep both, but rank them.
+
 ## The citation staleness watcher (`scripts/staleness_watcher.py`)
 
 **Section added 2026-09-07.** Until this date the watcher was documented only
