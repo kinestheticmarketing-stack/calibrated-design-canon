@@ -28,6 +28,7 @@ property. Shared infrastructure belongs in canon.
 | Rules pipeline drift check | `scripts/monitoring/rules_drift_check.sh`, wired into `scripts/monitoring/daily_checks.sh` | Alerts if `rules.md` ever diverges from canon's `ARCHITECT_DISCIPLINE.md`, or if the local canon checkout falls behind `origin/main` |
 | Mac-side monitoring layer | `scripts/monitoring/` in this repo | Uptime, TLS expiry, deploy drift (per-site), page-200, ops drift, and rules drift — see below |
 | Mac-side scheduling | `~/Library/LaunchAgents/com.vongimbel.r2uptime.plist` and `com.vongimbel.r2daily.plist` — **not in this repo**, local-machine config | Run the checks in `scripts/monitoring/` |
+| Citation staleness watcher | `scripts/staleness_watcher.py` in this repo; its data is one `docs/citation-registry.json` per **site** repo | Re-fetches each cited source and diffs a per-provision fingerprint. Report-only, not currently scheduled. **It cannot read PDFs and cannot read JS-shell pages** — see [The citation staleness watcher](#the-citation-staleness-watcher-scriptsstaleness_watcherpy) below before registering any source |
 
 ## The VPS alerting layer (`ops/`)
 
@@ -222,6 +223,141 @@ proven both directions 2026-08-31 (see the lane's report for the exact
 sequence: a real trivial change was introduced, drift alerted, deployed,
 drift cleared and recovered, then reverted and deployed again with the
 same result both ways).
+
+## `grep` in a Claude Code session is NOT `/usr/bin/grep` — audit sweeps under-report
+
+**Found 2026-09-07** during a cross-repo citation sweep, by accident: a known
+stale citation was found when the sweep was scoped to a subdirectory and
+**not** found when the identical pattern was run from the repo root.
+
+Cause: Claude Code's shell snapshot (`~/.claude/shell-snapshots/snapshot-zsh-*.sh`)
+**shadows `grep` with a shell function** that execs a bundled `ugrep` with,
+among others, the flag **`--ignore-files`**. That flag makes it honor
+`.gitignore` / `.ignore`. So `grep -r <pattern> .` from a repo root **silently
+skips every gitignored path**, and reports success with a smaller count. It
+also honors `.gitignore` files *at or below the starting directory*, which is
+why scoping the search to a subdirectory changed the result — the repo-root
+`.gitignore` was no longer in play.
+
+Confirm it on any machine with:
+
+```bash
+type grep          # -> "grep is a shell function from /Users/.../shell-snapshots/snapshot-zsh-*.sh"
+```
+
+**Consequence for this portfolio:** an audit, census, or "sweep all repos for
+X" pass that uses bare `grep` is not authoritative. It measures the *tracked*
+tree, not the tree. In canon, `METHODS/seo-geo/sources/` is gitignored
+(`.gitignore:22`); in the site repos, log files such as
+`docs/citation-registry-log.txt` are. Both held real hits that a bare `grep`
+sweep missed on 2026-09-07.
+
+**The rule: any sweep whose output becomes a reported count uses the absolute
+path to the system binary.**
+
+```bash
+/usr/bin/grep -rIn "PATTERN" . --exclude-dir=.git
+```
+
+`--exclude-dir=.git` is now yours to pass — the shell function was supplying
+it. Add `-I` to skip binaries. The `Grep` *tool* (ripgrep-backed) has the same
+class of behavior and is fine for navigation; it is not fine as the source of
+a number in a Final Report.
+
+## The citation staleness watcher (`scripts/staleness_watcher.py`)
+
+**Section added 2026-09-07.** Until this date the watcher was documented only
+in [`docs/citation-registry-schema.md`](docs/citation-registry-schema.md) and
+had no entry in this runbook at all. The schema doc still owns *how to run
+and seed it*; this section owns **what it cannot do**, because that is the
+part a future pass will otherwise rediscover by shipping a permanently-
+alerting registry entry.
+
+What it is: a report-only checker in this repo that re-fetches each cited
+source in a site repo's `docs/citation-registry.json` and compares a
+per-provision fingerprint against the registered hash. Exit 0 = all
+UNCHANGED, exit 1 = at least one CHANGED or UNREACHABLE. It never edits
+anything. Registries live one-per-site-repo (DCI, LGM, GCI), not here.
+
+### It cannot read PDFs. Do not register a PDF source.
+
+`scripts/staleness_watcher.py` has **no PDF text-extraction branch.** Its
+`fetch()` / `normalize()` pipeline is HTML-oriented — it strips tags and
+decodes the response bytes as text. A PDF's content streams are
+Flate-compressed, so a literal search over them can never match the
+registered pattern, and **any PDF-hosted source will report CHANGED
+forever.**
+
+**PDF sources must not be registered in the `sources` array until that
+branch exists.** A watcher that cries wolf every scheduled run is a watcher
+somebody turns off, and the recommended schedule is weekly (`launchd`,
+`Weekday: 1`), so a bad entry is an alert every Monday indefinitely.
+
+**Building that PDF-extraction branch is known, needed, unstarted work.** It
+was explicitly ruled out of scope for the 2026-09-07 pass that wrote this
+section. Nothing here should be read as a design for it.
+
+### A JS-shell page is also unwatchable
+
+Seeding against
+`https://co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing`
+(a Salesforce SPA) on 2026-09-07 returned, verbatim:
+
+```
+UNREACHABLE (JS shell): visible text after stripping tags is only 58 chars (floor 300)
+```
+
+So for the Xcel rebate summary specifically, *both* candidate targets fail:
+the authoritative artifact is a PDF, and the stable HTML page that document
+lives behind is a client-rendered shell. Both forms are permanent false
+alarms.
+
+### There is currently NO supported way to register an un-fingerprintable source
+
+Row R2 of the 2026-09-07 pass established the failure modes **empirically,
+against a scratch registry**. Recorded here verbatim because this is the
+strongest evidence available and it is not obvious from reading the script:
+
+- `check_source()` reads `entry["fingerprint"]` **unconditionally**
+  (`staleness_watcher.py:183` and `:193`), and `cmd_check()` has **no
+  per-entry `try`/`except`**.
+- An entry inside the `sources[]` array with `"fingerprint": null` raises
+  `TypeError: 'NoneType' object is not subscriptable`.
+- The same entry with `fingerprint` **omitted** raises
+  `KeyError: 'fingerprint'`.
+- **Either one aborts the ENTIRE run at that entry, so every source after it
+  goes unchecked**, and the failure presents as a crash rather than as a
+  stale citation. A registry can be silently unwatched by one bad row.
+
+### The sanctioned workaround: a top-level `unwatchable_sources` array
+
+The pattern R2 adopted, and the one to follow:
+
+- Put the entry in a **new top-level `unwatchable_sources` array**, a sibling
+  of `sources`, never inside `sources`.
+- `cmd_check()` reads `registry.get("sources", [])`
+  (`staleness_watcher.py:209`) and **never iterates `unwatchable_sources`**,
+  so such an entry cannot crash the run.
+- The entry survives as documentation sitting next to the property it
+  describes, rather than as a comment in some other file.
+- Give it `"watchable": false` and `"fingerprint": null`, and put the reason
+  it cannot be fingerprinted — **both paths tested** — in its `notes`.
+- This placement is **load-bearing, not stylistic.** Say so in the entry's
+  own notes so a future tidy-up pass does not "normalize" it back into
+  `sources` and disable the registry.
+
+Verified after adoption: the watcher runs clean on all 11 DCI sources
+(2026-09-07, row R2), and clean on all 13 LGM sources (2026-09-07, row R4,
+after the orphaned PDF entry `XCEL_CO_INSULATION_REBATE_24_02_205` was
+deleted and replaced with a `25-12-215` entry in `unwatchable_sources`).
+
+```bash
+# proves both registries check clean, exit 0
+python3 scripts/staleness_watcher.py check \
+  --registry /Users/vongimbel/code/denvercoloradoinsulation.com/docs/citation-registry.json
+python3 scripts/staleness_watcher.py check \
+  --registry /Users/vongimbel/code/longmontcoloradoinsulation.com/docs/citation-registry.json
+```
 
 ## The backend-code deploy pipeline (`ops/push-backend.sh`, per site repo)
 

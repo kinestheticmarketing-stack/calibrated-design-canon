@@ -265,6 +265,55 @@ any other claim. Cite the document, quote the string, and date the fetch.
 Those are historical-record surfaces and need their own supersession
 pass; they are not corrected here.
 
+**SUPERSESSION — 2026-09-07 — the Xcel document cited above is no longer
+current. Cite `25-12-215`, never `24-02-205`.**
+
+The 2026-08-24 correction block above is left standing verbatim as the
+record of what was verified on that date — it truthfully reports a live
+`24-02-205` fetch on 2026-08-24 and rewriting it would falsify a dated
+retrieval. Read the *document identity* in it as superseded by this note.
+The block's methodological ruling is unaffected and, in fact, reinforced.
+
+- **The governing document is now:** Xcel Energy's Colorado residential
+  rebate summary, **print code `25-12-215`**, title "2025–2026 REBATE
+  SUMMARY / COLORADO RESIDENTIAL ENERGY EFFICIENCY PROGRAMS", **"EFFECTIVE
+  NOV. 16, 2025"**. (The year separator is a U+2013 EN DASH.) SHA-256
+  `524f2e8dc57eb2c192e90fd5bbfe331f805863f72186c9850bced342f2c65c0c`,
+  710,578 bytes. Corroborated by a second Xcel document, the 2025
+  Insulation Rebate Application, print code `17-9230 (01-25)`.
+- **What it supersedes:** the sheet named above, **filename**
+  `24-02-205 CO Res Rebate Summary Information Sheet.pdf`, whose
+  **internal print code is `23-11-205`**, effective January 1, 2024.
+  `24-02-205` is a **FILENAME, not a print code** — a distinction that has
+  already caused this portfolio to search for the wrong string.
+- **There is no stable public URL for the PDF.** It is served from Xcel's
+  Salesforce content delivery behind volatile `versionId`/`contentId`
+  parameters that rot. The citable URL is Xcel's own stable program page:
+  `https://co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing`.
+  Recording a renditionDownload URL guarantees a dead citation.
+- **The qualifying standards, verbatim from `25-12-215`:** air sealing
+  `20% reduction in CFM 50`; wall `Pre-job empty wall cavity, with a
+  post-job R-value of 13 or greater`; attic `Pre-job R-value of less than
+  24, with a post-job R-value of 60 or greater`.
+- **Therefore the attic thresholds quoted in the block above — "less than
+  15 / 49 or greater" — are STALE.** They are **24 / 60** now. Xcel's own
+  live HTML page still shows the old 15/49 pair; Xcel half-updated its own
+  site. The print-coded, dated PDF wins, and the second Xcel document
+  corroborates it. Recorded explicitly so a future pass does not "fix"
+  24/60 backwards to 15/49 by trusting the HTML page.
+- **Do NOT cite the 2019 edition**, print code `19-06-612`, still live at
+  `xcelenergy.com/staticfiles/xe-responsive/Working%20With%20Us/CO-Residential-Rebate-Summary-Sheet.pdf`.
+  It ranks in search and is a trap.
+- **What this proves about the rule, again:** the 2026-08-24 block
+  concluded by saying "a worked example is a claim and needs a citation
+  like any other claim. Cite the document, quote the string, and date the
+  fetch." That is exactly right, and it is exactly why this note exists —
+  a dated fetch goes stale on a schedule the document sets, not the one
+  the pass expected. At genesis, **re-verify the rebate document itself**,
+  not just the metric inside it. Phase 1 item 7 already says programs
+  terminate; this says the *sheet* revises too, and the revision changed a
+  threshold without changing the metric.
+
 **Reconciliation note:** DCI's 20-step checklist has no equivalent to
 this phase — market facts are swapped as checklist item 11
 ("Update COPY_VOICE.md with niche-specific facts"), sequenced *after*
