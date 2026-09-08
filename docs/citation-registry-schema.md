@@ -49,6 +49,89 @@ not raw HTML — inline markup routinely splits a cited sentence mid-word
 (e.g. a hyperlinked term), and matching raw HTML makes a fingerprint brittle
 to markup changes that have nothing to do with the cited content.
 
+## What CANNOT be registered (added 2026-09-07)
+
+Read this before adding a source. Two whole classes of source are
+unwatchable today, and registering one does not merely fail — it can
+silently disable the check for every other source in that registry.
+
+**1. PDFs.** `scripts/staleness_watcher.py` has **no PDF text-extraction
+branch.** `fetch()`/`normalize()` are HTML-oriented — they strip tags and
+decode the response bytes as text. A PDF's content streams are
+Flate-compressed, so a literal search over them can never match, and **any
+PDF-hosted source will report CHANGED forever.** Under the weekly schedule
+recommended below that is an alert every Monday indefinitely, which is how a
+watcher gets switched off. **Do not register a PDF source until that branch
+exists.** Building it is known, needed, unstarted work; it was explicitly
+ruled out of scope for the 2026-09-07 pass that wrote this section.
+
+**2. JS-shell pages.** `seed` refuses them by design. Seeding against
+`https://co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing`
+(a Salesforce SPA) on 2026-09-07 returned, verbatim:
+
+```
+UNREACHABLE (JS shell): visible text after stripping tags is only 58 chars (floor 300)
+```
+
+### Why you cannot just set `fingerprint` to null
+
+Established empirically 2026-09-07 against a scratch registry:
+
+- `check_source()` reads `entry["fingerprint"]` **unconditionally**
+  (`staleness_watcher.py:183`, `:193`), and `cmd_check()` has **no per-entry
+  `try`/`except`**.
+- Inside `sources[]`, `"fingerprint": null` raises
+  `TypeError: 'NoneType' object is not subscriptable`.
+- Inside `sources[]`, omitting `fingerprint` raises
+  `KeyError: 'fingerprint'`.
+- **Either aborts the ENTIRE run at that entry, so every source after it goes
+  unchecked**, and it presents as a crash rather than as a stale citation.
+
+There is currently **no supported way to register an un-fingerprintable
+source inside `sources[]`.**
+
+### The sanctioned pattern: a top-level `unwatchable_sources` array
+
+Put such an entry in a **new top-level `unwatchable_sources` array**, a
+sibling of `sources`:
+
+```json
+{
+  "sources": [ ... ],
+  "unwatchable_sources": [
+    {
+      "id": "EXAMPLE_ID",
+      "type": "document",
+      "url": "https://example.com/stable-wayfinding-page",
+      "claim": "...",
+      "repo": "examplesite.com",
+      "pages": ["page-that-cites-it.html"],
+      "retrieved": "2026-09-07",
+      "watchable": false,
+      "fingerprint": null,
+      "notes": "NOT WATCHABLE BY scripts/staleness_watcher.py — this placement is LOAD-BEARING, see below. Reason it cannot be fingerprinted, both paths tested: ..."
+    }
+  ]
+}
+```
+
+`cmd_check()` reads `registry.get("sources", [])`
+(`staleness_watcher.py:209`) and **never iterates `unwatchable_sources`**, so
+the entry cannot crash the run, while surviving as documentation next to the
+property it describes instead of as a comment in an unrelated file.
+
+State in the entry's own `notes` that the placement is **load-bearing, not
+stylistic**, so a future tidy-up pass does not "normalize" it back into
+`sources` and disable the registry.
+
+In use as of 2026-09-07: `XCEL_CO_REBATE_SUMMARY_25_12_215` in both
+`denvercoloradoinsulation.com/docs/citation-registry.json` and
+`longmontcoloradoinsulation.com/docs/citation-registry.json`. Both registries
+check clean afterwards — DCI 11 sources, LGM 13 sources, exit 0 each.
+Operational detail and the full failure-mode record are in this repo's
+[`TOOLING_RUNBOOK.md`](../TOOLING_RUNBOOK.md), section "The citation
+staleness watcher".
+
 ## Scheduling
 
 Not installed this pass (report-only tool, no cron/launchd unit created).
