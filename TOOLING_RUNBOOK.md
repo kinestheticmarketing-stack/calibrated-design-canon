@@ -300,6 +300,67 @@ pass fixed the page it had been handed rather than the claim.
 4. **`public/` is the surface that matters.** A generator comment is a record;
    a rendered page is a claim to a customer. Sweep both, but rank them.
 
+### Enumerate the corpus from what you SHIP, not from what you INDEX
+
+**Found 2026-09-08**, after ten adversarial reads of the same three properties
+had all missed the same defect. `sitemap.xml` is a list of what you want
+crawled. It is **not** a list of what you deploy. Measured on this portfolio:
+
+```
+DCI  public/ 83 files   sitemap 72 locs   11 artifacts not in the sitemap
+LGM  public/ 59 files   sitemap 47 locs   12 not in the sitemap
+GCI  public/ 49 files   sitemap 37 locs   12 not in the sitemap
+```
+
+The gap is `llms.txt`, `robots.txt`, `404.html`, `sitemap.xml` itself, a
+Search Console verification `.txt`, and the image assets. **`llms.txt` is the
+one that bites** — it is prose, it is deployed, it is live, it is the file
+written specifically for machine readers, and it is in no sitemap. A stacking
+claim (`"Xcel rebate-stack eligibility"`) sat in DCI's `llms.txt` through the
+entire 2026-09-07 pass — eleven content commits and ten adversarial reads —
+while the identical class was driven from 70 rendered pages to zero.
+
+**Two rules, and the second is the one that is easy to get wrong:**
+
+1. **Enumerate every sweep from the deployed artifact set (`public/`),** never
+   from `sitemap.xml` and never from a crawl of indexed URLs.
+2. **A corpus widened for VERIFICATION is not widened for AUDIT.** Fetching all
+   83 artifacts and `cmp`-ing them against `public/` proves they *shipped
+   intact*. It says **nothing about what they claim.** Both checks are needed
+   and they are different instruments: byte-identity is a deploy check; the
+   claim sweep is a truth check. Pointing the claim instrument at the deployed
+   set rather than the page set added **+94 claim-sentence instances / +69
+   unique sentences** across the three properties, and two of those 69 were
+   live defects.
+
+### Deleting dead code: prove it with the output manifest
+
+The cheapest conclusive deadness test, and better than reasoning about
+reachability: **delete the code, regenerate, and compare the output manifest.**
+
+```bash
+find public -type f ! -name sitemap.xml | sort | xargs md5 | md5   # before
+# ...delete...
+find public -type f ! -name sitemap.xml | sort | xargs md5 | md5   # after
+```
+
+Byte-identical means the code was dead, demonstrated rather than argued. Used
+on 2026-09-08 to delete an 11-block `meta=` key from
+`denvercoloradoinsulation.com/_generate_service_pages.py` (0 consumers, 0
+reads); manifest `f73e029d0c70132081047a5bb97a65e1` before and after.
+
+### A phrase split across concatenation boundaries is invisible to grep
+
+Python implicit string concatenation means a rendered sentence need not exist
+as a literal anywhere in the source. DCI's stacking claim was
+`"...and Xcel rebate-stack " "eligibility for..."` — it matched the compiled
+`.pyc` and **not** the `.py`. If a string is live in `public/` and `grep` cannot
+find it in the generators, do not conclude it is generated elsewhere: search
+for a fragment, or collapse the concatenation before grepping. The same
+property means a sitewide substitution can leave the words on either side of a
+boundary unread — which is why every replacement is read back **as a full
+rendered sentence**, in the built output and not only in the staged text.
+
 ## The citation staleness watcher (`scripts/staleness_watcher.py`)
 
 **Section added 2026-09-07.** Until this date the watcher was documented only
