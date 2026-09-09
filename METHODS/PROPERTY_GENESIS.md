@@ -114,6 +114,15 @@ running a single generator, before touching `COPY_VOICE.md`.**
    service for only three of nine candidate towns
    (`ATMOS_CONFIRMED_TOWNS`: Greeley, Evans, Eaton) and explicitly does
    not assert Atmos service for the other six without a primary source.
+   **[STRENGTHENED 2026-09-08 — this item was followed and the defect
+   shipped anyway. "Not confirmed" is not a safe resting state: three of
+   Greeley's six unconfirmed towns turned out to be confirmed to a
+   DIFFERENT gas utility, and hedging them read to a visitor as "probably
+   Atmos, we just haven't checked." A per-town verification is not done
+   when it has failed to confirm the anchor's utility; it is done when it
+   has NAMED each town's utility from that town's own source, or recorded
+   an explicit unknown. See the 2026-09-08 correction block at the end of
+   this phase.]**
 
 4. **Establish the rebate program structure, not just the amounts.**
    Amounts change quarterly; structure is architectural. Determine
@@ -313,6 +322,128 @@ The block's methodological ruling is unaffected and, in fact, reinforced.
   not just the metric inside it. Phase 1 item 7 already says programs
   terminate; this says the *sheet* revises too, and the revision changed a
   threshold without changing the metric.
+
+**ADDITION — 2026-09-08 — THE UTILITY-TERRITORY DEFECT CLASS RECURRED, AND
+THIS TIME IT WAS AN UNTESTED ASSUMPTION RATHER THAN A PORTED CLAIM. A
+SERVICE-AREA PREMISE IS A CLAIM AND NEEDS A PRIMARY SOURCE PER TOWN, NOT PER
+MARKET.**
+
+This phase already carried a rule against carrying a sibling property's
+utility facts into a new market (item 1, "Assume nothing carries over from the
+control property's utility structure"). **That rule did not catch this, and
+could not have, because nobody ported anything.** Greeley's premise — *"Atmos
+Energy is the gas utility across the service area"* — was never imported from
+Denver or Longmont. It was formed once, at genesis, from Atmos's own material
+naming Weld County and three towns, and then silently generalised from three
+towns to nine. It survived two years and several rebate-verification passes
+because every one of those passes verified the *program* — amounts,
+thresholds, eligibility tiers, effective dates — and none of them ever
+verified the *territory*. On 2026-09-08 the premise was tested for the first
+time and found **wrong for three of the nine towns**: Johnstown, Milliken and
+Severance are Xcel Energy gas territory, and Atmos does not serve them at all.
+
+**Record the distinction, because it is the whole lesson:** a ported claim is
+a claim someone else sourced and you inherited; an untested assumption is a
+claim NOBODY sourced and everybody inherited. The second is harder to catch,
+because there is no foreign fingerprint on it and no sibling document to
+diff against. An anti-porting rule cannot find it. The only thing that finds
+it is treating the premise itself as a claim.
+
+**THE TRANSFERABLE RULE — five parts, all of them load-bearing.**
+
+1. **A service-area premise is a claim.** "The gas utility here is X" is not
+   scaffolding, background, or a framing choice. It is an assertion about
+   every town in the area, and it needs the same primary source, the same
+   verbatim quote and the same dated retrieval as a rebate figure does. The
+   most dangerous claims on a property are the ones stated once, at genesis,
+   in a sentence that reads like context rather than like a fact.
+2. **PER TOWN, NOT PER MARKET. Utility territory does not follow municipal
+   boundaries, and it does not follow county lines either.** A source naming
+   the county and the anchor city establishes the anchor city, and nothing
+   else. Greeley's genesis source named "Weld County (Greeley)" and described
+   service to three towns; the property shipped as though it had established
+   nine. **The unit of verification is the town, and every town in the service
+   area gets its own named utility or its own recorded unknown. There is no
+   third state.** "Unconfirmed" is not a resting place — it is a task.
+3. **BOTH LEGS ARE REQUIRED: the town's own source AND the utility's own
+   territory filing.** Neither alone is sufficient, and they fail in opposite
+   directions. A town's government page is authoritative about that town and
+   is often loosely worded, undated and maintained by someone who is not a
+   regulatory filer. A utility's tariff is precise, dated and filed under
+   penalty, and is silent about every town it does not serve — so it can only
+   ever *exclude*, never enumerate a competitor. Run both. On Greeley's
+   correction, each of the three towns was confirmed by its own government
+   site naming Xcel for gas, **and** by absence from Atmos's current Colorado
+   tariff territory table (Colo. P.U.C. No. 7 Gas, Third Revised Sheets 3 and
+   4, Advice Letter No. 647, issued 2026-08-12, effective 2026-08-17,
+   SHA-256 `c9aed9b4ac73448f1c0223efe3ed9800e1e65bb85d3c1ef3e4897427b5c0bffc`,
+   1,898,937 bytes, `pdftotext -layout`). The three towns appear **zero times
+   in the whole 132-page document.**
+4. **A TARIFF IS THE AUTHORITY FOR *PRESENCE*, NEVER FOR *EXCLUSIVITY*.** This
+   is the part a confident pass gets wrong in the other direction. Finding a
+   town in a utility's tariff proves that utility serves it. It does **not**
+   prove no other utility does, and in Colorado two utilities can hold gas
+   territory inside one municipality — Xcel's own community list marks two
+   towns in Greeley's area, including Greeley itself, as gas-and-electric.
+   Greeley therefore keeps a *hedged* Atmos branch for the three towns that
+   ARE in Atmos's tariff but whose exclusivity is unestablished (Windsor,
+   LaSalle, Ault), and does **not** upgrade them, and does not upgrade the
+   anchor city either. **Absence from a tariff is strong negative evidence;
+   presence in one is weak positive evidence.** A verification pass that
+   promotes a hedge on the strength of a tariff hit has manufactured an
+   exclusivity claim out of a presence record. Record the reasoning next to
+   the hedge, in code and in the property's state documents, or a later pass
+   will read the hedge as an unfinished job and "fix" it.
+5. **THE ANSWER MAY BE A SPLIT, AND A SPLIT IS AN ANSWER — but it is not a
+   utility name.** Territory does not resolve to one company per town as often
+   as a genesis pass expects. In Greeley's nine towns the *electric* answer is
+   an overlap in the anchor city, two towns split by address, one split three
+   ways, one split by named subdivision, and two with no first-party source at
+   all. Every one of those is a finding to record. None of them licenses
+   naming a provider on a page. Record the shape of the split, name nobody,
+   and say so in the property's ground-truth file so the next session does not
+   re-run the research and reach the same non-answer.
+
+**TWO FAILURE MODES THIS CORRECTION SURFACED, BOTH GENERAL.**
+
+**A false absence from a spelling variant.** The tariff spells the town **"La
+Salle"** (two words). The property spells it **"LaSalle"** (one word). A grep
+for the property's spelling against the tariff returns zero — which reads
+exactly like "this town is not in Atmos's territory," the same signal that
+correctly identified the three Xcel towns. It is not that; it is a spelling
+mismatch, and acting on it would have produced a second, opposite error in the
+same pass. **Before treating any absence as evidence, enumerate the spellings
+the SOURCE might use, not the ones your repo uses** — one word versus two,
+"St."/"Saint", "Mt."/"Mount", hyphenation, and accents. A negative result from
+a string search is only as good as the string. This is the split-literal trap
+already recorded in this canon, arriving through a different door: there, the
+literal was broken across lines in source; here, the same word is spelled two
+ways by two authors. The general form is: **a grep proves something about a
+string, and you are trying to learn something about a fact.**
+
+**A citation going stale independently of the fact it supports.** The kickoff
+that opened this correction cited **Advice Letter No. 544** for Atmos's
+Colorado territory. That letter is from 2018 and governs the **superseded**
+Second Revised Sheets; the current filing is **No. 647**. Atmos's Colorado
+territory did not change between the two — the *fact* was stable and the
+*citation* rotted underneath it. This is a distinct staleness class from the
+one recorded above for Xcel's `25-12-215` supersession, where the document
+revision genuinely changed a threshold. Both are real and they need different
+handling: **re-verify the citation on its own schedule even when you have no
+reason to think the fact moved, and never let "the fact is still true" stand
+in for "the citation is still current."** Cite No. 647 or cite nothing.
+
+**WHAT THIS DOES NOT CHANGE.** Nothing above weakens item 1, item 2 or item 3
+of this phase. The anti-porting rule (item 1) is still correct; it is simply
+not sufficient. The municipal-utility rule (item 2) is still correct and now
+has a companion: check for a *second investor-owned* utility, not only for a
+carved-out municipal or cooperative one. Item 3's per-town instruction is
+still correct and has been strengthened in place above, because it was
+followed to the letter and the defect shipped anyway — the instruction said
+verify each town and the pass verified each town *against the anchor's
+utility*, which is a different and much weaker thing.
+
+---
 
 **Reconciliation note:** DCI's 20-step checklist has no equivalent to
 this phase — market facts are swapped as checklist item 11
