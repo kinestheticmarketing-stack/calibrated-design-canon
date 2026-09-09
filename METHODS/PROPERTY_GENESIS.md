@@ -378,7 +378,32 @@ it is treating the premise itself as a claim.
    4, Advice Letter No. 647, issued 2026-08-12, effective 2026-08-17,
    SHA-256 `c9aed9b4ac73448f1c0223efe3ed9800e1e65bb85d3c1ef3e4897427b5c0bffc`,
    1,898,937 bytes, `pdftotext -layout`). The three towns appear **zero times
-   in the whole 132-page document.**
+   in the whole 139-page document.**
+   **[FIGURES CORRECTED 2026-09-09. This block first read "132-page"; the
+   document is 139 pages. Corrected against the same PDF, re-fetched and
+   re-hashed to the identical SHA-256 and byte count, and confirmed four
+   independent ways: `pdfinfo` `Pages: 139`; 139 `/Type /Page` objects;
+   139 `pdftotext -layout` form-feeds; 139 plain `pdftotext` form-feeds. The
+   page count is incidental to the finding — the absence is what carries the
+   argument, and it is unchanged — but it was recorded as settled fact without
+   being counted, in the very block that rules a worked example is a claim
+   needing a citation. See "AN UNCOUNTED FIGURE IS A GUESS" below.]**
+   **A NULL RESULT IS ONLY EVIDENCE IF THE LIST WOULD HAVE SHOWN THE ITEM.**
+   The absence is affirmative rather than an extraction artifact because the
+   territory table is a two-column alphabetical locality list and **each
+   missing town falls inside a printed alphabetical gap**: `Hudson →
+   Keenesburg` skips Johnstown, `Meeker → Milner` skips Milliken, and
+   `Salida → Springfield` skips Severance. The neighbours on both sides of
+   each gap extracted cleanly, so the extractor was working exactly where the
+   town would have been. **That is the reasoning that converts "I did not find
+   it" into "it is not there," and it must be recorded next to any absence
+   used as evidence** — without it a null result is indistinguishable from a
+   failed search. (Precision, because the argument should not be overstated:
+   the list is alphabetical with one local inversion — `Platteville` is
+   printed before `Pierce` on Sheet 4. The inversion is between adjacent rows
+   inside `P` and touches none of the three gaps, but "perfectly alphabetical"
+   is not what the document shows, and the weaker true claim is the one to
+   rely on.)
 4. **A TARIFF IS THE AUTHORITY FOR *PRESENCE*, NEVER FOR *EXCLUSIVITY*.** This
    is the part a confident pass gets wrong in the other direction. Finding a
    town in a utility's tariff proves that utility serves it. It does **not**
@@ -420,6 +445,57 @@ already recorded in this canon, arriving through a different door: there, the
 literal was broken across lines in source; here, the same word is spelled two
 ways by two authors. The general form is: **a grep proves something about a
 string, and you are trying to learn something about a fact.**
+
+**A false absence from the EXTRACTOR — same family, worse blast radius.** The
+spelling trap above loses one town. A silently-failing PDF extractor loses the
+whole document, and it fails in the direction that looks like a finding.
+Measured on this exact tariff, 2026-09-09:
+
+- **`textutil -convert txt` does not extract this PDF at all.** It emits the
+  raw file — its output begins `%PDF-1.6` — and then reports **all nine** of
+  the property's towns as absent, **including Greeley, Evans, Eaton, Windsor,
+  Ault and La Salle, which are demonstrably in the territory table.** Taken at
+  face value it "proves" Atmos serves none of them. A tool that returns zero
+  for every search term is not reporting an absence, it is reporting its own
+  failure, and nothing in its exit status says so.
+- **`strings` fails the same way** — zero hits for Greeley as well as for the
+  three genuinely-absent towns, because the page text lives in FlateDecode
+  streams.
+- **`pdftotext -layout` worked**, and `-layout` specifically: the territory
+  table is two columns, and locality/county pairing is only legible with
+  layout preserved.
+- (A companion report on this correction also listed pypdf, PyPDF2, pdfminer
+  and PyMuPDF as failing on this document. **None of those four is installed
+  here and this session did not test them**, so that is recorded as reported,
+  not as verified. It changes nothing: one working extractor is enough.)
+
+**THE CONTROL THAT CATCHES ALL OF THIS COSTS ONE COMMAND: search for a term
+you KNOW is present before you trust a term you believe is absent.** Greeley
+is in that tariff. Any extraction pipeline that cannot find Greeley cannot be
+used to establish that Johnstown is missing. **Run the positive control first,
+every time, and record it beside the null result.** Both failure modes in this
+section — the spelling variant and the dead extractor — die immediately to
+that one habit.
+
+**A FALSE PRESENCE, for completeness, because the same carelessness runs the
+other way.** `/usr/bin/grep -ci 'ault' ` on this tariff returns **8**; the
+locality `Ault` appears exactly **once**. The other seven are `default` and
+`fault` in the terms-of-service prose. Case-insensitive substring matching on
+a short proper noun manufactures hits. Use `-w` and match case when the term
+is a name: `/usr/bin/grep -cw 'Ault'` returns `1`.
+
+**AN UNCOUNTED FIGURE IS A GUESS, even when it sits next to verified ones.**
+The original version of this block recorded the tariff's SHA-256 and byte
+count correctly — both genuinely measured — and in the same sentence recorded
+the page count as 132 and the Weld County territory as six localities. Both
+were wrong (139 pages; **18** Weld localities, of which six are the property's
+own towns). The verified figures lent their credibility to the unverified ones
+sitting beside them. **Precision in one figure is not evidence about the next
+figure in the same sentence.** Count every number you publish, including the
+ones that feel like scene-setting, and state the command that produced each.
+Note what this cost: a pass whose entire subject was utility facts recorded as
+untested assumptions shipped two untested figures about its own primary source
+— into a settled-decisions file — and a later round had to be spent on it.
 
 **A citation going stale independently of the fact it supports.** The kickoff
 that opened this correction cited **Advice Letter No. 544** for Atmos's
