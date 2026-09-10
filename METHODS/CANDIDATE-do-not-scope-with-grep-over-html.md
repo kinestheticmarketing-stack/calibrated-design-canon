@@ -163,6 +163,32 @@ so no figure-shaped search will locate them. Search for the PROMISE — "covers
 the amounts", "for current amounts see", "the figures are on", "how much" —
 against what each destination now actually renders.
 
+### REPORT THE RAW MATCH COUNT NEXT TO THE ADJUDICATED ONE
+
+A refinement the verification row produced, and it corrects how the
+coordinator had been reporting its own sweeps in this same pass.
+
+Three independent JS-comment scans across the three properties were reported
+as "**0 rebate numerals**." That conclusion was correct. But the instrument
+did not match nothing — it fired **153 times** (DCI 150, LGM 2, GCI 1) and
+every hit was adjudicated away as a non-rebate numeral: form-page counts,
+a commit SHA, R-values, decision-path counts, and LGM's permitted
+installed-cost rates.
+
+**A bare `0` conceals that the zero came from judgment applied AFTER the
+match, not from the instrument finding nothing.** And a run whose filter
+silently dropped a real hit looks identical, on the page, to a clean run.
+Reporting "raw 153, adjudicated 0, here is the adjudication" is falsifiable.
+Reporting "0" is not.
+
+This is the same lesson as the `$`-anchored gate one level up: the number a
+sweep reports is a statement about the instrument as much as about the tree,
+and a reader cannot tell the two apart unless both are shown.
+
+**The rule: any sweep reported as zero states its raw match count, its filter,
+and what the filter removed.** The null half of a sweep is only auditable if
+the cleared items are enumerated.
+
 ### One more, for completeness: fixing the string is not fixing the class
 
 GCI's editing row corrected *"the Atmos **amounts** quoted elsewhere"* and
