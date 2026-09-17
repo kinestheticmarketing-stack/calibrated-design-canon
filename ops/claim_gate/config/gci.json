@@ -136,6 +136,11 @@
                  "Whole Home Efficiency Bonus", "DRCOG", "ENERGY STAR",
                  "Colorado Energy Office"],
     "noun_use_constants": ["REBATE_ACKNOWLEDGMENT"],
+          "attributed_exception": { "allowed": true,
+            "publishers": ["Colorado Energy Office", "Energy Outreach Colorado", "ENERGY STAR"],
+            "requires_publisher_named": true,
+            "requires_cited_source_key": true,
+            "basis": "Same reason as DCI: the class was unassignable on this property because only LGM named a publisher." },
     "noun_use_note": "REBATE_ACKNOWLEDGMENT renders on 35 pages and is locked verbatim. It read 'the primary insulation rebate stack in Greeley, Evans and Eaton'; f0203ad KEPT it with the reasoning recorded in-source and FLAGGED IT TO THE DIRECTOR. The Director then ruled: 38b80e0 changed 'rebate stack' to 'rebate programs'."
   },
 

@@ -85,7 +85,8 @@ class ArithmeticMismatch(Exception):
 class Hit(object):
     __slots__ = ("rid", "sub", "rel", "surface", "locator", "text", "note",
                  "cite_key", "sentence", "r5_inblock", "r5_instat",
-                 "r8_excluded", "r2_noscope", "r2_subject_ok", "r3_kind")
+                 "r8_excluded", "r2_noscope", "r2_subject_ok", "r3_kind",
+                 "on_embed")
 
     def __init__(self, rid, sub, rel, surface, locator, text, note="",
                  cite_key=None, sentence=""):
@@ -104,14 +105,16 @@ class Hit(object):
         self.r2_noscope = False
         self.r2_subject_ok = True
         self.r3_kind = ""
+        self.on_embed = False
 
     def sortkey(self):
         return (self.rel, self.sub, self.surface, self.locator, self.text)
 
     def line(self):
         n = ("  [%s]" % self.note) if self.note else ""
-        return "  %s:%s  %s  %s%s" % (self.rel, self.surface, self.sub,
-                                      self.text, n)
+        e = "  [EMBED]" if getattr(self, "on_embed", False) else ""
+        return "  %s:%s  %s  %s%s%s" % (self.rel, self.surface, self.sub,
+                                        self.text, n, e)
 
 
 class Filt(object):
@@ -1225,6 +1228,60 @@ def rule_R2(ctx, res):
                                    % (u, sent),
                                    note="electric-utility-named",
                                    sentence=sent))
+        # FORBIDDEN PROGRAM NAMES. config.R2.forbidden_program_names carried
+        # full provenance -- DCI's "Xcel IQ Program" returns 0 on Xcel's own
+        # Colorado DSM filing page, which does carry 23 "IQ" tokens, all in
+        # SPECIFIC program titles -- and NO code path read it. This is why the
+        # invented-fifth-program defect scored MISSED.
+        for skey, loc, sent in ctx.pool(art):
+            for bad in names_in(sent, c.get("forbidden_program_names", []) or [],
+                                None, ci=True):
+                raw.append(Hit("R2", "p", art.rel, skey, str(loc),
+                               "%s is a FORBIDDEN program name | %s | %s"
+                               % (bad, c.get("forbidden_program_reason",
+                                             "")[:120], sent),
+                               note="forbidden-program-name", sentence=sent))
+
+        # LOCKED RESTRICTION STRINGS. Ruling 7's LGM clause: every Efficiency
+        # Works sentence must carry the LPC-electric-customers-only
+        # restriction. Measured as unenforced: an Efficiency Works sentence on
+        # Longmont's own index.html with no restriction gave RAW 0 ADJ 0 PASS.
+        locked_req = c.get("locked_restriction_strings", []) or []
+        req_for = c.get("locked_restriction_required_for", []) or []
+        if locked_req and req_for and art.kind != "src":
+            named_where = []
+            for skey, loc, sent in ctx.pool(art):
+                if names_in(sent, req_for, None, ci=True):
+                    named_where.append((skey, str(loc), sent))
+            if named_where:
+                page_has = has_any(art.txt, locked_req, word=False)
+                in_sent = [x for x in named_where
+                           if has_any(x[2], locked_req, word=False)]
+                # ONE finding per PAGE, not per sentence. Ruling 7's clause is
+                # about the restriction travelling with the claim, and the
+                # config's own locked_restriction_reach records the standing
+                # state as PAGE-level ("10 + 8 pages, measured in d6e8dab").
+                # Sentence granularity produced 190 + 871 rows on LGM, which
+                # is a number nobody acts on.
+                skey, loc, sent = named_where[0]
+                if not page_has:
+                    raw.append(Hit(
+                        "R2", "r", art.rel, skey, loc,
+                        "%s named in %d place(s) and the locked restriction "
+                        "appears NOWHERE on this page | first: %s"
+                        % (",".join(names_in(sent, req_for, None, ci=True)),
+                           len(named_where), sent),
+                        note="restriction-absent", sentence=sent))
+                elif not in_sent:
+                    raw.append(Hit(
+                        "R2", "r", art.rel, skey, loc,
+                        "%s named in %d place(s); the locked restriction is on "
+                        "the page but not in the same sentence as any of them "
+                        "| first: %s"
+                        % (",".join(names_in(sent, req_for, None, ci=True)),
+                           len(named_where), sent),
+                        note="restriction-elsewhere-on-page", sentence=sent))
+
         # hedge preservation and the per-town qualifier are assertions about
         # the town's OWN page.
         own = ctx.own_towns(art)
@@ -1302,9 +1359,14 @@ def rule_R2(ctx, res):
     def f_noscope(h):
         return bool(getattr(h, "r2_noscope", False))
 
+    def f_restr_elsewhere(h):
+        return h.note == "restriction-elsewhere-on-page"
+
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
         Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
+        Filt("locked restriction present ON THE PAGE but not in the same "
+             "sentence -- REVIEW, not FAIL", f_restr_elsewhere),
         Filt("no territory configured for this property -- R2 cannot scope "
              "anything (raised, then cleared here, never dropped silently)",
              f_noscope),
@@ -1407,7 +1469,21 @@ def rule_R3(ctx, res):
     def f_srcdup(h):
         return ctx.src_dup(h)
 
+    # config.R3.allowed_occurrences was dead, so the figure allowlist was
+    # UNBOUNDED: a 21st occurrence of $70,000 passed exactly like the 20
+    # the Director ruled on.
+    caps = c.get("allowed_occurrences", {}) or {}
+    _used = {}
+    for _h in sorted(raw, key=lambda x: x.sortkey()):
+        k = (_h.note or "").strip()
+        if k in allowed:
+            _used[k] = _used.get(k, 0) + 1
+            if k in caps and _used[k] > int(caps[k]):
+                _h.r3_kind = "over-cap"
+
     def f_allowed(h):
+        if getattr(h, "r3_kind", "") == "over-cap":
+            return False
         return h.note in allowed or (h.note and h.note.lstrip("$") in
                                      [a.lstrip("$") for a in allowed])
 
@@ -1457,6 +1533,19 @@ def rule_R3(ctx, res):
         ctx, ["$"] + [str(x) for x in (c.get("known_figures") or [])[:8]],
         ci=False, word=False)
     t4 = len([h for h in res.raw if h.surface in ("LD", "JS")])
+    over = [h for h in res.adjudicated
+            if getattr(h, "r3_kind", "") == "over-cap"]
+    if over:
+        res.notes.append("ALLOWLIST CAP EXCEEDED: %d occurrence(s) of an "
+                         "allowed figure beyond config.allowed_occurrences -- "
+                         "the Director ruled on a COUNT, not on a string: %s"
+                         % (len(over),
+                            ", ".join(sorted(set(h.note for h in over)))))
+    if caps:
+        res.notes.append("allowlist caps enforced: %s"
+                         % ", ".join("%s<=%s" % (k, caps[k])
+                                     for k in sorted(caps)))
+
     res.notes.append("T1 $-anchored %d  ·  T2 bare numeral in a money window "
                      "%d  ·  T3 rank/magnitude/superlative %d  ·  T4 (the LD "
                      "and JS-comment subset of T1+T2) %d"
@@ -1988,11 +2077,17 @@ def rule_R7(ctx, res):
                 if level == S.NORM_RAW and term in art.txt:
                     continue
                 p = m.start()
-                raw.append(Hit("R7", "A", art.rel, level,
-                               "%s@%d" % (level.lower(), p),
-                               "%s | %s" % (term, S.collapse(win(text, p, 90))),
-                               note="identifier",
-                               sentence=S.collapse(win(text, p, 200))))
+                repl = (c.get("current_replacements", {}) or {}).get(term)
+                raw.append(Hit(
+                    "R7", "A", art.rel, level, "%s@%d" % (level.lower(), p),
+                    "%s%s | %s"
+                    % (term,
+                       (" -> SUPERSEDED BY %s" % repl) if repl
+                       else " -> no replacement recorded in "
+                            "config.current_replacements",
+                       S.collapse(win(text, p, 90))),
+                    note="identifier",
+                    sentence=S.collapse(win(text, p, 200))))
         for u in urls:
             for p in occ(art.raw, u, ci=False, word=False):
                 raw.append(Hit("R7", "A", art.rel, "ATTR", "url@%d" % p,
@@ -2099,6 +2194,17 @@ def rule_R8(ctx, res):
             if path.endswith(".datePublished") and \
                     re.match(r"\d{4}-\d{2}-\d{2}", str(val)):
                 dates.setdefault("ld:datePublished", str(val)[:10])
+        # config.R8.footer_marker was dead, so a plain-text
+        # "Last reviewed: January 1, 2027" with no <time> element contributed
+        # no date at all and the page was skipped.
+        fm = c.get("footer_marker") or ""
+        if fm:
+            for mpos in occ(art.txt, fm, ci=True, word=False):
+                tail = art.txt[mpos:mpos + 80]
+                v = _parse_long_date(tail)
+                if v:
+                    dates.setdefault("footer_text", v)
+                    break
         lm = sitemap_lastmod.get(base)
         if lm:
             dates["sitemap:lastmod"] = lm
@@ -2552,7 +2658,6 @@ def rule_R11(ctx, res):
                 "%s: %d page(s) do both, yet naive subtraction coincides with "
                 "the measured unattributed count. Verify the cells were each "
                 "queried independently." % (t.get("label", tid), len(both)))
-    res.r11_rows = rows
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [])
     res.levels, res.level_detail = level_counts(ctx, ["cited-stat"], ci=False,
@@ -3254,7 +3359,9 @@ def _main(args, out, t0):
         if not os.path.isfile(p):
             continue
         try:
-            art = S.parse_artifact(rel, p, embeds)
+            art = S.parse_artifact(
+                rel, p, embeds,
+                cfg.get("R1", {}).get("cited_stat_class", "cited-stat"))
         except RecursionError as exc:
             parse_failures.append("%s: RecursionError (%s)" % (rel, exc))
             continue
@@ -3322,7 +3429,13 @@ def _main(args, out, t0):
            if cfg.get("og_image_raster_only") else
            "the SVG or .mvg source is read instead"))
     if cfg.get("embed_artifacts"):
-        out("embed frame: %s" % ", ".join(cfg["embed_artifacts"]))
+        present = [e for e in cfg["embed_artifacts"] if e in ctx.by_rel]
+        out("embed frame: %s  |  IN THE READ SET: %d of %d%s"
+            % (", ".join(cfg["embed_artifacts"]), len(present),
+               len(cfg["embed_artifacts"]),
+               "" if len(present) == len(cfg["embed_artifacts"])
+               else "  *** an embed artifact named in the config is NOT in "
+                    "public/ ***"))
     else:
         out("embed frame: %s" % cfg.get(
             "embed_artifacts_note",
@@ -3448,6 +3561,10 @@ def _main(args, out, t0):
             out("CLAIM GATE: NOT RUN")
             _finish(out, args, 2, t0)
             return 2
+        embeds_set = set(cfg.get("embed_artifacts", []) or [])
+        for h in list(res.raw) + list(res.adjudicated):
+            if h.rel in embeds_set:
+                h.on_embed = True
         n = len(res.adjudicated)
         if not rule.blocking:
             res.verdict = "REPORT"

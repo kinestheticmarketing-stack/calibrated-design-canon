@@ -323,9 +323,19 @@ class _HTMLSurfaces(HTMLParser):
         self.handle_data("&#%s;" % name)
 
 
-_CITED_STAT = re.compile(
-    r'<p class="cited-stat">(?P<body>.*?)</p>', re.DOTALL
-)
+_CITED_STAT_CACHE = {}
+
+
+def cited_stat_re(cls="cited-stat"):
+    """The attributing-block pattern, built from the CONFIGURED class name.
+    It was hardcoded, so renaming the class in config.R1.cited_stat_class
+    silently disabled R1 half A and all of R11 while both kept printing."""
+    rx = _CITED_STAT_CACHE.get(cls)
+    if rx is None:
+        rx = re.compile(r'<p class="%s">(?P<body>.*?)</p>' % re.escape(cls),
+                        re.DOTALL)
+        _CITED_STAT_CACHE[cls] = rx
+    return rx
 _CITED_ANCHOR = re.compile(
     r'<a href="(?P<url>[^"]*)"[^>]*>(?P<label>.*?)</a>', re.DOTALL
 )
@@ -432,6 +442,7 @@ class Artifact(object):
         self.ld_parse_errors = []
         self.ld_truncated = []
         self.cite_keys = []         # filled by the claim-set builder
+        self.cited_stat_class = "cited-stat"
 
     # -- access ----------------------------------------------------------
     def stream(self, keys):
@@ -515,7 +526,7 @@ def _parse_html(art):
                 continue
             art.hidden_selectors.append(sel)
 
-    for m in _CITED_STAT.finditer(art.raw):
+    for m in cited_stat_re(art.cited_stat_class).finditer(art.raw):
         body = m.group("body")
         am = _CITED_ANCHOR.search(body)
         url = am.group("url") if am else ""
@@ -597,7 +608,7 @@ def _parse_sitemap(art):
     return art
 
 
-def parse_artifact(rel, path, embed_paths=()):
+def parse_artifact(rel, path, embed_paths=(), cited_stat_class="cited-stat"):
     """Parse ONE artifact into every surface it has. One read, one parse."""
     with open(path, "rb") as fh:
         data = fh.read()
@@ -615,6 +626,7 @@ def parse_artifact(rel, path, embed_paths=()):
         kind = "txt"
 
     art = Artifact(rel, kind, raw)
+    art.cited_stat_class = cited_stat_class or "cited-stat"
     art.is_embed = rel in set(embed_paths)
     if kind == "html":
         _parse_html(art)
