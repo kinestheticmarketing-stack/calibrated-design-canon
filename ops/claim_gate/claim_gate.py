@@ -567,6 +567,35 @@ def win(text, pos, n):
     return text[max(0, pos - n):pos + n]
 
 
+def names_in(text, names, aliases=None, ci=True):
+    """Canonical names present in `text`, longest-first, SPAN-CONSUMING.
+
+    Two properties this needs and `which_any` does not have:
+
+      * case-insensitive by default. `atmos energy` in lowercase was invisible
+        to R2 and `R4.programs` had the same hole (ci=False everywhere).
+      * a matched span is CONSUMED, so a shorter name that overlaps a longer
+        one already matched does not count again. Without this, adding bare
+        "Xcel" beside "Xcel Energy" would let one mention of Xcel Energy
+        satisfy R4's two-distinct-programs requirement by itself.
+
+    Town names deliberately do NOT come through here: they stay
+    word-boundary-anchored and CASE-SENSITIVE, because `grep -ci 'ault'` gives
+    8 where the locality Ault appears once.
+    """
+    aliases = aliases or {}
+    spans = []
+    found = []
+    for term in sorted((t for t in names if t), key=len, reverse=True):
+        for m in _pat(term, ci, True).finditer(text):
+            a, b = m.start(), m.end()
+            if any(a < y and b > x for x, y in spans):
+                continue
+            spans.append((a, b))
+            found.append(aliases.get(term, term))
+    return sorted(set(found))
+
+
 # ---------------------------------------------------------------------------
 # Context: the parsed corpus plus the claim set (spec 2)
 # ---------------------------------------------------------------------------
@@ -715,11 +744,14 @@ class Ctx(object):
         long-form allow-list is how a single-utility property manufactures
         1,859 findings about itself."""
         c = self.r("R2")
-        names = sorted(c.get("utility_names", []) or [], key=len, reverse=True)
-        found = set()
-        for n in which_any(text, names, ci=False):
-            found.add(self.canon_utility(n))
-        return sorted(found)
+        return names_in(text, c.get("utility_names", []) or [],
+                        c.get("utility_aliases", {}) or {}, ci=True)
+
+    def programs_in(self, text):
+        """Canonical R4 program names present in `text`, span-consuming."""
+        c = self.r("R4")
+        return names_in(text, c.get("programs", []) or [],
+                        c.get("program_aliases", {}) or {}, ci=True)
 
     def allowed_utilities(self, towns):
         """The utilities a page in `towns` may attribute a program to.
@@ -1084,9 +1116,9 @@ def rule_R2(ctx, res):
             for skey, loc, sent in ctx.pool(art):
                 if not has_any(sent, ELECTRIC_WORDS, word=False):
                     continue
-                for u in sorted(set(ctx.canon_utility(x) for x in
-                                    which_any(sent, elec_names or names,
-                                              ci=False))):
+                for u in names_in(sent, elec_names or names,
+                                  c.get("utility_aliases", {}) or {},
+                                  ci=True):
                     raw.append(Hit("R2", "e", art.rel, skey, str(loc),
                                    "%s named beside an electric word | %s"
                                    % (u, sent),
@@ -1239,7 +1271,7 @@ def rule_R3(ctx, res):
             if not rw:
                 continue
             if not (has_any(sent, money, word=False) or
-                    has_any(sent, progs, ci=False)):
+                    has_any(sent, progs, ci=True)):
                 continue
             raw.append(Hit("R3", "T3", art.rel, skey, str(loc),
                            "%s | %s" % (",".join(rw), sent),
@@ -1321,7 +1353,7 @@ def rule_R4(ctx, res):
             tk = which_any(sent, toks, word=False)
             if not tk:
                 continue
-            named = which_any(sent, programs, ci=False)
+            named = ctx.programs_in(sent)
             if len(set(named)) < 2:
                 cls = "NEUTRAL"
             elif not has_any(sent, preds, word=False):
@@ -1330,9 +1362,14 @@ def rule_R4(ctx, res):
                 cls = "DENIES"
             else:
                 cls = "ASSERTS"
-            pub = exc.get("publisher")
-            if cls in ("ASSERTS", "DENIES") and pub and has(sent, pub, ci=False) \
-                    and art.cite_keys:
+            pubs = exc.get("publishers") or \
+                ([exc["publisher"]] if exc.get("publisher") else [])
+            pub = None
+            for cand in pubs:
+                if has(sent, cand, ci=True):
+                    pub = cand
+                    break
+            if cls in ("ASSERTS", "DENIES") and pub and art.cite_keys:
                 cls = "ATTRIBUTED-AND-SOURCED"
             raw.append(Hit("R4", cls, art.rel, skey, str(loc),
                            "%s | programs=%s | %s"
