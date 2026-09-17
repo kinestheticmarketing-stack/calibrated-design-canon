@@ -13,7 +13,19 @@ rule derived from a defect this portfolio shipped live between 2026-09-01 and
 2026-09-11. Read it before changing a rule.
 
 **The gate is READ-ONLY on content. It edits no page, no copy, no generator, and
-it never deploys. It writes nothing except an explicit `--report` path.**
+it never deploys. It writes nothing except an explicit `--report` path** — the
+wrappers export `PYTHONDONTWRITEBYTECODE=1`, because setting
+`sys.dont_write_bytecode` in the module body is too late when something
+*imports* `claim_gate.py`.
+
+**The SRC normalization is real and scoped.** `config.src_rules` names which
+rules read the generators' tokenize-joined string runs — today `R2`, `R3-T3`,
+`R4`, `R5`, `R7` — and the header prints the list every run, including
+`READ BY: NO RULE -- SRC is computed and unused` if it is ever emptied. R3's
+T1/T2 numeral halves deliberately do **not** read SRC: the generators embed the
+citation registry's own deliberately-kept dollar figures. An SRC finding whose
+text already renders in `public/` is cleared through a named filter, because
+double-counting one claim is not coverage.
 
 ## How to run it
 
@@ -54,12 +66,12 @@ state to judge". A `REPORT` finding (R11) never changes the exit code.
 
 | Flag | Effect |
 |---|---|
-| `--canary` | run **only** the control phase and exit with its result. Independently checkable by hand or in CI. |
+| `--canary` | run **only** the control phase and exit with its result. Independently checkable by hand or in CI. The zero-artifact trap runs **before** this returns, so a green canary is not available on a gutted corpus. |
 | `--brief` | suppress the per-hit and per-removed-item enumerations. Prints `ENUMERATION SUPPRESSED BY --brief` in their place, so a brief run can never be mistaken for a full one. |
-| `--opt-in=R6b` | register the browser cross-product rule. See the note below. |
-| `--peer <repo>` | supply a second property for R9's cross-property half. Without it the gate prints `R9 CROSS-PROPERTY HALF SKIPPED: no --peer given`. |
+| `--opt-in=R6b` | request the browser cross-product rule. It is **UNAVAILABLE** — it needs a Chrome binary this gate cannot assume — so the gate discloses that and **runs the other ten blocking rules normally**. It does not abort. |
+| `--peer <repo>` | supply a second property for R9's cross-property half. The path is validated (no `public/` → exit 2), the peer corpus is enumerated, parsed and indexed with the same predicates, and subject value sets are compared across the two properties, skipping `deliberate_divergence`. The summary discloses the outcome **either way** — `R9 CROSS-PROPERTY HALF SKIPPED: no --peer given` or `R9 CROSS-PROPERTY HALF RAN against <path>`. Passing the flag can never make the gate stop saying whether the half ran. |
 | `--report <path>` | also write the output to a file. The only path the gate writes. |
-| `--today YYYY-MM-DD` | override the as-of date (default: the config's `R8.today`). |
+| `--today YYYY-MM-DD` | override the as-of date (default: the config's `R8.today`). Validated: a non-ISO or impossible calendar date exits 2, because R8 compares dates as strings and an unparseable value would silently disable the future-date test. Control fixtures are pinned to their own reference date, so `--today` cannot turn a fixture's own date into a false alarm. |
 
 **There is no flag that skips the controls.** A rule that cannot be shown to
 fire is indistinguishable from a rule that is not wired in, and it manufactures
@@ -105,6 +117,33 @@ embed frame: …
   report-only findings: N (…)
   opt-in rules not run: N
 CLAIM GATE: PASS | FAIL
+```
+
+### The control counts, reconciled
+
+`RULES_SPEC.md` §4's sample footer says `22 positive DETECTED, 14 negative
+clean`. The gate prints **24 positive controls, 24 repair tests and 14 negative
+controls**. Both are right about different things, and I cannot edit
+`RULES_SPEC.md`, so the reconciliation lives here:
+
+- **22 is a fixture-DOCUMENT count.** `fixtures/` holds 24 files outside
+  `negative/`; two are the `.gitfacts.json` sidecars for R8a and R8b, which are
+  input data rather than fixtures. 24 − 2 = 22 positive-control fixture
+  documents, exactly as §1's manifest and §8/§9 declare.
+- **24 is the CONTROL count**, i.e. the number of `canary+` lines. It differs
+  from 22 in both directions: R9's two files are one directory driving two
+  sub-tests and R10's three files are one directory driving two, which pushes
+  the control count *down*; and R1, R7, R8c and R10 each gained a second
+  control when every control was bound to a single sub-test, which pushes it
+  *up*. R6b is requested-and-unavailable and is **not** counted as a control.
+- **24 repair tests**, one per control, under `fixtures/repaired/`.
+- **14 negative controls** agrees exactly: 14 `NEG*.html` documents plus one
+  `NEG11.gitfacts.json` sidecar = 15 files.
+
+Commands:
+```
+find ops/claim_gate/fixtures -type f -not -path '*/repaired/*' -not -path '*/negative/*' | wc -l   -> 24
+find ops/claim_gate/fixtures/negative -name '*.html' | wc -l                                       -> 14
 ```
 
 ### A bare zero is FORBIDDEN
@@ -163,10 +202,11 @@ live in the per-property file.
 |---|---|---|---|
 | R1 | FABRICATED QUOTATION | CLAIM TEST (+ string list for the hand-written-prose half, declared) | yes |
 | R2 | WRONG-UTILITY CLAIM | CLAIM TEST | yes |
+| R2 sub-tests | `a` attribution · `b` inherited cite key · `c` wayfinding URL · `e` electric naming · `h` hedge halves · `q` town qualifier · `x` qualifier cross-contamination · `t` town-blind tool · `p` forbidden program name · `r` locked restriction | | |
 | R3 | REBATE DOLLAR FIGURE | CLAIM TEST for T3; STRING+WINDOW LIST for T1/T2/T4, declared | yes |
 | R4 | STACKING ASSERTION OR DENIAL | CLAIM TEST | yes |
 | R5 | UNCITED STATISTIC | CLAIM TEST | yes |
-| R6 | SELF-CONTRADICTING OUTPUT | CLAIM TEST (G1 branch/print identity, G2 monotonicity) | yes |
+| R6 | SELF-CONTRADICTING OUTPUT | CLAIM TEST (G1 branch/print identity, G2 strict monotonicity, G2-DUP two labels at one value, UNPARSEABLE) | yes |
 | R7 | SUPERSEDED-SOURCE CLAIM | CLAIM TEST for the proposition half; STRING LIST for the identifier half, declared | yes |
 | R8 | STALE REVIEW DATE | CLAIM TEST | yes |
 | R9 | INTERNAL CONTRADICTION | CLAIM TEST | yes |
@@ -180,32 +220,64 @@ R1 and R7 print **DEGRADED** on every run until the two schema additions
 list, and both say so rather than silently passing.
 
 R6's **R6b** (the browser cross-product) is opt-in and is never silently
-dropped: when not run the summary prints
+dropped. When not requested the summary prints
 `OPT-IN NOT RUN: R6b (browser cross-product). Run with --opt-in=R6b.`
-When you do pass `--opt-in=R6b` the gate registers it, its control **cannot**
-fire, and the gate exits **2** naming the missing prerequisite — R6b needs a
-Chrome binary this gate cannot assume (`RULES_SPEC.md` §6, §7.3), and the gate
-makes no outbound request and executes no page JavaScript. That refusal is the
-honest outcome: a rule that silently passed without running would be the exact
-failure the control-first contract exists to prevent.
+When you pass `--opt-in=R6b` the gate prints
+`canary= R6b-G3 ... UNAVAILABLE: requires a Chrome binary this gate cannot
+assume (spec 6, 7.3). No browser, no outbound request. Disclosed, not run, not
+counted as a control.` and **runs the other ten blocking rules normally**. It
+does not abort and it is not a control failure. Disclosure is what §6 requires;
+aborting all eleven rules converted a documented flag into a permanent red and
+denied the operator the ten rules that do work. The gate makes no outbound
+request and executes no page JavaScript.
+
+R6 also prints a real **DENOMINATOR** every run — chains examined, JS texts
+read, conditions located, label assignments found, branches bound to a
+condition — so a `RAW 0` can never mean both "clean" and "blind". A chain whose
+labels are present but cannot be bound to conditions (a ternary, a
+`switch (true)`) is a loud `UNPARSEABLE` finding, and two labels reachable at
+the same printed value is `G2-DUP` — which is the named defect class R6 exists
+for.
 
 ## Adding or changing a rule
 
 1. **A rule with no positive-control fixture cannot register.** The loader
    refuses it and exits 2. So does an empty `blind spot` field.
-2. Controls run against **fixture files only**, never the repo, and the gate
-   asserts `public/` mtimes are unchanged across the control phase.
+2. **Controls cannot reach the repo under test.** `ctx.repo` points at a path
+   that does not exist, rules refuse filesystem reads when `ctx.control`, and
+   `isolation_breach()` fails any control whose findings name a repo artifact.
+   The gate also asserts `public/` mtimes are unchanged across the control
+   phase. Before this was true, `rule_R6` read the real generator from inside a
+   negative-control context, so on a tree carrying the R6 defect all 14
+   negative fixtures false-alarmed and the gate exited 2 `NOT RUN` instead of 1
+   `R6 FAILED` — it refused to run precisely when the defect was present.
 3. Controls run against the fixture's own **config overlay** merged over the
-   property config (`*_CONTROL_OVERLAY` in `claim_gate.py`), so a control proves
-   the RULE can detect its defect regardless of which property's territory,
-   figures or label chains happen to be loaded. Control tallies are therefore
-   identical on all three properties.
-4. Every collection is sorted before printing. The gate is byte-deterministic:
-   run it twice and diff. The as-of date comes from the config, not the wall
+   property config (`*_CONTROL_OVERLAY` in `claim_gate.py`). The overlay
+   **merges, it does not replace**, so a property value can still reach a
+   control; the overlay only guarantees that the values a given control depends
+   on are the ones it declares. In practice the DETECTED/MISSED and
+   clean/FALSE-ALARM tallies are identical on all three properties and the
+   per-control hit counts in parentheses vary. Do not read this as "the control
+   is property-independent"; read it as "the control's own inputs are pinned".
+4. **Every control is bound to the ONE sub-test it proves** (`sub=` on the
+   `Control`). Without that binding a hit from any sub-test satisfied the
+   control, and R1's claim-test half and R2's wrong-utility half each ended up
+   with no control at all — each was satisfied by a different half of the same
+   fixture.
+5. **Every control has a REPAIR counterpart** under `fixtures/repaired/` in
+   which the defect is fixed, and the rule must return zero hits on that
+   control's sub-test against it. A control that still fires on a repaired
+   fixture is a control failure and exits 2. That is Ruling 6 made mechanical,
+   and it caught two regressions while this round was being written.
+6. Control fixtures are pinned to their own as-of date, so `--today` cannot
+   turn a fixture's own hardcoded date into a false alarm.
+7. Every collection is sorted before printing. The gate is byte-deterministic:
+   run it twice and `cmp`. The as-of date comes from the config, not the wall
    clock, for exactly this reason.
-5. **Values go in the config. Rules go in the implementation.** If a rule cannot
+8. **Values go in the config. Rules go in the implementation.** If a rule cannot
    be expressed without a property name inside `claim_gate.py`, the rule is
-   wrong.
+   wrong. And a config key that no code path reads is a rule that silently does
+   not exist: wire it up or delete it.
 
 ## Adding a property
 
