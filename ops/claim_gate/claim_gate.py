@@ -621,7 +621,7 @@ CLAIM_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD,
 # what told DCI its page contradicted its own navigation.
 POOL_KEYS = (S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS, S.S_ATTR,
              S.S_LLMS, S.S_ROBOTS, S.S_SVGTEXT, S.S_CITE, S.S_CONST,
-             S.S_LOWVIS, S.S_COMMENT, S.S_CSS, S.S_SITEMAP)
+             S.S_LOWVIS, S.S_COMMENT, S.S_CSS, S.S_SITEMAP, S.S_SRC)
 
 
 class Ctx(object):
@@ -641,6 +641,8 @@ class Ctx(object):
         self._svg_text = {}
         self._pool = {}
         self._levels_cache = {}
+        self.src_artifacts = []
+        self._rendered = None
 
     # ---- config access
     def r(self, rid):
@@ -649,6 +651,67 @@ class Ctx(object):
     # ---- artifact selection
     def read_artifacts(self):
         return self.artifacts
+
+    def rendered_index(self):
+        """One concatenated blob of everything that actually RENDERS into
+        public/, used to tell a generator-side finding that adds information
+        from one that merely restates a rendered page."""
+        if getattr(self, "_rendered", None) is None:
+            parts = []
+            for a in self.artifacts:
+                if a.kind == "src":
+                    continue
+                parts.append(a.txt)
+                for _, lit in a.js_strings:
+                    parts.append(S.collapse(S.dec(S.txt(lit))))
+                for sf in a.surfaces:
+                    parts.append(sf.text)
+            self._rendered = " \u0001 ".join(parts)
+        return self._rendered
+
+    def src_dup(self, hit):
+        """True when an SRC-sourced hit's text ALREADY renders in public/.
+
+        Wiring SRC (Ruling B) immediately produced a flood on DCI R5: 107 new
+        adjudicated hits, essentially all of them _educational_pages.py prose
+        that renders verbatim into public/ and was therefore already counted
+        once against the rendered artifact. Double-counting one claim is not
+        coverage.
+
+        What SRC is FOR is the claim that is NOT visible in the rendered
+        corpus: a string split across Python implicit concatenation
+        (REBATE_ACKNOWLEDGMENT reads "...the primary rebate " "stack for
+        Denver-area..."), and the pre-render form of a claim a page assembles at
+        runtime -- DCI's `Dec. 31, 2026` at _generate_calculator_pages.py:344,
+        which stayed outside the claim corpus for four rounds. Those survive
+        this filter; a restatement of rendered prose does not.
+        """
+        if not str(hit.rel).startswith("src:"):
+            return False
+        probe = S.collapse(hit.sentence)[:48]
+        if len(probe) < 20:
+            return False
+        return probe in self.rendered_index()
+
+    def src_rules(self):
+        return set(self.cfg.get("src_rules", []) or [])
+
+    def rule_artifacts(self, rid):
+        """Claim artifacts, plus the generator SRC pseudo-artifacts for the
+        rules config.src_rules names.
+
+        DELIBERATELY NOT R3's T1/T2 numeral halves: the generators embed the
+        citation registry's own deliberately-kept dollar figures (DCI 7786ce5
+        records why the registry keeps them), so feeding SRC to a $-anchored
+        or bare-numeral scan would flood it with figures that are correct
+        where they sit. R3's T3 rank-claim half DOES read SRC, because
+        "the largest rebate" lived in _generate_service_pages.py's
+        CROSS_CONTEXT['attic'] and shipped to six pages from there.
+        """
+        base = self.claim_artifacts()
+        if rid in self.src_rules():
+            return base + self.src_artifacts
+        return base
 
     def claim_artifacts(self):
         # .xml included: sitemap.xml is a deployed artifact and its prose and
@@ -1086,7 +1149,7 @@ def rule_R2(ctx, res):
                          "town is not a town-blind verdict"
                          % (len(towns), ", ".join(sorted(uniform_allowed))))
     raw = []
-    for art in ctx.claim_artifacts():
+    for art in ctx.rule_artifacts("R2"):
         scope = ctx.town_scope(art)
         allowed = ctx.allowed_utilities(scope)
         scope_s = ",".join(scope) or ("sitewide(union of %d towns)"
@@ -1216,11 +1279,15 @@ def rule_R2(ctx, res):
         return has_any(h.sentence, c.get("non_territorial_programs", []) or [],
                        word=False) and h.sub in ("a",)
 
+    def f_srcdup(h):
+        return ctx.src_dup(h)
+
     def f_noscope(h):
         return bool(getattr(h, "r2_noscope", False))
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
         Filt("no territory configured for this property -- R2 cannot scope "
              "anything (raised, then cleared here, never dropped silently)",
              f_noscope),
@@ -1301,6 +1368,14 @@ def rule_R3(ctx, res):
                            "rate@%d" % m.start(),
                            "%s | %s" % (m.group(0), w),
                            note=m.group(0), sentence=w))
+
+
+    # T3 -- the genuine claim test -- reads the generators too, because
+    # "the largest rebate" lived in _generate_service_pages.py's
+    # CROSS_CONTEXT['attic'] and shipped from there to six pages. T1 and T2
+    # deliberately do NOT (Ruling B): the generators embed the citation
+    # registry's own deliberately-kept figures.
+    for art in ctx.rule_artifacts("R3-T3"):
         for skey, loc, sent in ctx.pool(art):
             rw = which_any(sent, ranks)
             if not rw:
@@ -1311,6 +1386,9 @@ def rule_R3(ctx, res):
             raw.append(Hit("R3", "T3", art.rel, skey, str(loc),
                            "%s | %s" % (",".join(rw), sent),
                            note="rank-claim", sentence=sent))
+
+    def f_srcdup(h):
+        return ctx.src_dup(h)
 
     def f_allowed(h):
         return h.note in allowed or (h.note and h.note.lstrip("$") in
@@ -1347,6 +1425,7 @@ def rule_R3(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
         Filt("allowed_figures (per-property Director ruling)", f_allowed),
         Filt("income-eligibility threshold (WAP standing exception)", f_income),
         Filt("cost_context_markers (Ruling 2 -- costs, not payouts)", f_cost),
@@ -1388,7 +1467,7 @@ def rule_R4(ctx, res):
     retired = c.get("retired_prohibition_strings", []) or []
 
     raw = []
-    for art in ctx.claim_artifacts():
+    for art in ctx.rule_artifacts("R4"):
         for skey, loc, sent in ctx.pool(art):
             tk = which_any(sent, toks, word=False)
             if not tk:
@@ -1416,6 +1495,9 @@ def rule_R4(ctx, res):
                            % (",".join(tk), ",".join(named) or "-", sent),
                            note=cls, sentence=sent))
 
+    def f_srcdup(h):
+        return ctx.src_dup(h)
+
     def f_legit(h):
         return has_any(h.sentence, legit, word=False)
 
@@ -1442,6 +1524,7 @@ def rule_R4(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
         Filt("legitimate_uses (stack effect, plumbing stack, can lights)", f_legit),
         Filt("NEUTRAL -- fewer than two distinct programs, or no predicate",
              f_neutral),
@@ -1481,7 +1564,7 @@ def rule_R5(ctx, res):
     marks = ctx.r("R7").get("correction_markers", []) or []
 
     raw = []
-    for art in ctx.claim_artifacts():
+    for art in ctx.rule_artifacts("R5"):
         stats = " || ".join(x["txt"] for x in art.cited_stats)
         cs_txt = [x["txt"] for x in art.cited_stats]
         for skey, loc, sent in ctx.pool(art):
@@ -1507,6 +1590,9 @@ def rule_R5(ctx, res):
             h.r5_inblock = inblock
             h.r5_instat = instat
             raw.append(h)
+
+    def f_srcdup(h):
+        return ctx.src_dup(h)
 
     def _open(pred):
         """No filter may remove a KNOWN-OPEN hit. config.known_uncited carries
@@ -1544,6 +1630,9 @@ def rule_R5(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("generator SRC restatement of prose that already renders in "
+             "public/ (counted once, against the rendered artifact)",
+             _open(f_srcdup)),
         Filt("the sentence IS a cited-stat block (attributed by construction)",
              _open(f_inblock)),
         Filt("the figure appears in a cited-stat rendered on this page "
@@ -1866,6 +1955,10 @@ def rule_R7(ctx, res):
 
     raw = []
     id_rx = _any_pat(ids, False, True) if ids else False
+    # half A stays on the READ SET. The 2026-09-07 four-repo sweep measured
+    # canon 3 / DCI 62 / LGM 64 / GCI 3 hits for the superseded print codes and
+    # only NINE were live defects; the rest are history quoted in generators
+    # and docs. Half B, the proposition half, is the one that reads SRC.
     for art in ctx.read_artifacts():
         for level, text in ((S.NORM_RAW, art.raw), (S.NORM_TXT, art.txt)):
             if not id_rx:
@@ -1889,7 +1982,7 @@ def rule_R7(ctx, res):
                                "%s | %s" % (u, S.collapse(win(art.raw, p, 60))),
                                note="superseded-url",
                                sentence=S.collapse(win(art.txt, 0, 1))))
-    for art in ctx.claim_artifacts():
+    for art in ctx.rule_artifacts("R7"):
         for skey, loc, sent in ctx.pool(art):
             for pr in props:
                 allof = pr.get("all_of") or []
@@ -1907,6 +2000,9 @@ def rule_R7(ctx, res):
                                "%s | %s" % (pr.get("claim_id", "?"), sent),
                                note=pr.get("claim_id", "?"), sentence=sent))
 
+    def f_srcdup(h):
+        return ctx.src_dup(h)
+
     def f_corr(h):
         return has_any(h.sentence, marks, word=False)
 
@@ -1916,6 +2012,7 @@ def rule_R7(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
         Filt("correction marker in scope (quoted in order to retire it)", f_corr),
         Filt("never_retire_on_403 source named (403 is bot-blocking)", f_never403),
     ])
@@ -3104,13 +3201,23 @@ def _main(args, out, t0):
         for t in sorted(trunc)[:10]:
             out("  %s" % t)
 
+    for mod in sorted(gen.src_runs):
+        a = S.src_artifact(mod, gen.src_runs[mod])
+        if a.surfaces:
+            ctx.src_artifacts.append(a)
+            ctx.by_rel[a.rel] = a
+
     build_claim_set(ctx)
     n_prop, n_cite, n_const, n_asset = ctx.claim_counts
     out("claim set: %d propositions resolved from %d cited-stat blocks, %d "
         "shared constants, %d referenced assets"
         % (n_prop, n_cite, n_const, n_asset))
+    sr = sorted(cfg.get("src_rules", []) or [])
     out("normalization levels compared: RAW DEC TXT   (+ SRC over %d "
-        "generator modules)" % len(gen.modules))
+        "generator modules, %d string runs >=12 chars, READ BY: %s)"
+        % (len(gen.modules),
+           sum(len(a.surfaces) for a in ctx.src_artifacts),
+           ", ".join(sr) if sr else "NO RULE -- SRC is computed and unused"))
     out("KNOWN HOLES, stated up front (spec 7): og-image RASTERS are not read "
         "(%s); no PDF text extraction; no JS execution outside opt-in R6b; no "
         "outbound request, so a live/repo divergence is invisible here; "

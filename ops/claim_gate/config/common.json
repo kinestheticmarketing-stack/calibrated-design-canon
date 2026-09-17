@@ -1,6 +1,8 @@
 {
   "_README": "SHARED VALUES ONLY. No property name, no territory, no per-property figure appears in this file -- those live in dci.json / lgm.json / gci.json, which each carry \"extends\": \"common.json\". One copy exists because _artifact_grep.sh is the recorded counter-example: GCI's copy and LGM's copy diverged into two files that must be maintained twice, and LGM's still names a five-town lock where the property has had four towns since 3ca991f. The implementation still holds the RULES; this file holds values, exactly as RULES_SPEC.md section 1 requires.",
   "schema_version": 1,
+  "src_rules": ["R2", "R3-T3", "R4", "R5", "R7"],
+  "src_rules_note": "Which rules read the SRC normalization (the tokenize-joined string runs of the property's own generators). Scoped per Ruling B 2026-09-17: NOT R3's T1/T2 numeral halves, because the generators embed the citation registry's own deliberately-kept dollar figures (DCI 7786ce5 records why the registry keeps them) and a $-anchored or bare-numeral scan over them would flood with figures that are correct where they sit. R3's T3 rank-claim half DOES read SRC, because 'the largest rebate' lived in _generate_service_pages.py CROSS_CONTEXT['attic'] and shipped to six pages from there. R7 half A (identifiers) also stays off SRC: the 2026-09-07 four-repo sweep measured DCI 62 / LGM 64 hits for the superseded print codes of which only NINE were live defects.",
 
   "R1": {
     "cited_stat_class": "cited-stat",

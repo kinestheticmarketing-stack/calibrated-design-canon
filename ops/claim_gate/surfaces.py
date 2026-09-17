@@ -154,6 +154,7 @@ S_LLMS = "LLMS"
 S_ROBOTS = "ROBOTS"
 S_SITEMAP = "SITEMAP"
 S_SVGTEXT = "SVGTEXT"
+S_SRC = "SRC"        # generator source, tokenize-joined string runs
 S_COMMENT = "COMMENT"  # <!-- ... --> bodies, a real claim surface
 S_CITE = "CITE"      # claim-set: a resolved CITED_SOURCES entry's own text
 S_CONST = "CONST"    # claim-set: a territorially-scoped shared constant
@@ -161,7 +162,7 @@ S_CONST = "CONST"    # claim-set: a territorially-scoped shared constant
 ALL_SURFACES = (
     S_VIS, S_TITLE, S_META, S_OG, S_TW, S_LD, S_JS, S_CSS, S_LOWVIS,
     S_ATTR, S_LLMS, S_ROBOTS, S_SITEMAP, S_SVGTEXT, S_COMMENT, S_CITE,
-    S_CONST,
+    S_CONST, S_SRC,
 )
 
 # LOWVIS: the tags three of the last five defects lived in (spec 3).
@@ -690,6 +691,29 @@ def _literal_str(tok):
     return v if isinstance(v, str) else str(v)
 
 
+def src_artifact(module, runs):
+    """A generator module as a pseudo-artifact whose surfaces are its
+    tokenize-joined STRING RUNS.
+
+    This is what makes the SRC normalization real instead of advertised.
+    src_string_runs() exists precisely because this portfolio's prose splits
+    across Python implicit-concatenation boundaries -- REBATE_ACKNOWLEDGMENT
+    reads "...the primary rebate " "stack for Denver-area..." and, verbatim
+    from DCI's lane row, "no single-string grep or regex can see the phrase".
+    Joining the run first is the only way a rule can.
+    """
+    art = Artifact("src:" + module, "src", "")
+    for line, text in runs:
+        t = collapse(text)
+        if len(t) >= 12:
+            art.surfaces.append(
+                Surface(S_SRC, "src:%s:%s" % (module, line), t))
+    art.txt = " ".join(x.text for x in art.surfaces)
+    art.doc_txt = art.txt
+    art.dec = art.txt
+    return art
+
+
 class GeneratorFacts(object):
     """Everything the gate needs from the generators: CITED_SOURCES, the
     slug->cite_keys maps, module-level string constants, and the SRC text."""
@@ -699,6 +723,7 @@ class GeneratorFacts(object):
         self.slug_cite_keys = {}    # slug -> sorted list of keys
         self.constants = {}         # NAME -> joined string value
         self.src_text = {}          # module rel -> SRC-joined text
+        self.src_runs = {}          # module rel -> [(lineno, joined text)]
         self.modules = []
         self.provenance_present = False
         self.quote_true_count = 0
@@ -778,6 +803,7 @@ def read_generators(repo, module_names):
             text = fh.read()
         facts.modules.append(name)
         runs = src_string_runs(text)
+        facts.src_runs[name] = runs
         facts.src_text[name] = "\n".join(collapse(r[1]) for r in runs)
         try:
             tree = _ast.parse(text)
