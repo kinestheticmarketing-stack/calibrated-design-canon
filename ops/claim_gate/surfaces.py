@@ -77,6 +77,11 @@ def txt(s):
 # claim whose own config note reads "the short form Dec. 31, 2026 survived four
 # further rounds because every sweep searched the long form". The gate had
 # reproduced that exact trap inside itself.
+# A new segment starts at a list-item marker, a numbered item, a markdown
+# heading, or a `Key: value` directive (robots.txt's shape).
+_SEG_START = re.compile(
+    r"^\s*(?:[-*+\u2022]\s|\d+[.)]\s|#{1,6}\s|[A-Za-z][\w-]*\s*:\s)")
+
 _ABBREV = (
     "Dec", "Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Sept",
     "Oct", "Nov",
@@ -640,18 +645,44 @@ def parse_artifact(rel, path, embed_paths=(), cited_stat_class="cited-stat"):
         base = rel.rsplit("/", 1)[-1].lower()
         key = S_LLMS if base == "llms.txt" else (
             S_ROBOTS if base == "robots.txt" else S_VIS)
-        # ONE SURFACE PER LINE. llms.txt and robots.txt are LINE-ORIENTED
-        # documents: llms.txt is a list of tile descriptions, one per line, and
-        # DCI fb08735 / LGM e329db7 were each a single such line. Emitting the
-        # whole file as one surface made it one enormous "sentence" in which
-        # every program name on the property co-occurred, so R4's
-        # two-distinct-programs test classified the entire file as a stacking
-        # claim. Per-line is the unit the defects actually shipped in.
-        for i, line in enumerate(dec(raw).splitlines()):
-            line = collapse(line)
-            if line:
+        # ONE SURFACE PER SEGMENT, NOT PER LINE.
+        #
+        # These are LINE-ORIENTED documents -- llms.txt is a list of tile
+        # descriptions and DCI fb08735 and LGM e329db7 were each a single such
+        # entry -- so the whole file must not become one enormous "sentence" in
+        # which every program name on the property co-occurs.
+        #
+        # But splitting on EVERY newline re-opened the line-wrap hole that
+        # collapse()'s own docstring calls the single most load-bearing line in
+        # this file. Measured: a superseded proposition on ONE line gave R7
+        # RAW 1 ADJ 1 FAIL; the SAME proposition wrapped across two lines gave
+        # RAW 0 ADJ 0 PASS. Three separate recorded false zeroes in this
+        # portfolio came from exactly that.
+        #
+        # So a segment BEGINS at a blank line, a list-item marker, a heading or
+        # a `Key: value` directive, and CONTINUES through wrapped continuation
+        # lines, which are joined with a space. Both properties hold: a bullet
+        # is its own unit, and a phrase that wraps inside one is still visible.
+        segs = []
+        cur = []
+        for line in dec(raw).splitlines():
+            st = line.strip()
+            if not st:
+                if cur:
+                    segs.append(cur)
+                    cur = []
+                continue
+            if _SEG_START.match(line) and cur:
+                segs.append(cur)
+                cur = []
+            cur.append(st)
+        if cur:
+            segs.append(cur)
+        for i, seg in enumerate(segs):
+            text = collapse(" ".join(seg))
+            if text:
                 art.surfaces.append(
-                    Surface(key, "%s:L%d" % (rel, i + 1), line))
+                    Surface(key, "%s:S%d" % (rel, i + 1), text))
     return art
 
 
