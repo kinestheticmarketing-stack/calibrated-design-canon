@@ -1662,7 +1662,12 @@ def rule_R3(ctx, res):
         for level, text in ((S.NORM_RAW, art.raw), (S.NORM_DEC, art.dec)):
             for m in dollar.finditer(text):
                 w = S.collapse(S.dec(win(text, m.start(), wchars)))
-                key = (m.group(0), w)
+                # Key on a NARROW normalized window. The wide window's edges
+                # differ between RAW and DEC whenever an entity sits inside it,
+                # so a figure visible at both levels was counted twice
+                # (RAW 4 ADJ 3, one copy tagged ENTITY-ENCODED) -- inflation,
+                # not blindness, and present twice on the real GCI run.
+                key = (m.group(0), S.collapse(S.dec(win(text, m.start(), 40))))
                 if key in seen_t1:
                     continue
                 seen_t1.add(key)
@@ -2013,6 +2018,7 @@ def rule_R5(ctx, res):
     computed = c.get("computed_output_markers", []) or []
     known = c.get("known_uncited", []) or []
     codes = ctx.r("R3").get("code_context_markers", []) or []
+    code_nouns = ctx.r("R3").get("code_noun_markers", []) or []
     structs = ctx.r("R3").get("allowed_structure_percentages", []) or []
     thresh = ctx.r("R3").get("allowed_thresholds", []) or []
     tctx = ctx.r("R3").get("threshold_context_markers", []) or []
@@ -2115,7 +2121,26 @@ def rule_R5(ctx, res):
         return has_any(h.sentence, computed, word=False)
 
     def f_code(h):
-        return has_any(h.sentence, codes, word=False)
+        # WAS: naming ENERGY STAR (or IECC, or any code marker) ANYWHERE in the
+        # sentence pardoned any uncited statistic in it, through a filter whose
+        # stated purpose is CODE CONTEXT. "ENERGY STAR homes differ, but our
+        # crews measure a 35% reduction in heating costs" was cleared by it --
+        # the same blanket-pardon shape f_pub had. NOW: the marker must be
+        # within 60 chars of the figure AND a code/standard noun must be near
+        # it, so the marker has to actually govern the number.
+        if not has_any(h.sentence, codes, word=False):
+            return False
+        if not has_any(h.sentence, code_nouns, word=False):
+            return False
+        nums = (h.text.split(" | ")[0] or "").split(",")
+        for n in nums:
+            n = n.strip()
+            if not n:
+                continue
+            for pos in occ(h.sentence, n, ci=True, word=False):
+                if has_any(win(h.sentence, pos, 60), codes, word=False):
+                    return True
+        return False
 
     def f_struct(h):
         if not has_any(h.sentence, list(structs) + list(thresh), word=False):
@@ -3512,9 +3537,36 @@ def run_controls(out, cfg, repo, opt_in, gen):
                              "fixture, so it is not proven to be a control"))
                 continue
             rpath = os.path.join(_HERE, c.repaired)
+            if not os.path.exists(rpath):
+                rows.append(("~", c.cid, c.repaired,
+                             "NOT TESTED -- repair fixture missing from disk"))
+                rep_absent += 1
+                continue
             paths = _fixture_paths(rpath)
             for e in c.repaired_extra:
-                paths = paths + _fixture_paths(os.path.join(_HERE, e))
+                ep = os.path.join(_HERE, e)
+                if os.path.exists(ep):
+                    paths = paths + _fixture_paths(ep)
+            # A SUBSTANCE FLOOR. The repair test asserted only "produces zero
+            # hits on this sub-test", which a GUTTED file satisfies trivially:
+            # replacing a repaired fixture with a zero-byte file, or with an
+            # empty page, both gave "24 repaired-clean, 0 FIRE ON REPAIRED"
+            # and exit 0. A repaired fixture must still be the same document
+            # with the defect removed.
+            osize = sum(os.path.getsize(x) for x in
+                        _fixture_paths(os.path.join(_HERE, c.fixture))
+                        if os.path.isfile(x))
+            rsize = sum(os.path.getsize(x) for x in paths
+                        if os.path.isfile(x))
+            if osize and (rsize < 120 or rsize < osize * 0.5):
+                rows.append(("~", c.cid, c.repaired,
+                             "*** REPAIRED FIXTURE TOO THIN *** %d bytes "
+                             "against the original's %d (%.0f%%); floor is "
+                             "50%% and 120 bytes -- a gutted file passes a "
+                             "zero-hit test trivially"
+                             % (rsize, osize, 100.0 * rsize / osize)))
+                rep_fired += 1
+                continue
             ctx = _control_ctx(base, _deep_merge({"R8": {"today": NEG_ASOF}},
                                                  c.overlay), sorted(paths),
                                repo)
@@ -3780,7 +3832,6 @@ def _main(args, out, t0):
 
     # parse once
     ctx = Ctx(cfg["key"], repo, cfg)
-    embeds = set(cfg.get("embed_artifacts", []) or [])
     kinds = {"html": 0, "txt": 0, "xml": 0, "svg": 0, "js": 0}
     parse_failures = []
     for rel in corpus.read_set:
@@ -3789,7 +3840,7 @@ def _main(args, out, t0):
             continue
         try:
             art = S.parse_artifact(
-                rel, p, embeds,
+                rel, p,
                 cfg.get("R1", {}).get("cited_stat_class", "cited-stat"))
         except RecursionError as exc:
             parse_failures.append("%s: RecursionError (%s)" % (rel, exc))
