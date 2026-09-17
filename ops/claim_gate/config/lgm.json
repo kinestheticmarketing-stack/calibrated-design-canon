@@ -58,6 +58,8 @@
       "applies only to residential electric customers of Longmont Power & Communications",
       "electric customers of Longmont Power"
     ],
+    "locked_restriction_required_for": ["Efficiency Works"],
+    "locked_restriction_required_for_reason": "Ruling 7's LGM clause. ground-truth.md:46-53 verbatim: 'Lafayette, Louisville and Niwot are Xcel-electric and cannot access Efficiency Works at all, so no stacking statement of any kind applies to them. Within Longmont it reaches only the LPC-served portion.' Every Efficiency Works sentence must carry the LPC-customers-only restriction.",
     "locked_restriction_reach": "10 + 8 pages, measured in d6e8dab. 'The restriction is not the figure' — it survived the figure strip deliberately.",
     "allowed_multi_utility_sentences": [
       "electric customers of Longmont Power",

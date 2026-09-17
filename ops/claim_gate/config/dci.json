@@ -78,6 +78,11 @@
                  "City of Golden", "federal 25C", "Section 25C", "DRCOG",
                  "Xcel Energy", "ENERGY STAR"],
     "noun_use_constants": ["REBATE_ACKNOWLEDGMENT"],
+          "attributed_exception": { "allowed": true,
+            "publishers": ["ENERGY STAR", "Colorado Energy Office", "Building Science Corporation"],
+            "requires_publisher_named": true,
+            "requires_cited_source_key": true,
+            "basis": "A third party's own published combination, ATTRIBUTED, is licensed; authoring a combined total is not. attributed_exception.publisher was set only on LGM, so ATTRIBUTED-AND-SOURCED could not be assigned on DCI at all and every attributed description read as an unattributed assertion." },
     "director_desk": "whole-home-efficiency-bonus-stacking-denver.html was KEPT and attributed on the narrow reading. A stricter reading deletes the page. Deleting a ranking page is the Director's call and is OPEN."
   },
 
