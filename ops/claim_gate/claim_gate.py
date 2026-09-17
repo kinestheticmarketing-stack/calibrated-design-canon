@@ -347,6 +347,70 @@ class Corpus(object):
         self.escaping_symlinks = []
 
 
+_DOC_PREFIXES = ("_", "note", "reason", "basis", "source", "why")
+
+
+def unread_config_keys(cfg):
+    """Config keys that appear NOWHERE as a literal in the implementation.
+
+    A key with full provenance that no code path reads is a rule that silently
+    does not exist -- the adversarial read counted 256 key names against 102
+    actually referenced. Rather than hand-auditing that list once and letting it
+    rot, the gate reads its OWN source and reports the difference every run.
+    Self-maintaining: wire a key up and it leaves the list; add a key nobody
+    reads and it appears.
+
+    Keys whose name ends in a documentation suffix (_note, _reason, _basis,
+    _source, _why) are provenance by construction and are not reported.
+    """
+    try:
+        with open(os.path.abspath(__file__), "r", encoding="utf-8") as fh:
+            impl = fh.read()
+        with open(os.path.join(_HERE, "surfaces.py"), "r",
+                  encoding="utf-8") as fh:
+            impl += fh.read()
+    except OSError:
+        return []
+    # DATA CONTAINERS hold values keyed by town, alias, slug or document
+    # field. Their KEYS are data, not behaviour, so descending into them would
+    # report "R2.towns.Ault" as an unread rule. Only BEHAVIOURAL positions are
+    # audited: the top level and one level inside each rule block.
+    DATA = ("towns", "utility_aliases", "utility_domains", "program_aliases",
+            "page_titles", "pinned_pages", "allowed_occurrences",
+            "current_replacements", "tariff_identity", "value_slots",
+            "boundary_inclusivity", "targets", "r6b_inputs", "expected",
+            "measured_at", "own_effective_date_values", "attributed_exception",
+            "known_holds", "label_chains", "claim_subjects",
+            "superseded_propositions", "tracked_terms", "anomalies",
+            "deliberate_divergence", "deliberate_edition_divergence",
+            "tools", "draft_gate", "known_uncited", "hedge_pairs")
+    unread = []
+
+    def audit(node, path, depth):
+        if not isinstance(node, dict) or depth > 1:
+            return
+        for k in sorted(node):
+            if not isinstance(k, str):
+                continue
+            low = k.lower()
+            if k.startswith("_") or any(
+                    low.endswith("_" + p) for p in _DOC_PREFIXES):
+                continue
+            full = "%s.%s" % (path, k) if path else k
+            if ('"%s"' % k) not in impl and ("'%s'" % k) not in impl:
+                unread.append(full)
+            if k not in DATA:
+                audit(node[k], full, depth + 1)
+
+    audit(cfg, "", 0)
+    doc = set(cfg.get("documentation_only_keys", []) or [])
+    owed = sorted(set(u for u in unread if u not in doc
+                      and u.split(".")[-1] not in doc))
+    noted = sorted(set(u for u in unread if u in doc
+                       or u.split(".")[-1] in doc))
+    return owed, noted
+
+
 def enumerate_corpus(repo, cfg):
     c = Corpus()
     # -z: without it git C-QUOTES any path with a non-ASCII byte, so a
@@ -2959,8 +3023,16 @@ def rule_R10(ctx, res):
             ok = False
             if kind == "anchor":
                 if re.match(r"https?://", dest) and not dest.startswith(domain):
+                    # config.R10.offproperty_is_compliant was dead. It is now
+                    # READ: a property that wants an off-property promise
+                    # checked rather than assumed compliant can say so, and the
+                    # gate will report it as unresolvable instead (it still
+                    # makes no outbound request, spec 7.3).
                     note = "off-property"
-                    ok = True
+                    ok = bool(c.get("offproperty_is_compliant", True))
+                    if not ok:
+                        note = "off-property, and offproperty_is_compliant " \
+                               "is false: NOT fetched (spec 7.3), REVIEW"
                 else:
                     base = dest.split("?")[0].split("#")[0].rstrip("/")
                     base = base.rsplit("/", 1)[-1] or "index.html"
@@ -3895,6 +3967,12 @@ def _main(args, out, t0):
     out("claim set: %d propositions resolved from %d cited-stat blocks, %d "
         "shared constants, %d referenced assets"
         % (n_prop, n_cite, n_const, n_asset))
+    owed, noted = unread_config_keys(cfg)
+    out("CONFIG KEYS READ BY NO CODE PATH: %d OWED, %d declared "
+        "documentation-only. An OWED key is a rule that silently does not "
+        "exist (Rule 2: wire it up or delete it).%s"
+        % (len(owed), len(noted),
+           ("  OWED: " + ", ".join(owed)) if owed else ""))
     sr = sorted(cfg.get("src_rules", []) or [])
     out("normalization levels compared: RAW DEC TXT   (+ SRC over %d "
         "generator modules, %d string runs >=12 chars, READ BY: %s)"
@@ -4046,7 +4124,13 @@ def _main(args, out, t0):
             if h.rel in embeds_set:
                 h.on_embed = True
         n = len(res.adjudicated)
-        if not rule.blocking:
+        blocking = rule.blocking
+        if rule.rid == "R11":
+            # config.R11.blocking was dead: the implementation hardcoded
+            # non-blocking. It is now READ, so a property that decides to block
+            # on attribution debt can say so in its own config.
+            blocking = bool(cfg.get("R11", {}).get("blocking", False))
+        if not blocking:
             res.verdict = "REPORT"
             res.reason = ("%d tracked-term row(s) reported; never changes the "
                           "exit code" % n)
