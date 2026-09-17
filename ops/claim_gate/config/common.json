@@ -1,6 +1,25 @@
 {
   "_README": "SHARED VALUES ONLY. No property name, no territory, no per-property figure appears in this file -- those live in dci.json / lgm.json / gci.json, which each carry \"extends\": \"common.json\". One copy exists because _artifact_grep.sh is the recorded counter-example: GCI's copy and LGM's copy diverged into two files that must be maintained twice, and LGM's still names a five-town lock where the property has had four towns since 3ca991f. The implementation still holds the RULES; this file holds values, exactly as RULES_SPEC.md section 1 requires.",
   "schema_version": 1,
+  "documentation_only_keys": [
+    "schema_version", "measured_at", "repo", "domain", "gates_present",
+    "gates_absent", "svg_readable", "atomic_answer_band", "reviewed_iso",
+    "static_page_reviewed_iso", "og_image_source", "og_image_history",
+    "market", "gas_utility", "electric_utility", "gas_structure",
+    "electric_structure", "hedge_rule", "gas_utility_split_fact",
+    "sibling_artifacts_forbidden", "locked_restriction_reach",
+    "DISCREPANCY_AGAINST_BRIEF", "allowlist", "forbidden_elevations",
+    "elevation_anchor", "exclude_paths", "bare_numeral_gate",
+    "detector_machinery_deleted", "director_desk", "date_surfaces",
+    "reviewed_iso_constant", "self_dated_sources", "static_page_constant",
+    "static_page_value", "measured_debt", "bump_rule",
+    "modified_xcel_gas_correction", "attribution_template", "quote_close",
+    "require_explicit_quote_field", "attributing_block_selector",
+    "report_registry_pages_drift", "opt_in", "town_count_note",
+    "known_disclosure_gaps_reason", "allowed_occurrences_note",
+    "allowed_structure_percentages", "allowed_thresholds"
+  ],
+  "documentation_only_keys_note": "Keys that are DELIBERATELY descriptive: measured provenance, null-result records, and fields RULES_SPEC.md section 10 defines as part of the config's documented shape. They are listed here so the gate's own dead-config detector can tell them apart from keys that read as live rules and are not. Anything NOT on this list and not referenced in the implementation is reported as OWED every run.",
   "src_rules": ["R2", "R3-T3", "R4", "R5", "R7"],
   "src_rules_note": "Which rules read the SRC normalization (the tokenize-joined string runs of the property's own generators). Scoped per Ruling B 2026-09-17: NOT R3's T1/T2 numeral halves, because the generators embed the citation registry's own deliberately-kept dollar figures (DCI 7786ce5 records why the registry keeps them) and a $-anchored or bare-numeral scan over them would flood with figures that are correct where they sit. R3's T3 rank-claim half DOES read SRC, because 'the largest rebate' lived in _generate_service_pages.py CROSS_CONTEXT['attic'] and shipped to six pages from there. R7 half A (identifiers) also stays off SRC: the 2026-09-07 four-repo sweep measured DCI 62 / LGM 64 hits for the superseded print codes of which only NINE were live defects.",
 
