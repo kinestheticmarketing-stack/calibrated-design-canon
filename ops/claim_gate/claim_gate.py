@@ -335,25 +335,41 @@ class Corpus(object):
         self.excluded = []      # (rel, reason)
         self.agree = True
         self.divergence = []
+        self.escaping_symlinks = []
 
 
 def enumerate_corpus(repo, cfg):
     c = Corpus()
-    out = git(repo, "ls-files", "public/")
+    # -z: without it git C-QUOTES any path with a non-ASCII byte, so a
+    # perfectly consistent repo DIVERGED against the working tree and the gate
+    # exited 2. core.quotePath=false would also work; -z is stronger because it
+    # also survives a newline in a filename.
+    out = git(repo, "-c", "core.quotePath=false", "ls-files", "-z", "public/")
     if out is None:
         raise ConfigError(
             "`git ls-files public/` failed in %s -- the corpus contract "
             "(spec 2) requires both halves" % repo)
-    c.ls_files = sorted(x for x in out.splitlines() if x.strip())
+    c.ls_files = sorted(x for x in out.split("\x00") if x.strip())
     pub = os.path.join(repo, "public")
     if not os.path.isdir(pub):
         raise ConfigError("no public/ directory in %s" % repo)
     found = []
-    for root, dirs, files in os.walk(pub):
+    repo_real = os.path.realpath(repo)
+    for root, dirs, files in os.walk(pub, followlinks=False):
         dirs.sort()
+        dirs[:] = [d for d in dirs
+                   if not os.path.islink(os.path.join(root, d))]
         for f in sorted(files):
-            rel = os.path.relpath(os.path.join(root, f), repo)
-            found.append(rel.replace(os.sep, "/"))
+            full = os.path.join(root, f)
+            rel = os.path.relpath(full, repo).replace(os.sep, "/")
+            # A symlink pointing OUT of the repo is not this property's
+            # artifact. One such link made a DCI page read as a GCI artifact.
+            if os.path.islink(full):
+                tgt = os.path.realpath(full)
+                if not (tgt == repo_real or tgt.startswith(repo_real + os.sep)):
+                    c.escaping_symlinks.append("%s -> %s" % (rel, tgt))
+                    continue
+            found.append(rel)
     c.found = sorted(found)
     only_git = sorted(set(c.ls_files) - set(c.found))
     only_tree = sorted(set(c.found) - set(c.ls_files))
@@ -643,6 +659,7 @@ class Ctx(object):
         self._levels_cache = {}
         self.src_artifacts = []
         self._rendered = None
+        self.peer_ctx = None
 
     # ---- config access
     def r(self, rid):
@@ -2184,13 +2201,10 @@ def rule_R8(ctx, res):
            "dates impossible, contradicted, or preceding their content"
 
 
-def rule_R9(ctx, res):
-    c = ctx.r("R9")
-    subjects = c.get("claim_subjects", []) or []
-    hi = set(c.get("high_severity_surfaces", []) or [])
-    tools = c.get("tools", []) or []
-    marks = ctx.r("R7").get("correction_markers", []) or []
-
+def _r9_instances(ctx, subjects):
+    """(slot, rel, surface, locator, sentence) for every contested-subject
+    instance in `ctx`. Factored out so a --peer context can be indexed with the
+    same predicates."""
     instances = {}
     for sub in subjects:
         sid = sub.get("id")
@@ -2201,7 +2215,7 @@ def rule_R9(ctx, res):
         prox = int(sub.get("proximity_chars", 120))
         if not pats or not slots:
             continue
-        for art in ctx.claim_artifacts():
+        for art in ctx.rule_artifacts("R9"):
             for skey, loc, sent in ctx.pool(art):
                 spans = []
                 for p in pats:
@@ -2219,6 +2233,17 @@ def rule_R9(ctx, res):
                         if has_any(w, slots[slot], word=False):
                             instances.setdefault(sid, []).append(
                                 (slot, art.rel, skey, str(loc), sent))
+    return instances
+
+
+def rule_R9(ctx, res):
+    c = ctx.r("R9")
+    subjects = c.get("claim_subjects", []) or []
+    hi = set(c.get("high_severity_surfaces", []) or [])
+    tools = c.get("tools", []) or []
+    marks = ctx.r("R7").get("correction_markers", []) or []
+
+    instances = _r9_instances(ctx, subjects)
 
     raw = []
     for sub in subjects:
@@ -2278,7 +2303,40 @@ def rule_R9(ctx, res):
     ])
     res.levels, res.level_detail = level_counts(
         ctx, ["CFM 50", "CFM50", "front door"], ci=False, word=False)
-    if not ctx.control:
+    peer = getattr(ctx, "peer_ctx", None)
+    if peer is not None:
+        delib = set()
+        for d in (c.get("deliberate_divergence") or []):
+            delib.add(str(d.get("subject", "")).split()[0].lower())
+        pinst = _r9_instances(peer, subjects)
+        compared = diverged = 0
+        for sub in subjects:
+            sid = sub.get("id")
+            mine = sorted(set(i[0] for i in instances.get(sid, [])))
+            theirs = sorted(set(i[0] for i in pinst.get(sid, [])))
+            if not mine or not theirs:
+                continue
+            compared += 1
+            if sid.split("_")[0].lower() in delib or sid.lower() in delib:
+                continue
+            if set(mine) != set(theirs):
+                diverged += 1
+                for slot, rel, skey, loc, sent in sorted(
+                        set(instances.get(sid, []))):
+                    if slot in theirs:
+                        continue
+                    raw.append(Hit(
+                        "R9", "N4", rel, skey, loc,
+                        "%s: this property says %s, peer %s says %s | %s"
+                        % (sid, mine, peer.key, theirs, sent),
+                        note="cross-property-divergence", sentence=sent))
+        res.notes.append("R9 CROSS-PROPERTY HALF RAN against %s (%s): %d "
+                         "subject(s) had instances on BOTH properties, %d "
+                         "diverged, %d subject(s) skipped as "
+                         "deliberate_divergence"
+                         % (peer.key, peer.repo, compared, diverged,
+                            len(delib)))
+    elif not ctx.control:
         res.notes.append("R9 CROSS-PROPERTY HALF SKIPPED: no --peer given")
     hidden = {}
     for art in ctx.html_artifacts():
@@ -2773,6 +2831,9 @@ def validate_registry():
 # ---------------------------------------------------------------------------
 
 NEGATIVES = ["NEG%02d" % i for i in range(1, 15)]
+# The reference date the negative fixtures were written against. Fixed on
+# purpose: see the neg_overlay comment in run_controls().
+NEG_ASOF = "2026-09-17"
 
 
 def _fixture_paths(p):
@@ -2867,7 +2928,9 @@ def run_controls(out, cfg, repo, opt_in, gen):
             paths = _fixture_paths(path)
             for e in c.extra:
                 paths = paths + _fixture_paths(os.path.join(_HERE, e))
-            ctx = _control_ctx(base, c.overlay, sorted(paths), repo)
+            ctx = _control_ctx(base, _deep_merge({"R8": {"today": NEG_ASOF}},
+                                                 c.overlay), sorted(paths),
+                               repo)
             res = RuleResult(rule)
             try:
                 rule.fn(ctx, res)
@@ -2918,7 +2981,9 @@ def run_controls(out, cfg, repo, opt_in, gen):
             paths = _fixture_paths(rpath)
             for e in c.repaired_extra:
                 paths = paths + _fixture_paths(os.path.join(_HERE, e))
-            ctx = _control_ctx(base, c.overlay, sorted(paths), repo)
+            ctx = _control_ctx(base, _deep_merge({"R8": {"today": NEG_ASOF}},
+                                                 c.overlay), sorted(paths),
+                               repo)
             res = RuleResult(rule)
             try:
                 rule.fn(ctx, res)
@@ -2940,9 +3005,15 @@ def run_controls(out, cfg, repo, opt_in, gen):
                              "repaired-clean (0 hits on sub %s)" % c.sub))
                 rep_clean += 1
 
+    # A negative control's correctness is a property of the FIXTURE, not of
+    # the operator's as-of date. NEG11 carries a hardcoded 2026-08-07, so any
+    # run with --today before that turned it into a future date, false-alarmed
+    # R8 and aborted the whole gate. Negative controls are therefore evaluated
+    # against the fixture reference date.
+    neg_overlay = {"R8": {"today": NEG_ASOF}}
     for neg in NEGATIVES:
         path = os.path.join(FIXTURES, "negative", neg + ".html")
-        ctx = _control_ctx(base, {}, _fixture_paths(path), repo)
+        ctx = _control_ctx(base, neg_overlay, _fixture_paths(path), repo)
         alarms = []
         for rule in RULES:
             if not rule.blocking:
@@ -2978,11 +3049,16 @@ def run_controls(out, cfg, repo, opt_in, gen):
         "(no repair fixture)" % (rep_clean, rep_fired, rep_absent))
 
     if "R6b" in opt_in:
-        out("  canary+ %-18s %-44s %s"
+        # RULING A, 2026-09-17: a disclosed non-run, NOT a control failure and
+        # NOT an abort. Section 6 requires the gate to DISCLOSE the opt-in
+        # rather than silently drop it, and disclosure satisfies that;
+        # aborting all eleven rules converted a documented flag into a
+        # permanent red and denied the operator the other ten rules.
+        out("  canary= %-18s %-44s %s"
             % ("R6b-G3", "(opt-in, browser cross-product)",
-               "*** MISSED *** R6b requires a Chrome binary this gate cannot "
-               "assume (spec 6, 7.3); no browser, no outbound requests"))
-        pos_missed += 1
+               "UNAVAILABLE: requires a Chrome binary this gate cannot "
+               "assume (spec 6, 7.3). No browser, no outbound request. "
+               "Disclosed, not run, not counted as a control."))
 
     after = mtimes(repo)
     if before != after:
@@ -3125,7 +3201,24 @@ def _main(args, out, t0):
                 opt_in.add(part)
 
     if args.today:
-        cfg.setdefault("R8", {})["today"] = args.today
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", args.today.strip()):
+            out("CONFIG ERROR: --today %r is not an ISO date (YYYY-MM-DD). "
+                "R8 compares dates as STRINGS, so an unparseable value would "
+                "silently disable the future-date test instead of failing."
+                % args.today)
+            out("CLAIM GATE: NOT RUN")
+            _finish(out, args, 2, t0)
+            return 2
+        try:
+            import datetime as _dt
+            _dt.date(*[int(x) for x in args.today.strip().split("-")])
+        except ValueError as exc:
+            out("CONFIG ERROR: --today %r is not a real calendar date (%s)"
+                % (args.today, exc))
+            out("CLAIM GATE: NOT RUN")
+            _finish(out, args, 2, t0)
+            return 2
+        cfg.setdefault("R8", {})["today"] = args.today.strip()
 
     gen = S.read_generators(repo, GEN_MODULES)
 
@@ -3147,6 +3240,9 @@ def _main(args, out, t0):
            "AGREE" if corpus.agree else "DIVERGE"))
     for d in corpus.divergence:
         out("  corpus divergence: %s" % d)
+    for lnk in sorted(corpus.escaping_symlinks):
+        out("  EXCLUDED, symlink escaping the repo (not this property's "
+            "artifact): %s" % lnk)
 
     # parse once
     ctx = Ctx(cfg["key"], repo, cfg)
@@ -3244,23 +3340,41 @@ def _main(args, out, t0):
         _finish(out, args, 2, t0)
         return 2
 
+    # THE ZERO-ARTIFACT TRAP RUNS BEFORE THE --canary RETURN. It used to sit
+    # after it, so a green canary was available on a gutted property -- and the
+    # README tells a new-property operator to run --canary as onboarding step 3.
+    n_all = len(ctx.artifacts) + len(corpus.excluded)
+    n_html = kinds.get("html", 0)
+    want_html = int(cfg.get("expected_html") or 0)
+    trap = []
+    if n_all < int(cfg["min_artifacts"]):
+        trap.append("corpus is %d artifacts, config min_artifacts is %d"
+                    % (n_all, cfg["min_artifacts"]))
+    if want_html and n_html < want_html:
+        # expected_html was REQUIRED PRESENT and COMPARED TO NOTHING, so a
+        # property with 1 of 38 html pages plus 51 junk .txt files passed
+        # min_artifacts and exited 0. Pages, not artifacts.
+        trap.append("read %d html page(s), config expected_html is %d"
+                    % (n_html, want_html))
+    if trap:
+        out()
+        out("ZERO-ARTIFACT TRAP: %s. An empty or truncated corpus passes every "
+            "check trivially; that is correct behaviour for a gate and is NOT "
+            "evidence the gate works." % "; ".join(trap))
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
+    if want_html and n_html > want_html:
+        out("  note: read %d html page(s) where config expected_html is %d -- "
+            "pages were ADDED since the config was measured; the config is "
+            "stale, not the corpus" % (n_html, want_html))
+
     if args.canary:
         out()
         out("CLAIM GATE: CANARY OK — control phase only, no rule ran "
             "against %s" % repo)
         _finish(out, args, 0, t0)
         return 0
-
-    if len(ctx.artifacts) + len(corpus.excluded) < int(cfg["min_artifacts"]):
-        out()
-        out("ZERO-ARTIFACT TRAP: corpus is %d artifacts, config min_artifacts "
-            "is %d. An empty or truncated directory passes every check "
-            "trivially; that is correct behaviour for a gate and is NOT "
-            "evidence the gate works."
-            % (len(ctx.artifacts) + len(corpus.excluded), cfg["min_artifacts"]))
-        out("CLAIM GATE: NOT RUN")
-        _finish(out, args, 2, t0)
-        return 2
     if not corpus.agree:
         out()
         out("CORPUS DIVERGENCE is itself a finding: git ls-files and the "
@@ -3269,6 +3383,40 @@ def _main(args, out, t0):
         out("CLAIM GATE: NOT RUN")
         _finish(out, args, 2, t0)
         return 2
+
+    if args.peer:
+        peer_repo = os.path.abspath(args.peer)
+        if not os.path.isdir(os.path.join(peer_repo, "public")):
+            out()
+            out("CONFIG ERROR: --peer %r has no public/ directory. The flag "
+                "used to be accepted, validated nowhere, wired to nothing, and "
+                "its only effect was to DELETE the line disclosing that R9's "
+                "cross-property half had not run." % args.peer)
+            out("CLAIM GATE: NOT RUN")
+            _finish(out, args, 2, t0)
+            return 2
+        try:
+            pcorpus = enumerate_corpus(peer_repo, cfg)
+        except ConfigError as exc:
+            out("CONFIG ERROR: --peer %r: %s" % (args.peer, exc))
+            out("CLAIM GATE: NOT RUN")
+            _finish(out, args, 2, t0)
+            return 2
+        pctx = Ctx(os.path.basename(peer_repo), peer_repo, cfg)
+        for rel in pcorpus.read_set:
+            pp = os.path.join(peer_repo, rel)
+            if not os.path.isfile(pp):
+                continue
+            try:
+                pctx.artifacts.append(S.parse_artifact(rel, pp))
+            except Exception:
+                continue
+            pctx.by_rel[rel] = pctx.artifacts[-1]
+        pctx.gen = S.GeneratorFacts()
+        build_claim_set(pctx)
+        ctx.peer_ctx = pctx
+        out("peer corpus for R9's cross-property half: %s -- %d artifact(s) "
+            "read" % (peer_repo, len(pctx.artifacts)))
 
     summary = []
     blocking_fail = []
@@ -3327,15 +3475,24 @@ def _main(args, out, t0):
     if "R6b" not in opt_in:
         out("  OPT-IN NOT RUN: R6b (%s). Run with --opt-in=R6b."
             % OPT_IN_RULES["R6b"])
+    else:
+        out("  OPT-IN REQUESTED BUT UNAVAILABLE: R6b (%s) requires a Chrome "
+            "binary this gate cannot assume (spec 6, 7.3). The other ten "
+            "blocking rules DID run and their verdicts above stand."
+            % OPT_IN_RULES["R6b"])
     if not args.peer:
         out("  R9 CROSS-PROPERTY HALF SKIPPED: no --peer given")
+    else:
+        out("  R9 CROSS-PROPERTY HALF RAN against %s" % os.path.abspath(args.peer))
     out("  blocking failures: %d%s"
         % (len(blocking_fail),
            (" (" + ", ".join(blocking_fail) + ")") if blocking_fail else ""))
     out("  report-only findings: %d%s"
         % (len(report_only),
            (" (" + ", ".join(report_only) + ")") if report_only else ""))
-    out("  opt-in rules not run: %d" % (0 if "R6b" in opt_in else 1))
+    out("  opt-in rules not run: 1 (R6b -- %s)"
+        % ("requested, UNAVAILABLE, disclosed" if "R6b" in opt_in
+           else "not requested"))
     exit_code = 1 if blocking_fail else 0
     out("CLAIM GATE: %s" % ("FAIL" if exit_code else "PASS"))
     _finish(out, args, exit_code, t0)
