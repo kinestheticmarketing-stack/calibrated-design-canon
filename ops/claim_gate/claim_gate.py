@@ -86,7 +86,7 @@ class Hit(object):
     __slots__ = ("rid", "sub", "rel", "surface", "locator", "text", "note",
                  "cite_key", "sentence", "r5_inblock", "r5_instat",
                  "r8_excluded", "r2_noscope", "r2_subject_ok", "r3_kind",
-                 "on_embed", "r3_w60", "r3_w40", "r3_struct")
+                 "on_embed", "r3_w60", "r3_w40", "r3_struct", "r5_stats")
 
     def __init__(self, rid, sub, rel, surface, locator, text, note="",
                  cite_key=None, sentence=""):
@@ -109,6 +109,7 @@ class Hit(object):
         self.r3_w60 = ""
         self.r3_w40 = ""
         self.r3_struct = ""
+        self.r5_stats = []
 
     def sortkey(self):
         return (self.rel, self.sub, self.surface, self.locator, self.text)
@@ -1853,6 +1854,7 @@ def rule_R5(ctx, res):
     pats = [re.compile(p) for p in (c.get("magnitude_patterns") or [])]
     words = c.get("magnitude_words", []) or []
     pubs = c.get("recognised_publishers", []) or []
+    attrib_verbs = ctx.r("R1").get("attribution_verbs", []) or []
     computed = c.get("computed_output_markers", []) or []
     known = c.get("known_uncited", []) or []
     codes = ctx.r("R3").get("code_context_markers", []) or []
@@ -1887,6 +1889,8 @@ def rule_R5(ctx, res):
                     note=ko or "uncited", sentence=sent)
             h.r5_inblock = inblock
             h.r5_instat = instat
+            h.r5_stats = [x["txt"] for x in art.cited_stats
+                          if any(n in x["txt"] for n in nums)]
             raw.append(h)
 
     def f_srcdup(h):
@@ -1906,11 +1910,48 @@ def rule_R5(ctx, res):
     def f_inblock(h):
         return getattr(h, "r5_inblock", False)
 
+    _STOP = frozenset((
+        "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "is",
+        "are", "was", "were", "be", "by", "with", "that", "this", "it", "as",
+        "at", "from", "your", "you", "we", "our", "can", "will", "not", "but",
+        "than", "then", "so", "if", "most", "more", "up"))
+
     def f_instat(h):
-        return getattr(h, "r5_instat", False)
+        # A numeral SUBSTRING present in ANY cited-stat on the page cleared the
+        # hit page-wide. That is how DCI's live uncited "15% reduction in
+        # heating and cooling costs" was nearly cleared by an UNRELATED ENERGY
+        # STAR 15% on the same page. The figure must now share at least three
+        # content words with the stat that is supposed to attribute it.
+        if not getattr(h, "r5_instat", False):
+            return False
+        sw = set(w for w in re.findall(r"[a-z]{3,}", h.sentence.lower())
+                 if w not in _STOP)
+        for st in getattr(h, "r5_stats", []) or []:
+            tw = set(w for w in re.findall(r"[a-z]{3,}", st.lower())
+                     if w not in _STOP)
+            if len(sw & tw) >= 3:
+                return True
+        return False
 
     def f_pub(h):
-        return has_any(h.sentence, pubs, ci=False)
+        # A publisher named ANYWHERE in the sentence used to exempt it. That
+        # removed the only two 25-40% rows on one page because "Xcel Energy"
+        # appears there as the PAYER, not as the publisher of the figure. An
+        # attribution needs an attribution VERB and the publisher near the
+        # figure -- not merely an organisation's name somewhere in the clause.
+        if not has_any(h.sentence, pubs, ci=True):
+            return False
+        if not has_any(h.sentence, attrib_verbs, word=False):
+            return False
+        nums = (h.text.split(" | ")[0] or "").split(",")
+        for n in nums:
+            n = n.strip()
+            if not n:
+                continue
+            for pos in occ(h.sentence, n, ci=True, word=False):
+                if has_any(win(h.sentence, pos, 80), pubs, ci=True):
+                    return True
+        return False
 
     def f_comp(h):
         return has_any(h.sentence, computed, word=False)
@@ -2753,7 +2794,12 @@ def rule_R10(ctx, res):
         return h.note == "unresolvable"
 
     def f_notinset(h):
-        return h.note == "destination-not-in-read-set"
+        # A promise pointing at a page that DOES NOT EXIST used to be cleared.
+        # A destination outside the read set cannot satisfy a promise of a
+        # figure, so it is a FAIL, not a pass. Only an OFF-PROPERTY
+        # destination is compliant by construction (spec 7.3), and that is
+        # already handled by the SATISFIED path.
+        return False
 
     def f_corr(h):
         return has_any(h.sentence, marks, word=False)
@@ -2764,7 +2810,9 @@ def rule_R10(ctx, res):
              f_refusal_here),
         Filt("destination satisfies the promise / is off-property", f_sat),
         Filt("destination unresolvable -> REVIEW, not FAIL", f_unres),
-        Filt("destination outside the read set", f_notinset),
+        Filt("destination outside the read set -- NO LONGER CLEARED: a page "
+             "that does not exist cannot satisfy a promise of a figure",
+             f_notinset),
         Filt("correction marker in scope", f_corr),
     ])
     res.levels, res.level_detail = level_counts(
