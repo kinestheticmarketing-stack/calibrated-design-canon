@@ -54,11 +54,38 @@ def collapse(s):
     return _WS.sub(" ", s).strip()
 
 
+# Invisible format characters, and the homoglyphs that read as Latin letters
+# but are not. A soft hyphen inside "Atmos" or a Cyrillic 'а' in "Xcel" makes a
+# banned string invisible to every word-boundary matcher in this gate while
+# rendering identically to a human and to a crawler.
+_ZAP = dict.fromkeys(
+    [0x00AD, 0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF], None)
+_FOLD = {
+    0x2010: "-", 0x2011: "-",                 # hyphen, NON-BREAKING hyphen
+    0x0430: "a", 0x0435: "e", 0x043E: "o", 0x0440: "p", 0x0441: "c",
+    0x0443: "y", 0x0445: "x", 0x0456: "i", 0x0458: "j",
+    0x0410: "A", 0x0412: "B", 0x0415: "E", 0x041A: "K", 0x041C: "M",
+    0x041D: "H", 0x041E: "O", 0x0420: "P", 0x0421: "C", 0x0422: "T",
+    0x0425: "X",
+    0x03BF: "o", 0x03B1: "a", 0x03BD: "v", 0x0391: "A", 0x0392: "B",
+    0x0395: "E", 0x039F: "O", 0x03A1: "P", 0x03A4: "T", 0x03A7: "X",
+}
+_CONFUSABLE = dict(_ZAP)
+_CONFUSABLE.update(_FOLD)
+
+
 def dec(s):
-    """RAW with HTML entities decoded and Unicode normalised to NFC.
+    """RAW with HTML entities decoded, Unicode normalised to NFC, and invisible
+    format characters and homoglyphs folded.
+
     `&amp;` is not what you typed; a raw substring count inflates by 4 per
-    ampersand (spec 3, DEC)."""
-    return unicodedata.normalize("NFC", html.unescape(s))
+    ampersand (spec 3, DEC). And a soft hyphen (U+00AD) inside a banned string,
+    a non-breaking hyphen (U+2011) in a print code, or a Cyrillic homoglyph in
+    a utility name makes the string invisible to every word-boundary matcher
+    here while rendering identically to a human and to a crawler.
+    """
+    return unicodedata.normalize(
+        "NFC", html.unescape(s)).translate(_CONFUSABLE)
 
 
 def txt(s):
@@ -338,8 +365,13 @@ def cited_stat_re(cls="cited-stat"):
     silently disabled R1 half A and all of R11 while both kept printing."""
     rx = _CITED_STAT_CACHE.get(cls)
     if rx is None:
-        rx = re.compile(r'<p class="%s">(?P<body>.*?)</p>' % re.escape(cls),
-                        re.DOTALL)
+        # CLASS-LIST MEMBERSHIP, not an exact attribute match.
+        # class="cited-stat footnote" is the same attributing block and the
+        # exact-match pattern did not see it, which silently removed the block
+        # from R1 half A and from all of R11.
+        rx = re.compile(
+            r'<p[^>]*class="[^"]*(?<![-\w])%s(?![-\w])[^"]*"[^>]*>'
+            r'(?P<body>.*?)</p>' % re.escape(cls), re.DOTALL)
         _CITED_STAT_CACHE[cls] = rx
     return rx
 _CITED_ANCHOR = re.compile(
