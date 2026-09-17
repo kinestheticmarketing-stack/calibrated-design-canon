@@ -612,7 +612,7 @@ GEN_MODULES = (
 
 CLAIM_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD,
               S.S_LOWVIS, S.S_ATTR, S.S_LLMS, S.S_SVGTEXT, S.S_CITE,
-              S.S_CONST, S.S_JS, S.S_COMMENT)
+              S.S_CONST, S.S_JS, S.S_COMMENT, S.S_CSS, S.S_SITEMAP)
 
 # The sentence pool every proposition rule runs over. VIS comes from the
 # whole-document TXT (so a sentence that runs through <strong> or a source line
@@ -621,7 +621,7 @@ CLAIM_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD,
 # what told DCI its page contradicted its own navigation.
 POOL_KEYS = (S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS, S.S_ATTR,
              S.S_LLMS, S.S_ROBOTS, S.S_SVGTEXT, S.S_CITE, S.S_CONST,
-             S.S_LOWVIS, S.S_COMMENT)
+             S.S_LOWVIS, S.S_COMMENT, S.S_CSS, S.S_SITEMAP)
 
 
 class Ctx(object):
@@ -651,7 +651,12 @@ class Ctx(object):
         return self.artifacts
 
     def claim_artifacts(self):
-        return [a for a in self.artifacts if a.kind in ("html", "txt", "svg", "js")]
+        # .xml included: sitemap.xml is a deployed artifact and its prose and
+        # comments are claim surfaces. Excluding it meant R3 advertised
+        # SITEMAP in its own surfaces: line while no proposition rule could
+        # reach the file.
+        return [a for a in self.artifacts
+                if a.kind in ("html", "txt", "svg", "js", "xml")]
 
     def html_artifacts(self):
         return [a for a in self.artifacts if a.kind == "html"]
@@ -673,34 +678,50 @@ class Ctx(object):
             for sent in S.sentences(art.txt):
                 out.append((S.S_VIS, "txt", sent))
         for s in self.surfaces(art, POOL_KEYS):
-            if s.key == S.S_JS and s.locator.endswith("body"):
+            if s.key in (S.S_JS, S.S_CSS) and s.locator.endswith("body"):
                 continue
             for sent in (S.sentences(s.text) or [s.text]):
                 out.append((s.key, s.locator, sent))
         self._pool[art.rel] = out
         return out
 
-    def script_spans(self, art):
-        if art.rel in self._script_spans:
-            return self._script_spans[art.rel]
+    def script_spans(self, art, level=S.NORM_RAW):
+        """Document-level spans of <script>, <style> and CSS `content:` string
+        values, per normalization level -- DEC shifts every offset after an
+        entity, so the spans must be computed against the same text the rule
+        scanned."""
+        key = (art.rel, level)
+        if key in self._script_spans:
+            return self._script_spans[key]
+        text = art.level_text(level)
         spans = []
         for m in re.finditer(
-                r"<script\b([^>]*)>(.*?)</script\s*>", art.raw,
+                r"<script\b([^>]*)>(.*?)</script\s*>", text,
                 re.DOTALL | re.IGNORECASE):
             kind = "LD" if "ld+json" in m.group(1).lower() else "JS"
             spans.append((m.start(), m.end(), kind))
-        for m in re.finditer(r"<style\b[^>]*>(.*?)</style\s*>", art.raw,
+        for m in re.finditer(r"<style\b[^>]*>(.*?)</style\s*>", text,
                              re.DOTALL | re.IGNORECASE):
             spans.append((m.start(), m.end(), "CSS"))
-        spans.sort()
-        self._script_spans[art.rel] = spans
+            body = m.group(1)
+            base = m.start(1)
+            for cm in S._CSS_CONTENT.finditer(body):
+                # `content:` renders TEXT to the visitor. A figure there is a
+                # figure the visitor sees, so it must not share a filter with
+                # a stroke-width. Position-based, because a window test let an
+                # adjacent stroke-width ride in on the same window.
+                spans.append((base + cm.start("v"), base + cm.end("v"),
+                              "CSS-CONTENT"))
+        spans.sort(key=lambda x: (x[0], -(x[1] - x[0])))
+        self._script_spans[key] = spans
         return spans
 
-    def surface_at(self, art, pos):
-        for a, b, k in self.script_spans(art):
+    def surface_at(self, art, pos, level=S.NORM_RAW):
+        hit = "RAW"
+        for a, b, k in self.script_spans(art, level):
             if a <= pos < b:
-                return k
-        return "RAW"
+                hit = k
+        return hit
 
     # ---- town scope / utilities (R2)
     def own_towns(self, art):
@@ -1255,7 +1276,7 @@ def rule_R3(ctx, res):
                 seen_t1.add(key)
                 enc = (level == S.NORM_DEC)
                 raw.append(Hit("R3", "T1", art.rel,
-                               ctx.surface_at(art, m.start()),
+                               ctx.surface_at(art, m.start(), level),
                                "%s@%d" % (level.lower(), m.start()),
                                "%s%s | %s"
                                % (m.group(0),
@@ -1267,7 +1288,7 @@ def rule_R3(ctx, res):
             if not has_any(w, money, word=False):
                 continue
             raw.append(Hit("R3", "T2", art.rel,
-                           ctx.surface_at(art, m.start()),
+                           ctx.surface_at(art, m.start(), S.NORM_DEC),
                            "dec@%d" % m.start(),
                            "%s | %s" % (m.group(0), w),
                            note=m.group(0), sentence=w))
@@ -1276,7 +1297,7 @@ def rule_R3(ctx, res):
             if not has_any(w, money, word=False):
                 continue
             raw.append(Hit("R3", "T2", art.rel,
-                           ctx.surface_at(art, m.start()),
+                           ctx.surface_at(art, m.start(), S.NORM_DEC),
                            "rate@%d" % m.start(),
                            "%s | %s" % (m.group(0), w),
                            note=m.group(0), sentence=w))
@@ -1314,6 +1335,11 @@ def rule_R3(ctx, res):
         return has_any(h.sentence, structs, word=False) and h.sub != "T1"
 
     def f_css(h):
+        # Only the NUMERIC-PROPERTY class of CSS false positive (stroke-width,
+        # dimensions, z-index). A figure rendered to the visitor through
+        # `content:` is a figure the visitor sees, and GCI f0203ad's own note
+        # -- "a bare-rate check for 0.75 finds only a CSS stroke-width" -- is
+        # about property VALUES, not about content strings.
         return h.surface == "CSS"
 
     def f_corr(h):

@@ -333,6 +333,9 @@ _LOC = re.compile(r"<loc>\s*(?P<loc>[^<]*)</loc>", re.I)
 _LASTMOD = re.compile(r"<lastmod>\s*(?P<d>[^<]*)</lastmod>", re.I)
 _URL_BLOCK = re.compile(r"<url>(?P<b>.*?)</url>", re.DOTALL | re.I)
 _CSS_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
+_CSS_CONTENT = re.compile(
+    r"content\s*:\s*(?P<q>[\"'])(?P<v>(?:[^\\]|\\.)*?)(?P=q)",
+    re.IGNORECASE | re.DOTALL)
 _DISPLAY_NONE = re.compile(
     r"(?P<sel>[^{}]+)\{[^{}]*?(?:display\s*:\s*none|visibility\s*:\s*hidden)"
     r"[^{}]*\}",
@@ -493,7 +496,12 @@ def _parse_html(art):
                         collapse(dec(txt(lit)))))
 
     for i, body in enumerate(art.css_bodies):
-        art.surfaces.append(Surface(S_CSS, "CSS[%d]" % i, collapse(body)))
+        art.surfaces.append(Surface(S_CSS, "CSS[%d]body" % i, collapse(body)))
+        for m in _CSS_CONTENT.finditer(body):
+            v = collapse(dec(m.group("v")))
+            if v and v not in ("", " ", "\\201C", "\\201D"):
+                art.surfaces.append(
+                    Surface(S_CSS, "CSS[%d]content@%d" % (i, m.start()), v))
         # Comments out, at-rule preludes out. `@media (max-width: 799px)` is
         # not a selector, and a decorative /* -- Scroll-to-top -- */ banner is
         # not one either; naming them as selectors makes the TRAP line unusable
@@ -563,6 +571,19 @@ def _parse_svg(art):
 
 
 def _parse_sitemap(art):
+    # Prose and comments inside sitemap.xml reached no proposition rule at all,
+    # because .xml was excluded from the claim corpus and the only surfaces
+    # emitted were <loc>/<lastmod> pairs. Emit the tag-stripped text per line
+    # as well, and the XML comments as COMMENT surfaces.
+    for i, line in enumerate(dec(art.raw).splitlines()):
+        stripped = collapse(_TAG.sub(" ", _COMMENT.sub(" ", line)))
+        if stripped and not stripped.isdigit():
+            art.surfaces.append(
+                Surface(S_SITEMAP, "%s:L%d(text)" % (art.rel, i + 1), stripped))
+    for i, m in enumerate(_COMMENT.finditer(art.raw)):
+        art.surfaces.append(
+            Surface(S_COMMENT, "%s:comment[%d]" % (art.rel, i),
+                    collapse(dec(m.group(0)[4:-3]))))
     for i, m in enumerate(_URL_BLOCK.finditer(art.raw)):
         b = m.group("b")
         lm = _LOC.search(b)
