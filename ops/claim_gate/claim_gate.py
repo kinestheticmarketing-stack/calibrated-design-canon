@@ -1241,13 +1241,27 @@ def rule_R3(ctx, res):
 
     raw = []
     for art in ctx.read_artifacts():
-        for m in dollar.finditer(art.raw):
-            w = S.collapse(S.dec(win(art.raw, m.start(), wchars)))
-            raw.append(Hit("R3", "T1", art.rel,
-                           ctx.surface_at(art, m.start()),
-                           "raw@%d" % m.start(),
-                           "%s | %s" % (m.group(0), w),
-                           note=m.group(0), sentence=w))
+        # T1 runs over RAW **and** DEC. RAW alone is what the existing
+        # acceptance gate does and it cannot see &#36; / &#x24; / &dollar;,
+        # which all decode to `$`. A DEC-only match is flagged as
+        # entity-encoded so the reader can see WHY the raw gate missed it.
+        seen_t1 = set()
+        for level, text in ((S.NORM_RAW, art.raw), (S.NORM_DEC, art.dec)):
+            for m in dollar.finditer(text):
+                w = S.collapse(S.dec(win(text, m.start(), wchars)))
+                key = (m.group(0), w)
+                if key in seen_t1:
+                    continue
+                seen_t1.add(key)
+                enc = (level == S.NORM_DEC)
+                raw.append(Hit("R3", "T1", art.rel,
+                               ctx.surface_at(art, m.start()),
+                               "%s@%d" % (level.lower(), m.start()),
+                               "%s%s | %s"
+                               % (m.group(0),
+                                  " [ENTITY-ENCODED: invisible at RAW]"
+                                  if enc else "", w),
+                               note=m.group(0), sentence=w))
         for m in re.finditer(r"\b\d{3,6}\b", art.dec):
             w = S.collapse(win(art.dec, m.start(), wchars))
             if not has_any(w, money, word=False):
@@ -1926,9 +1940,16 @@ def rule_R8(ctx, res):
             excluded_as = "own_effective_date_pages"
         dates = {}
         for dt, vis in art.time_elements:
-            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", dt or ""):
-                dates.setdefault("time[datetime]", dt)
-                v = _parse_long_date(vis)
+            # DECODE first, then take the ISO DATE PREFIX. The old
+            # re.fullmatch(r"\d{4}-\d{2}-\d{2}", dt) rejected both
+            # `2026&#45;08&#45;24` and a valid full timestamp
+            # `2027-01-01T00:00:00Z`, and a page whose only date was in one of
+            # those forms contributed no dates and was skipped whole.
+            dtd = S.dec(dt or "").strip()
+            m = re.match(r"(\d{4}-\d{2}-\d{2})", dtd)
+            if m:
+                dates.setdefault("time[datetime]", m.group(1))
+                v = _parse_long_date(S.dec(vis or ""))
                 if v:
                     dates.setdefault("footer_text", v)
         for path, val in art.ld_leaves:
