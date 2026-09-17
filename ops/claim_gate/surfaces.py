@@ -70,15 +70,66 @@ def txt(s):
     return collapse(dec(s))
 
 
-_SENT = re.compile(r"(?<=[.!?…])\s+")
+# Abbreviations whose period must NOT end a sentence. The list is not
+# decorative: an exhaustive scan of the configured patterns found that exactly
+# TWO were unfirable under the naive splitter, and both belonged to
+# R7.superseded_propositions[installed_and_invoiced_by_dec_31_2026] -- the one
+# claim whose own config note reads "the short form Dec. 31, 2026 survived four
+# further rounds because every sweep searched the long form". The gate had
+# reproduced that exact trap inside itself.
+_ABBREV = (
+    "Dec", "Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Sept",
+    "Oct", "Nov",
+    "No", "Nos", "Corp", "Inc", "Ltd", "Co", "Sec", "Secs", "Fig", "Figs",
+    "Ref", "Art", "Reg", "Rev", "Sq", "Ave", "Rd", "Blvd", "St", "Ste",
+    "Mr", "Mrs", "Ms", "Dr", "Jr", "Sr", "Prof",
+    "approx", "vs", "etc", "al", "est", "cf", "pp", "ca", "min", "max",
+)
+# Multi-period abbreviations, protected whole.
+_ABBREV_MULTI = ("U.S.A.", "U.S.", "U.K.", "e.g.", "i.e.", "a.m.", "p.m.",
+                 "P.U.C.", "No.s")
+
+_PROT = "\x00"
+_ABBREV_RE = re.compile(
+    r"\b(" + "|".join(re.escape(a) for a in _ABBREV) + r")\.", re.IGNORECASE)
+_INITIAL_RE = re.compile(r"\b([A-Z])\.")
+# A sentence boundary: terminal punctuation, then any number of CLOSING
+# quotes/brackets, then whitespace, then something that can open a sentence.
+# The closing-character group is the fix for the `."` OVER-JOIN: without it two
+# sentences separated by `.” ` stayed welded, and a filter word in the
+# FOLLOWING sentence could clear a claim in the preceding one. Python's re
+# forbids a variable-width lookbehind, so the boundary is marked with a
+# sentinel and then split, rather than matched by lookbehind.
+_BOUND_RE = re.compile(
+    r"([.!?][\u201d\u2019\"')\]\u00bb]*)\s+(?=[A-Z0-9\u201c\"(\u00ab])")
+_MARK = "\x01"
 
 
 def sentences(s):
-    """Sentence split over a TXT-normalized string. Deliberately simple and
-    deterministic; a rule that needs a window instead of a sentence asks for a
-    window."""
+    """Sentence split over a TXT-normalized string.
+
+    Deliberately simple and deterministic, but no longer naive. The previous
+    version split on terminal punctuation followed by whitespace, which broke
+    at `Dec.`,
+    `No.`, `Corp.`, `Inc.`, `U.S.`, `approx.`, `Sec.` and the ellipsis, and
+    over-joined across `.\u201d`. A rule that needs a window instead of a
+    sentence asks for a window.
+    """
+    if not s:
+        return []
+    t = s
+    for a in _ABBREV_MULTI:
+        t = t.replace(a, a.replace(".", _PROT))
+    t = _ABBREV_RE.sub(lambda m: m.group(1) + _PROT, t)
+    t = _INITIAL_RE.sub(lambda m: m.group(1) + _PROT, t)
+    # The ellipsis never ends a sentence here: LGM cdc3899 verified a fix by
+    # finding `&hellip;&rdquo;` mid-clause, and splitting there cut the clause
+    # in half.
+    t = t.replace("\u2026", _PROT + _PROT + _PROT)
+    t = _BOUND_RE.sub(lambda m: m.group(1) + _MARK, t)
     out = []
-    for part in _SENT.split(s):
+    for part in t.split(_MARK):
+        part = part.replace(_PROT + _PROT + _PROT, "\u2026").replace(_PROT, ".")
         part = part.strip()
         if part:
             out.append(part)
@@ -555,7 +606,18 @@ def parse_artifact(rel, path, embed_paths=()):
         base = rel.rsplit("/", 1)[-1].lower()
         key = S_LLMS if base == "llms.txt" else (
             S_ROBOTS if base == "robots.txt" else S_VIS)
-        art.surfaces.append(Surface(key, rel, collapse(dec(raw))))
+        # ONE SURFACE PER LINE. llms.txt and robots.txt are LINE-ORIENTED
+        # documents: llms.txt is a list of tile descriptions, one per line, and
+        # DCI fb08735 / LGM e329db7 were each a single such line. Emitting the
+        # whole file as one surface made it one enormous "sentence" in which
+        # every program name on the property co-occurred, so R4's
+        # two-distinct-programs test classified the entire file as a stacking
+        # claim. Per-line is the unit the defects actually shipped in.
+        for i, line in enumerate(dec(raw).splitlines()):
+            line = collapse(line)
+            if line:
+                art.surfaces.append(
+                    Surface(key, "%s:L%d" % (rel, i + 1), line))
     return art
 
 
