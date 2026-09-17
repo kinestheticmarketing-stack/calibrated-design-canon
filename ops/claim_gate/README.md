@@ -119,6 +119,34 @@ embed frame: …
 CLAIM GATE: PASS | FAIL
 ```
 
+### PARAPHRASE IS A KNOWN HOLE, and this instrument cannot close it
+
+This gate matches **strings, configured predicates and structure**. It does not
+understand language. A claim rewritten into words the config does not contain is
+invisible to it, and no amount of list-widening changes that — each round of
+widening only moves the defect one word sideways, which is the failure mode
+`METHODS/CANDIDATE-do-not-scope-with-grep-over-html.md` records as "a grep
+shaped like the last defect cannot see the next one".
+
+Measured examples that remain **MISSED** and are expected to:
+
+- R4: *"are cumulative on the same measure"*, *"claim … at once"*, *"run
+  concurrently and pay for the same measure"* were added to the config and now
+  fire; the next three phrasings will not.
+- R5: *"forty percent"* spelled out and *"by a third"* were added; *"cuts the
+  bill to two-thirds of what it was"* will not fire.
+- R3: a dollar figure written entirely in words, and *"pays the most"* as a rank
+  claim outside `rank_words`.
+- R1: the anaphoric form — a quotation attributed in the previous sentence.
+- R7: a superseded proposition restated in new words.
+
+What the gate DOES close is the mechanical evasion beneath paraphrase: entity
+encoding, template literals, HTML comments, invisible format characters and
+homoglyphs, line wrapping, abbreviation-driven sentence splits and class-list
+membership. Those are normalization failures and they are fixable. Paraphrase is
+not, and a rule list that implied otherwise would be the "manufactures
+confidence" failure this gate exists to prevent.
+
 ### The control counts, reconciled
 
 `RULES_SPEC.md` §4's sample footer says `22 positive DETECTED, 14 negative
