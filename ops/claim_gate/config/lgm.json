@@ -1,0 +1,137 @@
+{
+  "extends": "common.json",
+  "key": "lgm",
+  "repo": "longmontcoloradoinsulation.com",
+  "domain": "https://longmontcoloradoinsulation.com",
+  "measured_at": { "date": "2026-09-17", "head": "084a423" },
+  "min_artifacts": 59,
+  "expected_html": 48,
+  "embed_artifacts": [],
+  "embed_artifacts_note": "NULL RESULT — LGM has no embed frame. Verified: ls public/ | /usr/bin/grep -i 'embed|frame|iframe' returns empty.",
+  "key_files_excluded": ["public/ee368c8751be4043b5e29d015679f93b.txt"],
+  "svg_readable": ["public/favicon.svg", "public/logo.svg", "public/og-image.svg"],
+  "og_image_raster_only": false,
+  "gates_present": ["regen_all.sh", "_postbuild_check.py", "_check_links.py",
+                    "_intra_similarity_check.py", "_validators.py",
+                    "_out_guard.py", "_artifact_grep.sh",
+                    "ops/similarity_canary.sh", "ops/functional_proof.sh",
+                    "ops/live_token_check.sh"],
+  "gates_absent": ["_similarity_check.py", "_svc_pending_import_check.py"],
+  "reviewed_iso": "2026-08-05",
+  "atomic_answer_band": [54, 60],
+  "atomic_answer_note": "Enforced in code by RAISING. It broke one pass's build three times and rejected a rewrite at 79 words. Any copy correction hits it.",
+
+  "R2": {
+    "market": "Longmont",
+    "gas_utility": "Xcel Energy",
+    "electric_structure": "SPLIT — municipal in Longmont, Xcel in the other three",
+    "forbid_electric_utility_naming": false,
+    "known_present_control": "Longmont",
+    "territory_note": "docs/board/ground-truth.md:5-7 verbatim: 'Utility structure — stacking is an EVIDENTIARY rule. Gas: Xcel Energy. Electric: Longmont Power & Communications (LPC), municipal, via the Efficiency Works program.'",
+    "DISCREPANCY_AGAINST_BRIEF": "The brief states 'LGM = Xcel gas PLUS Efficiency Works for Longmont Power & Communications ELECTRIC customers only.' That is TRUE but materially incomplete, and the missing half is load-bearing. ground-truth.md:46-53 verbatim: 'Lafayette, Louisville and Niwot are Xcel-electric and cannot access Efficiency Works at all, so no stacking statement of any kind applies to them. Within Longmont it reaches only the LPC-served portion.' Efficiency Works is available on ONE of four towns, and only on part of that one. Recorded, not reconciled.",
+    "towns": {
+      "Longmont":   { "gas": "Xcel Energy", "gas_state": "CONFIRMED",
+                      "electric": "Longmont Power & Communications",
+                      "electric_state": "PARTIAL",
+                      "electric_qualifier": "roughly 61% of the city",
+                      "electric_program": "Efficiency Works",
+                      "electric_note": "_shared_components.py:562 cites LPC's own statement that it serves 'Longmont, parts of Lyons and Hygiene, and some unincorporated areas' — LPC does not serve every Longmont address. Every Efficiency Works sentence must carry the LPC-customers-only restriction.",
+                      "page_slugs": ["index.html", "insulation-attic-longmont.html",
+                                     "air-sealing-longmont.html"] },
+      "Lafayette":  { "gas": "Xcel Energy", "gas_state": "CONFIRMED",
+                      "electric": "Xcel Energy", "electric_program": null,
+                      "efficiency_works_access": false,
+                      "page_slugs": ["insulation-lafayette.html"] },
+      "Louisville": { "gas": "Xcel Energy", "gas_state": "CONFIRMED",
+                      "electric": "Xcel Energy", "electric_program": null,
+                      "efficiency_works_access": false,
+                      "page_slugs": ["insulation-louisville.html"] },
+      "Niwot":      { "gas": "Xcel Energy", "gas_state": "CONFIRMED",
+                      "electric": "Xcel Energy", "electric_program": null,
+                      "efficiency_works_access": false,
+                      "page_slugs": ["insulation-niwot.html"] }
+    },
+    "town_count_note": "FOUR area towns, measured: _area_pages.AREA_DATA = ['longmont','lafayette','louisville','niwot']. Erie was DROPPED (card closed as superseded, 3ca991f) and 'Erie' now appears 0 times in public/. _artifact_grep.sh's header comment still says 'Director-locked five: Longmont, Erie, Lafayette, Louisville, Niwot' — a STALE COMMENT in a gate file, recorded not fixed (not this lane's file).",
+    "locked_restriction_strings": [
+      "but ONLY for electric customers of Longmont Power & Communications, roughly 61% of the city.",
+      "applies only to residential electric customers of Longmont Power &amp; Communications",
+      "applies only to residential electric customers of Longmont Power & Communications",
+      "electric customers of Longmont Power"
+    ],
+    "locked_restriction_reach": "10 + 8 pages, measured in d6e8dab. 'The restriction is not the figure' — it survived the figure strip deliberately.",
+    "allowed_multi_utility_sentences": [
+      "electric customers of Longmont Power",
+      "Efficiency Works is the program Longmont Power & Communications runs",
+      "cannot access Efficiency Works"
+    ],
+    "non_territorial_programs": ["Colorado Energy Office", "ENERGY STAR",
+                                 "Boulder County EnergySmart",
+                                 "Colorado Weatherization Assistance Program",
+                                 "HEAR"],
+    "territorial_constants": ["ENTITY_DESCRIPTION", "ALIVE_REBATES"],
+    "sibling_artifacts_forbidden": ["Lakewood","Arvada","Aurora","Wheat Ridge",
+                                    "Centennial","Englewood","Littleton","Westminster",
+                                    "Thornton","Park Hill","Washington Park","Highland",
+                                    "Golden","Broomfield","Northglenn",
+                                    "Greeley","Evans","Windsor","Eaton","Johnstown",
+                                    "Milliken","Severance","LaSalle","Ault","Atmos"],
+    "sibling_artifacts_note": "NOT tested by R2 — that is _artifact_grep.sh's existing check, which LGM has.",
+    "elevation_anchor": "4,980",
+    "forbidden_elevations": ["5,280","mile high","4,108","4,400","4,432","4,658","4,675"],
+    "review_not_fail": ["Weld County"],
+    "review_not_fail_reason": "Longmont sits in Boulder County with part of Erie in Weld, so every occurrence must be a deliberate Erie-split disclosure rather than a cloned Greeley reference. _artifact_grep.sh reports it as INFO by design."
+  },
+
+  "R3": {
+    "allowed_figures": ["$1.50","$3.00","$3.50","$300","$1,200"],
+    "allowed_reason": "Ruling 2 — installed COST rates, not payouts. 8 occurrences total, all inside JS comments in the attic calculator. MEASURED 2026-09-17: $1.50 x3, $3.50 x2, $300 x1, $3.00 x1, $1,200 x1 = 8, and these are the ONLY $ figures anywhere under LGM public/. Was 141 before d6e8dab (133 removed, 8 kept).",
+    "allowed_thresholds": ["15%","25%","33%","50%"],
+    "allowed_thresholds_reason": "The four Efficiency Works air-sealing tier thresholds — measured reduction a homeowner is tested against, not amounts anyone is paid. Ruling 3.",
+    "known_figures": ["1160","770","1250","1000","3570","1770","60","25","15"],
+    "allowed_structure_percentages": ["75%","50% of project cost",
+                                      "capped at 100% of project cost"]
+  },
+
+  "R4": {
+    "programs": ["Xcel Energy", "Efficiency Works",
+                 "Boulder County EnergySmart",
+                 "Whole Home Efficiency Bonus",
+                 "Colorado Weatherization Assistance Program",
+                 "Colorado Energy Office", "HEAR", "ENERGY STAR"],
+    "attributed_exception": { "allowed": true,
+      "publisher": "Efficiency Works",
+      "requires_publisher_named": true,
+      "requires_cited_source_key": true,
+      "basis": "ground-truth.md:27-44 — EW's own 'Additional incentives' page has a column headed 'Xcel rebate' beside its own and a 'Total potential incentives' column that is the arithmetic sum. Stacking may be DESCRIBED as published by Efficiency Works, with attribution. It does NOT license the site to author its own combined total.",
+      "and_the_figures_are_still_banned": true },
+    "retired_prohibition_strings": ["The two programs have separate eligibility and are never combined into one figure.",
+                                    "These two programs must NEVER be described as stacking or combining."],
+    "retired_prohibition_note": "The first rendered 92 times across 46 pages and was DELETED. Standing instruction: do not restore it in its old wording — 'never combined into one figure' re-ships the prohibition form the Director retracted. The second survives deliberately in _shared_components.py:25-31 as a record."
+  },
+
+  "R5": { "known_uncited": [] },
+
+  "R6": {
+    "label_chains": [],
+    "note": "NULL RESULT — no label/figure chain of the R6 shape identified on LGM. The rebate-payback and attic-cost calculators emit figures without severity labels. Registering one later requires only a config entry."
+  },
+
+  "R8": {
+    "reviewed_iso": "2026-08-05",
+    "measured_debt": "31 of 48 pages publish 'Last reviewed 2026-08-05'; sitemap shows 27 at 2026-08-05, 15 at 2026-08-11, 3 at 2026-08-07, 2 at 2026-09-01. Content was corrected through 2026-09-10 (d6e8dab), 2026-09-07 (72e18ac, 3cae8aa, cdc3899) and 2026-09-08 (e329db7). This is the same debt GCI closed in bf240f8/348baf9 and DCI holds under D-003.",
+    "own_effective_date_pages": ["privacy.html"],
+    "self_dated_sources": ["EDU_LASTMOD_BY_FILENAME"]
+  },
+
+  "R10": { "page_titles": {} },
+
+  "R11": { "blocking": false, "tracked_terms": [] },
+
+  "draft_gate": {
+    "unpublished_pages": ["insulation-rebates-longmont.html",
+                          "insulation-rebate-eligibility-checker-longmont.html",
+                          "insulation-rebate-payback-longmont.html"],
+    "assertion": "absent from public/, absent from sitemap.xml, absent from llms.txt, HTTP 404 live",
+    "note": "Three rebate pages exist as generators + data and are deliberately unpublished. Their generators exit 2 on a public/ target. Any claim gate run must not treat their absence as a gap."
+  }
+}
