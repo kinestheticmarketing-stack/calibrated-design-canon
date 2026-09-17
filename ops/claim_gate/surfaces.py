@@ -450,7 +450,20 @@ def _parse_html(art):
         am = _CITED_ANCHOR.search(body)
         url = am.group("url") if am else ""
         label = collapse(dec(_TAG.sub("", am.group("label")))) if am else ""
-        quoted = ("&ldquo;" in body or "“" in body)
+        # Look for an opening quote glyph in the TAG-STRIPPED, DECODED body.
+        #
+        # Testing RAW meant &#8220;, &#x201C; and the guillemets were invisible,
+        # so a cited-stat publishing its stat as a verbatim quotation via a
+        # numeric entity was not an R1 half-A candidate at all. But testing the
+        # decoded body WITH TAGS still present walks straight into the trap the
+        # spec names: a search for `"` finds href="..." and rel="noopener",
+        # which made every cited-stat block read as quoted. Stripping tags
+        # first removes the attribute delimiters and leaves only real
+        # quotation marks, so the plain ASCII `"` (and &quot;, which decodes to
+        # it) can be included honestly.
+        bt = txt(body)
+        quoted = any(g in bt for g in
+                     ("\u201c", "\u201d", "\u00ab", "\u00bb", '"'))
         art.cited_stats.append({
             "offset": m.start(),
             "url": url,

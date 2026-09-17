@@ -5,8 +5,10 @@
   "R1": {
     "cited_stat_class": "cited-stat",
     "attribution_template": "According to {determiner}{source}, ",
-    "quote_open": ["&ldquo;", "“", "&quot;", "\""],
-    "quote_close": ["&rdquo;", "”", "&quot;", "\""],
+    "quote_open": ["&ldquo;", "“", "&quot;", "\"", "&#8220;", "&#x201C;",
+                   "«", "&laquo;", "&#171;"],
+    "quote_close": ["&rdquo;", "”", "&quot;", "\"", "&#8221;", "&#x201D;",
+                    "»", "&raquo;", "&#187;"],
     "attribution_verbs": ["According to", "accord to", "says", "stated", "states",
                           "per ", "'s own", "&rsquo;s own", "’s own",
                           "reports", "found that", "writes", "notes that",
