@@ -2176,10 +2176,32 @@ def rule_R6(ctx, res):
             tot["labels_seen"] = max(tot["labels_seen"],
                                      st["labels_present_in_text"])
 
-            # UNPARSEABLE -- a loud finding, never a silent PASS. A ternary or a
-            # switch(true) chain carries the labels with no `if (` in front of
-            # them, and that is exactly the form the old line scanner reported
-            # as clean.
+            # ZERO DENOMINATOR IS A FINDING, NOT A PASS. The denominator line
+            # says in its own words that this state means BLIND, and the gate
+            # was printing it beside VERDICT PASS and exiting 0. Renaming a
+            # calculator's four severity words -- an ordinary copy edit --
+            # switched R6 off silently. The old UNPARSEABLE gate was backwards
+            # for this case: it required labels to be PRESENT, so it fired when
+            # the gate saw labels but no branches and stayed silent when it saw
+            # neither.
+            if st["labels_present_in_text"] == 0:
+                raw.append(Hit(
+                    "R6", "UNREGISTERED", loc, "JS", loc,
+                    "chain %s: this surface was READ (%d conditions, %d "
+                    "assignments) and ZERO of its %d configured labels appear "
+                    "in it. Either the labels were renamed or the chain is "
+                    "misconfigured. A zero denominator is not a clean chain, "
+                    "it is an unwatched one."
+                    % (cid, st["conditions_located"], st["label_assignments"],
+                       len(labels)),
+                    note="zero-denominator", sentence=loc))
+            elif st["label_assignments"] == 0:
+                raw.append(Hit(
+                    "R6", "UNPARSEABLE", loc, "JS", loc,
+                    "chain %s: %d configured label(s) appear in this surface "
+                    "but ZERO label-emitting assignments were parsed from it"
+                    % (cid, st["labels_present_in_text"]),
+                    note="no-assignments", sentence=loc))
             if st["labels_present_in_text"] >= 2 and \
                     st["branches_with_condition"] < st["labels_present_in_text"] - 1:
                 shape = []
