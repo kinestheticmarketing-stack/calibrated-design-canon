@@ -284,18 +284,38 @@ _JS_STRING = re.compile(
 _JS_COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 
 
-def _ld_leaves(obj, path, out):
-    """Every string leaf of a parsed JSON-LD block, with its JSON path."""
+LD_MAX_DEPTH = 64
+LD_MAX_LEAVES = 20000
+
+
+def _ld_leaves(obj, path, out, depth=0, over=None):
+    """Every string leaf of a parsed JSON-LD block, with its JSON path.
+
+    DEPTH-GUARDED. `[[[[...]]]]` nested 2000 deep is valid JSON, and the
+    unguarded version raised RecursionError out of the parse loop, which exited
+    1 with an empty report: a CI job reading $? saw "a rule failed" and a human
+    reading the report saw nothing. Exceeding either limit is recorded and
+    surfaces as a TRUNCATED note, never as silence."""
+    if over is None:
+        over = []
+    if depth > LD_MAX_DEPTH:
+        over.append("depth>%d at %s" % (LD_MAX_DEPTH, path))
+        return over
+    if len(out) >= LD_MAX_LEAVES:
+        if not any(x.startswith("leaves>") for x in over):
+            over.append("leaves>%d" % LD_MAX_LEAVES)
+        return over
     if isinstance(obj, dict):
         for k in sorted(obj.keys()):
-            _ld_leaves(obj[k], "%s.%s" % (path, k), out)
+            _ld_leaves(obj[k], "%s.%s" % (path, k), out, depth + 1, over)
     elif isinstance(obj, list):
         for i, v in enumerate(obj):
-            _ld_leaves(v, "%s[%d]" % (path, i), out)
+            _ld_leaves(v, "%s[%d]" % (path, i), out, depth + 1, over)
     elif isinstance(obj, str):
         out.append((path, obj))
     elif obj is not None and not isinstance(obj, bool):
         out.append((path, str(obj)))
+    return over
 
 
 class Artifact(object):
@@ -336,6 +356,7 @@ class Artifact(object):
         self.sitemap_entries = []   # (loc, lastmod)
         self.is_embed = False
         self.ld_parse_errors = []
+        self.ld_truncated = []
         self.cite_keys = []         # filled by the claim-set builder
 
     # -- access ----------------------------------------------------------
@@ -376,7 +397,9 @@ def _parse_html(art):
         art.ld_docs.append((i, parsed, body))
         if parsed is not None:
             leaves = []
-            _ld_leaves(parsed, "LD[%d]" % i, leaves)
+            over = _ld_leaves(parsed, "LD[%d]" % i, leaves)
+            if over:
+                art.ld_truncated.append("LD[%d]: %s" % (i, "; ".join(over)))
             for path, s in leaves:
                 art.ld_leaves.append((path, s))
                 art.surfaces.append(Surface(S_LD, path, collapse(dec(s))))
