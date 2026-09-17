@@ -3091,6 +3091,8 @@ Every one is recorded in this portfolio, with the pass that hit it.
 21. **Search for a term you KNOW is present before trusting a term you believe is absent.** Greeley is in that tariff, so any pipeline that cannot find Greeley cannot establish Johnstown is missing (GCI ground-truth; canon `PROPERTY_GENESIS.md`).
 22. **A citation sweep must search for the CLAIM, not only for the identifier** (GCI `44d638c`).
 23. **The unit of work is the defect class, portfolio-wide, never the page that surfaced it** (canon Rule 8c; hit on DCI's unswept `prerequisite`, and hit again on the `before and after` class still live on DCI today).
+24. **A verification command that matches its own commit message is measuring the paperwork, not the tree.** `git show --stat HEAD | /usr/bin/grep -c ops/claim_gate/RULES_SPEC.md` returns **7**, not 1, because `git show` prints the commit MESSAGE and that message names the path six times. `git show --stat --format= HEAD | …` suppresses the message and returns **1**. Same family as #8 (`ault` inside `default`) and #2 (the anchor, not the tree): the instrument matched itself. Found while writing this spec's own commit, 2026-09-17.
+25. **A spec's own verification figures are subject to every rule in this file.** Three of the five `Verify:` figures on this spec's commit were written as the number the command OUGHT to return and were wrong: `POSITIVE-CONTROL FIXTURE` drafted as 11, returns **12** (§8's preamble names the field alongside the eleven rules); `blind spot` drafted as 4, returns **8**; and #24 above. All three were caught by running the commands before the report, and corrected in the same pass. **This is the fourth, fifth and sixth recorded instance in this portfolio of writing the figure a command ought to return** — GCI `12dfcbf` and `2a29eb9` recorded the first three, and the standing instruction from `gci-xcel-gas-state-docs` is unchanged and was ignored again here: **run the command, paste the output, then write the sentence around it.**
 
 ---
 
@@ -3110,12 +3112,26 @@ as a gate that hides its blind spot.
    unless its author knew to say otherwise, and **zero of 87 entries set it to
    True explicitly.** Flipping the default is a one-line change per property with
    a 52-entry blast radius, and it is not this lane's call. Recorded as owed.
-3. **Two live defects this retrieval found are out of this lane's scope** and are
-   reported rather than fixed, because R1 is specification-only: DCI's uncited
-   `15% reduction in heating and cooling costs` (2 occurrences, §11.2 R5), and
-   DCI's `before and after the work` blower-door attribution (13 files, 21
-   occurrences, §11.2 R9) — the class LGM swept on 2026-09-06 and DCI never
-   received.
+3. **THREE live defects this retrieval found are out of this lane's scope** and
+   are reported rather than fixed, because this row is specification-only.
+   (**This item read "Two" until 2026-09-17 and undercounted itself by one** —
+   the review-date item was written up in §11.2 R8 as LIVE NOW and then omitted
+   from this list. Corrected here, and it is the same class as §11.4 items 24
+   and 25: a count asserted rather than taken.)
+   - **(a)** DCI's uncited `15% reduction in heating and cooling costs` — 2
+     occurrences, `public/r-value-needed-calculator.html:1570` and
+     `public/do-i-need-new-insulation-quiz.html:1502`, from
+     `_generate_calculator_pages.py:453` and `:1102`. §11.2 R5.
+   - **(b)** DCI's `before and after the work` blower-door attribution — **13
+     files, 21 occurrences**, attributed to a sheet in which the phrase occurs
+     **zero** times. The class LGM swept on 2026-09-06 in `124c014` (12 files /
+     17 occurrences) and **DCI never received.** Canon Rule 8c. §11.2 R9.
+   - **(c)** DCI and LGM both publish review dates that predate corrections they
+     shipped: **DCI 70 of 75 pages at `2026-08-24`** against content corrected
+     through 2026-09-11, and **LGM 31 of 48 pages at `2026-08-05`** against
+     content corrected through 2026-09-10. GCI closed the identical debt in
+     `bf240f8`/`348baf9`; DCI holds it under D-003 and an Auditor HOLD, LGM has
+     no recorded hold. §11.2 R8.
 4. **One stale canon file:** `docs/board/ground-truth.md:9-12` still reads
    "Greeley (Atmos gas, electric unresolved)". Canon's settled-decisions file is
    not this lane's to edit; recorded, not reconciled.
