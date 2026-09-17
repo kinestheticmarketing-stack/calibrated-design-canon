@@ -23,6 +23,11 @@ import sys
 # The gate writes NOTHING into the repo it is run from or the repo it lives in.
 # Importing surfaces.py would otherwise drop ops/claim_gate/__pycache__/ next
 # to the implementation. Set BEFORE any first-party import.
+#
+# ADVERSARIAL READ, anomaly 8: setting this in the module body is too late when
+# something ELSE imports claim_gate.py -- by then the import machinery has
+# already written claim_gate's own .pyc. The wrapper therefore also exports
+# PYTHONDONTWRITEBYTECODE=1, which is the only place that can be early enough.
 sys.dont_write_bytecode = True
 
 import argparse  # noqa: E402
@@ -79,7 +84,8 @@ class ArithmeticMismatch(Exception):
 
 class Hit(object):
     __slots__ = ("rid", "sub", "rel", "surface", "locator", "text", "note",
-                 "cite_key", "sentence", "r5_inblock", "r5_instat")
+                 "cite_key", "sentence", "r5_inblock", "r5_instat",
+                 "r8_excluded", "r2_noscope", "r2_subject_ok", "r3_kind")
 
     def __init__(self, rid, sub, rel, surface, locator, text, note="",
                  cite_key=None, sentence=""):
@@ -94,6 +100,10 @@ class Hit(object):
         self.sentence = S.collapse(sentence or text)
         self.r5_inblock = False
         self.r5_instat = False
+        self.r8_excluded = ""
+        self.r2_noscope = False
+        self.r2_subject_ok = True
+        self.r3_kind = ""
 
     def sortkey(self):
         return (self.rel, self.sub, self.surface, self.locator, self.text)
@@ -117,6 +127,26 @@ class Filt(object):
 
 
 def adjudicate(raw_hits, filters):
+    """Partition the raw candidates through the named filters, then CROSS-CHECK
+    the partition independently.
+
+    The adversarial read was right that the old check was unreachable: it
+    compared a partition against its own arithmetic, which holds by
+    construction. The three checks below are independent of how the partition
+    was built and each one can actually fail:
+
+      C1  every REMOVED hit is re-tested against the filter credited with
+          removing it, on a second evaluation. A predicate that is
+          order-dependent, stateful or non-idempotent fails here.
+      C2  every SURVIVING hit is re-tested against EVERY removing filter. A
+          survivor that any filter matches means the partition leaked -- the
+          adjudicated set would contain something a filter claims to have
+          cleared.
+      C3  the identity, recomputed from the re-tested sets rather than from the
+          loop's own counters.
+
+    Any failure raises ArithmeticMismatch and the gate exits 2.
+    """
     remaining = list(raw_hits)
     rows = []
     for f in filters:
@@ -134,11 +164,38 @@ def adjudicate(raw_hits, filters):
                     keep.append(h)
             remaining = keep
         rows.append((f.label, count, removed))
-    total_removed = sum(len(r[2]) for r in rows)
-    if total_removed + len(remaining) != len(raw_hits):
+
+    removing = [f for f in filters if f.removes]
+    by_label = {}
+    for f in removing:
+        by_label.setdefault(f.label, []).append(f)
+
+    # C1 -- re-test every removal against its own credited filter
+    recheck_removed = 0
+    for label, count, removed in rows:
+        for h in removed:
+            preds = by_label.get(label) or []
+            if not any(f.pred(h) for f in preds):
+                raise ArithmeticMismatch(
+                    "C1: hit %r was removed by filter %r but that filter does "
+                    "not match it on re-evaluation (non-idempotent predicate)"
+                    % (h.locator, label))
+            recheck_removed += 1
+
+    # C2 -- re-test every survivor against every removing filter
+    for h in remaining:
+        for f in removing:
+            if f.pred(h):
+                raise ArithmeticMismatch(
+                    "C2: hit %r survived adjudication but filter %r matches it "
+                    "on re-evaluation -- the partition leaked"
+                    % (h.locator, f.label))
+
+    # C3 -- the identity, from the re-tested counts
+    if recheck_removed + len(remaining) != len(raw_hits):
         raise ArithmeticMismatch(
-            "raw %d - removed %d != adjudicated %d"
-            % (len(raw_hits), total_removed, len(remaining)))
+            "C3: raw %d - removed %d != adjudicated %d"
+            % (len(raw_hits), recheck_removed, len(remaining)))
     return remaining, rows
 
 
@@ -174,8 +231,21 @@ class Rule(object):
 
 
 class Control(object):
+    """A positive control, its sub-test binding, and its REPAIR counterpart.
+
+    `sub` is mandatory in practice: without it a hit from any sub-test
+    satisfied the control, which is how R1's claim-test half and R2's
+    wrong-utility half ended up with no control at all -- each was satisfied by
+    a different half of the same fixture.
+
+    `repaired` names a fixture in which the defect has been FIXED. The rule must
+    return zero hits on `sub` against it. A control that still fires on a
+    repaired fixture is not a control, and the gate treats that as a control
+    failure (exit 2), which is the mechanical form of Ruling 6.
+    """
+
     def __init__(self, cid, rid, fixture, overlay=None, expect=1, sub=None,
-                 extra=()):
+                 extra=(), repaired=None, repaired_extra=()):
         self.cid = cid
         self.rid = rid
         self.fixture = fixture
@@ -186,6 +256,8 @@ class Control(object):
         # is the whole point of the no-string vector: the claim is not in the
         # HTML, it is in something the HTML points at.
         self.extra = list(extra)
+        self.repaired = repaired
+        self.repaired_extra = list(repaired_extra)
 
 
 # ---------------------------------------------------------------------------
@@ -650,10 +722,21 @@ class Ctx(object):
         return sorted(found)
 
     def allowed_utilities(self, towns):
+        """The utilities a page in `towns` may attribute a program to.
+
+        `towns` EMPTY no longer means "exempt from R2". With a territory
+        configured it means SITEWIDE, and a sitewide artifact may name any
+        utility that serves somewhere in the territory -- but not one that
+        serves nowhere in it. Returning None here (the old behaviour) exempted
+        every page not listed in a town's page_slugs, which is most of each
+        property and permanently included llms.txt and robots.txt.
+        """
         c = self.r("R2")
         t = c.get("towns", {}) or {}
-        if not towns:
+        if not t:
             return None
+        if not towns:
+            towns = sorted(t)
         allowed = set()
         for name in towns:
             d = t.get(name, {})
@@ -953,17 +1036,21 @@ def rule_R2(ctx, res):
     for art in ctx.claim_artifacts():
         scope = ctx.town_scope(art)
         allowed = ctx.allowed_utilities(scope)
-        scope_s = ",".join(scope) or "sitewide"
+        scope_s = ",".join(scope) or ("sitewide(union of %d towns)"
+                                      % len(towns) if towns else "sitewide")
         for skey, loc, sent in ctx.pool(art):
             if not has_any(sent, aw, word=False):
                 continue
             for u in ctx.utilities_in(sent):
-                if allowed is None or u in allowed:
+                if allowed is not None and u in allowed:
                     continue
-                raw.append(Hit("R2", "a", art.rel, skey, str(loc),
-                               "%s | scope=%s | %s" % (u, scope_s, sent),
-                               note="utility-not-serving-town",
-                               sentence=sent))
+                h = Hit("R2", "a", art.rel, skey, str(loc),
+                        "%s | scope=%s | %s" % (u, scope_s, sent),
+                        note=("utility-not-serving-town" if allowed is not None
+                              else "sitewide-scope-no-town-configured"),
+                        sentence=sent)
+                h.r2_noscope = (allowed is None)
+                raw.append(h)
         for h in sorted(set(art.hrefs)):
             m = re.match(r"https?://([^/]+)", h)
             if not m:
@@ -972,20 +1059,27 @@ def rule_R2(ctx, res):
             for dom in sorted(domains):
                 if host == dom or host.endswith("." + dom):
                     u = ctx.canon_utility(domains[dom])
-                    if allowed is not None and u not in allowed:
-                        raw.append(Hit("R2", "c", art.rel, "ATTR",
-                                       "href:%s" % h,
-                                       "%s | scope=%s | %s" % (u, scope_s, h),
-                                       note="wayfinding-url", sentence=h))
+                    if allowed is None or u not in allowed:
+                        hit = Hit("R2", "c", art.rel, "ATTR", "href:%s" % h,
+                                  "%s | scope=%s | %s" % (u, scope_s, h),
+                                  note=("wayfinding-url" if allowed is not None
+                                        else "sitewide-scope-no-town-configured"),
+                                  sentence=h)
+                        hit.r2_noscope = (allowed is None)
+                        raw.append(hit)
         for k in art.cite_keys:
             e = ctx.gen.cited_sources.get(k) or {}
             blob = " ".join(str(e.get(f) or "") for f in ("source", "stat", "url"))
             for u in ctx.utilities_in(k.replace("_", " ") + " " + blob):
-                if allowed is not None and u not in allowed:
-                    raw.append(Hit("R2", "b", art.rel, "CITE", k,
-                                   "%s | scope=%s | inherited cite key %s"
-                                   % (u, scope_s, k),
-                                   note="inherited-cite-key", sentence=blob))
+                if allowed is None or u not in allowed:
+                    h = Hit("R2", "b", art.rel, "CITE", k,
+                            "%s | scope=%s | inherited cite key %s"
+                            % (u, scope_s, k),
+                            note=("inherited-cite-key" if allowed is not None
+                                  else "sitewide-scope-no-town-configured"),
+                            sentence=blob)
+                    h.r2_noscope = (allowed is None)
+                    raw.append(h)
         if c.get("forbid_electric_utility_naming"):
             for skey, loc, sent in ctx.pool(art):
                 if not has_any(sent, ELECTRIC_WORDS, word=False):
@@ -1048,6 +1142,11 @@ def rule_R2(ctx, res):
                                        note="town-blind-tool",
                                        sentence=S.collapse(lit)))
 
+    refusals = ctx.r("R10").get("refusal_markers", []) or []
+
+    def f_wayfind(h):
+        return has_any(h.sentence, refusals, word=False)
+
     def f_locked(h):
         return has_any(h.sentence, locked, word=False)
 
@@ -1064,8 +1163,17 @@ def rule_R2(ctx, res):
         return has_any(h.sentence, c.get("non_territorial_programs", []) or [],
                        word=False) and h.sub in ("a",)
 
+    def f_noscope(h):
+        return bool(getattr(h, "r2_noscope", False))
+
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("no territory configured for this property -- R2 cannot scope "
+             "anything (raised, then cleared here, never dropped silently)",
+             f_noscope),
+        Filt("sanctioned off-property wayfinding (a refusal marker binds the "
+             "sentence: it names the publisher and declines to republish)",
+             f_wayfind),
         Filt("locked multi-utility sentence (gas-split fact, verbatim)", f_locked),
         Filt("known_disclosure_gaps (Director told, not reversing)", f_gap),
         Filt("review_not_fail -> REVIEW classification, never FAIL", f_review),
@@ -1383,45 +1491,104 @@ def rule_R5(ctx, res):
            "magnitude claims with no attribution on the page"
 
 
+_JS_COND = re.compile(r"\b(?:else\s+if|if)\s*\(")
+_JS_ELSE = re.compile(r"\belse\s*\{")
+_JS_ASSIGN = re.compile(r"([A-Za-z_$][\w$]*)\s*=\s*([^;]*)")
+_JS_ANYSTR = re.compile(
+    r"'((?:[^'\\]|\\.)*)'" r'|"((?:[^"\\]|\\.)*)"' r"|`((?:[^`\\]|\\.)*)`",
+    re.DOTALL)
+_JS_STRIPSTR = re.compile(
+    r"'(?:[^'\\]|\\.)*'" r'|"(?:[^"\\]|\\.)*"' r"|`(?:[^`\\]|\\.)*`",
+    re.DOTALL)
+
+
+def _match_paren(s, i):
+    depth = 0
+    for j in range(i, len(s)):
+        c = s[j]
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+            if depth == 0:
+                return j
+    return -1
+
+
 def _js_label_chain(js_text, labels):
-    """Line-scoped conditional-chain scanner over the emitted JS. Returns
-    [(condition_idents, condition_numbers, assigned_string, interpolated_idents)].
-    Not a JS parser -- printed in R6's blind spot."""
-    chain = []
-    cur_cond = None
-    cur_nums = ()
-    for line in js_text.splitlines():
-        st = line.strip()
-        m = re.match(r"(?:\}\s*)?else\s+if\s*\((?P<c>.*)\)\s*\{", st) or \
-            re.match(r"if\s*\((?P<c>.*)\)\s*\{", st)
-        if m:
-            cond = m.group("c")
-            cur_cond = sorted(set(re.findall(r"[A-Za-z_$][A-Za-z0-9_$]*", cond))
-                              - {"true", "false", "null", "undefined"})
-            cur_nums = tuple(int(x) for x in re.findall(r"\b\d+\b", cond))
+    """POSITION-based conditional-chain scanner over the emitted JS.
+
+    Rewritten after the adversarial read: the previous version iterated
+    splitlines() and anchored `^if (...)` per line, so the SAME defect minified
+    onto one line produced a byte-identical clean block. Conditions are now
+    located by position with real parenthesis matching, and each label
+    assignment is bound to the nearest PRECEDING condition regardless of
+    newlines. Backtick template literals are included.
+
+    Returns (branches, stats) where branches is a list of
+    (cond_idents, cond_numbers, cond_text, label_text, interpolated_idents,
+     has_condition) and stats is a dict of real denominators.
+    """
+    conds = []
+    for m in _JS_COND.finditer(js_text):
+        o = js_text.find("(", m.start())
+        if o < 0:
             continue
-        if re.match(r"(?:\}\s*)?else\s*\{", st):
-            cur_cond = []
-            cur_nums = ()
+        c = _match_paren(js_text, o)
+        if c < 0:
             continue
-        m2 = re.match(r"(?:var\s+)?(\w+)\s*=\s*(.+?);?$", st)
-        if not m2:
+        conds.append((m.start(), js_text[o + 1:c]))
+    for m in _JS_ELSE.finditer(js_text):
+        conds.append((m.start(), ""))
+    conds.sort()
+
+    assigns = []
+    for m in _JS_ASSIGN.finditer(js_text):
+        rhs = m.group(2)
+        parts = [a or b or c for a, b, c in _JS_ANYSTR.findall(rhs)]
+        flat = "".join(parts)
+        if not flat:
             continue
-        rhs = m2.group(2)
-        strs = re.findall(r"'((?:[^'\\]|\\.)*)'|\"((?:[^\"\\]|\\.)*)\"", rhs)
-        flat = "".join(a or b for a, b in strs)
-        if not flat or not any(lb and lb[:18] in flat for lb in labels):
+        if not any(lb and lb[:18] in flat for lb in labels):
             continue
-        idents = sorted(set(re.findall(r"[A-Za-z_$][A-Za-z0-9_$]*",
-                                       re.sub(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"",
-                                              " ", rhs))))
-        chain.append((cur_cond or [], cur_nums, flat, idents))
-    return chain
+        bare = _JS_STRIPSTR.sub(" ", rhs)
+        idents = sorted(set(re.findall(r"[A-Za-z_$][\w$]*", bare)))
+        assigns.append((m.start(), flat, idents))
+
+    branches = []
+    for pos, flat, idents in assigns:
+        cond = None
+        for cp, ct in conds:
+            if cp < pos:
+                cond = ct
+            else:
+                break
+        if cond is None:
+            branches.append(([], (), "", flat, idents, False))
+            continue
+        cidents = sorted(set(re.findall(r"[A-Za-z_$][\w$]*", cond))
+                         - {"true", "false", "null", "undefined"})
+        nums = tuple(int(x) for x in re.findall(r"\b\d+\b", cond))
+        branches.append((cidents, nums, S.collapse(cond), flat, idents, True))
+
+    labels_present = sorted(set(lb for lb in labels
+                                if lb and lb[:18] in js_text))
+    stats = {
+        "conditions_located": len(conds),
+        "label_assignments": len(assigns),
+        "branches_with_condition": len([b for b in branches if b[5]]),
+        "labels_present_in_text": len(labels_present),
+        "ternary_present": "?" in js_text and ":" in js_text,
+        "switch_present": bool(re.search(r"\bswitch\s*\(", js_text)),
+    }
+    return branches, stats
 
 
 def rule_R6(ctx, res):
     c = ctx.r("R6")
     chains = c.get("label_chains", []) or []
+    tot = {"chains": 0, "conds": 0, "assigns": 0, "branches": 0,
+           "labels_seen": 0, "texts": 0}
     if not chains:
         res.notes.append("NULL RESULT -- 0 label chains configured for this "
                          "property. Registering one later is a config entry.")
@@ -1429,83 +1596,178 @@ def rule_R6(ctx, res):
         res.adjudicated, res.rows = adjudicate([], [])
         res.levels, res.level_detail = level_counts(ctx, ["short of target"],
                                                     ci=False, word=False)
+        res.notes.append("DENOMINATOR  chains examined 0 · JS texts read 0 · "
+                         "conditions located 0 · label assignments found 0 · "
+                         "branches bound to a condition 0 -- RAW 0 here means "
+                         "NOTHING WAS REGISTERED, not 'clean'")
         return "label-emitting conditional chains examined", \
                "chains whose branch quantity is not the printed quantity"
 
     raw = []
     for ch in chains:
+        tot["chains"] += 1
         labels = ch.get("labels", []) or []
         pv = ch.get("printed_var")
         at = ch.get("at_target_label") or ""
         order = ch.get("severity_order", []) or []
         targets = ch.get("targets", {}) or {}
+        cid = ch.get("id", "?")
         texts = []
-        for p in (ch.get("surfaces") or []):
-            a = ctx.by_rel.get(p)
+        for pth in (ch.get("surfaces") or []):
+            a = ctx.by_rel.get(pth) or ctx.by_rel.get(pth.rsplit("/", 1)[-1])
             if a:
                 for i, body in enumerate(a.js_bodies):
-                    texts.append(("%s:JS[%d]" % (p, i), body))
+                    texts.append(("%s:JS[%d]" % (a.rel, i), body))
         gen = ch.get("generator")
-        if gen:
-            gp = os.path.join(ctx.repo, gen)
+        if gen and not ctx.control:
+            # NEVER read the repo from a control context (isolation, spec 5).
+            gp = os.path.join(ctx.repo or "", gen)
             if os.path.isfile(gp):
                 with open(gp, "r", encoding="utf-8", errors="replace") as fh:
                     texts.append((gen, fh.read()))
+            else:
+                raw.append(Hit("R6", "UNREGISTERED", cid, "SRC", cid,
+                               "chain %s names generator %r which does not "
+                               "exist in this repo -- the chain is registered "
+                               "and unreadable" % (cid, gen),
+                               note="generator-missing", sentence=cid))
+        tot["texts"] += len(texts)
         if not texts:
-            raw.append(Hit("R6", "UNREGISTERED", ch.get("id", "?"), "SRC",
-                           ch.get("id", "?"),
-                           "chain %s: no surface or generator text found"
-                           % ch.get("id"), note="unreachable"))
+            if ctx.control:
+                # A control corpus legitimately lacks the property's surfaces.
+                continue
+            raw.append(Hit("R6", "UNREGISTERED", cid, "SRC", cid,
+                           "chain %s: no surface or generator text found -- "
+                           "registered and unreadable" % cid,
+                           note="unreachable", sentence=cid))
             continue
         for loc, body in texts:
-            found = _js_label_chain(body, labels)
-            if not found:
-                continue
-            for conds, nums, label, idents in found:
-                if at and at[:18] in label:
-                    continue
+            branches, st = _js_label_chain(body, labels)
+            tot["conds"] += st["conditions_located"]
+            tot["assigns"] += st["label_assignments"]
+            tot["branches"] += st["branches_with_condition"]
+            tot["labels_seen"] = max(tot["labels_seen"],
+                                     st["labels_present_in_text"])
+
+            # UNPARSEABLE -- a loud finding, never a silent PASS. A ternary or a
+            # switch(true) chain carries the labels with no `if (` in front of
+            # them, and that is exactly the form the old line scanner reported
+            # as clean.
+            if st["labels_present_in_text"] >= 2 and \
+                    st["branches_with_condition"] < st["labels_present_in_text"] - 1:
+                shape = []
+                if st["switch_present"]:
+                    shape.append("switch")
+                if st["ternary_present"]:
+                    shape.append("ternary")
+                raw.append(Hit(
+                    "R6", "UNPARSEABLE", loc, "JS", loc,
+                    "chain %s: %d configured labels present in this text but "
+                    "only %d branch(es) bound to a condition%s -- the gate "
+                    "cannot read this chain and will not call it clean"
+                    % (cid, st["labels_present_in_text"],
+                       st["branches_with_condition"],
+                       (" (shape: %s)" % "+".join(shape)) if shape else ""),
+                    note="unparseable", sentence=loc))
+
+            sev = [b for b in branches if not (at and at[:18] in b[3])]
+
+            for cidents, nums, ctext, label, idents, hascond in sev:
                 if pv and pv not in idents:
                     continue
-                extra = [x for x in conds
+                if not hascond:
+                    continue
+                extra = [x for x in cidents
                          if x not in (pv, "Math", "t", "true", "false")]
                 if extra:
                     raw.append(Hit("R6", "G1", loc, "JS", loc,
                                    "branch reads {%s} while the printed string "
-                                   "interpolates {%s} | %s"
-                                   % (",".join(conds), pv, label[:80]),
+                                   "interpolates {%s} | cond: %s | %s"
+                                   % (",".join(cidents), pv, ctext,
+                                      label[:80]),
                                    note="G1", sentence=label))
                     for area, tmin in sorted(targets.items()):
                         for n in nums:
                             if isinstance(tmin, int) and n > tmin:
                                 raw.append(Hit(
-                                    "R6", "G2", loc, "JS", "%s/%s" % (loc, area),
+                                    "R6", "G2", loc, "JS",
+                                    "%s/%s" % (loc, area),
                                     "threshold %d on {%s} is unreachable for "
                                     "%s (targetMin %d) while the printed "
                                     "quantity can reach 100"
-                                    % (n, ",".join(conds), area, tmin),
+                                    % (n, ",".join(cidents), area, tmin),
                                     note="G2", sentence=label))
-            seq = [(nums, label) for conds, nums, label, idents in found
-                   if nums and not (at and at[:18] in label)]
-            thr = [n[0][0] for n in seq if n[0]]
-            if thr and thr != sorted(thr, reverse=True):
-                raw.append(Hit("R6", "G2", loc, "JS", loc,
-                               "branch thresholds %s are not monotone "
-                               "decreasing" % (thr,), note="G2"))
-            labs = [lb for nums, lb in seq]
+
+            # --- the named defect class: two severity words beside the SAME
+            # --- printed value. Duplicate or overlapping thresholds on the
+            # --- printed quantity, and duplicate condition text.
+            on_pv = [(nums, ctext, label) for cidents, nums, ctext, label,
+                     idents, hascond in sev
+                     if hascond and nums and (not pv or pv in cidents)]
+            seen_thr = {}
+            for nums, ctext, label in on_pv:
+                key = nums[0]
+                seen_thr.setdefault(key, []).append((ctext, label))
+            for key in sorted(seen_thr):
+                if len(seen_thr[key]) > 1:
+                    labs = sorted(set(S.collapse(l)[:40]
+                                      for _, l in seen_thr[key]))
+                    raw.append(Hit(
+                        "R6", "G2-DUP", loc, "JS", "%s@%s" % (loc, key),
+                        "threshold %s on {%s} is tested by %d branches, so %d "
+                        "different labels are reachable at the SAME printed "
+                        "value: %s" % (key, pv, len(seen_thr[key]),
+                                       len(labs), " | ".join(labs)),
+                        note="two-labels-one-value", sentence=str(key)))
+            ctexts = {}
+            for nums, ctext, label in on_pv:
+                ctexts.setdefault(ctext, []).append(label)
+            for ct in sorted(ctexts):
+                if len(ctexts[ct]) > 1:
+                    raw.append(Hit(
+                        "R6", "G2-DUP", loc, "JS", "%s#%s" % (loc, ct),
+                        "condition %r appears on %d label-emitting branches -- "
+                        "only the first is reachable and the labels disagree"
+                        % (ct, len(ctexts[ct])),
+                        note="duplicate-condition", sentence=ct))
+
+            thr = [n[0][0] for n in
+                   [(nums,) for nums, _, _ in on_pv] if n[0]]
+            if thr and (thr != sorted(thr, reverse=True) or
+                        len(set(thr)) != len(thr)):
+                raw.append(Hit("R6", "G2", loc, "JS", "%s:monotone" % loc,
+                               "branch thresholds %s on {%s} are not STRICTLY "
+                               "monotone decreasing" % (thr, pv),
+                               note="G2", sentence=str(thr)))
+            labs = [b[3] for b in sev if b[5]]
             ranks = []
             for lb in labs:
                 for i, o in enumerate(order):
                     if o[:18] in lb:
                         ranks.append(i)
             if ranks and ranks != sorted(ranks, reverse=True):
-                raw.append(Hit("R6", "G2", loc, "JS", loc,
+                raw.append(Hit("R6", "G2", loc, "JS", "%s:order" % loc,
                                "label order %s disagrees with "
-                               "config.severity_order" % (labs,), note="G2"))
+                               "config.severity_order" % (labs,), note="G2",
+                               sentence=str(labs)))
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [])
     res.levels, res.level_detail = level_counts(ctx, ["short of target"],
                                                 ci=False, word=False)
+    res.notes.append("DENOMINATOR  chains examined %d · JS texts read %d · "
+                     "conditions located %d · label assignments found %d · "
+                     "branches bound to a condition %d · configured labels "
+                     "seen in text %d -- a RAW of 0 with a nonzero "
+                     "denominator means CLEAN; a RAW of 0 with a zero "
+                     "denominator means BLIND"
+                     % (tot["chains"], tot["texts"], tot["conds"],
+                        tot["assigns"], tot["branches"], tot["labels_seen"]))
+    if tot["texts"] and not tot["assigns"]:
+        res.traps.append("R6 read %d JS text(s) and found ZERO label "
+                         "assignments matching the configured labels. Treat "
+                         "this rule's PASS as unproven on this property."
+                         % tot["texts"])
     return "label-emitting conditional chains examined", \
            "chains whose branch quantity is not the printed quantity"
 
@@ -1620,8 +1882,11 @@ def rule_R8(ctx, res):
     raw = []
     for art in ctx.html_artifacts():
         base = art.rel.rsplit("/", 1)[-1]
-        if base in exempt or base in own:
-            continue
+        excluded_as = ""
+        if base in exempt:
+            excluded_as = "exempt_pages"
+        elif base in own:
+            excluded_as = "own_effective_date_pages"
         dates = {}
         for dt, vis in art.time_elements:
             if re.fullmatch(r"\d{4}-\d{2}-\d{2}", dt or ""):
@@ -1647,31 +1912,38 @@ def rule_R8(ctx, res):
         # (b) after today
         for k, v in claimed:
             if v > today:
-                raw.append(Hit("R8", "b", art.rel, k, k,
-                               "%s = %s is after today (%s)" % (k, v, today),
-                               note="future-date", sentence=base))
+                h = Hit("R8", "b", art.rel, k, k,
+                        "%s = %s is after today (%s)" % (k, v, today),
+                        note="future-date", sentence=base)
+                h.r8_excluded = excluded_as
+                raw.append(h)
         # (c) surfaces disagree
         vals = sorted(set(v for _, v in claimed))
         if len(vals) > 1:
-            raw.append(Hit("R8", "c", art.rel, "VIS", base,
-                           "date surfaces disagree: %s"
-                           % "; ".join("%s=%s" % (k, v) for k, v in claimed),
-                           note="surfaces-disagree", sentence=base))
+            h = Hit("R8", "c", art.rel, "VIS", base,
+                    "date surfaces disagree: %s"
+                    % "; ".join("%s=%s" % (k, v) for k, v in claimed),
+                    note="surfaces-disagree", sentence=base)
+            h.r8_excluded = excluded_as
+            raw.append(h)
         if pub:
             for k, v in claimed:
                 if pub > v:
-                    raw.append(Hit("R8", "c", art.rel, k, k,
-                                   "datePublished %s is after %s %s"
-                                   % (pub, k, v), note="ordering",
-                                   sentence=base))
+                    h = Hit("R8", "c", art.rel, k, k,
+                            "datePublished %s is after %s %s" % (pub, k, v),
+                            note="ordering", sentence=base)
+                    h.r8_excluded = excluded_as
+                    raw.append(h)
         first = ctx.gitfacts.first_seen.get(art.rel)
         if first:
             for k, v in claimed:
                 if v < first:
-                    raw.append(Hit("R8", "a", art.rel, k, k,
-                                   "%s = %s precedes first appearance in git "
-                                   "(%s)" % (k, v, first),
-                                   note="precedes-creation", sentence=base))
+                    h = Hit("R8", "a", art.rel, k, k,
+                            "%s = %s precedes first appearance in git (%s)"
+                            % (k, v, first),
+                            note="precedes-creation", sentence=base)
+                    h.r8_excluded = excluded_as
+                    raw.append(h)
         last = ctx.gitfacts.last_content_change(art.rel) \
             if ctx.gitfacts.available else None
         if last:
@@ -1682,22 +1954,30 @@ def rule_R8(ctx, res):
                     note = "pinned"
                 elif hold_note:
                     note = hold_note
-                raw.append(Hit("R8", "d", art.rel, "VIS", base,
-                               "published review date %s precedes the last "
-                               "visible-text change %s" % (newest, last),
-                               note=note, sentence=base))
+                h = Hit("R8", "d", art.rel, "VIS", base,
+                        "published review date %s precedes the last "
+                        "visible-text change %s" % (newest, last),
+                        note=note, sentence=base)
+                h.r8_excluded = excluded_as
+                raw.append(h)
 
     def f_pinned(h):
         return h.note == "pinned"
 
-    def f_known(h):
-        return False
+    def f_exempt(h):
+        # Was `return False` -- dead code wired to a filter row that could only
+        # ever print "0 (removed 0)". A filter that cannot fire does not reduce
+        # confidence, it manufactures it. An excluded page's dates are now
+        # RAISED and removed HERE, with a real count and a real enumeration,
+        # so an impossible 2027 date on 404.html is visible as a cleared item
+        # instead of vanishing before any counter moved.
+        return bool(getattr(h, "r8_excluded", ""))
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("own_effective_date_pages / exempt_pages (raised, then cleared "
+             "here -- never dropped before the count)", f_exempt),
         Filt("pinned_pages (visible text unchanged; JSON-LD only)", f_pinned),
-        Filt("own_effective_date_pages / exempt_pages (excluded before match)",
-             f_known),
     ])
     res.levels, res.level_detail = level_counts(
         ctx, ["Last reviewed", "<lastmod>"], ci=False, word=False)
@@ -2005,14 +2285,34 @@ def rule_R11(ctx, res):
         exp = t.get("expected", {}) or {}
         rows.append((tid, t.get("label", tid), len(asserting),
                      len(attributed), len(unattributed), len(both), naive, exp))
-        if c.get("forbid_subtraction") and len(both) and naive == len(unattributed):
-            pass
+        if not asserting:
+            # No page asserts this term. Emitting a row anyway is what let the
+            # R11 control report DETECTED against a fixture reading
+            # "<p>Nothing.</p>".
+            continue
         raw.append(Hit("R11", "row", tid, "VIS", tid,
                        "%s asserting %d / attributed %d / unattributed %d / "
                        "both %d  (naive subtraction would say unattributed=%d)"
                        % (t.get("label", tid), len(asserting), len(attributed),
                           len(unattributed), len(both), naive),
                        note="report-only", sentence=tid))
+        # The control for this rule is not "does it fire" but "does it count
+        # correctly, WITHOUT subtracting". forbid_subtraction is now a real
+        # assertion with a distinct sub-test, not a `pass`.
+        if len(both) and naive != len(unattributed):
+            raw.append(Hit(
+                "R11", "nonsubtractive", tid, "VIS", "%s:nosub" % tid,
+                "%s: %d page(s) BOTH attribute and assert outside the block, "
+                "so naive subtraction gives unattributed=%d where the measured "
+                "value is %d. Each cell is its own query."
+                % (t.get("label", tid), len(both), naive, len(unattributed)),
+                note="forbid_subtraction-proved", sentence=tid))
+        if c.get("forbid_subtraction") and len(both) and \
+                naive == len(unattributed):
+            res.traps.append(
+                "%s: %d page(s) do both, yet naive subtraction coincides with "
+                "the measured unattributed count. Verify the cells were each "
+                "queried independently." % (t.get("label", tid), len(both)))
     res.r11_rows = rows
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [])
@@ -2075,6 +2375,8 @@ R4_CONTROL_OVERLAY = {"R4": {"programs": [
     "federal 25C"], "noun_use_constants": [],
     "retired_prohibition_strings": [],
     "attributed_exception": {"allowed": True}}}
+R5_CONTROL_OVERLAY = {"R3": {"allowed_thresholds": [],
+                             "allowed_structure_percentages": []}}
 R6_CONTROL_OVERLAY = {"R6": {"label_chains": [{
     "id": "control-rvalue-tier",
     "printed_var": "pctShort",
@@ -2107,7 +2409,11 @@ RULES = [
          "cannot see a missing ellipsis or a quotation that is exact and "
          "misleading by selection.",
          rule_R1,
-         controls=[Control("R1", "R1", _f("R1_fabricated_quotation.html"))]),
+         controls=[
+             Control("R1-A", "R1", _f("R1_fabricated_quotation.html"),
+                     sub="A", repaired=_f("repaired", "R1_fabricated_quotation.html")),
+             Control("R1-B", "R1", _f("R1_fabricated_quotation.html"),
+                     sub="B", repaired=_f("repaired", "R1_fabricated_quotation.html"))]),
 
     Rule("R2", "WRONG-UTILITY CLAIM", "CLAIM TEST",
          "VIS TITLE META OG TW LD JS LOWVIS ATTR LLMS SVGTEXT EMBED",
@@ -2119,11 +2425,12 @@ RULES = [
          rule_R2,
          controls=[
              Control("R2a", "R2", _f("R2a_wrong_utility_visible.html"),
-                     R2_CONTROL_OVERLAY),
+                     R2_CONTROL_OVERLAY, sub="a", repaired=_f("repaired", "R2a_wrong_utility_visible.html")),
              Control("R2b", "R2", _f("R2b_wrong_utility_no_string.html"),
-                     R2_CONTROL_OVERLAY, extra=[_f("R2b_og-image.svg")]),
+                     R2_CONTROL_OVERLAY, extra=[_f("R2b_og-image.svg")],
+                     sub="a", repaired=_f("repaired", "R2b_wrong_utility_no_string.html"), repaired_extra=[_f("repaired", "R2b_og-image.svg")]),
              Control("R2c", "R2", _f("R2c_wrong_utility_anchor_only.html"),
-                     R2_CONTROL_OVERLAY)]),
+                     R2_CONTROL_OVERLAY, sub="c", repaired=_f("repaired", "R2c_wrong_utility_anchor_only.html"))]),
 
     Rule("R3", "REBATE DOLLAR FIGURE",
          "CLAIM TEST for the rank/magnitude half (T3); STRING+WINDOW LIST for "
@@ -2136,11 +2443,11 @@ RULES = [
          rule_R3,
          controls=[
              Control("R3a", "R3", _f("R3a_js_comment_cap.html"),
-                     R3_CONTROL_OVERLAY),
+                     R3_CONTROL_OVERLAY, sub="T2", repaired=_f("repaired", "R3a_js_comment_cap.html")),
              Control("R3b", "R3", _f("R3b_jsonld_amount.html"),
-                     R3_CONTROL_OVERLAY),
+                     R3_CONTROL_OVERLAY, sub="T1", repaired=_f("repaired", "R3b_jsonld_amount.html")),
              Control("R3c", "R3", _f("R3c_rank_claim_no_numeral.html"),
-                     R3_CONTROL_OVERLAY)]),
+                     R3_CONTROL_OVERLAY, sub="T3", repaired=_f("repaired", "R3c_rank_claim_no_numeral.html"))]),
 
     Rule("R4", "STACKING ASSERTION OR DENIAL", "CLAIM TEST",
          "VIS TITLE META OG TW LD JS LOWVIS ATTR LLMS EMBED",
@@ -2151,9 +2458,9 @@ RULES = [
          rule_R4,
          controls=[
              Control("R4a", "R4", _f("R4a_stacking_denial_jsonld.html"),
-                     R4_CONTROL_OVERLAY),
+                     R4_CONTROL_OVERLAY, sub="DENIES", repaired=_f("repaired", "R4a_stacking_denial_jsonld.html")),
              Control("R4b", "R4", _f("R4b_stacking_assertion_prose.html"),
-                     R4_CONTROL_OVERLAY)]),
+                     R4_CONTROL_OVERLAY, sub="ASSERTS", repaired=_f("repaired", "R4b_stacking_assertion_prose.html"))]),
 
     Rule("R5", "UNCITED STATISTIC", "CLAIM TEST",
          "VIS TITLE META OG TW LD JS LOWVIS LLMS EMBED SVGTEXT",
@@ -2165,7 +2472,8 @@ RULES = [
          "as uncited; and a qualitative magnitude with no numeral is invisible "
          "to it.",
          rule_R5,
-         controls=[Control("R5", "R5", _f("R5_uncited_statistic.html"))]),
+         controls=[Control("R5", "R5", _f("R5_uncited_statistic.html"),
+                           R5_CONTROL_OVERLAY, sub="mag", repaired=_f("repaired", "R5_uncited_statistic.html"))]),
 
     Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
          "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",
@@ -2178,9 +2486,9 @@ RULES = [
          rule_R6,
          controls=[
              Control("R6a-G1", "R6", _f("R6_label_figure_contradiction.js"),
-                     R6_CONTROL_OVERLAY, sub="G1"),
+                     R6_CONTROL_OVERLAY, sub="G1", repaired=_f("repaired", "R6_label_figure_contradiction.js")),
              Control("R6a-G2", "R6", _f("R6_label_figure_contradiction.js"),
-                     R6_CONTROL_OVERLAY, sub="G2")]),
+                     R6_CONTROL_OVERLAY, sub="G2", repaired=_f("repaired", "R6_label_figure_contradiction.js"))]),
 
     Rule("R7", "SUPERSEDED-SOURCE CLAIM",
          "CLAIM TEST for the proposition half; STRING LIST for the identifier "
@@ -2193,7 +2501,9 @@ RULES = [
          "the fact it supports. It must never list a source that is merely "
          "403 (bot-blocked, not dead).",
          rule_R7,
-         controls=[Control("R7", "R7", _f("R7_superseded_source.html"))]),
+         controls=[
+             Control("R7-A", "R7", _f("R7_superseded_source.html"), sub="A", repaired=_f("repaired", "R7_superseded_source.html")),
+             Control("R7-B", "R7", _f("R7_superseded_source.html"), sub="B", repaired=_f("repaired", "R7_superseded_source.html"))]),
 
     Rule("R8", "STALE REVIEW DATE", "CLAIM TEST",
          "VIS ATTR LD SITEMAP META OG TW EMBED (+ git log as a non-artifact "
@@ -2206,11 +2516,13 @@ RULES = [
          rule_R8,
          controls=[
              Control("R8a", "R8", _f("R8a_stale_review_date.html"),
-                     R8_CONTROL_OVERLAY),
+                     R8_CONTROL_OVERLAY, sub="d", repaired=_f("repaired", "R8a_stale_review_date.html")),
              Control("R8b", "R8", _f("R8b_review_precedes_creation.html"),
-                     R8_CONTROL_OVERLAY),
+                     R8_CONTROL_OVERLAY, sub="a", repaired=_f("repaired", "R8b_review_precedes_creation.html")),
              Control("R8c", "R8", _f("R8c_future_review_date.html"),
-                     R8_CONTROL_OVERLAY)]),
+                     R8_CONTROL_OVERLAY, sub="b", repaired=_f("repaired", "R8c_future_review_date.html")),
+             Control("R8c-c", "R8", _f("R8c_future_review_date.html"),
+                     R8_CONTROL_OVERLAY, sub="c", repaired=_f("repaired", "R8c_future_review_date.html"))]),
 
     Rule("R9", "INTERNAL CONTRADICTION", "CLAIM TEST",
          "all surfaces, including LLMS and ATTR/LOWVIS",
@@ -2223,9 +2535,9 @@ RULES = [
          rule_R9,
          controls=[
              Control("R9-N1", "R9", _f("R9_cross_surface_contradiction"),
-                     sub="N1"),
+                     sub="N1", repaired=_f("repaired", "R9_cross_surface_contradiction")),
              Control("R9-N2", "R9", _f("R9_cross_surface_contradiction"),
-                     sub="N2")]),
+                     sub="N2", repaired=_f("repaired", "R9_cross_surface_contradiction"))]),
 
     Rule("R10", "DANGLING PROMISE", "CLAIM TEST",
          "VIS TITLE META OG TW LD LOWVIS ATTR LLMS EMBED",
@@ -2236,7 +2548,11 @@ RULES = [
          "something other than a figure; and a refusal phrased in words the "
          "config does not know reads as a destination with no figures.",
          rule_R10,
-         controls=[Control("R10", "R10", _f("R10_dangling_promise"))]),
+         controls=[
+             Control("R10-anchor", "R10", _f("R10_dangling_promise"),
+                     sub="anchor", repaired=_f("repaired", "R10_dangling_promise")),
+             Control("R10-reflexive", "R10", _f("R10_dangling_promise"),
+                     sub="reflexive", repaired=_f("repaired", "R10_dangling_promise"))]),
 
     Rule("R11", "ATTRIBUTION DEBT", "CLAIM TEST",
          "VIS LD LOWVIS META OG TW LLMS",
@@ -2246,7 +2562,7 @@ RULES = [
          "attribution is OWED, which is a Director judgement.",
          rule_R11, blocking=False,
          controls=[Control("R11", "R11", _f("R11_attribution_debt.html"),
-                           R11_CONTROL_OVERLAY)]),
+                           R11_CONTROL_OVERLAY, sub="nonsubtractive", repaired=_f("repaired", "R11_attribution_debt.html"))]),
 ]
 
 OPT_IN_RULES = {
@@ -2291,9 +2607,23 @@ def _fixture_paths(p):
     return [p]
 
 
+CONTROL_NO_REPO = os.path.join(_HERE, "fixtures", "_CONTROL_HAS_NO_REPO_")
+
+
 def _control_ctx(base_cfg, overlay, paths, repo):
+    """Build a control context that CANNOT reach the repo under test.
+
+    `ctx.repo` is pointed at a path that does not exist, so any rule that
+    touches the filesystem finds nothing instead of finding the real tree. This
+    is the fix for the halt-level defect: rule_R6 used to read
+    os.path.join(ctx.repo, chain['generator']) off the real disk inside a
+    NEGATIVE-control context, so on a DCI tree carrying the R6 calculator
+    defect all 14 negative fixtures FALSE-ALARMed with the real finding
+    attached and the gate exited 2 "NOT RUN" -- it refused to run precisely
+    when the defect it exists to catch was present.
+    """
     cfg = _deep_merge(base_cfg, overlay or {})
-    ctx = Ctx(base_cfg["key"], repo, cfg, control=True)
+    ctx = Ctx(base_cfg["key"], CONTROL_NO_REPO, cfg, control=True)
     for p in paths:
         rel = os.path.relpath(p, _HERE).replace(os.sep, "/")
         art = S.parse_artifact(rel.rsplit("/", 1)[-1], p)
@@ -2310,6 +2640,21 @@ def _control_ctx(base_cfg, overlay, paths, repo):
     ctx.gen = base_cfg.get("_gen") or S.GeneratorFacts()
     build_claim_set(ctx)
     return ctx
+
+
+def isolation_breach(ctx, res):
+    """A control finding may only name a fixture. Any hit naming a repo
+    artifact means a rule reached outside its fixture read set."""
+    allowed = set(ctx.by_rel)
+    bad = []
+    for h in list(res.raw) + list(res.adjudicated):
+        rel = h.rel or ""
+        if rel.startswith("public/") or rel.startswith("/"):
+            bad.append(rel)
+        elif rel and rel not in allowed and "/" in rel and \
+                not rel.startswith("fixtures"):
+            bad.append(rel)
+    return sorted(set(bad))
 
 
 def mtimes(repo):
@@ -2350,17 +2695,69 @@ def run_controls(out, cfg, repo, opt_in, gen):
                              "*** MISSED *** filter arithmetic: %s" % exc))
                 pos_missed += 1
                 continue
+            except Exception as exc:
+                rows.append(("+", c.cid, c.fixture,
+                             "*** MISSED *** %s: %s"
+                             % (exc.__class__.__name__, exc)))
+                pos_missed += 1
+                continue
+            breach = isolation_breach(ctx, res)
+            if breach:
+                rows.append(("+", c.cid, c.fixture,
+                             "*** ISOLATION BREACH *** control read outside "
+                             "its fixture set: %s" % ", ".join(breach[:3])))
+                pos_missed += 1
+                continue
             hits = res.adjudicated
             if c.sub:
                 hits = [h for h in hits if h.sub == c.sub]
             if len(hits) >= c.expect:
                 subs = sorted(set(h.sub for h in res.adjudicated))
                 rows.append(("+", c.cid, c.fixture,
-                             "DETECTED  (%d: %s)" % (len(hits), ",".join(subs))))
+                             "DETECTED  (%d %s: %s)"
+                             % (len(hits), c.sub or "any sub-test",
+                                ",".join(subs))))
                 pos_detected += 1
             else:
-                rows.append(("+", c.cid, c.fixture, "*** MISSED ***"))
+                rows.append(("+", c.cid, c.fixture,
+                             "*** MISSED *** (0 hits on the sub-test this "
+                             "control proves: %s)" % (c.sub or "any")))
                 pos_missed += 1
+
+    rep_clean = rep_fired = rep_absent = 0
+    for rule in RULES:
+        for c in rule.controls:
+            if not c.repaired:
+                rep_absent += 1
+                rows.append(("~", c.cid, "(no repaired counterpart)",
+                             "NOT TESTED -- this control has no repair "
+                             "fixture, so it is not proven to be a control"))
+                continue
+            rpath = os.path.join(_HERE, c.repaired)
+            paths = _fixture_paths(rpath)
+            for e in c.repaired_extra:
+                paths = paths + _fixture_paths(os.path.join(_HERE, e))
+            ctx = _control_ctx(base, c.overlay, sorted(paths), repo)
+            res = RuleResult(rule)
+            try:
+                rule.fn(ctx, res)
+            except Exception as exc:
+                rows.append(("~", c.cid, c.repaired,
+                             "*** REPAIR TEST CRASHED *** %s: %s"
+                             % (exc.__class__.__name__, exc)))
+                rep_fired += 1
+                continue
+            hits = [h for h in res.adjudicated
+                    if (not c.sub) or h.sub == c.sub]
+            if hits:
+                rows.append(("~", c.cid, c.repaired,
+                             "*** FIRES ON REPAIRED *** %d hit(s) on sub %s: %s"
+                             % (len(hits), c.sub, hits[0].text[:80])))
+                rep_fired += 1
+            else:
+                rows.append(("~", c.cid, c.repaired,
+                             "repaired-clean (0 hits on sub %s)" % c.sub))
+                rep_clean += 1
 
     for neg in NEGATIVES:
         path = os.path.join(FIXTURES, "negative", neg + ".html")
@@ -2375,6 +2772,15 @@ def run_controls(out, cfg, repo, opt_in, gen):
             except ArithmeticMismatch as exc:
                 alarms.append("%s arithmetic %s" % (rule.rid, exc))
                 continue
+            except Exception as exc:
+                alarms.append("%s %s: %s"
+                              % (rule.rid, exc.__class__.__name__, exc))
+                continue
+            breach = isolation_breach(ctx, res)
+            if breach:
+                alarms.append("%s ISOLATION BREACH %s"
+                              % (rule.rid, ", ".join(breach[:2])))
+                continue
             for h in res.adjudicated:
                 alarms.append("%s %s %s" % (rule.rid, h.sub, h.text[:90]))
         if alarms:
@@ -2387,6 +2793,8 @@ def run_controls(out, cfg, repo, opt_in, gen):
 
     for sign, cid, fx, verdict in rows:
         out("  canary%s %-18s %-44s %s" % (sign, cid, fx, verdict))
+    out("  REPAIR TESTS: %d repaired-clean, %d FIRE ON REPAIRED, %d NOT TESTED "
+        "(no repair fixture)" % (rep_clean, rep_fired, rep_absent))
 
     if "R6b" in opt_in:
         out("  canary+ %-18s %-44s %s"
@@ -2403,7 +2811,7 @@ def run_controls(out, cfg, repo, opt_in, gen):
         % len(before))
     out("  CONTROLS: %d positive DETECTED, %d MISSED · %d negative clean, "
         "%d FALSE ALARM" % (pos_detected, pos_missed, neg_clean, neg_false))
-    ok = (pos_missed == 0 and neg_false == 0)
+    ok = (pos_missed == 0 and neg_false == 0 and rep_fired == 0)
     return rows, pos_detected, pos_missed, neg_clean, neg_false, ok
 
 
@@ -2484,9 +2892,27 @@ def build_parser():
 
 
 def main(argv=None):
+    """Wrapper. Any exception that escapes _main becomes a loud exit 2 with a
+    report, never an empty stdout and an exit code a CI job will misread."""
     t0 = time.time()
     args = build_parser().parse_args(argv)
     out = Out()
+    try:
+        return _main(args, out, t0)
+    except SystemExit:
+        raise
+    except BaseException as exc:
+        import traceback
+        out()
+        out("CLAIM GATE CRASHED: %s: %s" % (exc.__class__.__name__, exc))
+        for line in traceback.format_exc().splitlines():
+            out("  %s" % line)
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
+
+
+def _main(args, out, t0):
 
     errs = validate_registry()
     if errs:
@@ -2545,11 +2971,20 @@ def main(argv=None):
     ctx = Ctx(cfg["key"], repo, cfg)
     embeds = set(cfg.get("embed_artifacts", []) or [])
     kinds = {"html": 0, "txt": 0, "xml": 0, "svg": 0, "js": 0}
+    parse_failures = []
     for rel in corpus.read_set:
         p = os.path.join(repo, rel)
         if not os.path.isfile(p):
             continue
-        art = S.parse_artifact(rel, p, embeds)
+        try:
+            art = S.parse_artifact(rel, p, embeds)
+        except RecursionError as exc:
+            parse_failures.append("%s: RecursionError (%s)" % (rel, exc))
+            continue
+        except Exception as exc:
+            parse_failures.append("%s: %s: %s"
+                                  % (rel, exc.__class__.__name__, exc))
+            continue
         ctx.artifacts.append(art)
         ctx.by_rel[rel] = art
         kinds[art.kind] = kinds.get(art.kind, 0) + 1
@@ -2564,6 +2999,26 @@ def main(argv=None):
         % (len(ctx.artifacts), kinds.get("html", 0), kinds.get("txt", 0),
            kinds.get("xml", 0), kinds.get("svg", 0), len(corpus.excluded),
            ", ".join("%s:%d" % (k, reasons[k]) for k in sorted(reasons))))
+
+    if parse_failures:
+        out()
+        out("PARSE FAILURES: %d artifact(s) could not be parsed and are "
+            "therefore OUTSIDE every rule. A corpus the gate cannot read is "
+            "not a corpus it has judged." % len(parse_failures))
+        for f in sorted(parse_failures):
+            out("  %s" % f)
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
+
+    trunc = []
+    for art in ctx.artifacts:
+        trunc.extend("%s %s" % (art.rel, x) for x in art.ld_truncated)
+    if trunc:
+        out("JSON-LD TRUNCATED (depth or leaf cap hit -- stated, never "
+            "silent): %d block(s)" % len(trunc))
+        for t in sorted(trunc)[:10]:
+            out("  %s" % t)
 
     build_claim_set(ctx)
     n_prop, n_cite, n_const, n_asset = ctx.claim_counts
@@ -2636,6 +3091,20 @@ def main(argv=None):
             out.head("%s  %s" % (rule.rid, rule.name))
             out("  FILTER ARITHMETIC MISMATCH: %s" % exc)
             out("  subtraction is not measurement. The gate exits 2.")
+            out()
+            out("CLAIM GATE: NOT RUN")
+            _finish(out, args, 2, t0)
+            return 2
+        except Exception as exc:
+            import traceback
+            out()
+            out.head("%s  %s" % (rule.rid, rule.name))
+            out("  RULE CRASHED: %s: %s" % (exc.__class__.__name__, exc))
+            for line in traceback.format_exc().splitlines():
+                out("    %s" % line)
+            out("  A crashed rule has judged NOTHING. The gate exits 2 rather "
+                "than 0 or 1, because a rule that did not run must never be "
+                "reported as a rule that passed.")
             out()
             out("CLAIM GATE: NOT RUN")
             _finish(out, args, 2, t0)
