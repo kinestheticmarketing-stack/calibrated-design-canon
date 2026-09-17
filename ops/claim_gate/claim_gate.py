@@ -2168,40 +2168,19 @@ def rule_R6(ctx, res):
                            "registered and unreadable" % cid,
                            note="unreachable", sentence=cid))
             continue
+        chain_seen = {"labels": 0, "assigns": 0, "conds": 0}
         for loc, body in texts:
             branches, st = _js_label_chain(body, labels)
+            chain_seen["labels"] = max(chain_seen["labels"],
+                                       st["labels_present_in_text"])
+            chain_seen["assigns"] += st["label_assignments"]
+            chain_seen["conds"] += st["conditions_located"]
             tot["conds"] += st["conditions_located"]
             tot["assigns"] += st["label_assignments"]
             tot["branches"] += st["branches_with_condition"]
             tot["labels_seen"] = max(tot["labels_seen"],
                                      st["labels_present_in_text"])
 
-            # ZERO DENOMINATOR IS A FINDING, NOT A PASS. The denominator line
-            # says in its own words that this state means BLIND, and the gate
-            # was printing it beside VERDICT PASS and exiting 0. Renaming a
-            # calculator's four severity words -- an ordinary copy edit --
-            # switched R6 off silently. The old UNPARSEABLE gate was backwards
-            # for this case: it required labels to be PRESENT, so it fired when
-            # the gate saw labels but no branches and stayed silent when it saw
-            # neither.
-            if st["labels_present_in_text"] == 0:
-                raw.append(Hit(
-                    "R6", "UNREGISTERED", loc, "JS", loc,
-                    "chain %s: this surface was READ (%d conditions, %d "
-                    "assignments) and ZERO of its %d configured labels appear "
-                    "in it. Either the labels were renamed or the chain is "
-                    "misconfigured. A zero denominator is not a clean chain, "
-                    "it is an unwatched one."
-                    % (cid, st["conditions_located"], st["label_assignments"],
-                       len(labels)),
-                    note="zero-denominator", sentence=loc))
-            elif st["label_assignments"] == 0:
-                raw.append(Hit(
-                    "R6", "UNPARSEABLE", loc, "JS", loc,
-                    "chain %s: %d configured label(s) appear in this surface "
-                    "but ZERO label-emitting assignments were parsed from it"
-                    % (cid, st["labels_present_in_text"]),
-                    note="no-assignments", sentence=loc))
             if st["labels_present_in_text"] >= 2 and \
                     st["branches_with_condition"] < st["labels_present_in_text"] - 1:
                 shape = []
@@ -2299,6 +2278,36 @@ def rule_R6(ctx, res):
                                "label order %s disagrees with "
                                "config.severity_order" % (labs,), note="G2",
                                sentence=str(labs)))
+
+        # ZERO DENOMINATOR IS A FINDING, NOT A PASS -- judged ONCE PER CHAIN,
+        # across all of its texts. The denominator line says in its own words
+        # that this state means BLIND, and the gate was printing it beside
+        # VERDICT PASS and exiting 0: renaming a calculator's four severity
+        # words, an ordinary copy edit, switched R6 off silently.
+        #
+        # PER CHAIN, not per text. My first version judged each JS text
+        # separately and fired on public/r-value-needed-calculator.html's JS[0]
+        # -- an unrelated inline script that naturally contains none of the
+        # chain's labels -- while JS[1] carried all of them. A page has several
+        # scripts and the chain need only live in one.
+        if texts and chain_seen["labels"] == 0:
+            raw.append(Hit(
+                "R6", "UNREGISTERED", cid, "SRC", cid,
+                "chain %s: %d surface text(s) were READ (%d conditions, %d "
+                "label assignments) and ZERO of its %d configured labels "
+                "appear in ANY of them. Either the labels were renamed or the "
+                "chain is misconfigured. A zero denominator is not a clean "
+                "chain, it is an unwatched one."
+                % (cid, len(texts), chain_seen["conds"],
+                   chain_seen["assigns"], len(labels)),
+                note="zero-denominator", sentence=cid))
+        elif texts and chain_seen["assigns"] == 0:
+            raw.append(Hit(
+                "R6", "UNPARSEABLE", cid, "SRC", cid,
+                "chain %s: %d configured label(s) appear in its surfaces but "
+                "ZERO label-emitting assignments were parsed from any of them"
+                % (cid, chain_seen["labels"]),
+                note="no-assignments", sentence=cid))
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [])
