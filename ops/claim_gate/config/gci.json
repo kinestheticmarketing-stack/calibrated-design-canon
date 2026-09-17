@@ -3,28 +3,48 @@
   "key": "gci",
   "repo": "greeleycoloradoinsulation.com",
   "domain": "https://greeleycoloradoinsulation.com",
-  "measured_at": { "date": "2026-09-17", "head": "d9ebab7" },
+  "measured_at": {
+    "date": "2026-09-17",
+    "head": "d9ebab7"
+  },
   "min_artifacts": 49,
   "expected_html": 38,
   "embed_artifacts": [],
   "embed_artifacts_note": "NULL RESULT — GCI has no embed frame.",
-  "key_files_excluded": ["public/d38d3ab74418efeba995b5fab6345f07.txt"],
-  "svg_readable": ["public/favicon.svg", "public/logo.svg", "public/og-image.svg"],
+  "key_files_excluded": [
+    "public/d38d3ab74418efeba995b5fab6345f07.txt"
+  ],
+  "svg_readable": [
+    "public/favicon.svg",
+    "public/logo.svg",
+    "public/og-image.svg"
+  ],
   "og_image_raster_only": false,
   "og_image_source": "_brand_build/og-image.mvg via _generate_brand_assets.py (OG_FOOTER)",
   "og_image_history": "e6cb44e changed OG_FOOTER from 'Atmos rebates explained' to 'Rebates explained'. og-image.png/svg are referenced by og:image and twitter:image on EVERY page including the three Xcel-gas towns, so this asset is a territorial claim surface.",
-  "gates_present": ["regen_all.sh", "_postbuild_check.py", "_check_links.py",
-                    "_intra_similarity_check.py", "_validators.py",
-                    "_similarity_check.py", "_artifact_grep.sh",
-                    "_svc_pending_import_check.py",
-                    "ops/similarity_canary.sh", "ops/functional_proof.sh",
-                    "ops/live_token_check.sh"],
-  "gates_absent": ["_out_guard.py"],
+  "gates_present": [
+    "regen_all.sh",
+    "_postbuild_check.py",
+    "_check_links.py",
+    "_intra_similarity_check.py",
+    "_validators.py",
+    "_similarity_check.py",
+    "_artifact_grep.sh",
+    "_svc_pending_import_check.py",
+    "ops/similarity_canary.sh",
+    "ops/functional_proof.sh",
+    "ops/live_token_check.sh"
+  ],
+  "gates_absent": [
+    "_out_guard.py"
+  ],
   "reviewed_iso": "2026-09-09",
   "static_page_reviewed_iso": "2026-08-05",
-  "atomic_answer_band": [54, 60],
+  "atomic_answer_band": [
+    54,
+    60
+  ],
   "atomic_answer_note": "sc.atomic_answer_html() enforces a hard 54-60 word band by RAISING.",
-
   "R2": {
     "market": "Greeley and the Weld County corridor",
     "gas_structure": "SPLIT THREE WAYS. There is no single gas utility for this service area.",
@@ -34,36 +54,95 @@
     "forbid_electric_reason": "Absolute rule: no page names a residential electric utility for any AREA_PAGES town. GCI bf240f8 (3) found MILLIKEN_GAS_XCEL rendering the verbatim quotation 'Xcel Energy provides gas and electricity for most of Milliken', which breaks it. Not a formality: the same source page names Poudre Valley REA for Mad Russian and Mill Iron, so 'most of' does not resolve the electric split.",
     "territory_note": "docs/board/ground-truth.md:5-29, landed 2026-09-08 in 5f9698b. It SUPERSEDES the position that stood until that day, which read '- **Gas utility: Atmos Energy.**' and framed the nine towns as 'unevenly confirmed' Atmos. That premise was formed once at genesis from a source naming Weld County and three towns, silently generalised to nine, and never tested against the utility's own territory filing. It survived TWO YEARS because every rebate pass verified the PROGRAM and none verified the TERRITORY.",
     "towns": {
-      "Greeley":   { "gas": "Atmos Energy", "gas_state": "CONFIRMED", "gas_qualifier": "",
-                     "electric": "UNRESOLVED", "page_slugs": ["insulation-greeley.html","index.html"],
-                     "corollary": "'Atmos is the gas utility in Greeley' is CONFIRMED but NOT EXCLUSIVE." },
-      "Evans":     { "gas": "Atmos Energy", "gas_state": "CONFIRMED", "gas_qualifier": "",
-                     "electric": "UNRESOLVED", "page_slugs": ["insulation-evans.html"] },
-      "Eaton":     { "gas": "Atmos Energy", "gas_state": "CONFIRMED", "gas_qualifier": "",
-                     "electric": "UNRESOLVED", "page_slugs": ["insulation-eaton.html"] },
-      "Windsor":   { "gas": "Atmos Energy", "gas_state": "HEDGED",
-                     "electric": "SPLIT BY ADDRESS", "page_slugs": ["insulation-windsor.html"] },
-      "LaSalle":   { "gas": "Atmos Energy", "gas_state": "HEDGED",
-                     "electric": "UNKNOWN", "page_slugs": ["insulation-lasalle.html"],
-                     "spelling_variants": ["LaSalle", "La Salle"] },
-      "Ault":      { "gas": "Atmos Energy", "gas_state": "HEDGED",
-                     "electric": "UNKNOWN", "page_slugs": ["insulation-ault.html"],
-                     "substring_trap": "grep -ci 'ault' gives 8; the locality appears once. Use -w and matching case." },
-      "Johnstown": { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "gas_qualifier": "",
-                     "gas_qualifier_rule": "NONE. Its source states Xcel for gas flatly. NEVER INVENT A QUALIFIER FOR JOHNSTOWN.",
-                     "source": "https://johnstownco.gov/510/Utility-Service-Providers — table row 'Natural Gas | Xcel Energy | 1-800-895-1999'. The 'most of' hedge on that page sits on the Electric Service row above it, not on gas.",
-                     "electric": "THREE-WAY SPLIT (Xcel / United Power / PVREA)",
-                     "page_slugs": ["insulation-johnstown.html"] },
-      "Milliken":  { "gas": "Xcel Energy", "gas_state": "CONFIRMED",
-                     "gas_qualifier": "most of Milliken",
-                     "source": "https://www.millikenco.gov/246/New-Residents",
-                     "electric": "SPLIT BY NAMED SUBDIVISION (PVREA for Mad Russian and Mill Iron)",
-                     "page_slugs": ["insulation-milliken.html"] },
-      "Severance": { "gas": "Xcel Energy", "gas_state": "CONFIRMED",
-                     "gas_qualifier": "most locations in Severance",
-                     "source": "https://www.townofseverance.org/265/Natural-Gas",
-                     "electric": "SPLIT BY ADDRESS",
-                     "page_slugs": ["insulation-severance.html"] }
+      "Greeley": {
+        "gas": "Atmos Energy",
+        "gas_state": "CONFIRMED",
+        "gas_qualifier": "",
+        "electric": "UNRESOLVED",
+        "page_slugs": [
+          "insulation-greeley.html",
+          "index.html"
+        ],
+        "corollary": "'Atmos is the gas utility in Greeley' is CONFIRMED but NOT EXCLUSIVE."
+      },
+      "Evans": {
+        "gas": "Atmos Energy",
+        "gas_state": "CONFIRMED",
+        "gas_qualifier": "",
+        "electric": "UNRESOLVED",
+        "page_slugs": [
+          "insulation-evans.html"
+        ]
+      },
+      "Eaton": {
+        "gas": "Atmos Energy",
+        "gas_state": "CONFIRMED",
+        "gas_qualifier": "",
+        "electric": "UNRESOLVED",
+        "page_slugs": [
+          "insulation-eaton.html"
+        ]
+      },
+      "Windsor": {
+        "gas": "Atmos Energy",
+        "gas_state": "HEDGED",
+        "electric": "SPLIT BY ADDRESS",
+        "page_slugs": [
+          "insulation-windsor.html"
+        ]
+      },
+      "LaSalle": {
+        "gas": "Atmos Energy",
+        "gas_state": "HEDGED",
+        "electric": "UNKNOWN",
+        "page_slugs": [
+          "insulation-lasalle.html"
+        ],
+        "spelling_variants": [
+          "LaSalle",
+          "La Salle"
+        ]
+      },
+      "Ault": {
+        "gas": "Atmos Energy",
+        "gas_state": "HEDGED",
+        "electric": "UNKNOWN",
+        "page_slugs": [
+          "insulation-ault.html"
+        ],
+        "substring_trap": "grep -ci 'ault' gives 8; the locality appears once. Use -w and matching case."
+      },
+      "Johnstown": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "gas_qualifier": "",
+        "gas_qualifier_rule": "NONE. Its source states Xcel for gas flatly. NEVER INVENT A QUALIFIER FOR JOHNSTOWN.",
+        "source": "https://johnstownco.gov/510/Utility-Service-Providers — table row 'Natural Gas | Xcel Energy | 1-800-895-1999'. The 'most of' hedge on that page sits on the Electric Service row above it, not on gas.",
+        "electric": "THREE-WAY SPLIT (Xcel / United Power / PVREA)",
+        "page_slugs": [
+          "insulation-johnstown.html"
+        ]
+      },
+      "Milliken": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "gas_qualifier": "most of Milliken",
+        "source": "https://www.millikenco.gov/246/New-Residents",
+        "electric": "SPLIT BY NAMED SUBDIVISION (PVREA for Mad Russian and Mill Iron)",
+        "page_slugs": [
+          "insulation-milliken.html"
+        ]
+      },
+      "Severance": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "gas_qualifier": "most locations in Severance",
+        "source": "https://www.townofseverance.org/265/Natural-Gas",
+        "electric": "SPLIT BY ADDRESS",
+        "page_slugs": [
+          "insulation-severance.html"
+        ]
+      }
     },
     "hedge_rule": "Do NOT promote Windsor/LaSalle/Ault to unconditional Atmos language. They ARE named in Atmos's current Colorado tariff, so Atmos SERVES them; the tariff does not establish EXCLUSIVITY. A tariff is authority for PRESENCE, never for EXCLUSIVITY. ATMOS_CONFIRMED_TOWNS stays at three towns.",
     "hedge_pairs": [],
@@ -78,98 +157,219 @@
     "tariff_identity": {
       "document": "Colo. P.U.C. No. 7 Gas, Third Revised Sheets 3 and 4",
       "advice_letter": "No. 647",
-      "issued": "2026-08-12", "effective": "2026-08-17",
+      "issued": "2026-08-12",
+      "effective": "2026-08-17",
       "sha256": "c9aed9b4ac73448f1c0223efe3ed9800e1e65bb85d3c1ef3e4897427b5c0bffc",
       "bytes": 1898937,
       "pages": 139,
       "pages_note": "139, confirmed four ways: pdfinfo 'Pages: 139'; 139 /Type /Page objects; 139 pdftotext -layout form-feeds; 139 plain form-feeds; and the linearization dictionary carries /N 139. It was recorded as 132 in four files and that was NEVER COUNTED.",
-      "weld_localities": ["Ault","Eaton","Evans","Fort Lupton*","Garden City","Gilcrest","Greeley","Hudson","Keenesburg","Kersey","La Salle","Lucerne*","Nunn","Platteville","Pierce","Prospect Valley*","Roggen*","Windsor"],
+      "weld_localities": [
+        "Ault",
+        "Eaton",
+        "Evans",
+        "Fort Lupton*",
+        "Garden City",
+        "Gilcrest",
+        "Greeley",
+        "Hudson",
+        "Keenesburg",
+        "Kersey",
+        "La Salle",
+        "Lucerne*",
+        "Nunn",
+        "Platteville",
+        "Pierce",
+        "Prospect Valley*",
+        "Roggen*",
+        "Windsor"
+      ],
       "weld_localities_count": 18,
       "weld_note": "EIGHTEEN, not six. The six previously recorded are the six OF THIS SITE'S NINE TOWNS that appear — a materially different statement. * = the tariff's own footnote 1, 'Unincorporated Communities'. The list is alphabetical WITH ONE LOCAL INVERSION: Platteville is printed before Pierce.",
       "extraction": "pdftotext -layout (-layout specifically, because the table is two-column)",
-      "extraction_traps": ["textutil -convert txt does NOT extract this PDF — output begins %PDF-1.6 — and reports all nine towns absent INCLUDING the six provably present",
-                           "strings fails identically (zero hits for Greeley)",
-                           "pypdf/PyPDF2/pdfminer/PyMuPDF reported failing; none installed here; recorded as reported, not verified"],
+      "extraction_traps": [
+        "textutil -convert txt does NOT extract this PDF — output begins %PDF-1.6 — and reports all nine towns absent INCLUDING the six provably present",
+        "strings fails identically (zero hits for Greeley)",
+        "pypdf/PyPDF2/pdfminer/PyMuPDF reported failing; none installed here; recorded as reported, not verified"
+      ],
       "null_result_reasoning": "Johnstown, Milliken and Severance appear ZERO times in both extraction modes. What makes that evidence rather than a failed search: each missing town falls inside a printed alphabetical gap whose neighbours on BOTH sides extracted cleanly, so the extractor was working exactly where the town would have been.",
       "the_one_command_control": "Search for a term you KNOW is present before trusting a term you believe is absent. Greeley IS in that tariff, so any pipeline that cannot find Greeley cannot establish that Johnstown is missing.",
-      "do_not_cite": ["Advice Letter No. 544"],
+      "do_not_cite": [
+        "Advice Letter No. 544"
+      ],
       "do_not_cite_reason": "It governs the superseded Second Revised Sheets. Cite No. 647 or cite nothing.",
       "grep_note": "Grep as 'No. 647', not 'Advice Letter No. 647' — the phrase wraps a line break in the state documents and the full-phrase grep returns a false 0."
     },
-    "known_disclosure_gaps": ["Atmos Energy is the natural gas utility in Greeley, Evans and Eaton",
-                              "Xcel Energy is the natural gas utility in Johnstown"],
+    "known_disclosure_gaps": [
+      "Atmos Energy is the natural gas utility in Greeley, Evans and Eaton",
+      "Xcel Energy is the natural gas utility in Johnstown"
+    ],
     "known_disclosure_gaps_reason": "Every sitewide gas-split sentence names six of nine towns, so a Windsor, LaSalle or Ault reader on their own town page sees a split that omits their town. This is a direct consequence of the presence-not-exclusivity ruling. The Director has been told and is NOT reversing it. Do not file it as a defect.",
-    "non_territorial_programs": ["Colorado Weatherization Assistance Program",
-                                 "Colorado Energy Office", "Energy Outreach Colorado",
-                                 "ENERGY STAR", "DRCOG"],
-    "territorial_constants": ["REBATE_ACKNOWLEDGMENT", "THANK_YOU_BODY",
-                              "ENTITY_DESCRIPTION", "GAS_UTILITY_SPLIT_FACT",
-                              "ATMOS_CONFIRMED_TOWNS", "XCEL_GAS_TOWNS"],
-    "sibling_artifacts_forbidden": ["Lakewood","Arvada","Aurora","Wheat Ridge",
-                                    "Centennial","Englewood","Littleton","Westminster",
-                                    "Thornton","Park Hill","Washington Park","Highland",
-                                    "Golden","Broomfield","Northglenn",
-                                    "Longmont","Erie","Lafayette","Louisville","Niwot",
-                                    "Longmont Power & Communications","Efficiency Works"],
+    "non_territorial_programs": [
+      "Colorado Weatherization Assistance Program",
+      "Colorado Energy Office",
+      "Energy Outreach Colorado",
+      "ENERGY STAR",
+      "DRCOG"
+    ],
+    "territorial_constants": [
+      "REBATE_ACKNOWLEDGMENT",
+      "THANK_YOU_BODY",
+      "ENTITY_DESCRIPTION",
+      "GAS_UTILITY_SPLIT_FACT",
+      "ATMOS_CONFIRMED_TOWNS",
+      "XCEL_GAS_TOWNS"
+    ],
+    "sibling_artifacts_forbidden": [
+      "Lakewood",
+      "Arvada",
+      "Aurora",
+      "Wheat Ridge",
+      "Centennial",
+      "Englewood",
+      "Littleton",
+      "Westminster",
+      "Thornton",
+      "Park Hill",
+      "Washington Park",
+      "Highland",
+      "Golden",
+      "Broomfield",
+      "Northglenn",
+      "Longmont",
+      "Erie",
+      "Lafayette",
+      "Louisville",
+      "Niwot",
+      "Longmont Power & Communications",
+      "Efficiency Works"
+    ],
     "sibling_artifacts_note": "NOT tested by R2 — that is _artifact_grep.sh's existing check, which GCI has.",
     "elevation_anchor": "4,108",
-    "allowlist": ["DRCOG"],
+    "allowlist": [
+      "DRCOG"
+    ],
     "allowlist_note": "Director-granted. GCI is the only property with one."
   },
-
   "R3": {
-    "allowed_figures": ["$70,000","$99,920"],
+    "allowed_figures": [
+      "$70,000",
+      "$99,920"
+    ],
     "allowed_reason": "STANDING EXCEPTION. Director ruling 2026-09-10 (the SECOND ruling), restored in 25cb16b after 2cecf33 stripped them. Colorado Weatherization Assistance Program income-eligibility limits: $70,000 for a single-person Weld County household, $99,920 for a household of four. They are eligibility thresholds for a FREE, income-qualified government program, not per-measure rebate amounts. Verified first-party TWICE, independently, against the Colorado Energy Office's WAP income-eligibility Google Sheet (CSV export, Weld row verbatim: Weld,\"$70,000\",\"$79,920\",\"$90,000\",\"$99,920\",\"$107,920\"). The chart prints NO effective date or fiscal year, so copy says 'checked September 10, 2026' and never 'FFY2026 figures'.",
-    "allowed_occurrences": { "$70,000": 10, "$99,920": 10 },
+    "allowed_occurrences": {
+      "$70,000": 10,
+      "$99,920": 10
+    },
     "allowed_occurrences_note": "MEASURED 2026-09-17: exactly 20 occurrences, and these are the ONLY $ figures anywhere under GCI public/. Was 206 before 2cecf33 ($1,550 x77, $575 x49, $1,325 x19, $1,075 x18, $1,150 x11, $70,000 x10, $99,920 x10, $663 x6, $125 x6).",
-    "known_figures": ["1550","1075","1325","1150","663","125","575","70000","99920"],
+    "known_figures": [
+      "1550",
+      "1075",
+      "1325",
+      "1150",
+      "663",
+      "125",
+      "575",
+      "70000",
+      "99920"
+    ],
     "bare_numeral_gate": "/usr/bin/grep -rnoE '\\b(1550|1075|1325|1150|663|125|575|70000|99920)\\b' public/ ... | grep -iE 'atmos|rebate|cap|rate|incentive|wap|weatheriz|pays'  -> 0. Installed in f0203ad because the $-anchored gate structurally cannot catch a bare-digit cap.",
-    "allowed_structure_percentages": ["75%","50%","30%","100% of project cost"],
-    "detector_machinery_deleted": ["ATMOS_REBATE_AMOUNTS","REBATE_VERIFICATION_NOTE","rebate_note_section_html()","WAP_INCOME_FIGURES","WAP_VERIFICATION_NOTE","wap_note_section_html()","CAP","RATE","money()"],
+    "allowed_structure_percentages": [
+      "75%",
+      "50%",
+      "30%",
+      "100% of project cost"
+    ],
+    "detector_machinery_deleted": [
+      "ATMOS_REBATE_AMOUNTS",
+      "REBATE_VERIFICATION_NOTE",
+      "rebate_note_section_html()",
+      "WAP_INCOME_FIGURES",
+      "WAP_VERIFICATION_NOTE",
+      "wap_note_section_html()",
+      "CAP",
+      "RATE",
+      "money()"
+    ],
     "detector_note": "These were DETECTORS, not sources — tuples scanned against BUILT HTML (including inlined calculator JS) to inject a verification note. With the amounts gone they matched nothing and the note vanished from every page. Deleted rather than left inert (Rule 2). DO NOT RESURRECT."
   },
-
   "R4": {
-    "programs": ["Atmos Energy", "Xcel Energy",
-                 "Colorado Weatherization Assistance Program",
-                 "Energy Outreach Colorado CARE", "Energy Outreach Colorado",
-                 "Whole Home Efficiency Bonus", "DRCOG", "ENERGY STAR",
-                 "Colorado Energy Office"],
-    "noun_use_constants": ["REBATE_ACKNOWLEDGMENT"],
-          "attributed_exception": { "allowed": true,
-            "publishers": ["Colorado Energy Office", "Energy Outreach Colorado", "ENERGY STAR"],
-            "requires_publisher_named": true,
-            "requires_cited_source_key": true,
-            "basis": "Same reason as DCI: the class was unassignable on this property because only LGM named a publisher." },
-    "noun_use_note": "REBATE_ACKNOWLEDGMENT renders on 35 pages and is locked verbatim. It read 'the primary insulation rebate stack in Greeley, Evans and Eaton'; f0203ad KEPT it with the reasoning recorded in-source and FLAGGED IT TO THE DIRECTOR. The Director then ruled: 38b80e0 changed 'rebate stack' to 'rebate programs'."
+    "programs": [
+      "Atmos Energy",
+      "Xcel Energy",
+      "Colorado Weatherization Assistance Program",
+      "Energy Outreach Colorado CARE",
+      "Energy Outreach Colorado",
+      "Whole Home Efficiency Bonus",
+      "DRCOG",
+      "ENERGY STAR",
+      "Colorado Energy Office",
+      "Xcel",
+      "Atmos"
+    ],
+    "noun_use_constants": [
+      "REBATE_ACKNOWLEDGMENT"
+    ],
+    "attributed_exception": {
+      "allowed": true,
+      "publishers": [
+        "Colorado Energy Office",
+        "Energy Outreach Colorado",
+        "ENERGY STAR"
+      ],
+      "requires_publisher_named": true,
+      "requires_cited_source_key": true,
+      "basis": "Same reason as DCI: the class was unassignable on this property because only LGM named a publisher."
+    },
+    "noun_use_note": "REBATE_ACKNOWLEDGMENT renders on 35 pages and is locked verbatim. It read 'the primary insulation rebate stack in Greeley, Evans and Eaton'; f0203ad KEPT it with the reasoning recorded in-source and FLAGGED IT TO THE DIRECTOR. The Director then ruled: 38b80e0 changed 'rebate stack' to 'rebate programs'.",
+    "programs_note": "Bare 'Xcel' added 2026-09-17. DCI's llms.txt line 'Xcel rebate-stack eligibility' -- 1 occurrence, unchanged across every tree, survivor of five stacking sweeps and ten adversarial reads -- was still missed because 'Xcel' was not in this list. Safe to add because names_in() is SPAN-CONSUMING: one mention of 'Xcel Energy' yields ONE canonical name, not two.",
+    "program_aliases": {
+      "Xcel": "Xcel Energy",
+      "Atmos": "Atmos Energy",
+      "LPC": "Longmont Power & Communications"
+    },
+    "program_aliases_reason": "Bare 'Xcel' and 'Xcel Energy' are ONE program. Without this map a single sentence reading 'According to Xcel Energy, its ... Xcel ...' resolved to TWO distinct program names and satisfied R4's two-distinct-programs test by itself. Span-consuming matching stops one MENTION counting twice; only an alias map stops two mentions of the same utility counting as two programs."
   },
-
   "R5": {
     "known_uncited": [],
     "note": "MEASURED 2026-09-17: '15% reduction' returns 0 occurrences in GCI public/."
   },
-
   "R6": {
     "label_chains": [],
     "note": "NULL RESULT — no severity-label chain remains. e6cb44e made the four calculators' verdicts utility-neutral, naming no payer and carrying no amount, and deleted CAP/RATE/money() once the amounts left. A new tool with a severity label needs a config entry."
   },
-
   "R8": {
     "reviewed_iso": "2026-09-09",
     "static_page_constant": "STATIC_PAGE_REVIEWED_ISO",
     "static_page_value": "2026-08-05",
-    "pinned_pages": { "about.html": { "reason": "visible text did not change — JSON-LD only — so 2026-08-07 remains its true content date and its footer stays pinned at 2026-08-05; neither value is false and the 2-day divergence is pre-existing",
-                                      "expected_sitemap": "2026-08-07", "expected_footer": "2026-08-05" },
-                      "404.html": { "reason": "schema-only change; pinned" } },
-    "own_effective_date_pages": ["privacy.html"],
-    "own_effective_date_values": { "privacy.html": "2026-08-30" },
-    "self_dated_sources": ["EDU_LASTMOD_BY_FILENAME","MODIFIED_XCEL_GAS_CORRECTION"],
+    "pinned_pages": {
+      "about.html": {
+        "reason": "visible text did not change — JSON-LD only — so 2026-08-07 remains its true content date and its footer stays pinned at 2026-08-05; neither value is false and the 2-day divergence is pre-existing",
+        "expected_sitemap": "2026-08-07",
+        "expected_footer": "2026-08-05"
+      },
+      "404.html": {
+        "reason": "schema-only change; pinned"
+      }
+    },
+    "own_effective_date_pages": [
+      "privacy.html"
+    ],
+    "own_effective_date_values": {
+      "privacy.html": "2026-08-30"
+    },
+    "self_dated_sources": [
+      "EDU_LASTMOD_BY_FILENAME",
+      "MODIFIED_XCEL_GAS_CORRECTION"
+    ],
     "modified_xcel_gas_correction": "2026-09-09",
     "bump_rule": "MEASURE BEFORE BUMPING. Batch-stamping is forbidden. bf240f8 measured 35 of 38 pages changed visibly, 2 changed only in JSON-LD (pinned), 1 byte-identical. 348baf9 then reversed its own round-2 argument on evidence: lastmod equals the page's REAL CONTENT-REVIEW date, not its article-body-edit date. Result: 35 of 37 sitemap URLs at 2026-09-09.",
     "d007_note": "_generate_sitemap.py's D-007 hardcode is a PORT-PARITY justification, not a truth justification. Where parity and accuracy conflict, PARITY LOSES."
   },
-
-  "R10": { "page_titles": {} },
-
-  "R11": { "blocking": false, "tracked_terms": [] }
+  "R10": {
+    "page_titles": {}
+  },
+  "R11": {
+    "blocking": false,
+    "tracked_terms": []
+  }
 }

@@ -3,22 +3,45 @@
   "key": "dci",
   "repo": "denvercoloradoinsulation.com",
   "domain": "https://denvercoloradoinsulation.com",
-  "measured_at": { "date": "2026-09-17", "head": "f9e7551" },
+  "measured_at": {
+    "date": "2026-09-17",
+    "head": "f9e7551"
+  },
   "min_artifacts": 85,
   "expected_html": 75,
-  "embed_artifacts": ["public/r-value-needed-calculator-embed.html",
-                      "public/r-value-needed-calculator-embed-code.html"],
-  "key_files_excluded": ["public/1b79c33b73e0dea0470080c5c9854d20.txt"],
-  "svg_readable": ["public/favicon.svg", "public/logo.svg"],
+  "embed_artifacts": [
+    "public/r-value-needed-calculator-embed.html",
+    "public/r-value-needed-calculator-embed-code.html"
+  ],
+  "key_files_excluded": [
+    "public/1b79c33b73e0dea0470080c5c9854d20.txt"
+  ],
+  "svg_readable": [
+    "public/favicon.svg",
+    "public/logo.svg"
+  ],
   "og_image_raster_only": true,
-  "gates_present": ["regen_all.sh", "_postbuild_check.py", "_check_links.py",
-                    "_intra_similarity_check.py", "_validators.py",
-                    "ops/similarity_canary.sh", "ops/functional_proof.sh",
-                    "ops/live_token_check.sh", "ops/hooks/commit-msg"],
-  "gates_absent": ["_artifact_grep.sh", "_similarity_check.py", "_out_guard.py"],
+  "gates_present": [
+    "regen_all.sh",
+    "_postbuild_check.py",
+    "_check_links.py",
+    "_intra_similarity_check.py",
+    "_validators.py",
+    "ops/similarity_canary.sh",
+    "ops/functional_proof.sh",
+    "ops/live_token_check.sh",
+    "ops/hooks/commit-msg"
+  ],
+  "gates_absent": [
+    "_artifact_grep.sh",
+    "_similarity_check.py",
+    "_out_guard.py"
+  ],
   "reviewed_iso": "2026-08-24",
-  "atomic_answer_band": [40, 60],
-
+  "atomic_answer_band": [
+    40,
+    60
+  ],
   "R2": {
     "market": "Denver metro",
     "gas_utility": "Xcel Energy",
@@ -27,145 +50,421 @@
     "known_present_control": "Denver",
     "territory_note": "docs/board/ground-truth.md:5-7 verbatim: 'Xcel Energy is both the gas and electric utility for this market. Denver metro. Unlike Longmont and Greeley, there is no second utility and no service-area hedging required.'",
     "towns": {
-      "Denver":          { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "gas_qualifier": "", "electric": "Xcel Energy", "page_slugs": ["index.html"] },
-      "Lakewood":        { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-lakewood.html"] },
-      "Arvada":          { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-arvada.html"] },
-      "Aurora":          { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-aurora.html"] },
-      "Wheat Ridge":     { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-wheat-ridge.html"] },
-      "Centennial":      { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-centennial.html"] },
-      "Englewood":       { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-englewood.html"] },
-      "Littleton":       { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-littleton.html"] },
-      "Westminster":     { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-westminster.html"] },
-      "Thornton":        { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-thornton.html"] },
-      "Park Hill":       { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-park-hill.html"] },
-      "Washington Park": { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-washington-park.html"] },
-      "Highland":        { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-highland.html"] },
-      "Golden":          { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-golden.html"],
-                           "municipal_program": "City of Golden rebate match",
-                           "note": "Golden runs its own municipal match program with its own published caps ($1,000/$2,000, removed 2026-09-10). It is NOT Xcel and must not be attributed to Xcel." },
-      "Broomfield":      { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-broomfield.html"] },
-      "Northglenn":      { "gas": "Xcel Energy", "gas_state": "CONFIRMED", "electric": "Xcel Energy", "page_slugs": ["insulation-northglenn.html"] }
+      "Denver": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "gas_qualifier": "",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "index.html"
+        ]
+      },
+      "Lakewood": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-lakewood.html"
+        ]
+      },
+      "Arvada": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-arvada.html"
+        ]
+      },
+      "Aurora": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-aurora.html"
+        ]
+      },
+      "Wheat Ridge": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-wheat-ridge.html"
+        ]
+      },
+      "Centennial": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-centennial.html"
+        ]
+      },
+      "Englewood": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-englewood.html"
+        ]
+      },
+      "Littleton": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-littleton.html"
+        ]
+      },
+      "Westminster": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-westminster.html"
+        ]
+      },
+      "Thornton": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-thornton.html"
+        ]
+      },
+      "Park Hill": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-park-hill.html"
+        ]
+      },
+      "Washington Park": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-washington-park.html"
+        ]
+      },
+      "Highland": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-highland.html"
+        ]
+      },
+      "Golden": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-golden.html"
+        ],
+        "municipal_program": "City of Golden rebate match",
+        "note": "Golden runs its own municipal match program with its own published caps ($1,000/$2,000, removed 2026-09-10). It is NOT Xcel and must not be attributed to Xcel."
+      },
+      "Broomfield": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-broomfield.html"
+        ]
+      },
+      "Northglenn": {
+        "gas": "Xcel Energy",
+        "gas_state": "CONFIRMED",
+        "electric": "Xcel Energy",
+        "page_slugs": [
+          "insulation-northglenn.html"
+        ]
+      }
     },
-    "non_territorial_programs": ["Colorado Energy Office", "ENERGY STAR",
-                                 "HEAR", "City of Golden", "DRCOG",
-                                 "Power Ahead Colorado",
-                                 "Xcel's income-qualified programs"],
-    "forbidden_program_names": ["Xcel IQ Program", "IQ Program", "Xcel IQ"],
+    "non_territorial_programs": [
+      "Colorado Energy Office",
+      "ENERGY STAR",
+      "HEAR",
+      "City of Golden",
+      "DRCOG",
+      "Power Ahead Colorado",
+      "Xcel's income-qualified programs"
+    ],
+    "forbidden_program_names": [
+      "Xcel IQ Program",
+      "IQ Program",
+      "Xcel IQ"
+    ],
     "forbidden_program_reason": "3da02df/1794f98/cb97983: 'IQ Program' as a customer-facing umbrella name returns 0 on Xcel's own Colorado DSM filing page (which does carry 23 'IQ' tokens, all in SPECIFIC program titles). Do not reinstate without a first-party Xcel source. Plural is the accurate form.",
-    "territorial_constants": ["REBATE_ACKNOWLEDGMENT", "THANK_YOU_BODY"],
-    "sibling_artifacts_forbidden": ["Greeley","Evans","Windsor","Eaton","Johnstown",
-                                    "Milliken","Severance","LaSalle","Ault",
-                                    "Longmont","Erie","Lafayette","Louisville","Niwot",
-                                    "Atmos","Efficiency Works",
-                                    "Longmont Power & Communications"],
+    "territorial_constants": [
+      "REBATE_ACKNOWLEDGMENT",
+      "THANK_YOU_BODY"
+    ],
+    "sibling_artifacts_forbidden": [
+      "Greeley",
+      "Evans",
+      "Windsor",
+      "Eaton",
+      "Johnstown",
+      "Milliken",
+      "Severance",
+      "LaSalle",
+      "Ault",
+      "Longmont",
+      "Erie",
+      "Lafayette",
+      "Louisville",
+      "Niwot",
+      "Atmos",
+      "Efficiency Works",
+      "Longmont Power & Communications"
+    ],
     "sibling_artifacts_note": "NOT tested by R2. This list is _artifact_grep.sh's check, and _artifact_grep.sh DOES NOT EXIST on DCI (a null result recorded in lane rows xcel-25-12-215-figures-dci and dci-d3-tier-label-fix). Recorded here so the gap is visible as a decision.",
     "elevation_anchor": "5,280"
   },
-
   "R3": {
     "allowed_figures": [],
     "note": "MEASURED 2026-09-17: /usr/bin/grep -rhoE '\\$[0-9][0-9,.]*' over public/ returns ZERO occurrences. DCI is the only property with no surviving dollar figure of any kind. Was 198 before 5703f8c ($600 x173, $0 x12, $2,000 x6, $1,000 x6, $1,500 x1).",
-    "known_figures": ["600","500","400","350","200","2000","1000","1500","1250"],
-    "allowed_structure_percentages": ["75%","50% of project cost",
-                                      "capped at 100% of project cost",
-                                      "30% of project cost"]
+    "known_figures": [
+      "600",
+      "500",
+      "400",
+      "350",
+      "200",
+      "2000",
+      "1000",
+      "1500",
+      "1250"
+    ],
+    "allowed_structure_percentages": [
+      "75%",
+      "50% of project cost",
+      "capped at 100% of project cost",
+      "30% of project cost"
+    ]
   },
-
   "R4": {
-    "programs": ["Xcel Whole Home Efficiency Bonus", "Whole Home Efficiency Bonus",
-                 "Combo Bonus", "Xcel's income-qualified programs",
-                 "HEAR", "Power Ahead Colorado", "City of Golden rebate match",
-                 "City of Golden", "federal 25C", "Section 25C", "DRCOG",
-                 "Xcel Energy", "ENERGY STAR"],
-    "noun_use_constants": ["REBATE_ACKNOWLEDGMENT"],
-          "attributed_exception": { "allowed": true,
-            "publishers": ["ENERGY STAR", "Colorado Energy Office", "Building Science Corporation"],
-            "requires_publisher_named": true,
-            "requires_cited_source_key": true,
-            "basis": "A third party's own published combination, ATTRIBUTED, is licensed; authoring a combined total is not. attributed_exception.publisher was set only on LGM, so ATTRIBUTED-AND-SOURCED could not be assigned on DCI at all and every attributed description read as an unattributed assertion." },
-    "director_desk": "whole-home-efficiency-bonus-stacking-denver.html was KEPT and attributed on the narrow reading. A stricter reading deletes the page. Deleting a ranking page is the Director's call and is OPEN."
+    "programs": [
+      "Xcel Whole Home Efficiency Bonus",
+      "Whole Home Efficiency Bonus",
+      "Combo Bonus",
+      "Xcel's income-qualified programs",
+      "HEAR",
+      "Power Ahead Colorado",
+      "City of Golden rebate match",
+      "City of Golden",
+      "federal 25C",
+      "Section 25C",
+      "DRCOG",
+      "Xcel Energy",
+      "ENERGY STAR",
+      "Xcel"
+    ],
+    "noun_use_constants": [
+      "REBATE_ACKNOWLEDGMENT"
+    ],
+    "attributed_exception": {
+      "allowed": true,
+      "publishers": [
+        "ENERGY STAR",
+        "Colorado Energy Office",
+        "Building Science Corporation"
+      ],
+      "requires_publisher_named": true,
+      "requires_cited_source_key": true,
+      "basis": "A third party's own published combination, ATTRIBUTED, is licensed; authoring a combined total is not. attributed_exception.publisher was set only on LGM, so ATTRIBUTED-AND-SOURCED could not be assigned on DCI at all and every attributed description read as an unattributed assertion."
+    },
+    "director_desk": "whole-home-efficiency-bonus-stacking-denver.html was KEPT and attributed on the narrow reading. A stricter reading deletes the page. Deleting a ranking page is the Director's call and is OPEN.",
+    "programs_note": "Bare 'Xcel' added 2026-09-17. DCI's llms.txt line 'Xcel rebate-stack eligibility' -- 1 occurrence, unchanged across every tree, survivor of five stacking sweeps and ten adversarial reads -- was still missed because 'Xcel' was not in this list. Safe to add because names_in() is SPAN-CONSUMING: one mention of 'Xcel Energy' yields ONE canonical name, not two.",
+    "program_aliases": {
+      "Xcel": "Xcel Energy",
+      "Atmos": "Atmos Energy",
+      "LPC": "Longmont Power & Communications"
+    },
+    "program_aliases_reason": "Bare 'Xcel' and 'Xcel Energy' are ONE program. Without this map a single sentence reading 'According to Xcel Energy, its ... Xcel ...' resolved to TWO distinct program names and satisfied R4's two-distinct-programs test by itself. Span-consuming matching stops one MENTION counting twice; only an alias map stops two mentions of the same utility counting as two programs."
   },
-
   "R5": {
     "known_uncited": [
-      { "text": "15% reduction in heating and cooling costs",
-        "files": ["public/r-value-needed-calculator.html",
-                  "public/do-i-need-new-insulation-quiz.html"],
+      {
+        "text": "15% reduction in heating and cooling costs",
+        "files": [
+          "public/r-value-needed-calculator.html",
+          "public/do-i-need-new-insulation-quiz.html"
+        ],
         "generator": "_generate_calculator_pages.py:453,1102",
         "occurrences": 2,
         "status": "OPEN — flagged to the Director 2026-09-11 in lane dci-d3-tier-label-fix",
-        "audience": "grew 33 -> 54 input combinations after 37c7b29" }
+        "audience": "grew 33 -> 54 input combinations after 37c7b29"
+      }
     ]
   },
-
   "R6": {
     "label_chains": [
-      { "id": "dci-rvalue-tier",
+      {
+        "id": "dci-rvalue-tier",
         "generator": "_generate_calculator_pages.py",
         "js_block": "RVALUE_CORE_JS",
         "printed_var": "pctShort",
-        "labels": ["You're already at or above code target.",
-                   "Significantly under code",
-                   "Moderately under code",
-                   "Close to code"],
-        "severity_order": ["Close to code", "Moderately under code",
-                           "Significantly under code"],
+        "labels": [
+          "You're already at or above code target.",
+          "Significantly under code",
+          "Moderately under code",
+          "Close to code"
+        ],
+        "severity_order": [
+          "Close to code",
+          "Moderately under code",
+          "Significantly under code"
+        ],
         "at_target_label": "You're already at or above code target.",
-        "boundary_inclusivity": { "50": ">=", "20": ">=" },
-        "targets": { "attic": 60, "wall-existing": 13, "wall-new": 20,
-                     "crawl-vented": 30, "crawl-encap": 15, "floor": 30,
-                     "basement": 15 },
-        "surfaces": ["public/r-value-needed-calculator.html",
-                     "public/r-value-needed-calculator-embed.html"],
-        "r6b_inputs": { "area": 7, "era": 4, "current": 5 },
+        "boundary_inclusivity": {
+          "50": ">=",
+          "20": ">="
+        },
+        "targets": {
+          "attic": 60,
+          "wall-existing": 13,
+          "wall-new": 20,
+          "crawl-vented": 30,
+          "crawl-encap": 15,
+          "floor": 30,
+          "basement": 15
+        },
+        "surfaces": [
+          "public/r-value-needed-calculator.html",
+          "public/r-value-needed-calculator-embed.html"
+        ],
+        "r6b_inputs": {
+          "area": 7,
+          "era": 4,
+          "current": 5
+        },
         "r6b_expected_combinations": 140,
-        "r6b_expected_histogram": [45, 54, 31, 10] }
+        "r6b_expected_histogram": [
+          45,
+          54,
+          31,
+          10
+        ]
+      }
     ]
   },
-
   "R8": {
     "reviewed_iso": "2026-08-24",
-    "known_holds": [ { "id": "DCI-D-003", "scope": "all pages",
-                       "note": "No per-page date machinery. Auditor HOLD governs. Debt measured at 70 of 72 pages; sitemap shows 70 x 2026-08-24 while content was corrected through 2026-09-11.",
-                       "report_as": "KNOWN-OPEN" } ],
-    "own_effective_date_pages": ["privacy.html"],
-    "anomalies": [ { "page": "unidentified", "date": "2026-05-05",
-                     "note": "one page publishes 2026-05-05 in both footer and sitemap; investigate" } ]
+    "known_holds": [
+      {
+        "id": "DCI-D-003",
+        "scope": "all pages",
+        "note": "No per-page date machinery. Auditor HOLD governs. Debt measured at 70 of 72 pages; sitemap shows 70 x 2026-08-24 while content was corrected through 2026-09-11.",
+        "report_as": "KNOWN-OPEN"
+      }
+    ],
+    "own_effective_date_pages": [
+      "privacy.html"
+    ],
+    "anomalies": [
+      {
+        "page": "unidentified",
+        "date": "2026-05-05",
+        "note": "one page publishes 2026-05-05 in both footer and sitemap; investigate"
+      }
+    ]
   },
-
   "R9": {
-    "tools": [ { "page": "public/r-value-needed-calculator.html",
-                 "visible": "#calcOutput",
-                 "hidden": ["lf-calc-inputs", "lf-calc-output"] } ]
+    "tools": [
+      {
+        "page": "public/r-value-needed-calculator.html",
+        "visible": "#calcOutput",
+        "hidden": [
+          "lf-calc-inputs",
+          "lf-calc-output"
+        ]
+      }
+    ]
   },
-
   "R10": {
-    "page_titles": { "standard rebate guide": "public/xcel-insulation-rebate-guide-denver.html",
-                     "cost calculator": "public/attic-insulation-cost-calculator.html" }
+    "page_titles": {
+      "standard rebate guide": "public/xcel-insulation-rebate-guide-denver.html",
+      "cost calculator": "public/attic-insulation-cost-calculator.html"
+    }
   },
-
   "R11": {
     "blocking": false,
     "tracked_terms": [
-      { "id": "combo_bonus_600", "label": "$600 Combo Bonus",
-        "patterns": ["$600 Insulation + Air Sealing Combo Bonus",
-                     "Combo Bonus"],
-        "expected": { "asserting": 72, "attributed": 0, "unattributed": 72, "both": 0 } },
-      { "id": "participating_contractor", "label": "participating-contractor rule",
-        "patterns": ["participating contractor", "participating Whole Home Efficiency contractor",
-                     "participating contractors"],
-        "expected": { "asserting": 72, "attributed": 23, "unattributed": 72, "both": 23 } },
-      { "id": "whe_25pct", "label": "WHE 25% bonus",
-        "patterns": ["25% bonus on all standard rebates", "25% bonus on the standard rebates",
-                     "adds 25%"],
-        "expected": { "asserting": 42, "attributed": 1, "unattributed": 42, "both": 1 } },
-      { "id": "cfm50_20pct", "label": "CFM 50 20% reduction",
-        "patterns": ["20% reduction in CFM 50", "20% reduction in CFM50",
-                     "20% in CFM50"],
-        "expected": { "asserting": 36, "attributed": 10, "unattributed": 34, "both": 8 } },
-      { "id": "by_check_payment", "label": "by-check payment method",
-        "patterns": ["paid by check", "by check"],
-        "expected": { "asserting": 46, "attributed": 1, "unattributed": 46, "both": 1 } }
+      {
+        "id": "combo_bonus_600",
+        "label": "$600 Combo Bonus",
+        "patterns": [
+          "$600 Insulation + Air Sealing Combo Bonus",
+          "Combo Bonus"
+        ],
+        "expected": {
+          "asserting": 72,
+          "attributed": 0,
+          "unattributed": 72,
+          "both": 0
+        }
+      },
+      {
+        "id": "participating_contractor",
+        "label": "participating-contractor rule",
+        "patterns": [
+          "participating contractor",
+          "participating Whole Home Efficiency contractor",
+          "participating contractors"
+        ],
+        "expected": {
+          "asserting": 72,
+          "attributed": 23,
+          "unattributed": 72,
+          "both": 23
+        }
+      },
+      {
+        "id": "whe_25pct",
+        "label": "WHE 25% bonus",
+        "patterns": [
+          "25% bonus on all standard rebates",
+          "25% bonus on the standard rebates",
+          "adds 25%"
+        ],
+        "expected": {
+          "asserting": 42,
+          "attributed": 1,
+          "unattributed": 42,
+          "both": 1
+        }
+      },
+      {
+        "id": "cfm50_20pct",
+        "label": "CFM 50 20% reduction",
+        "patterns": [
+          "20% reduction in CFM 50",
+          "20% reduction in CFM50",
+          "20% in CFM50"
+        ],
+        "expected": {
+          "asserting": 36,
+          "attributed": 10,
+          "unattributed": 34,
+          "both": 8
+        }
+      },
+      {
+        "id": "by_check_payment",
+        "label": "by-check payment method",
+        "patterns": [
+          "paid by check",
+          "by check"
+        ],
+        "expected": {
+          "asserting": 46,
+          "attributed": 1,
+          "unattributed": 46,
+          "both": 1
+        }
+      }
     ],
     "forbid_subtraction": true
   }
