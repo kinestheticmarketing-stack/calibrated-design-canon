@@ -1729,13 +1729,43 @@ def rule_R4(ctx, res):
 
     raw = []
     for art in ctx.rule_artifacts("R4"):
+        prev = []
         for skey, loc, sent in ctx.pool(art):
             tk = which_any(sent, toks, word=False)
             if not tk:
+                prev = (prev + [(skey, ctx.programs_in(sent))])[-2:]
                 continue
             named = ctx.programs_in(sent)
-            if len(set(named)) < 2:
-                cls = "NEUTRAL"
+            # ANAPHORA. "The Whole Home Efficiency Bonus is worth having. It
+            # layers on top of the standard rebate." names one program in the
+            # first sentence and makes the claim in the second. Program names
+            # from the previous two sentences OF THE SAME SURFACE carry
+            # forward, marked so the enumeration says where they came from.
+            carried = []
+            for pk, pn in prev:
+                if pk == skey:
+                    carried += pn
+            prev = (prev + [(skey, named)])[-2:]
+            allnamed = sorted(set(named) | set(carried))
+            if len(set(allnamed)) < 2:
+                # SINGLE-PROGRAM STACKING CLASS. R4's two-distinct-programs
+                # requirement removed the LGM knob-and-tube denial, the GCI
+                # FAQPage denial, the DCI llms.txt claim and the 70-page DCI
+                # boilerplate. "Xcel rebate-stack eligibility" names ONE
+                # program and still asserts combinability. One program plus a
+                # combination predicate within 60 chars of it is the claim.
+                one = allnamed[0] if allnamed else None
+                near = False
+                if one and has_any(sent, preds, word=False):
+                    for pos in occ(sent, one, ci=True):
+                        if has_any(win(sent, pos, 60), preds, word=False):
+                            near = True
+                            break
+                if near:
+                    cls = ("DENIES-1P" if has_any(sent, denials, word=False)
+                           else "ASSERTS-1P")
+                else:
+                    cls = "NEUTRAL"
             elif not has_any(sent, preds, word=False):
                 cls = "NEUTRAL"
             elif has_any(sent, denials, word=False):
@@ -1752,8 +1782,12 @@ def rule_R4(ctx, res):
             if cls in ("ASSERTS", "DENIES") and pub and art.cite_keys:
                 cls = "ATTRIBUTED-AND-SOURCED"
             raw.append(Hit("R4", cls, art.rel, skey, str(loc),
-                           "%s | programs=%s | %s"
-                           % (",".join(tk), ",".join(named) or "-", sent),
+                           "%s | programs=%s%s | %s"
+                           % (",".join(tk), ",".join(allnamed) or "-",
+                              (" (carried from the previous sentence: %s)"
+                               % ",".join(sorted(set(carried) - set(named))))
+                              if set(carried) - set(named) else "",
+                              sent),
                            note=cls, sentence=sent))
 
     def f_srcdup(h):
@@ -1797,12 +1831,15 @@ def rule_R4(ctx, res):
     ])
     res.levels, res.level_detail = level_counts(
         ctx, ["stack", "on top of", "layer", "combin"], word=False)
-    res.notes.append("ASSERTS %d  ·  DENIES %d  ·  both FAIL: silence is the "
-                     "compliant state and affirmative denial is equally a "
-                     "defect" % (len([h for h in res.adjudicated
-                                      if h.sub == "ASSERTS"]),
-                                 len([h for h in res.adjudicated
-                                      if h.sub == "DENIES"])))
+    res.notes.append("ASSERTS %d  ·  DENIES %d  ·  ASSERTS-1P %d  ·  "
+                     "DENIES-1P %d  ·  all four FAIL: silence is the compliant "
+                     "state and affirmative denial is equally a defect"
+                     % (len([h for h in res.adjudicated if h.sub == "ASSERTS"]),
+                        len([h for h in res.adjudicated if h.sub == "DENIES"]),
+                        len([h for h in res.adjudicated
+                             if h.sub == "ASSERTS-1P"]),
+                        len([h for h in res.adjudicated
+                             if h.sub == "DENIES-1P"])))
     return "stacking tokens resolved to sentences", \
            "sentences that assert or deny that programs combine"
 

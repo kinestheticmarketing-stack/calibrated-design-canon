@@ -659,6 +659,38 @@ def parse_artifact(rel, path, embed_paths=(), cited_stat_class="cited-stat"):
 # SRC -- generator-source normalization (spec 3, SRC)
 # ---------------------------------------------------------------------------
 
+def _docstring_lines(source_text):
+    """Line numbers of every module/class/function DOCSTRING.
+
+    Docstrings are developer documentation, not rendered copy, and they are the
+    densest place in these generators for prose ABOUT a rule -- "Efficiency
+    Works is mentioned with its LPC-electric condition attached, never as a
+    combined total" is a docstring describing the standing ruling, and reading
+    it as a page claim made R4 report the repo's own rule documentation as a
+    stacking denial."""
+    import ast as _ast
+    out = set()
+    try:
+        tree = _ast.parse(source_text)
+    except (SyntaxError, ValueError):
+        return out
+    for node in _ast.walk(tree):
+        if not isinstance(node, (_ast.Module, _ast.ClassDef,
+                                 _ast.FunctionDef, _ast.AsyncFunctionDef)):
+            continue
+        body = getattr(node, "body", None) or []
+        if not body:
+            continue
+        first = body[0]
+        if isinstance(first, _ast.Expr) and \
+                isinstance(first.value, _ast.Constant) and \
+                isinstance(first.value.value, str):
+            for ln in range(first.lineno,
+                            (first.end_lineno or first.lineno) + 1):
+                out.add(ln)
+    return out
+
+
 def src_string_runs(source_text):
     """Walk maximal runs of ADJACENT STRING tokens with `tokenize`, decode and
     join each run into its real text.
@@ -671,6 +703,7 @@ def src_string_runs(source_text):
     Hence tokenize, never regex.
     """
     runs = []
+    skip = _docstring_lines(source_text)
     try:
         toks = list(tokenize.generate_tokens(io.StringIO(source_text).readline))
     except (tokenize.TokenError, IndentationError, SyntaxError):
@@ -679,6 +712,12 @@ def src_string_runs(source_text):
     start = None
     for tok in toks:
         if tok.type == tokenize.STRING:
+            if tok.start[0] in skip:
+                if cur:
+                    runs.append((start, "".join(cur)))
+                    cur = []
+                    start = None
+                continue
             if not cur:
                 start = tok.start[0]
             try:
