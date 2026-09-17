@@ -277,9 +277,18 @@ _DISPLAY_NONE = re.compile(
     r"[^{}]*\}",
     re.IGNORECASE,
 )
-# A JS string literal, single or double quoted, escape-aware.
+# A JS string literal: single-quoted, double-quoted, or a BACKTICK TEMPLATE
+# LITERAL. Escape-aware. The template-literal branch is the fix for the single
+# highest-value blindness the adversarial read found: with no backtick branch a
+# claim written `like this` reached NO rule, which defeated R1, R2, R4, R5, R7
+# and R9 in one move, while the identical claim in a single-quoted literal was
+# caught. Template literals may span newlines, so that branch does not exclude
+# \n the way the quote branches do.
 _JS_STRING = re.compile(
-    r"'(?:[^'\\\n]|\\.)*'" r'|"(?:[^"\\\n]|\\.)*"'
+    r"'(?:[^'\\\n]|\\.)*'"
+    r'|"(?:[^"\\\n]|\\.)*"'
+    r"|`(?:[^`\\]|\\.)*`",
+    re.DOTALL,
 )
 _JS_COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 
