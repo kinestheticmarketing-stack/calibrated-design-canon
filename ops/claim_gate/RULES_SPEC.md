@@ -59,18 +59,21 @@ calibrated-design-canon/
     fixtures/R2a_wrong_utility_visible.html
     fixtures/R2b_wrong_utility_no_string.html
     fixtures/R2c_wrong_utility_anchor_only.html
+    fixtures/R2b_og-image.svg
     fixtures/R3a_js_comment_cap.html
     fixtures/R3b_jsonld_amount.html
+    fixtures/R3c_rank_claim_no_numeral.html
     fixtures/R4a_stacking_denial_jsonld.html
     fixtures/R4b_stacking_assertion_prose.html
     fixtures/R5_uncited_statistic.html
     fixtures/R6_label_figure_contradiction.js
     fixtures/R7_superseded_source.html
-    fixtures/R8a_stale_review_date.html
-    fixtures/R8b_review_precedes_creation.html
+    fixtures/R8a_stale_review_date.html   + R8a.gitfacts.json
+    fixtures/R8b_review_precedes_creation.html + R8b.gitfacts.json
     fixtures/R8c_future_review_date.html
-    fixtures/R9_cross_surface_contradiction/
-    fixtures/R10_dangling_promise/
+    fixtures/R9_cross_surface_contradiction/   (llms.txt, air-sealing.html)
+    fixtures/R10_dangling_promise/             (3 html)
+    fixtures/R11_attribution_debt.html
     fixtures/negative/NEG01..NEG14.html
 <property-repo>/
   ops/claim_gate.sh            <- thin wrapper, R2/R4's rows own these
