@@ -86,7 +86,8 @@ class Hit(object):
     __slots__ = ("rid", "sub", "rel", "surface", "locator", "text", "note",
                  "cite_key", "sentence", "r5_inblock", "r5_instat",
                  "r8_excluded", "r2_noscope", "r2_subject_ok", "r3_kind",
-                 "on_embed", "r3_w60", "r3_w40", "r3_struct", "r5_stats")
+                 "on_embed", "r3_w60", "r3_w40", "r3_struct", "r5_stats",
+                 "r2_sitewide")
 
     def __init__(self, rid, sub, rel, surface, locator, text, note="",
                  cite_key=None, sentence=""):
@@ -110,6 +111,7 @@ class Hit(object):
         self.r3_w40 = ""
         self.r3_struct = ""
         self.r5_stats = []
+        self.r2_sitewide = False
 
     def sortkey(self):
         return (self.rel, self.sub, self.surface, self.locator, self.text)
@@ -869,6 +871,56 @@ class Ctx(object):
         return names_in(text, c.get("programs", []) or [],
                         c.get("program_aliases", {}) or {}, ci=True)
 
+    def utility_spots(self, text):
+        """(canonical utility, position) for every utility MENTION in `text`,
+        span-consuming and alias-aware. Positions are what clause-level
+        resolution needs and utilities_in() does not give."""
+        c = self.r("R2")
+        names = sorted((n for n in (c.get("utility_names") or []) if n),
+                       key=len, reverse=True)
+        al = c.get("utility_aliases", {}) or {}
+        spans = []
+        out = []
+        for term in names:
+            for m in _pat(term, True, True).finditer(text):
+                a, b = m.start(), m.end()
+                if any(a < y and b > x for x, y in spans):
+                    continue
+                spans.append((a, b))
+                out.append((al.get(term, term), a))
+        return sorted(set(out), key=lambda t: (t[1], t[0]))
+
+    def town_spots(self, text):
+        """(town, position) for every town MENTION, case-sensitive and
+        word-boundary, spelling_variants honoured."""
+        c = self.r("R2")
+        towns = c.get("towns", {}) or {}
+        out = []
+        for name in sorted(towns):
+            for v in [name] + list(towns[name].get("spelling_variants") or []):
+                for pos in occ(text, v, ci=False):
+                    out.append((name, pos))
+        return sorted(set(out), key=lambda t: (t[1], t[0]))
+
+    def towns_near(self, text, pos, radius=100):
+        """Towns named within `radius` characters of `pos`.
+
+        Case-sensitive, word-boundary, spelling_variants honoured -- because
+        /usr/bin/grep -ci 'ault' returns 8 where the locality Ault appears
+        once.
+        """
+        c = self.r("R2")
+        towns = c.get("towns", {}) or {}
+        w = win(text, pos, radius)
+        hit = set()
+        for name in sorted(towns):
+            variants = [name] + list(towns[name].get("spelling_variants") or [])
+            for v in variants:
+                if has(w, v, ci=False):
+                    hit.add(name)
+                    break
+        return sorted(hit)
+
     def allowed_utilities(self, towns):
         """The utilities a page in `towns` may attribute a program to.
 
@@ -1196,8 +1248,79 @@ def rule_R2(ctx, res):
             # them (GCI f0203ad's cap shipped in one), which is the right split.
             if skey == S.S_JS and "comment@" in str(loc):
                 continue
-            for u in ctx.utilities_in(sent):
+            uspots = ctx.utility_spots(sent)
+            bound = set()
+            for tname, tpos in ctx.town_spots(sent):
+                near = [(abs(tpos - up), uu, up) for uu, up in uspots
+                        if abs(tpos - up) <= 100]
+                if not near:
+                    continue
+                _, uu, up = sorted(near)[0]
+                bound.add((uu, up))
+                if uu in (ctx.allowed_utilities([tname]) or set()):
+                    continue
+                lo, hi = min(up, tpos), max(up, tpos)
+                span = sent[max(0, lo - 34):hi + 40]
+                if has_any(span, neg_markers, word=False) and \
+                        (set(x[0] for x in uspots) &
+                         set(ctx.allowed_utilities([tname]) or set())):
+                    hc = Hit("R2", "a", art.rel, skey, str(loc),
+                             "%s bound to %s | %s" % (uu, tname, sent),
+                             note="utility-not-serving-town-in-clause",
+                             sentence=sent)
+                    hc.r2_subject_ok = False
+                    raw.append(hc)
+                    continue
+                hb = Hit(
+                    "R2", "a", art.rel, skey, str(loc),
+                    "%s is bound to the nearest town named in its own clause, "
+                    "%s, which it does not serve | %s" % (uu, tname, sent),
+                    note="utility-not-serving-town-in-clause", sentence=sent)
+                # A SPLIT DISCLOSURE names two or more utilities AND two or
+                # more towns in one sentence, and deliberately: GCI's
+                # GAS_UTILITY_SPLIT_FACT is exactly that and renders on 35
+                # pages. Nearest-binding is not reliable inside one -- word
+                # order, not meaning, decides which utility a town lands
+                # against -- so it is a REVIEW, never a FAIL. Measured: without
+                # this, the split constant alone produced 259 of GCI's 324
+                # findings, all of them "Xcel Energy bound to Greeley/Evans/
+                # Eaton" inside a sentence that says the opposite.
+                if len(set(x[0] for x in uspots)) >= 2 and \
+                        len(set(t for t, _ in ctx.town_spots(sent))) >= 2:
+                    hb.note = "split-disclosure-review"
+                raw.append(hb)
+            for u, upos in uspots:
+                if (u, upos) in bound:
+                    continue
+                # CLAUSE-LEVEL TOWN RESOLUTION, NEAREST-BINDING.
+                #
+                # town_scope() resolved only from three PAGE-LEVEL signals --
+                # basename against page_slugs, JSON-LD areaServed, the <h1> --
+                # and llms.txt, robots.txt, sitemap.xml and a bare .svg have
+                # none of them, so those four classes could NEVER be scoped and
+                # were permanently exempt from all of R2. The wrong-utility
+                # defect shipped in shared components that render sitewide.
+                #
+                # Each TOWN mention binds to its NEAREST utility mention, not
+                # to every utility within a window. A window bound "Xcel
+                # Energy" to Greeley across the gas-split sentence -- "Atmos
+                # Energy serves Greeley, Evans and Eaton, while Xcel Energy
+                # serves Johnstown..." -- and produced 89 false positives on
+                # GCI alone. Nearest-binding reads that sentence correctly.
+                #
+                # No town bound to this mention. Ruling 5: an unscoped claim
+                # must not be indistinguishable from a clean run, so it is
+                # RAISED and cleared through a named filter with a real count
+                # rather than skipped before any counter moves.
                 if allowed is not None and u in allowed:
+                    if not scope:
+                        hh = Hit("R2", "a", art.rel, skey, str(loc),
+                                 "%s | no town bound in the clause, no town "
+                                 "scope on the page | %s" % (u, sent),
+                                 note="sitewide-no-town-in-clause",
+                                 sentence=sent)
+                        hh.r2_sitewide = True
+                        raw.append(hh)
                     continue
                 h = Hit("R2", "a", art.rel, skey, str(loc),
                         "%s | scope=%s | %s" % (u, scope_s, sent),
@@ -1403,6 +1526,12 @@ def rule_R2(ctx, res):
     def f_noscope(h):
         return bool(getattr(h, "r2_noscope", False))
 
+    def f_sitewide(h):
+        return bool(getattr(h, "r2_sitewide", False))
+
+    def f_split(h):
+        return h.note == "split-disclosure-review"
+
     def f_restr_elsewhere(h):
         return h.note == "restriction-elsewhere-on-page"
 
@@ -1412,6 +1541,13 @@ def rule_R2(ctx, res):
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
         Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
+        Filt("split disclosure -- two or more utilities AND two or more towns "
+             "in one sentence, where nearest-binding is decided by word order "
+             "rather than meaning: REVIEW, never FAIL", f_split),
+        Filt("sitewide artifact, no town named in the clause -- the utility "
+             "serves somewhere in this territory, so nothing is asserted "
+             "against a town (raised and enumerated, never dropped silently)",
+             f_sitewide),
         Filt("corrective disclosure -- a negation or contrast marker governs "
              "the flagged utility and the sentence names one that DOES serve "
              "the scope (correct territory copy, not an attribution)",
