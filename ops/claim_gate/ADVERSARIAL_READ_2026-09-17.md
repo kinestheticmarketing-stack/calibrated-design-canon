@@ -1430,3 +1430,670 @@ file was the only dirty path, staged by explicit path.
   TESTED** — GCI's baseline `R2 ADJ 98` includes it, but I constructed no
   targeted vector for it.
 - R6b's browser cross-product. **NOT TESTED** (no browser).
+
+---
+---
+
+# SECOND SECTION — RE-TEST AFTER THE FIX ROUND — 2026-09-17
+
+Same reviewer, same scratch dir, same byte-exact fixtures. The first section
+above drove a fix round of fifteen commits, `283d1eb..e1b9166`. This section
+re-runs the original vectors against the rewritten gate, re-runs the
+repair-the-fixture test on every control, confirms the halt-level regression,
+and attacks everything the fix round added. **Nothing was fixed by this pass.**
+
+State at the start of the re-test, measured:
+
+```
+denvercoloradoinsulation.com    main  ac2b7b8cbeee41d6bafd5ebd48aa9473d3879cc6  clean  0 0
+longmontcoloradoinsulation.com  main  124682275e2e3b1859314a5a51c409199cb078a6  clean  0 0
+greeleycoloradoinsulation.com   main  7a832b80022a1a63b16bd6c6eb1f6fe9ef345ec9  clean  0 0
+calibrated-design-canon         main  e1b91661555143c521a92b7287e515da0c9d436e  clean  0 0
+```
+
+`claim_gate.py` 2,698 → 3,894 lines; `surfaces.py` 698 → 913; `README.md`
+219 → 291. Baselines: DCI exit 1, 8 blocking failures; LGM exit 1, 5; GCI
+exit 1, 6.
+
+## 0a. A CORRECTION TO MY OWN FIRST SECTION, BEFORE ANYTHING ELSE
+
+The first section's headline says **"Forty-two distinct adversarial vectors were
+run. Thirty-one MISSED."** Both numbers are wrong, and I did not measure them —
+I counted by eye and wrote the number the list looked like. Counted from the
+battery scripts themselves:
+
+```
+total rows defined across the four batteries : 104
+  of which positive-control / clean rows     : 12
+  duplicate ids (R4 run under BOTH dci and gci): 7
+  DISTINCT ADVERSARIAL VECTORS (non-control, de-duplicated): 86
+```
+
+And the first section's own enumerated miss list, added up, is **59**, not 31:
+R1 7 + R2 14 + R3 9 + R4 6 + R5 4 + R6 4 + R7 6 + R8 5 + R9 2 + R10 2 = 59.
+
+So the true first-round result was **59 of 86 vectors missed**, not 31 of 42.
+The enumerated per-vector tables in the first section are correct and were
+produced by commands; only the summary sentence was an uncounted figure. That
+is precisely the defect class this portfolio records — a figure written as the
+number a command ought to return — and I produced it in the document whose
+purpose is to catch it. Every number in this second section comes from a command
+whose output is pasted beside it.
+
+## 0b. MOST SEVERE SURVIVING FINDING
+
+**R6's DENOMINATOR is a diagnostic, not a gate. Rename the severity words and
+R6 turns itself off while printing PASS and exiting 0 — and the denominator line
+it prints says, in its own words, that this state means BLIND.**
+
+Reproduction. A page carrying the identical branch/print defect (`gap >=`
+branches, `pctShort` interpolated) but with the four severity labels renamed to
+`AT TARGET` / `WAY OFF` / `SOME WAY OFF` / `NEARLY THERE`:
+
+```
+  exit 0
+    RAW              label-emitting conditional chains examined     0
+    note: DENOMINATOR  chains examined 1 · JS texts read 1 · conditions located 4 ·
+          label assignments found 0 · branches bound to a condition 0 ·
+          configured labels seen in text 0 -- a RAW of 0 with a nonzero
+          denominator means CLEAN; a RAW of 0 with a zero denominator means BLIND
+    VERDICT          PASS — 0 adjudicated findings from 0 raw match(es) across 0 filter(s)
+```
+
+`configured labels seen in text 0` and `branches bound to a condition 0` are the
+two counters that matter, both are zero, the gate prints the sentence that says
+this means BLIND, and then it passes. The `UNPARSEABLE` hit that correctly
+catches the ternary and `switch` shapes is gated on *"configured labels present
+in this text"* — so it fires when the gate can see the labels but not the
+branches, and stays silent when it can see neither. Relabelling a calculator's
+severity words is an ordinary copy edit. It silently disarms the rule.
+
+By contrast, the chain whose `surfaces` file is absent from `public/` altogether
+IS caught (`RAW 1`, `UNREGISTERED`, exit 1). So the hole is specifically:
+labels present in config, absent from the page, defect present in the page.
+
+## 1. THE 86 ORIGINAL VECTORS, RE-RUN BYTE-EXACT
+
+Same scripts, same fixture bytes, driven through `--config`/`--repo` against the
+scratch mirror of the rewritten gate. `CTRL` rows are my own positive controls
+and are excluded from the vector counts.
+
+**Result: 59 of 86 missed before; 29 of 86 miss now. 30 vectors fixed, 0
+regressions among the original 86.**
+
+| rule | vectors | missed round 1 | missed round 2 | newly caught |
+|---|---|---|---|---|
+| R1 | 7 | 7 | **2** | 5 |
+| R2 | 18 | 14 | **10** | 4 |
+| R3 | 20 | 9 | **4** | 5 |
+| R4 | 9 | 6 | **3** | 3 |
+| R5 | 8 | 4 | **3** | 1 |
+| R6 | 6 | 4 | **0** | 4 |
+| R7 | 8 | 6 | **2** | 4 |
+| R8 | 6 | 5 | **3** | 2 |
+| R9 | 2 | 2 | **1** | 1 |
+| R10 | 2 | 2 | **1** | 1 |
+| **total** | **86** | **59** | **29** | **30** |
+
+### R1 — FABRICATED QUOTATION (7 vectors, 2 still miss)
+
+| vector | round 1 | round 2 | gate output |
+|---|---|---|---|
+| R1-A1 `&#8220;` numeric entity | MISS | **CAUGHT** | `RAW 1 ADJ 1 FAIL` exit 1 |
+| R1-A1x `&#x201C;` hex entity | MISS | **CAUGHT** | `RAW 1 ADJ 1 FAIL` exit 1 |
+| R1-A2 `class="cited-stat footnote"` | MISS | MISS | `RAW 0 ADJ 0 PASS` exit 0 |
+| R1-A3 anaphoric (source 3 sentences earlier) | MISS | MISS | `RAW 0 ADJ 0 PASS` |
+| R1-A4 guillemets `« »` | MISS | **CAUGHT** | `RAW 1 ADJ 1 FAIL` exit 1 |
+| R1-A5 JS backtick template literal | MISS | **CAUGHT** | `RAW 1 ADJ 1 FAIL` exit 1 |
+| R1-A6 HTML comment | MISS | **CAUGHT** | `RAW 1 ADJ 1 FAIL` exit 1 |
+
+R1-A2 still misses even though `R1.cited_stat_class` is now read: the config
+value is the bare string `cited-stat` and the match is still exact-attribute,
+not class-list membership. R1-A3 is the sentence-scoped attribution window.
+
+### R2 — WRONG-UTILITY CLAIM (18 vectors, 10 still miss)
+
+| vector | round 1 | round 2 | gate output |
+|---|---|---|---|
+| R2-B1 sitewide hub page, no configured town | MISS | MISS | `RAW 0 ADJ 0 PASS` exit 0 |
+| R2-B2 no `attribution_words` in the sentence | MISS | MISS | `RAW 0 ADJ 0 PASS` |
+| R2-B3 utility name lower-cased | MISS | **CAUGHT** | `RAW 1 ADJ 1 FAIL` |
+| R2-B4 soft hyphen U+00AD | MISS | MISS | `RAW 0 ADJ 0 PASS` |
+| R2-B4z zero-width space | caught | caught | `RAW 1 ADJ 1 FAIL` |
+| R2-B4c Cyrillic homoglyph | MISS | MISS | `RAW 0 ADJ 0 PASS` |
+| R2-B5 JS backtick literal | MISS | **CAUGHT** | `RAW 2 ADJ 2 FAIL` |
+| R2-B5q single-quoted JS literal | caught | caught | `RAW 2 ADJ 2 FAIL` |
+| R2-B6 inline CSS `content:` | MISS | **CAUGHT** | `RAW 1 ADJ 1 FAIL` |
+| R2-B7 `sitemap.xml` only | MISS | MISS | `RAW 0 ADJ 0 PASS` |
+| R2-B8 assembled at runtime | MISS | MISS | `RAW 0 ADJ 0 PASS` |
+| R2-B9 `&nbsp;` inside the name | caught | caught | `RAW 1 ADJ 1 FAIL` |
+| R2-B10 `<td>`/`<option>`/`alt`/`title` | caught | caught | `RAW 4 ADJ 4 FAIL` |
+| R2-B11 `llms.txt` only | MISS | MISS | `RAW 0 ADJ 0 PASS` |
+| R2-B12 `robots.txt` only | MISS | MISS | `RAW 0 ADJ 0 PASS` |
+| R2-B13 HTML comment | MISS | **CAUGHT** | `RAW 1 ADJ 1 FAIL` |
+| R2-B14 sentence embedding a locked phrase | MISS | MISS | `RAW 1 ADJ 0 PASS` (filtered) |
+| R2-B15 unreferenced `.svg` | MISS | MISS | `RAW 0 ADJ 0 PASS` |
+
+Nine of the ten survivors (B1, B2, B7, B11, B12, B15, and the three artifact
+classes below) trace to one cause, analysed in section 5. B4/B4c are the
+non-whitespace Unicode vectors. B8 has no literal form in the bytes. B14 is the
+locked-phrase pardon, still a blanket exemption.
+
+### R3 — REBATE DOLLAR FIGURE (20 vectors, 4 still miss)
+
+Newly caught: **C1 `&#36;`**, **C1b `&#x24;`**, **C1c `&dollar;`**,
+**C5 bare `2000`** (the four-digit-year filter no longer eats it), **C6 CSS
+`content:`** (now classified `CSS-CONTENT` instead of cleared as CSS noise) —
+each `RAW ≥1 ADJ ≥1 FAIL` exit 1. Still caught: C2, C4, C7–C15.
+
+Still missing: **C3** (`fifteen hundred and fifty dollars`, no numeral),
+**C16** (`pays the most`, not in `rank_words`), **C4b** (`Atmos returns 1550
+dollars for a finished attic job.` on a page with no `money_words`), **C17**
+(`Atmos sends 1550 to the homeowner once the attic job is invoiced.`) — all
+`RAW 0 ADJ 0 PASS` exit 0. A bare-digit payout still needs a configured money
+word in its 120-character window, and `dollars` is not one.
+
+### R4 — STACKING (9 vectors, 3 still miss)
+
+Newly caught: **D1** (anaphoric — the two programs in sentences 1 and 2, the
+assertion in sentence 3) `RAW 1 ADJ 1 FAIL`; **D4** (backtick literal)
+`RAW 1 ADJ 1 FAIL`; **D7** (HTML comment) `RAW 1 ADJ 1 FAIL`. Still caught:
+D4b, D5, D6.
+
+Still missing: **D2** `are cumulative on the same measure`, **D3** `claim … at
+once for the same job`, **D3b** `run concurrently and pay for the same measure`
+— all `RAW 0 ADJ 0 PASS`. The token list grew but is still a token list. The
+identical results were obtained under both DCI's and GCI's program lists.
+
+### R5 — UNCITED STATISTIC (8 vectors, 3 still miss)
+
+Newly caught: **E5** (backtick literal) `RAW 1 ADJ 1 FAIL`. Still caught: E4,
+E6, E7, E8. Still missing: **E1** `40 percent` spelled out, **E2** `by a third`
+(no numeral), **E3** — and E3 is a finding in its own right, in section 4.
+
+### R6 — SELF-CONTRADICTING OUTPUT (6 defect variants, 0 miss)
+
+**Every R6 vector is now caught, including the headline defect.**
+
+| vector | round 1 | round 2 | gate output |
+|---|---|---|---|
+| R6-CTRL branches read `gap`, prints `pctShort` | caught | caught | `RAW 5 ADJ 5 FAIL` |
+| R6-CLEAN the repaired form | PASS (correct) | PASS (correct) | `RAW 0 ADJ 0 PASS`, denominator nonzero |
+| R6-F1 minified onto one line | MISS | **CAUGHT** | `RAW 5 ADJ 5 FAIL` |
+| R6-F2 nested ternary | MISS | **CAUGHT** | `RAW 1 ADJ 1 FAIL`, `UNPARSEABLE … (shape: ternary)` |
+| R6-F3 `if` wrapped across three lines | caught (by accident) | caught (correctly) | `RAW 5 ADJ 5 FAIL` |
+| R6-F4 `switch (true) { case … }` | MISS | **CAUGHT** | `RAW 1 ADJ 1 FAIL`, `UNPARSEABLE … (shape: switch+ternary)` |
+| R6-F5 two severity words on one percentage | MISS | **CAUGHT** | `RAW 3 ADJ 3 FAIL` |
+| R6-F6 label split across a concat boundary | caught | caught | `RAW 5 ADJ 5 FAIL` |
+
+F5's hit lines, verbatim — this is the defect the gate was built after:
+
+```
+  public/calc.html:JS[0]:JS  G2  branch thresholds [50, 50] on {pctShort} are not STRICTLY monotone decreasing  [G2]
+  public/calc.html:JS[0]:JS  G2-DUP  condition 'pctShort >= 50' appears on 2 label-emitting branches -- only the first is reachable and the labels disagree  [duplicate-condition]
+  public/calc.html:JS[0]:JS  G2-DUP  threshold 50 on {pctShort} is tested by 2 branches, so 2 different labels are reachable at the SAME printed value: Moderately under code — % short of | Significantly under code — % short  [two-labels-one-value]
+```
+
+And the previously-fatal configuration — a chain with `surfaces` but no
+`generator` — now runs to completion instead of aborting the gate.
+
+### R7 — SUPERSEDED SOURCE (8 vectors, 2 still miss)
+
+Newly caught: **G1** `invoiced by Dec. 31, 2026`, **G1b** `installed and
+invoiced by Dec. 31` (the abbreviation guard), **G3** backtick literal,
+**G4** `sitemap.xml` prose — all `RAW 1 ADJ 1 FAIL` exit 1. Still caught:
+G2b, G5. Still missing: **G2** (U+2011 non-breaking hyphens in `24‑02‑205`),
+**G6** (`pre&#8209;requisite`) — both `RAW 0 ADJ 0 PASS`.
+
+### R8 — STALE REVIEW DATE (6 vectors, 3 still miss)
+
+Newly caught: **H1** plain-text `Last reviewed: January 1, 2027` with no
+`<time>` element (`footer_marker` is now read) `RAW 1 ADJ 1 FAIL`; **H2** full
+ISO timestamp `2027-01-01T00:00:00Z` `RAW 2 ADJ 2 FAIL`. Still caught: H5.
+Still missing: **H3** (`privacy.html`, an `own_effective_date_pages` entry) and
+**H4** (`404.html`, an `exempt_pages` entry) — both now `RAW 2 ADJ 0 PASS`, i.e.
+raised and cleared rather than never counted, which is the Ruling-5 half of the
+fix even though the defect still passes; and **H6** (entity-encoded hyphens
+inside `datetime=`) `RAW 0 ADJ 0 PASS`.
+
+### R9 and R10 (2 vectors each, 1 still misses each)
+
+**R9-I2** (contradicting half in a backtick literal) MISS → **CAUGHT**
+`RAW 1 ADJ 1 FAIL`. **R9-I1** (the contradiction paraphrased outside the
+configured `value_slots`) still `RAW 0 ADJ 0 PASS`.
+**R10-J2** (promise pointing at a page that does not exist) MISS → **CAUGHT**
+`RAW 1 ADJ 1 FAIL` — `f_notinset` no longer pardons it. **R10-J1** (`the real
+numbers live on …`, outside the 14 `promise_patterns`) still `RAW 0 ADJ 0 PASS`.
+
+### Where my verdict differs from the implementing row's reconstruction
+
+The row reported *32 of 33 reconstructions now caught*. On the actual fixture
+bytes I get **29 of 86 still missing**. The two are not in conflict about any
+single vector I can identify — the row reconstructed from my *named causes*, of
+which there were about a dozen, while the 86 vectors instantiate those causes
+many times each. Where a cause was fixed, every vector instantiating it now
+passes. The disagreement is one of denominator, not of verdict, and **I have the
+fixtures, so 29/86 is the number to carry.**
+
+## 2. THE REPAIR TEST ON ALL 24 CONTROLS
+
+The gate now has **24 positive controls** (was 20), each bound to one sub-test,
+**24 repair tests**, and **14 negative controls**. Counted:
+`grep -c 'canary+' → 24`, `grep -c 'canary~' → 24`, `grep -c 'canary-' → 14`.
+
+I re-applied my own minimal "remove ONLY the defect" mutations to `fixtures/` in
+the scratch mirror. **All 24 controls now stop firing when their own defect is
+repaired.** The three that were not controls are now controls:
+
+| control | round 1 | round 2 |
+|---|---|---|
+| **R1** (one control, either half) | repair half A → still `DETECTED (2: B)` — **not a control** | split into **R1-A** and **R1-B**; repair half A → `R1-A *** MISSED ***` while `R1-B DETECTED (2 B: B)`, and vice versa. **Both are real controls.** |
+| **R2a** | repair the wrong-utility defect → still `DETECTED (1: q)` — **not a control** | bound to sub `a`; repair the defect → `R2a *** MISSED *** (0 hits on the sub-test this control proves: a)`. **Real control.** |
+| **R11** | fixture reduced to an empty page → still `DETECTED (2: row)` — **vacuous** | bound to sub `nonsubtractive`; remove the terms → `*** MISSED ***`; reduce the fixture to `<p>Nothing.</p>` → `*** MISSED ***`. **Real control.** |
+
+The other 21 all still stop firing: R2b, R2c, R3a, R3b, R3c, R4a, R4b, R5,
+R6a-G1, R6a-G2, R7-A, R7-B, R8a, R8b, R8c, R8c-c, R9-N1, R9-N2, R10-anchor,
+R10-reflexive — each printing `*** MISSED *** (0 hits on the sub-test this
+control proves: <sub>)`.
+
+### Are the 24 repaired fixtures genuine repairs?
+
+I diffed every one against its original. Seventeen are real prose rewrites at
+91–120 % of the original size that keep the page shape and remove only the
+defect — R6's is literally the two-line `gap >= 20` → `pctShort >= 50` change,
+R8a/R8b/R8c change only the dates, R2c changes only the hostname. Two are
+substantial deletions: **R4b is 67 % of the original** (the `<h1>`, three
+paragraphs and the `<nav>` removed) and **R11 is 80 %**. One,
+`R2b_wrong_utility_no_string.html`, is **byte-identical to the original** — its
+defect lives in the referenced SVG, and I verified the repair phase really does
+use the repaired SVG (attack A5 below).
+
+### Attacking the repair phase itself
+
+| attack | result |
+|---|---|
+| **A1** the repaired R4b fixture replaced with a **zero-byte file** | `24 repaired-clean, 0 FIRE ON REPAIRED`, **exit 0** — **the repair phase can be fooled** |
+| **A2** the repaired R4b fixture replaced with an **empty page** | `24 repaired-clean, 0 FIRE ON REPAIRED`, **exit 0** — **fooled** |
+| **A3** the repaired R4b fixture replaced with the **original (still defective)** | `*** FIRES ON REPAIRED *** 5 hit(s) on sub ASSERTS`, `23 repaired-clean, 1 FIRE ON REPAIRED`, **exit 2** — correctly caught |
+| **A4** the repaired R4b fixture **deleted** | `CLAIM GATE CRASHED: FileNotFoundError … repaired/R4b_stacking_assertion_prose.html`, `CLAIM GATE: NOT RUN`, **exit 2** — loud, but a crash rather than the designed `NOT TESTED (no repair fixture)` state, which is therefore unreachable while every control declares a `repaired=` path |
+| **A5** the **defect put back into the repaired SVG** for R2b (whose repaired HTML is byte-identical) | `*** FIRES ON REPAIRED *** 2 hit(s) on sub a: Atmos Energy … Atmos rebates explained`, **exit 2** — correctly caught; the repaired SVG is genuinely used |
+
+**NEW FINDING (moderate).** The repair phase asserts only *"the repaired fixture
+produces zero hits on this control's sub-test."* A repaired fixture that has had
+its content deleted satisfies that trivially. So the mechanism my own first-round
+finding produced can be silenced by gutting the repaired fixture, and the gate
+will report `24 repaired-clean, 0 FIRE ON REPAIRED` and exit 0. Nothing asserts
+that a repaired fixture still contains the non-defective substance of the
+original — no size floor, no similarity check, no assertion that the repaired
+file still names the same subject.
+
+### Can a control be bound to a sub-test that cannot fail?
+
+Not in the current registry: every one of the 24 `sub=` values corresponds to a
+sub-test I have made fire with a fixture, and each stops firing when its own
+defect is repaired. But the binding is a free-text string with no validation —
+`Control(..., sub="TYPO")` would report `*** MISSED ***` and exit 2 rather than
+passing silently, which is the safe direction. **Verified by reading the
+registry and by the 24 repair results; not verified by editing the registry,
+which is forbidden. Labelled NOT TESTED for the deliberate-typo case.**
+
+## 3. THE HALT-LEVEL REGRESSION — CONFIRMED FIXED
+
+I cloned DCI into scratch and re-introduced the pre-`37c7b29` calculator defect
+in both the page and the embed frame, then ran DCI's real config against it.
+
+```
+  reverted public/r-value-needed-calculator.html: 1 + 1 branch conditions back to the pre-fix `gap` form
+  reverted public/r-value-needed-calculator-embed.html: 1 + 1 branch conditions back to the pre-fix `gap` form
+=== running DCI's real config against the defective clone:
+EXIT=1
+CLAIM GATE — dci — /tmp/claim-gate-scratch/r4/dci-defect — HEAD e7595eb — as-of 2026-09-17
+  REPAIR TESTS: 24 repaired-clean, 0 FIRE ON REPAIRED, 0 NOT TESTED (no repair fixture)
+  CONTROLS: 24 positive DETECTED, 0 MISSED · 14 negative clean, 0 FALSE ALARM
+CLAIM GATE: FAIL
+  R6  SELF-CONTRADICTING OUTPUT        RAW 10     ADJ 10     FAIL
+  blocking failures: 9 (R1, R2, R3, R4, R5, R6, R7, R8, R9)
+```
+
+with the R6 denominator reading `chains examined 1 · JS texts read 4 ·
+conditions located 166 · label assignments found 9 · branches bound to a
+condition 9 · configured labels seen in text 3`.
+
+**Round 1: exit 2, `0 negative clean, 14 FALSE ALARM`, `CLAIM GATE: NOT RUN`,
+no R6 block. Round 2: exit 1, `R6 FAIL` with ten enumerated hits, all controls
+and negatives clean.** The single most important regression is closed.
+
+## 4. NEW BREAKS FOUND, WITH REPRODUCTIONS
+
+### NEW-1 (severe) — the R6 zero-denominator PASS
+
+Section 0b. Rename the severity labels; R6 prints PASS with the denominator
+counters at zero and exits 0.
+
+### NEW-2 (severe) — the per-line `llms.txt` surface re-opened the line-wrap hole
+
+`llms.txt` and `robots.txt` are now one surface per line. That fixed the
+whole-file-as-one-blob problem and created a new one: a claim that **wraps an
+`llms.txt` line break is now invisible to every sentence-pool rule.**
+
+```
+  E4 control: superseded proposition on ONE llms.txt line   R7 (1, 1, 'FAIL') exit 1
+  E5: the SAME proposition WRAPPED across two llms.txt lines R7 (0, 0, 'PASS') exit 0
+```
+
+Fixture E5, verbatim:
+
+```
+# Greeley
+- Air sealing is a prerequisite for the
+  Whole Home Efficiency bonus.
+```
+
+This is the exact class `surfaces.collapse()`'s own docstring calls *"the single
+most load-bearing line in this file: three separate recorded false zeroes came
+from a phrase that wrapped a source line break."* R3 is unaffected (E7 caught,
+`RAW 2 ADJ 2 FAIL`) because it scans RAW/DEC rather than the per-line pool.
+
+### NEW-3 (moderate) — `code_context_markers` is the blanket pardon that `f_pub` used to be
+
+The fix round narrowed R5's publisher pardon to require an attribution verb
+within 80 characters. Verified — and it works:
+
+```
+  E3b: publisher named with NO attribution verb and further away   R5 (1, 1, 'FAIL') exit 1
+  E3c: publisher named WITH an attribution verb (pardoned)         R5 (1, 0, 'PASS') exit 0
+       FILTER  recognised_publishers named in the same sentence 1 (removed 1)
+```
+
+But my original E3 still passes, cleared by a **different** filter:
+
+```
+  FILTER   recognised_publishers named in the same sentence 0    (removed 0)
+  FILTER   code_context_markers (IECC / ENERGY STAR / R-value) 1    (removed 1)
+  ADJUDICATED   magnitude claims with no attribution on the page  0
+  VERDICT  PASS — 0 adjudicated findings from 1 raw match(es) across 8 filter(s)
+  [code_context_markers …] public/a.html:VIS  mag  35% | ENERGY STAR homes differ, but our crews measure a 35% reduction in heating costs.  [uncited]
+```
+
+`"ENERGY STAR"` is in `R3.code_context_markers`, which R5 reuses as `f_code`.
+Mentioning the phrase anywhere in a sentence pardons any uncited statistic in it,
+through a filter whose stated purpose is code context, not attribution. The
+narrowed pardon survives one filter over, on 21 marker strings including
+`ENERGY STAR`, `IECC`, `R-value`, `retrofit` and `price`.
+
+### NEW-4 (moderate) — the repair phase can be fooled by gutting a repaired fixture
+
+Attacks A1/A2 in section 2.
+
+### NEW-5 (minor) — the abbreviation guard misses `Colo.`
+
+I ran 29 abbreviations through `surfaces.sentences()`. **26 are now held
+together**, including every one from my first section (`Dec.`, `No.`, `Inc.`,
+`U.S.`, `approx.`, `Sec.`) plus `Jan.`, `Sept.`, `Ave.`, `St.`, `Mr.`, `Ph.D.`,
+`etc.`, `vs.`, `e.g.`, `i.e.`, `Fig.`, `Rev.`, `Co.`, `Est.`, `cf.`, `Dept.`,
+`Assn.`, `Feb.`, `Nov.`, lower-case `no.`. The `."` over-join is fixed —
+`She said "…CFM50." Then she left.` now correctly yields two sentences.
+
+Two miss:
+
+```
+  Colo.    'Colo. P.U.C. No. 7 Gas governs.' -> ['Colo.', 'P.U.C. No. 7 Gas governs.']
+  P.U.C.   'Colo. P.U.C. No. 7 Gas, Third Revised Sheets 3 and 4.' -> ['Colo.', 'P.U.C. …']
+```
+
+`Colo.` is the load-bearing one in this portfolio: GCI's tariff is
+`Colo. P.U.C. No. 7 Gas, Third Revised Sheets 3 and 4`. It is **latent, not
+live**, because that string sits in `R2.tariff_identity.document`, which is still
+dead config. My own independent unfirable-pattern scan over a wider key set than
+the implementing row used: **437 patterns scanned, 0 still unfirable** — the
+2 → 0 claim holds, and my scan is a superset.
+
+### NEW-6 (minor) — a doubled R3 hit when a figure is visible at both RAW and DEC
+
+An entity-heavy `<style>` block before a `content:` figure produced the same
+`$1,550` twice, once tagged `[ENTITY-ENCODED: invisible at RAW]` and once not
+(`R3 RAW 4 ADJ 3`). Inflation, not blindness. Present on the real GCI run
+(`grep -c 'ENTITY-ENCODED'` → 2 on GCI, 0 on DCI).
+
+### NEW-7 (minor) — `Artifact.is_embed` is still dead
+
+The fix round lists `is_embed` among the eight wired keys.
+`/usr/bin/grep -n 'is_embed' claim_gate.py surfaces.py` returns **two lines,
+both in `surfaces.py`** — the declaration and the assignment. The behaviour was
+implemented under a different name, `Hit.on_embed` (set at `claim_gate.py:3829`,
+printed at line 119), and it works: 9 `[EMBED]` markers appear in the DCI run.
+So the capability exists; the key named in the fix list does not read anything.
+
+### Attacks that FAILED to break anything
+
+- **`isolation_breach()`** — I could not construct a control finding that names
+  a repo artifact without editing the registry. What I could verify is the
+  consequence: DCI's config, which previously made all 14 negatives false-alarm,
+  now gives `24 positive DETECTED, 0 MISSED · 14 negative clean, 0 FALSE ALARM`
+  on a foreign repo and on a defective DCI clone. **The breach detector itself is
+  NOT TESTED in the firing direction.**
+- **The C1/C2/C3 arithmetic re-tests.** C1 is genuinely reachable — a
+  deliberately non-idempotent predicate raises
+  `C1: hit 'l2' was removed by filter 'flaky' but that filter does not match it
+  on re-evaluation (non-idempotent predicate)`. I could not make any real filter
+  non-idempotent: every predicate is a closure over immutable config and
+  per-hit fields set at construction. C2 correctly re-tests only *removing*
+  filters, so a report-only filter matching a survivor is not an error — that is
+  R1's `registry-backed by DEFAULT quote` row, printed as `count N (removed 0)`.
+  **The guard is now real. Not defeated.**
+- **Positional `f_css`.** A plain `content:` figure → `CSS-CONTENT` `RAW 2 ADJ 2
+  FAIL`; the same after 4 KB of entity-encoded CSS comment → still caught and
+  labelled `[ENTITY-ENCODED: invisible at RAW]`; `stroke-width:0.75` and
+  `stroke-width:1550` alone → `RAW 2 ADJ 0 PASS` with
+  `FILTER CSS surface … 2 (removed 2)`. **Span arithmetic survives DEC offset
+  shifts. Not defeated.**
+- **SRC dedup.** A stacking assertion present **only** in a generator and never
+  rendered is caught: `R4 (1, 1, 'FAIL')` exit 1, header
+  `SRC over 1 generator modules, 2 string runs >=12 chars, READ BY: R2, R3-T3,
+  R4, R5, R7`. With the same generator plus a rendered sibling claim the count
+  stays 1, so dedup does not double-count. **I did not construct a case where
+  the identical defect text appears in both the generator and a page, so the
+  "deduped away as a restatement" risk is NOT FULLY TESTED.**
+- **`--peer`.** No peer → `R9 CROSS-PROPERTY HALF SKIPPED: no --peer given`.
+  Real peer → `R9 CROSS-PROPERTY HALF RAN against
+  /Users/vongimbel/code/denvercoloradoinsulation.com`, `peer corpus … 81
+  artifact(s) read`. Bad path → **exit 2**,
+  `CONFIG ERROR: --peer '/nonexistent/path' has no public/ directory.`
+  **It can no longer be used to delete its own disclosure. Fixed.**
+- **`--today`.** `2026-08-01`, `2020-01-01`, `2030-01-01` all give
+  `24 positive DETECTED, 0 MISSED · 14 negative clean, 0 FALSE ALARM`; the
+  round-1 `NEG11` false alarm is gone. `--today not-a-date` now **exits 2**
+  instead of silently disabling R8's future-date test.
+- **`expected_html`.** Now compared: a 2-page corpus against `expected_html: 38`
+  gives `ZERO-ARTIFACT TRAP: read 2 html page(s), config expected_html is 38`,
+  `CLAIM GATE: NOT RUN`.
+- **`--opt-in=R6b`.** Now **exit 1** with all **11** rule blocks printed,
+  `canary= R6b-G3 … UNAVAILABLE: requires a Chrome binary this gate cannot
+  assume … Disclosed, not run, not counted as a control`, and
+  `OPT-IN REQUESTED BUT UNAVAILABLE … The other ten blocking rules DID run and
+  their verdicts above stand.`
+
+## 5. THE ADMITTED MISS — CONFIRMED, AND BROADER THAN ADMITTED
+
+The implementing row admits one hole: *a sitewide artifact attributing a utility
+to a town named inside the sentence still gives R2 raw 0 — e.g. `llms.txt`
+reading "Atmos Energy rebates attic insulation in Johnstown".* Confirmed, and it
+is not only `llms.txt`. Johnstown is Xcel gas under GCI's real config, so every
+row below is a genuine wrong-utility claim:
+
+| vector | result |
+|---|---|
+| M1 the admitted case — `llms.txt`, town named in the sentence | `R2 RAW 0 ADJ 0` exit 0 — **MISS** |
+| M2 the same claim on a sitewide **HTML hub page** | `R2 RAW 0 ADJ 0` exit 0 — **MISS** |
+| M3 the same on a hub page with the strongest attribution wording | `R2 RAW 0 ADJ 0` exit 0 — **MISS** |
+| M4 a hub page whose JSON-LD `areaServed` names Johnstown | `R2 RAW 1 ADJ 1 FAIL` exit 1 — CAUGHT |
+| M5 `robots.txt`, town named in the sentence | `R2 RAW 0 ADJ 0` exit 0 — **MISS** |
+| M6 `sitemap.xml` prose, town named in the sentence | `R2 RAW 0 ADJ 0` exit 0 — **MISS** |
+| M7 a standalone unreferenced `.svg`, town named | `R2 RAW 0 ADJ 0` exit 0 — **MISS** |
+| M8 CONTROL: the identical sentence on Johnstown's own page | `R2 RAW 1 ADJ 1 FAIL` exit 1 — CAUGHT |
+| M9 own page, claim inside `<details><summary>` | `RAW 1 ADJ 1 FAIL` — CAUGHT |
+| M10 own page, wrong utility as the bare first name `Atmos` | `RAW 1 ADJ 1 FAIL` — CAUGHT |
+| M11 own page, wrong utility in an `aria-label` only | `RAW 1 ADJ 1 FAIL` — CAUGHT |
+| M12 own page, wrong utility in JSON-LD `knowsAbout[]` | `RAW 1 ADJ 1 FAIL` — CAUGHT |
+
+**Clause-level town resolution is not the whole of it.** The actual rule is:
+`ctx.town_scope()` resolves a page to towns from three **page-level** signals —
+the basename against `page_slugs`, JSON-LD `areaServed`, and the `<h1>`. An
+artifact with none of them gets `allowed = None` and every R2 sub-test does
+`if allowed is None or u in allowed: continue`. A sitewide **HTML** page is
+exempt (M2, M3) — not admitted. And `llms.txt`, `robots.txt`, `sitemap.xml` and
+a bare `.svg` have no `<h1>` and no JSON-LD, so those four classes **can never
+be scoped** and are permanently exempt from all of R2, whatever they say.
+
+This is also a **surviving Ruling-5 violation.** Drop 2 from the first section,
+re-tested: the R2 block for a wrong-utility claim on an unscoped page still
+differs from a genuinely clean run in **exactly one line**, the incidental
+`LEVEL-DISAGREE` counter (`RAW=0 DEC=0 TXT=0` → `RAW=1 DEC=1 TXT=1`), with
+`RAW 0`, all ten filter rows `0 (removed 0)`, `ADJUDICATED 0`, `VERDICT PASS`.
+On the real GCI run that counter reads `RAW=178 DEC=178 TXT=176`.
+
+Drop 1 **is** fixed:
+
+```
+  RAW              published date surfaces compared               2
+  FILTER           own_effective_date_pages / exempt_pages (raised, then cleared here -- never dropped before the count) 2    (removed 2)
+  ADJUDICATED      dates impossible, contradicted, or preceding their content 0
+  --- 2 items the filters removed, enumerated ---
+  [own_effective_date_pages / exempt_pages …] public/404.html:footer_text  b  footer_text = 2027-01-01 is after today (2026-09-17)  [future-date]
+  [own_effective_date_pages / exempt_pages …] public/404.html:time[datetime]  b  time[datetime] = 2027-01-01 is after today (2026-09-17)  [future-date]
+```
+
+The dead `def f_known(h): return False` filter is gone.
+
+## 6. INVARIANTS, RE-CONFIRMED
+
+**Determinism** — all against real GCI at `7a832b8`, comparing full `--report`
+output with `cmp`:
+
+```
+run1 exit 1 / run2 exit 1        RUN1 == RUN2 byte for byte
+different cwd (cd /)             CWD-INDEPENDENT: identical
+different CANON_ROOT             CANON_ROOT-INDEPENDENT: identical
+PYTHONHASHSEED 0 / 1 / 12345     HASH-SEED-INDEPENDENT: all three identical
+LC_ALL C vs tr_TR.UTF-8          LOCALE-INDEPENDENT: identical
+TZ UTC vs Pacific/Kiritimati     TZ-INDEPENDENT: identical
+```
+
+**Writes nothing** — `stat -f '%N %z %m %p'` over every file in all four repos,
+`.git` excluded, before and after running the gate on all three properties:
+
+```
+dci exit 1 / lgm exit 1 / gci exit 1
+*** NO FILE ADDED, REMOVED, RESIZED, RE-INODED OR MTIME-CHANGED ***
+  denvercoloradoinsulation.com modified-since-mark: 0
+  longmontcoloradoinsulation.com modified-since-mark: 0
+  greeleycoloradoinsulation.com modified-since-mark: 0
+  calibrated-design-canon modified-since-mark: 0
+```
+
+The wrapper fix is real — all three wrappers carry
+`export PYTHONDONTWRITEBYTECODE=1` at line 12. Clean-room: a bare
+`import claim_gate` **with no wrapper and no env var still writes**
+`__pycache__/claim_gate.cpython-314.pyc`; the same import **with** the env var
+writes nothing new. So the documented invocation path is closed and the import
+path is unchanged — which is exactly what the rewritten README now says.
+
+**Corpus** — my enumeration against the gate's, unchanged and still exact:
+
+| property | my `find` | my `ls-files` | my html | gate |
+|---|---|---|---|---|
+| DCI | 85 | 85 | 75 | `85 / 85 AGREE`, `80 artifacts (75 html, 2 txt, 1 xml, 2 svg) | excluded: 5 (binary-raster:4, indexnow-key-file:1)` |
+| LGM | 59 | 59 | 48 | `59 / 59 AGREE`, `54 artifacts (48 html, 2 txt, 1 xml, 3 svg) | excluded: 5` |
+| GCI | 49 | 49 | 38 | `49 / 49 AGREE`, `44 artifacts (38 html, 2 txt, 1 xml, 3 svg) | excluded: 5` |
+
+The excluded list is unchanged: 4 binary rasters plus the IndexNow key file per
+property, all stated.
+
+**No bare zeros** — every one of the eleven rule blocks prints a `RAW` row and an
+`ADJUDICATED` row. R6 and R11 still print no `FILTER` row (they have no
+filters), but both now carry a note: R6 the DENOMINATOR line, R11 the
+null-result/non-subtraction note.
+
+**Repo state** — unchanged at the SHAs I found them, all four clean, all `0 0`
+before my commit.
+
+## 7. THE README, RE-VERIFIED
+
+Every claim I falsified last round has been rewritten, and the rewrites are
+true. Verified one by one:
+
+| claim | status |
+|---|---|
+| *"writes nothing except an explicit `--report` path — the wrappers export `PYTHONDONTWRITEBYTECODE=1`, because setting `sys.dont_write_bytecode` in the module body is too late when something *imports* `claim_gate.py`"* | **TRUE**, both halves, clean-room verified |
+| *"The SRC normalization is real and scoped … the header prints the list every run, including `READ BY: NO RULE -- SRC is computed and unused` if it is ever emptied"* | **TRUE** — header reads `READ BY: R2, R3-T3, R4, R5, R7`; with `src_rules: []` it reads `READ BY: NO RULE -- SRC is computed and unused`; and SRC genuinely catches a generator-only R4 defect |
+| *"the gate asserts `raw − removed == adjudicated` and exits 2 if that identity fails"* | **TRUE NOW** — C1 demonstrated reachable |
+| *"`--peer` … Passing the flag can never make the gate stop saying whether the half ran"* | **TRUE** — verified three ways |
+| *"24 positive controls, 24 repair tests and 14 negative controls"*, with both fixture-count commands | **TRUE** — `24`, `14`, and `grep -c canary+/~/-` → `24 / 24 / 14` |
+| *"the DETECTED/MISSED and clean/FALSE-ALARM tallies are identical on all three properties … the per-control hit counts in parentheses vary. Do not read this as 'the control is property-independent'"* | **TRUE and honestly caveated** — tallies identical on all three; the parenthetical differs (`R2b DETECTED (2 a: a)` on DCI vs `(1 a: a)` on GCI), which the README predicts |
+| *"A control that still fires on a repaired fixture is a control failure and exits 2"* | **TRUE** — attack A3 |
+| *"Control fixtures are pinned to their own as-of date, so `--today` cannot turn a fixture's own hardcoded date into a false alarm"* | **TRUE** — `2020-01-01`, `2026-08-01`, `2030-01-01` all clean |
+| *"a config key that no code path reads is a rule that silently does not exist: wire it up or delete it"* | stated as a rule; ~21 keys still violate it, listed below |
+| *"A run whose filter silently dropped a real hit must not look identical to a clean run"* | **STILL FALSE for one case** — the unscoped-page R2 drop, section 5 |
+
+## 8. DEAD CONFIG, RE-VERIFIED INDEPENDENTLY
+
+Seven of the eight keys the fix round claims to have wired are genuinely
+referenced: `forbidden_program_names`, `locked_restriction_strings`,
+`footer_marker`, `cited_stat_class`, `allowed_occurrences`,
+`current_replacements`, `attributed_exception.publishers` — 1 reference each.
+`is_embed` shows **0** references (NEW-7). `elevation_anchor` was also wired,
+unclaimed. `res.r11_rows` is gone — 0 references.
+
+Still not referenced anywhere in `claim_gate.py` or `surfaces.py`, behavioural
+keys only, my own scan: `R1.quote_close`, `R1.attribution_template`,
+`R1.require_explicit_quote_field`, `R10.offproperty_is_compliant`,
+`R11.attributing_block_selector`, `R11.blocking`,
+`R11.report_registry_pages_drift`, `R2.forbidden_elevations`, `R2.allowlist`,
+`R3.bare_numeral_gate`, `R3.exclude_paths`,
+`R4.attributed_exception.requires_publisher_named`,
+`R4.attributed_exception.requires_cited_source_key`, `R6.opt_in`,
+`R7.deliberate_edition_divergence`, `R8.date_surfaces`,
+`R8.reviewed_iso_constant`, `R8.static_page_constant`, `R8.static_page_value`,
+`R8.self_dated_sources`, `R8.own_effective_date_values`, `svg_readable`, and
+`R2.sibling_artifacts_forbidden` (a stated decision, not an oversight).
+**That is 23, consistent with the fix round's own "~21 still dead and named as
+open."** The purely descriptive keys (`market`, `gas_utility`, `tariff_identity`,
+`gates_present`, `measured_at`, `draft_gate`, `reviewed_iso`,
+`atomic_answer_band`) are documentation and I do not count them as dead rules.
+
+## 9. WOULD THE GATE NOW STOP THE SIX ORIGINAL DEFECTS?
+
+| defect | round 1 | round 2 |
+|---|---|---|
+| paraphrase inside quotation marks as a utility's own words, 11 pages | one exact spelling only | **YES for five of seven forms.** Entity-encoded quotes, guillemets, backtick literals and HTML comments are all caught. Still missed: a class *list* containing `cited-stat`, and the anaphoric form where the source is named three sentences earlier. |
+| three towns credited to the wrong gas utility for two years | town page only, exact case, attribution word required | **YES on the town's own page** — case-insensitive, bare `Atmos`, `<details>`, `aria-label`, JSON-LD, CSS `content:`, HTML comments and backticks all caught. **NO on any sitewide artifact** — a hub page, `llms.txt`, `robots.txt`, `sitemap.xml` or a bare `.svg` naming the wrong utility for a named town is still `RAW 0 PASS`. Given the original defect shipped in shared components that render sitewide, this is the gap that matters most. |
+| retired eligibility rule published as current, 35 pages | the two `Dec. 31` short forms unfirable | **YES.** Both short forms now fire; 437 sentence-scoped config patterns scanned, 0 unfirable. |
+| invented rebate program with four invented pathways, 72 pages | not addressed as a claim | **STILL NOT ADDRESSED.** No rule asserts that a named programme exists. R7 matches propositions a human already wrote into the config, so it catches this class only after it has been found by other means. |
+| 545 banned rebate dollar figures | strongest rule, five holes | **YES, substantially better.** Entity-encoded `$` in three forms, a bare `2000`, and a CSS `content:` figure are all now caught. Still missed: the figure written in words, and a bare numeral with no configured money word in its 120-character window. |
+| calculator printing two severity words on one percentage | NO | **YES** — `G2-DUP … two-labels-one-value`, plus the minified, ternary and `switch` shapes. **Unless the severity words are renamed**, which turns the whole rule off silently (NEW-1). |
+
+**Four of six now genuinely covered, one materially improved but with a
+sitewide hole, one still not addressed.**
+
+## 10. WHAT IT IS STILL BLIND TO
+
+1. **Scope, not surface.** The surface problem is largely solved — backticks,
+   comments, CSS, entities, JSON-LD, SVG, `sitemap.xml` and generator source all
+   reach rules now. What is left in R2 is a *scoping* rule: a claim is only
+   judged if the gate can attach a town to the whole artifact. Nine of R2's ten
+   surviving misses are that one rule.
+2. **Paraphrase.** R4's `cumulative` / `at once` / `run concurrently`, R5's
+   `40 percent` and `by a third`, R9's reworded contested value, R10's
+   unlisted promise wording, R3's figure in words and `pays the most` — every
+   one is the same proposition in unlisted words. The gate is materially better
+   at finding a listed string anywhere; it is no better at recognising an
+   unlisted phrasing of the same claim.
+3. **Its own configuration being wrong.** R6 turns off if the labels are
+   renamed; R1 turns off if the `cited-stat` class gains a second class name;
+   23 behavioural keys still read as rules that do not exist. The gate now
+   prints a denominator that would tell a reader it has gone blind — and does
+   not act on it.
+4. **Non-whitespace Unicode.** A soft hyphen and a Cyrillic homoglyph still
+   defeat every name match.
+5. **A repaired fixture that was gutted rather than repaired**, which silences
+   the very mechanism this document produced.
