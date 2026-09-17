@@ -764,6 +764,14 @@ class Ctx(object):
         if art.kind == "html":
             for sent in S.sentences(art.txt):
                 out.append((S.S_VIS, "txt", sent))
+        else:
+            # A non-HTML artifact's own surfaces include S_VIS, which is NOT in
+            # POOL_KEYS (it comes from art.txt for HTML). Without this, any
+            # deployed .txt that is not llms.txt or robots.txt reached no
+            # proposition rule at all.
+            for sf in self.surfaces(art, (S.S_VIS,)):
+                for sent in (S.sentences(sf.text) or [sf.text]):
+                    out.append((S.S_VIS, sf.locator, sent))
         for s in self.surfaces(art, POOL_KEYS):
             if s.key in (S.S_JS, S.S_CSS) and s.locator.endswith("body"):
                 continue
@@ -1758,7 +1766,18 @@ def rule_R4(ctx, res):
                 one = allnamed[0] if allnamed else None
                 near = False
                 if one and has_any(sent, preds, word=False):
-                    for pos in occ(sent, one, ci=True):
+                    # Look for the canonical name AND every alias that maps to
+                    # it. "Xcel rebate-stack eligibility" contains the ALIAS
+                    # "Xcel", never the canonical "Xcel Energy", so a lookup on
+                    # the canonical name alone found no position and the
+                    # single-program class never fired on the very line it was
+                    # written for.
+                    spots = list(occ(sent, one, ci=True))
+                    for alias, canon in sorted(
+                            (c.get("program_aliases", {}) or {}).items()):
+                        if canon == one:
+                            spots += occ(sent, alias, ci=True)
+                    for pos in sorted(set(spots)):
                         if has_any(win(sent, pos, 60), preds, word=False):
                             near = True
                             break
@@ -1920,8 +1939,11 @@ def rule_R5(ctx, res):
         # A numeral SUBSTRING present in ANY cited-stat on the page cleared the
         # hit page-wide. That is how DCI's live uncited "15% reduction in
         # heating and cooling costs" was nearly cleared by an UNRELATED ENERGY
-        # STAR 15% on the same page. The figure must now share at least three
-        # content words with the stat that is supposed to attribute it.
+        # STAR 15% on the same page. The figure must now share at least FIVE
+        # content words with the stat that is supposed to attribute it. Three
+        # was still too loose: "see a 15% reduction in heating and cooling
+        # costs" and "save an average of 15% on heating and cooling costs"
+        # share exactly heating/cooling/costs and are different claims.
         if not getattr(h, "r5_instat", False):
             return False
         sw = set(w for w in re.findall(r"[a-z]{3,}", h.sentence.lower())
@@ -1929,7 +1951,7 @@ def rule_R5(ctx, res):
         for st in getattr(h, "r5_stats", []) or []:
             tw = set(w for w in re.findall(r"[a-z]{3,}", st.lower())
                      if w not in _STOP)
-            if len(sw & tw) >= 3:
+            if len(sw & tw) >= 5:
                 return True
         return False
 
