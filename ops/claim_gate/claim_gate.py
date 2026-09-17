@@ -86,7 +86,7 @@ class Hit(object):
     __slots__ = ("rid", "sub", "rel", "surface", "locator", "text", "note",
                  "cite_key", "sentence", "r5_inblock", "r5_instat",
                  "r8_excluded", "r2_noscope", "r2_subject_ok", "r3_kind",
-                 "on_embed")
+                 "on_embed", "r3_w60", "r3_w40", "r3_struct")
 
     def __init__(self, rid, sub, rel, surface, locator, text, note="",
                  cite_key=None, sentence=""):
@@ -106,6 +106,9 @@ class Hit(object):
         self.r2_subject_ok = True
         self.r3_kind = ""
         self.on_embed = False
+        self.r3_w60 = ""
+        self.r3_w40 = ""
+        self.r3_struct = ""
 
     def sortkey(self):
         return (self.rel, self.sub, self.surface, self.locator, self.text)
@@ -1142,6 +1145,7 @@ def rule_R2(ctx, res):
     marks = ctx.r("R7").get("correction_markers", []) or []
     towns = c.get("towns", {}) or {}
     elec_names = c.get("electric_utility_names", []) or []
+    neg_markers = c.get("corrective_disclosure_markers", []) or []
 
     # the known-present control (spec 3): search for a term you KNOW is
     # present before trusting a term you believe is absent
@@ -1177,6 +1181,12 @@ def rule_R2(ctx, res):
         for skey, loc, sent in ctx.pool(art):
             if not has_any(sent, aw, word=False):
                 continue
+            # JS COMMENTS ARE OUT OF R2's CLAIM SET. A comment naming a utility
+            # is not an attribution made to a visitor, and they were a
+            # measurable share of R2's 100% false-positive rate. R3 still reads
+            # them (GCI f0203ad's cap shipped in one), which is the right split.
+            if skey == S.S_JS and "comment@" in str(loc):
+                continue
             for u in ctx.utilities_in(sent):
                 if allowed is not None and u in allowed:
                     continue
@@ -1186,6 +1196,25 @@ def rule_R2(ctx, res):
                               else "sitewide-scope-no-town-configured"),
                         sentence=sent)
                 h.r2_noscope = (allowed is None)
+                # Is this a CORRECTIVE DISCLOSURE rather than an attribution?
+                # insulation-johnstown.html says "in Johnstown the natural gas
+                # utility is Xcel Energy, NOT Atmos Energy" -- correct copy --
+                # and R2 flagged the Atmos mention. The test: a negation or
+                # contrast marker governs the flagged name within 34 chars AND
+                # the sentence also names a utility that DOES serve the scope.
+                h.r2_subject_ok = True
+                if allowed:
+                    where = list(occ(sent, u, ci=True))
+                    for alias, canon in sorted(
+                            (c.get("utility_aliases", {}) or {}).items()):
+                        if canon == u:
+                            where += occ(sent, alias, ci=True)
+                    for pos in sorted(set(where)):
+                        pre = sent[max(0, pos - 34):pos]
+                        if has_any(pre, neg_markers, word=False) and \
+                                (set(ctx.utilities_in(sent)) & set(allowed)):
+                            h.r2_subject_ok = False
+                            break
                 raw.append(h)
         for h in sorted(set(art.hrefs)):
             m = re.match(r"https?://([^/]+)", h)
@@ -1318,9 +1347,15 @@ def rule_R2(ctx, res):
                             sentence=cs))
         # town-blind tool output
         if art.kind == "html" and art.js_strings and not uniform:
+            # Satisfied by a town input OR by the tool asking for the utility
+            # DIRECTLY -- a calculator that asks "who is your gas utility" is
+            # not town-blind, it is town-independent.
             has_town_input = bool(
-                re.search(r"id=\"[^\"]*town", art.raw, re.I) or
-                re.search(r"name=\"[^\"]*town", art.raw, re.I))
+                re.search(r"(?:id|name)=\"[^\"]*(?:town|city|municipal"
+                          r"|utility|provider)", art.raw, re.I) or
+                re.search(r"<label[^>]*>[^<]{0,60}(?:your town|your city|"
+                          r"gas utility|which utility|utility provider)",
+                          art.raw, re.I))
             if not has_town_input:
                 for loc, lit in art.js_strings:
                     for u in [x for x in ctx.utilities_in(lit)
@@ -1362,9 +1397,16 @@ def rule_R2(ctx, res):
     def f_restr_elsewhere(h):
         return h.note == "restriction-elsewhere-on-page"
 
+    def f_corrective(h):
+        return not getattr(h, "r2_subject_ok", True)
+
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
         Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
+        Filt("corrective disclosure -- a negation or contrast marker governs "
+             "the flagged utility and the sentence names one that DOES serve "
+             "the scope (correct territory copy, not an attribution)",
+             f_corrective),
         Filt("locked restriction present ON THE PAGE but not in the same "
              "sentence -- REVIEW, not FAIL", f_restr_elsewhere),
         Filt("no territory configured for this property -- R2 cannot scope "
@@ -1389,6 +1431,62 @@ def rule_R2(ctx, res):
            "attributions to a utility that does not serve the town"
 
 
+_T2_PHONE = re.compile(r"\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b")
+_T2_ZIP = re.compile(r"\b8[0-1]\d{3}\b")
+_T2_PRINTCODE = re.compile(r"\b\d{2}-\d{2}-\d{3}\b|\b\d{2}-\d{4}\b"
+                           r"|\bPublic Law \d+-\d+\b|\b\d{2}-\d{4}\s*\("
+                           r"\d{2}-\d{2}\)")
+_T2_UNITS = ("\u00b0F", "degree", "perm", "pascal", "CFM", "sq ft",
+             "square feet", "square foot", "feet", "foot", "inch", "inches",
+             "BTU", "kWh", "therm", "R-value", "lb", "pound", "cubic",
+             "elevation", "ZIP", "zip code", "phone", "call ", "tel:",
+             "priority", "changefreq", "word", "character")
+_T2_XMLATTR = re.compile(
+    r"(?:\b(?:d|x|y|x1|x2|y1|y2|cx|cy|r|rx|ry|width|height|viewBox|points|"
+    r"stroke-width|font-size|offset|opacity|transform|letter-spacing|"
+    r"stop-opacity)\s*=\s*[\"'][^\"']*)$", re.IGNORECASE)
+_T2_INURL = re.compile(r"(?:https?://|/)[^\s\"'<>]*$")
+
+
+def _t2_structural(ctx, art, text, pos, matched):
+    """Why a bare numeral is NOT a money figure. Returns a reason or "".
+
+    R3-T2's measured false-positive rate was 85.1% / 100% / 77.3% while DCI
+    carries ZERO $ figures at HEAD, and the hits were square footage, ZIP
+    codes, phone numbers, sitemap <priority>, a statute, 0.1 perm,
+    130-150 degF, 5,280 feet, a print code and an SVG path coordinate. A rule
+    nobody trusts gets ignored, which is worse than no rule.
+    """
+    before = text[max(0, pos - 90):pos]
+    after = text[pos:pos + 90]
+    w = before + after
+    if art.kind in ("xml", "svg") or _T2_XMLATTR.search(before):
+        return "xml/svg numeric attribute or path coordinate"
+    if _T2_INURL.search(before):
+        return "inside a URL or path"
+    if re.search(r"=\s*[\"'][^\"']{0,80}$", before):
+        return "inside an attribute value"
+    if _T2_PHONE.search(w):
+        return "telephone number"
+    if _T2_ZIP.search(matched) and "8" == matched[:1] and len(matched) == 5:
+        return "Colorado postal code"
+    if _T2_PRINTCODE.search(w):
+        return "statute or citation print code"
+    # An ISO date is a date wherever it appears. Structural, not a marker
+    # list: the repaired R3a fixture reads "... were DELETED 2026-09-08" and no
+    # vocabulary of date words would have covered "DELETED".
+    if re.match(r"\d{4}-\d{2}-\d{2}", text[pos:pos + 10]) or \
+            re.search(r"\d{4}-\d{2}-$", text[max(0, pos - 8):pos]) or \
+            re.search(r"\d{4}-$", text[max(0, pos - 5):pos]):
+        return "part of an ISO date"
+    ea = (ctx.r("R2").get("elevation_anchor") or "")
+    if ea and (matched == ea.replace(",", "") or matched in ea):
+        return "configured elevation anchor"
+    if has_any(w, _T2_UNITS, word=False):
+        return "unit-of-measure phrase, not a payout"
+    return ""
+
+
 def rule_R3(ctx, res):
     c = ctx.r("R3")
     dollar = re.compile(c.get("dollar_pattern", r"\$[0-9][0-9,.]*"))
@@ -1398,6 +1496,9 @@ def rule_R3(ctx, res):
     wchars = int(c.get("window_chars", 120))
     allowed = c.get("allowed_figures", []) or []
     costs = c.get("cost_context_markers", []) or []
+    cost_units = c.get("cost_unit_markers", []) or []
+    cost_nouns = c.get("cost_noun_markers", []) or []
+    year_binders = c.get("year_payout_binders", []) or []
     codes = c.get("code_context_markers", []) or []
     income = c.get("income_eligibility_markers", []) or []
     structs = c.get("allowed_structure_percentages", []) or []
@@ -1421,6 +1522,7 @@ def rule_R3(ctx, res):
                     continue
                 seen_t1.add(key)
                 enc = (level == S.NORM_DEC)
+                _h1 = None
                 raw.append(Hit("R3", "T1", art.rel,
                                ctx.surface_at(art, m.start(), level),
                                "%s@%d" % (level.lower(), m.start()),
@@ -1429,6 +1531,8 @@ def rule_R3(ctx, res):
                                   " [ENTITY-ENCODED: invisible at RAW]"
                                   if enc else "", w),
                                note=m.group(0), sentence=w))
+                raw[-1].r3_w60 = S.collapse(win(text, m.start(), 60))
+                raw[-1].r3_w40 = S.collapse(win(text, m.start(), 40))
         for m in re.finditer(r"\b\d{3,6}\b", art.dec):
             w = S.collapse(win(art.dec, m.start(), wchars))
             if not has_any(w, money, word=False):
@@ -1438,6 +1542,10 @@ def rule_R3(ctx, res):
                            "dec@%d" % m.start(),
                            "%s | %s" % (m.group(0), w),
                            note=m.group(0), sentence=w))
+            raw[-1].r3_w60 = S.collapse(win(art.dec, m.start(), 60))
+            raw[-1].r3_w40 = S.collapse(win(art.dec, m.start(), 40))
+            raw[-1].r3_struct = _t2_structural(ctx, art, art.dec, m.start(),
+                                               m.group(0))
         for m in rate.finditer(art.dec):
             w = S.collapse(win(art.dec, m.start(), wchars))
             if not has_any(w, money, word=False):
@@ -1447,6 +1555,10 @@ def rule_R3(ctx, res):
                            "rate@%d" % m.start(),
                            "%s | %s" % (m.group(0), w),
                            note=m.group(0), sentence=w))
+            raw[-1].r3_w60 = S.collapse(win(art.dec, m.start(), 60))
+            raw[-1].r3_w40 = S.collapse(win(art.dec, m.start(), 40))
+            raw[-1].r3_struct = _t2_structural(ctx, art, art.dec, m.start(),
+                                               m.group(0))
 
 
     # T3 -- the genuine claim test -- reads the generators too, because
@@ -1487,17 +1599,55 @@ def rule_R3(ctx, res):
         return h.note in allowed or (h.note and h.note.lstrip("$") in
                                      [a.lstrip("$") for a in allowed])
 
+    def f_nonmoney(h):
+        return bool(getattr(h, "r3_struct", ""))
+
     def f_income(h):
-        return has_any(h.sentence, income, word=False)
+        # NARROWED. The income filter matched anywhere in the 120-char window,
+        # which removed ALL TWELVE City of Golden rebate caps and 77 of 173
+        # $600 hits on DCI because "80% of Area Median Income" happened to sit
+        # in the window. An income-eligibility threshold sits BESIDE its
+        # phrase and is not a payout, so: the marker must be within 60 chars
+        # AND no money word within 40.
+        if not has_any(getattr(h, "r3_w60", "") or h.sentence, income,
+                       word=False):
+            return False
+        return not has_any(getattr(h, "r3_w40", "") or "", money, word=False)
 
     def f_cost(h):
-        return has_any(h.sentence, costs, word=False)
+        # SPLIT. LGM's cost_context_markers listed "per square foot" while
+        # Efficiency Works DENOMINATES ITS PAYOUT per square foot, and that
+        # single marker removed 103 of the 133 banned figures -- 65 x $1.16 and
+        # 38 x $0.77. A per-unit marker is no longer sufficient on its own; it
+        # now needs a COST noun in the same window.
+        if has_any(h.sentence, costs, word=False):
+            return True
+        if has_any(h.sentence, cost_units, word=False):
+            return has_any(h.sentence, cost_nouns, word=False)
+        return False
 
     def f_code(h):
         return has_any(h.sentence, codes, word=False)
 
     def f_year(h):
-        return bool(h.note) and re.fullmatch(r"(19|20)\d\d", h.note) is not None
+        # The old test was re.fullmatch(r"(19|20)\d\d", ...) with no context
+        # at all, which silently ate ANY bare-digit rebate amount between 1900
+        # and 2099. My first repair required a DATE-VOCABULARY word nearby, and
+        # that was worse: DCI R3 went 68 -> 237 adjudicated, 162 of them the
+        # bare year in "the 2026 Xcel rebate programs", because a year needs no
+        # date word to be a year.
+        #
+        # This version keeps the blanket clearance but DISCLOSES its one real
+        # risk and declines to take it: a four-digit number in 1900-2099 is
+        # cleared as a year UNLESS a strong PAYOUT BINDER sits within 40
+        # characters ("up to", "pays", "capped at", "rebate of", ...). Those
+        # are the constructions in which a bare amount in the year range is
+        # actually plausible, and they stay.
+        if not (h.note and re.fullmatch(r"(19|20)\d\d", h.note)):
+            return False
+        if has_any(getattr(h, "r3_w40", "") or "", year_binders, word=False):
+            return False
+        return True
 
     def f_comp(h):
         return has_any(h.sentence, computed, word=False)
@@ -1520,10 +1670,15 @@ def rule_R3(ctx, res):
     res.adjudicated, res.rows = adjudicate(raw, [
         Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
         Filt("allowed_figures (per-property Director ruling)", f_allowed),
+        Filt("structural non-money numeral (URL/attribute, XML or SVG "
+             "coordinate, telephone, postal code, statute or print code, "
+             "unit phrase, elevation anchor, ISO date)", f_nonmoney),
         Filt("income-eligibility threshold (WAP standing exception)", f_income),
         Filt("cost_context_markers (Ruling 2 -- costs, not payouts)", f_cost),
         Filt("code_context_markers (IECC / ENERGY STAR / R-value)", f_code),
-        Filt("four-digit year inside the 3-6 digit scan", f_year),
+        Filt("four-digit 1900-2099 cleared as a YEAR (kept when a payout "
+             "binder is within 40 chars -- BLIND SPOT: a bare rebate amount "
+             "in that range with no binder)", f_year),
         Filt("computed_output_markers (Ruling 4 -- visitor arithmetic)", f_comp),
         Filt("allowed_structure_percentages (Ruling 2, none added)", f_struct),
         Filt("CSS surface (stroke-width class of false positive)", f_css),
