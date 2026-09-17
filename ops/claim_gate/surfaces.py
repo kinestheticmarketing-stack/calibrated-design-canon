@@ -103,12 +103,14 @@ S_LLMS = "LLMS"
 S_ROBOTS = "ROBOTS"
 S_SITEMAP = "SITEMAP"
 S_SVGTEXT = "SVGTEXT"
+S_COMMENT = "COMMENT"  # <!-- ... --> bodies, a real claim surface
 S_CITE = "CITE"      # claim-set: a resolved CITED_SOURCES entry's own text
 S_CONST = "CONST"    # claim-set: a territorially-scoped shared constant
 
 ALL_SURFACES = (
     S_VIS, S_TITLE, S_META, S_OG, S_TW, S_LD, S_JS, S_CSS, S_LOWVIS,
-    S_ATTR, S_LLMS, S_ROBOTS, S_SITEMAP, S_SVGTEXT, S_CITE, S_CONST,
+    S_ATTR, S_LLMS, S_ROBOTS, S_SITEMAP, S_SVGTEXT, S_COMMENT, S_CITE,
+    S_CONST,
 )
 
 # LOWVIS: the tags three of the last five defects lived in (spec 3).
@@ -253,6 +255,14 @@ class _HTMLSurfaces(HTMLParser):
             self._emit(S_LOWVIS, data, self.stack[-1])
         else:
             self._emit(S_VIS, data, self.stack[-1] if self.stack else "-")
+
+    def handle_comment(self, data):
+        """An HTML comment is a claim surface. txt() strips comments before the
+        pool, so a claim inside <!-- --> reached R1, R2, R4 and R7 through
+        nothing at all -- while R3, which reads RAW, saw it. That inconsistency
+        is what proves it an oversight rather than a decision: the bytes ship,
+        view-source shows them, and an LLM crawler reads them."""
+        self._emit(S_COMMENT, data, "comment")
 
     def handle_entityref(self, name):
         self.handle_data("&%s;" % name)

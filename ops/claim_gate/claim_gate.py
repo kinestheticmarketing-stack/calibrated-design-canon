@@ -612,7 +612,7 @@ GEN_MODULES = (
 
 CLAIM_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD,
               S.S_LOWVIS, S.S_ATTR, S.S_LLMS, S.S_SVGTEXT, S.S_CITE,
-              S.S_CONST, S.S_JS)
+              S.S_CONST, S.S_JS, S.S_COMMENT)
 
 # The sentence pool every proposition rule runs over. VIS comes from the
 # whole-document TXT (so a sentence that runs through <strong> or a source line
@@ -621,7 +621,7 @@ CLAIM_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD,
 # what told DCI its page contradicted its own navigation.
 POOL_KEYS = (S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS, S.S_ATTR,
              S.S_LLMS, S.S_ROBOTS, S.S_SVGTEXT, S.S_CITE, S.S_CONST,
-             S.S_LOWVIS)
+             S.S_LOWVIS, S.S_COMMENT)
 
 
 class Ctx(object):
@@ -919,7 +919,7 @@ def level_counts(ctx, probes, ci=True, word=True):
 # THE RULES (spec 8)
 # ===========================================================================
 
-R1_SURF = "VIS TITLE META OG TW LD LOWVIS EMBED LLMS SVGTEXT"
+R1_SURF = "VIS TITLE META OG TW LD LOWVIS COMMENT EMBED LLMS SVGTEXT"
 R1_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD,
            S.S_LOWVIS, S.S_LLMS, S.S_SVGTEXT)
 
@@ -2474,7 +2474,7 @@ RULES = [
                      sub="B", repaired=_f("repaired", "R1_fabricated_quotation.html"))]),
 
     Rule("R2", "WRONG-UTILITY CLAIM", "CLAIM TEST",
-         "VIS TITLE META OG TW LD JS LOWVIS ATTR LLMS SVGTEXT EMBED",
+         "VIS TITLE META OG TW LD JS LOWVIS ATTR COMMENT LLMS SVGTEXT EMBED",
          "TXT for propositions; RAW for href and JS comments; SRC over the "
          "generators",
          "it enforces the config's territory and cannot discover that a "
@@ -2508,7 +2508,7 @@ RULES = [
                      R3_CONTROL_OVERLAY, sub="T3", repaired=_f("repaired", "R3c_rank_claim_no_numeral.html"))]),
 
     Rule("R4", "STACKING ASSERTION OR DENIAL", "CLAIM TEST",
-         "VIS TITLE META OG TW LD JS LOWVIS ATTR LLMS EMBED",
+         "VIS TITLE META OG TW LD JS LOWVIS ATTR COMMENT LLMS EMBED",
          "TXT sentence-split; SRC for the generator half",
          "it enforces silence; it cannot verify whether stacking is actually "
          "permitted, and it classifies rather than decides -- a NEUTRAL noun "
@@ -2551,7 +2551,7 @@ RULES = [
     Rule("R7", "SUPERSEDED-SOURCE CLAIM",
          "CLAIM TEST for the proposition half; STRING LIST for the identifier "
          "half, declared",
-         "VIS TITLE META OG TW LD JS LOWVIS ATTR LLMS EMBED",
+         "VIS TITLE META OG TW LD JS LOWVIS ATTR COMMENT LLMS EMBED",
          "RAW for identifiers and URLs; TXT sentence-split for propositions; "
          "SRC for the generator half",
          "it enforces a list and cannot notice a source that went stale since "
