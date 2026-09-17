@@ -271,8 +271,10 @@ _SVG_TEXT = re.compile(r"<text\b[^>]*>(?P<t>.*?)</text\s*>", re.DOTALL | re.I)
 _LOC = re.compile(r"<loc>\s*(?P<loc>[^<]*)</loc>", re.I)
 _LASTMOD = re.compile(r"<lastmod>\s*(?P<d>[^<]*)</lastmod>", re.I)
 _URL_BLOCK = re.compile(r"<url>(?P<b>.*?)</url>", re.DOTALL | re.I)
+_CSS_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
 _DISPLAY_NONE = re.compile(
-    r"(?P<sel>[^{}]+)\{[^}]*?(?:display\s*:\s*none|visibility\s*:\s*hidden)[^}]*\}",
+    r"(?P<sel>[^{}]+)\{[^{}]*?(?:display\s*:\s*none|visibility\s*:\s*hidden)"
+    r"[^{}]*\}",
     re.IGNORECASE,
 )
 # A JS string literal, single or double quoted, escape-aware.
@@ -399,8 +401,17 @@ def _parse_html(art):
 
     for i, body in enumerate(art.css_bodies):
         art.surfaces.append(Surface(S_CSS, "CSS[%d]" % i, collapse(body)))
-        for m in _DISPLAY_NONE.finditer(body):
-            art.hidden_selectors.append(collapse(m.group("sel")))
+        # Comments out, at-rule preludes out. `@media (max-width: 799px)` is
+        # not a selector, and a decorative /* -- Scroll-to-top -- */ banner is
+        # not one either; naming them as selectors makes the TRAP line unusable
+        # for the reader who has to adjudicate it.
+        clean = _CSS_COMMENT.sub(" ", body)
+        for m in _DISPLAY_NONE.finditer(clean):
+            sel = collapse(m.group("sel"))
+            sel = sel.rsplit("}", 1)[-1].rsplit("{", 1)[-1].strip()
+            if not sel or sel.startswith("@"):
+                continue
+            art.hidden_selectors.append(sel)
 
     for m in _CITED_STAT.finditer(art.raw):
         body = m.group("body")
