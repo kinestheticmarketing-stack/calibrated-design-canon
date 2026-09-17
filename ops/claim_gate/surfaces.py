@@ -89,10 +89,11 @@ _ABBREV = (
     "Ref", "Art", "Reg", "Rev", "Sq", "Ave", "Rd", "Blvd", "St", "Ste",
     "Mr", "Mrs", "Ms", "Dr", "Jr", "Sr", "Prof",
     "approx", "vs", "etc", "al", "est", "cf", "pp", "ca", "min", "max",
+    "Colo", "Colo. P", "Nos", "Vol", "No",
 )
 # Multi-period abbreviations, protected whole.
 _ABBREV_MULTI = ("U.S.A.", "U.S.", "U.K.", "e.g.", "i.e.", "a.m.", "p.m.",
-                 "P.U.C.", "No.s")
+                 "P.U.C.", "Colo. P.U.C.", "No.s")
 
 _PROT = "\x00"
 _ABBREV_RE = re.compile(
@@ -443,7 +444,6 @@ class Artifact(object):
         self.ids = []
         self.cited_stats = []       # dicts: url, label, body, txt, quoted
         self.sitemap_entries = []   # (loc, lastmod)
-        self.is_embed = False
         self.ld_parse_errors = []
         self.ld_truncated = []
         self.cite_keys = []         # filled by the claim-set builder
@@ -613,7 +613,7 @@ def _parse_sitemap(art):
     return art
 
 
-def parse_artifact(rel, path, embed_paths=(), cited_stat_class="cited-stat"):
+def parse_artifact(rel, path, cited_stat_class="cited-stat"):
     """Parse ONE artifact into every surface it has. One read, one parse."""
     with open(path, "rb") as fh:
         data = fh.read()
@@ -632,7 +632,6 @@ def parse_artifact(rel, path, embed_paths=(), cited_stat_class="cited-stat"):
 
     art = Artifact(rel, kind, raw)
     art.cited_stat_class = cited_stat_class or "cited-stat"
-    art.is_embed = rel in set(embed_paths)
     if kind == "html":
         _parse_html(art)
     elif kind == "svg":
