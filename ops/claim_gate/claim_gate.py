@@ -1,0 +1,2698 @@
+#!/usr/bin/env python3
+"""claim_gate.py -- the ONE implementation of the standing claim gate.
+
+Specification: ops/claim_gate/RULES_SPEC.md, in full. Every rule here is
+derived from a defect this portfolio shipped live between 2026-09-01 and
+2026-09-11. The gate is the re-runnable acceptance predicate over the whole
+deployed artifact set; it is NOT an inventory, NOT a build gate, NOT a truth
+oracle, and it NEVER edits anything.
+
+python3 STDLIB ONLY (spec 1). Read-only on content. Writes nothing except an
+explicit --report path.
+
+Exit codes (spec 4):
+  0  every blocking rule PASS, every control fired, corpus counts agree
+  1  at least one blocking rule FAIL
+  2  control failure, config error, corpus divergence, filter arithmetic
+     mismatch, or a corpus smaller than the config's min_artifacts -- "the gate
+     could not be trusted to have run"
+"""
+
+import sys
+
+# The gate writes NOTHING into the repo it is run from or the repo it lives in.
+# Importing surfaces.py would otherwise drop ops/claim_gate/__pycache__/ next
+# to the implementation. Set BEFORE any first-party import.
+sys.dont_write_bytecode = True
+
+import argparse  # noqa: E402
+import json  # noqa: E402
+import os  # noqa: E402
+import re  # noqa: E402
+import subprocess  # noqa: E402
+import time  # noqa: E402
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+
+import surfaces as S  # noqa: E402
+
+FIXTURES = os.path.join(_HERE, "fixtures")
+
+# ---------------------------------------------------------------------------
+# Output primitives (spec 4). Column layout inherited from _artifact_grep.sh's
+# printf '  %-6s %-46s %s\n'.
+# ---------------------------------------------------------------------------
+
+BAR = "━" * 3
+
+
+class Out(object):
+    def __init__(self):
+        self.lines = []
+
+    def __call__(self, s=""):
+        self.lines.append(s)
+
+    def field(self, label, desc, value, tail=""):
+        self("  %-16s %-46s %s%s" % (label, desc, value, tail))
+
+    def head(self, s):
+        self("%s %s %s" % (BAR, s, BAR))
+
+    def text(self):
+        return "\n".join(self.lines) + "\n"
+
+
+class ConfigError(Exception):
+    pass
+
+
+class ArithmeticMismatch(Exception):
+    pass
+
+
+# ---------------------------------------------------------------------------
+# Hits, filters, adjudication (spec 4.1-4.3)
+# ---------------------------------------------------------------------------
+
+class Hit(object):
+    __slots__ = ("rid", "sub", "rel", "surface", "locator", "text", "note",
+                 "cite_key", "sentence", "r5_inblock", "r5_instat")
+
+    def __init__(self, rid, sub, rel, surface, locator, text, note="",
+                 cite_key=None, sentence=""):
+        self.rid = rid
+        self.sub = sub
+        self.rel = rel
+        self.surface = surface
+        self.locator = locator
+        self.text = S.collapse(text)[:220]
+        self.note = note
+        self.cite_key = cite_key
+        self.sentence = S.collapse(sentence or text)
+        self.r5_inblock = False
+        self.r5_instat = False
+
+    def sortkey(self):
+        return (self.rel, self.sub, self.surface, self.locator, self.text)
+
+    def line(self):
+        n = ("  [%s]" % self.note) if self.note else ""
+        return "  %s:%s  %s  %s%s" % (self.rel, self.surface, self.sub,
+                                      self.text, n)
+
+
+class Filt(object):
+    """One named filter. `count` is taken over ALL raw candidates; `removed` is
+    taken over the candidates still standing when this filter runs -- so a
+    filter can report that it matched N and removed fewer, which is exactly the
+    shape spec 4's sample block prints."""
+
+    def __init__(self, label, pred, removes=True):
+        self.label = label
+        self.pred = pred
+        self.removes = removes
+
+
+def adjudicate(raw_hits, filters):
+    remaining = list(raw_hits)
+    rows = []
+    for f in filters:
+        count = 0
+        for h in raw_hits:
+            if f.pred(h):
+                count += 1
+        removed = []
+        if f.removes:
+            keep = []
+            for h in remaining:
+                if f.pred(h):
+                    removed.append(h)
+                else:
+                    keep.append(h)
+            remaining = keep
+        rows.append((f.label, count, removed))
+    total_removed = sum(len(r[2]) for r in rows)
+    if total_removed + len(remaining) != len(raw_hits):
+        raise ArithmeticMismatch(
+            "raw %d - removed %d != adjudicated %d"
+            % (len(raw_hits), total_removed, len(remaining)))
+    return remaining, rows
+
+
+class RuleResult(object):
+    def __init__(self, rule):
+        self.rule = rule
+        self.raw = []
+        self.rows = []
+        self.adjudicated = []
+        self.levels = {}
+        self.level_detail = []
+        self.degraded = []
+        self.notes = []
+        self.traps = []
+        self.verdict = "PASS"
+        self.reason = ""
+        self.skipped = False
+
+
+class Rule(object):
+    def __init__(self, rid, name, kind, surf, norms, blind_spot, fn,
+                 blocking=True, controls=(), opt_in=False):
+        self.rid = rid
+        self.name = name
+        self.kind = kind
+        self.surf = surf
+        self.norms = norms
+        self.blind_spot = blind_spot
+        self.fn = fn
+        self.blocking = blocking
+        self.controls = list(controls)
+        self.opt_in = opt_in
+
+
+class Control(object):
+    def __init__(self, cid, rid, fixture, overlay=None, expect=1, sub=None,
+                 extra=()):
+        self.cid = cid
+        self.rid = rid
+        self.fixture = fixture
+        self.overlay = overlay or {}
+        self.expect = expect
+        self.sub = sub
+        # Extra fixture files the control's corpus needs -- R2b's og-image.svg
+        # is the whole point of the no-string vector: the claim is not in the
+        # HTML, it is in something the HTML points at.
+        self.extra = list(extra)
+
+
+# ---------------------------------------------------------------------------
+# Config loading (spec 1: the config holds values, the implementation holds
+# rules). `extends` keeps one copy of the shared VALUES; the direct lesson of
+# _artifact_grep.sh, whose GCI and LGM copies diverged into two files that must
+# be maintained twice.
+# ---------------------------------------------------------------------------
+
+def _deep_merge(base, over):
+    out = dict(base)
+    for k, v in over.items():
+        if k in out and isinstance(out[k], dict) and isinstance(v, dict):
+            out[k] = _deep_merge(out[k], v)
+        else:
+            out[k] = v
+    return out
+
+
+def load_config(path):
+    seen = []
+    cur = path
+    chain = []
+    while True:
+        cur = os.path.abspath(cur)
+        if cur in seen:
+            raise ConfigError("config extends cycle at %s" % cur)
+        seen.append(cur)
+        if not os.path.isfile(cur):
+            raise ConfigError("config not found: %s" % cur)
+        with open(cur, "r", encoding="utf-8") as fh:
+            try:
+                doc = json.load(fh)
+            except ValueError as exc:
+                raise ConfigError("config %s is not valid JSON: %s" % (cur, exc))
+        chain.append(doc)
+        parent = doc.get("extends")
+        if not parent:
+            break
+        cur = os.path.join(os.path.dirname(cur), parent)
+    cfg = {}
+    for doc in reversed(chain):
+        cfg = _deep_merge(cfg, doc)
+    cfg.pop("extends", None)
+    for req in ("key", "repo", "min_artifacts", "expected_html"):
+        if req not in cfg:
+            raise ConfigError("config is missing required field %r" % req)
+    return cfg
+
+
+# ---------------------------------------------------------------------------
+# Corpus enumeration (spec 2). Enumerate from public/, NEVER from sitemap.xml.
+# ---------------------------------------------------------------------------
+
+BINARY_EXT = (".ico", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf",
+              ".woff", ".woff2", ".ttf", ".eot", ".zip", ".mp4", ".avif")
+
+
+def git(repo, *args):
+    try:
+        p = subprocess.run(["git"] + list(args), cwd=repo,
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
+        return None
+    if p.returncode != 0:
+        return None
+    return p.stdout.decode("utf-8", "replace")
+
+
+class Corpus(object):
+    def __init__(self):
+        self.ls_files = []
+        self.found = []
+        self.read_set = []
+        self.excluded = []      # (rel, reason)
+        self.agree = True
+        self.divergence = []
+
+
+def enumerate_corpus(repo, cfg):
+    c = Corpus()
+    out = git(repo, "ls-files", "public/")
+    if out is None:
+        raise ConfigError(
+            "`git ls-files public/` failed in %s -- the corpus contract "
+            "(spec 2) requires both halves" % repo)
+    c.ls_files = sorted(x for x in out.splitlines() if x.strip())
+    pub = os.path.join(repo, "public")
+    if not os.path.isdir(pub):
+        raise ConfigError("no public/ directory in %s" % repo)
+    found = []
+    for root, dirs, files in os.walk(pub):
+        dirs.sort()
+        for f in sorted(files):
+            rel = os.path.relpath(os.path.join(root, f), repo)
+            found.append(rel.replace(os.sep, "/"))
+    c.found = sorted(found)
+    only_git = sorted(set(c.ls_files) - set(c.found))
+    only_tree = sorted(set(c.found) - set(c.ls_files))
+    if only_git or only_tree:
+        c.agree = False
+        for r in only_git:
+            c.divergence.append("tracked but absent from the working tree: %s" % r)
+        for r in only_tree:
+            c.divergence.append("in the working tree but untracked: %s" % r)
+
+    key_excl = set(cfg.get("key_files_excluded", []))
+    for rel in sorted(set(c.ls_files) | set(c.found)):
+        low = rel.lower()
+        if rel in key_excl:
+            c.excluded.append((rel, "indexnow-key-file"))
+            continue
+        if low.endswith(BINARY_EXT):
+            c.excluded.append((rel, "binary-raster"))
+            continue
+        c.read_set.append(rel)
+    return c
+
+
+# ---------------------------------------------------------------------------
+# git facts for R8 (a non-artifact input, spec R8)
+# ---------------------------------------------------------------------------
+
+DATE_LINE_PAT = re.compile(
+    r"Last reviewed|<lastmod>|datetime=\"\d{4}-\d{2}-\d{2}\""
+    r"|\"dateModified\"|\"datePublished\"")
+
+
+class GitFacts(object):
+    """Per-file first-appearance and last VISIBLE-TEXT change, with the
+    review-date line itself stripped so it cannot count as its own change --
+    GCI 348baf9 hit that exact false positive and solved it this way."""
+
+    def __init__(self, repo=None, cap=15):
+        self.repo = repo
+        self.cap = cap
+        self.commits = {}
+        self.first_seen = {}
+        self._content = {}
+        self._sidecar = {}
+        self.available = False
+        self.capped = []
+        self._proc = None
+
+    def load(self, repo, rels):
+        self.repo = repo
+        out = git(repo, "log", "--format=@@@%H|%cI", "--name-only", "--", "public/")
+        if out is None:
+            return
+        self.available = True
+        sha = date = None
+        for line in out.splitlines():
+            if line.startswith("@@@"):
+                body = line[3:]
+                sha, _, date = body.partition("|")
+                date = date[:10]
+            elif line.strip():
+                self.commits.setdefault(line.strip(), []).append((sha, date))
+        for rel, lst in self.commits.items():
+            self.first_seen[rel] = lst[-1][1]
+
+    def _batch(self):
+        if getattr(self, "_proc", None) is None:
+            try:
+                self._proc = subprocess.Popen(
+                    ["git", "cat-file", "--batch"], cwd=self.repo,
+                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL)
+            except OSError:
+                self._proc = False
+        return self._proc
+
+    def blob(self, sha, rel):
+        """One long-lived `git cat-file --batch` instead of a subprocess per
+        blob. 75 files x 2 blobs was 150 forks and most of the wall clock."""
+        p = self._batch()
+        if not p:
+            out = git(self.repo, "show", "%s:%s" % (sha, rel))
+            return out or ""
+        try:
+            p.stdin.write(("%s:%s\n" % (sha, rel)).encode())
+            p.stdin.flush()
+            header = p.stdout.readline().decode("utf-8", "replace").strip()
+            if header.endswith("missing") or " " not in header:
+                return ""
+            parts = header.split()
+            size = int(parts[-1])
+            data = p.stdout.read(size)
+            p.stdout.read(1)
+            return data.decode("utf-8", "replace")
+        except Exception:
+            return ""
+
+    def close(self):
+        p = getattr(self, "_proc", None)
+        if p:
+            try:
+                p.stdin.close()
+                p.wait(timeout=5)
+            except Exception:
+                pass
+            self._proc = None
+
+    def last_content_change(self, rel):
+        if rel in self._content:
+            return self._content[rel]
+        lst = self.commits.get(rel) or []
+        answer = None
+        for i, (sha, date) in enumerate(lst[:self.cap]):
+            cur = self.blob(sha, rel)
+            parent = self.blob(sha + "^", rel)
+            if _differs_outside_date_lines(cur, parent):
+                answer = date
+                break
+        if answer is None and lst:
+            if len(lst) > self.cap:
+                self.capped.append(rel)
+            answer = lst[min(len(lst), self.cap) - 1][1]
+        self._content[rel] = answer
+        return answer
+
+    # control mode: sidecar facts, so a control needs no repo
+    def add_sidecar(self, rel, facts):
+        self._sidecar[rel] = facts
+        if "first_seen" in facts:
+            self.first_seen[rel] = facts["first_seen"]
+        if "last_visible_change" in facts:
+            self._content[rel] = facts["last_visible_change"]
+        self.available = True
+
+
+def _differs_outside_date_lines(a, b):
+    la = [x for x in a.splitlines() if not DATE_LINE_PAT.search(x)]
+    lb = [x for x in b.splitlines() if not DATE_LINE_PAT.search(x)]
+    return la != lb
+
+
+# ---------------------------------------------------------------------------
+# Matching primitives. Occurrences, never lines. Word boundaries, and a
+# known-present control (spec 3).
+# ---------------------------------------------------------------------------
+
+def _wb(term):
+    t = re.escape(term)
+    lead = r"\b" if term[:1].isalnum() else ""
+    tail = r"\b" if term[-1:].isalnum() else ""
+    return lead + t + tail
+
+
+_PAT_CACHE = {}
+
+
+def _pat(term, ci, word):
+    k = (term, ci, word)
+    p = _PAT_CACHE.get(k)
+    if p is None:
+        p = re.compile(_wb(term) if word else re.escape(term),
+                       re.IGNORECASE if ci else 0)
+        _PAT_CACHE[k] = p
+    return p
+
+
+def occ(text, term, ci=True, word=True):
+    return [m.start() for m in _pat(term, ci, word).finditer(text)]
+
+
+def has(text, term, ci=True, word=True):
+    return _pat(term, ci, word).search(text) is not None
+
+
+_ANY_CACHE = {}
+
+
+def _any_pat(terms, ci, word):
+    """One compiled alternation per (term list, ci, word). 4.8 million
+    single-term searches becomes 600 thousand alternation searches."""
+    key = (tuple(terms), ci, word)
+    p = _ANY_CACHE.get(key)
+    if p is None:
+        real = [t for t in terms if t]
+        if not real:
+            p = False
+        else:
+            real.sort(key=len, reverse=True)
+            alt = "|".join(_wb(t) if word else re.escape(t) for t in real)
+            p = re.compile(alt, re.IGNORECASE if ci else 0)
+        _ANY_CACHE[key] = p
+    return p
+
+
+def has_any(text, terms, ci=True, word=True):
+    p = _any_pat(terms, ci, word)
+    if not p:
+        return False
+    return p.search(text) is not None
+
+
+def which_any(text, terms, ci=True, word=True):
+    out = []
+    for t in terms:
+        if t and has(text, t, ci, word):
+            out.append(t)
+    return sorted(set(out))
+
+
+def win(text, pos, n):
+    return text[max(0, pos - n):pos + n]
+
+
+# ---------------------------------------------------------------------------
+# Context: the parsed corpus plus the claim set (spec 2)
+# ---------------------------------------------------------------------------
+
+GEN_MODULES = (
+    "_shared_components.py", "_area_pages.py", "_generate_area_pages.py",
+    "_generate_calculator_pages.py", "_service_pages.py",
+    "_generate_service_pages.py", "_educational_pages.py",
+    "_generate_educational.py", "_generate_homepage.py",
+    "_generate_llms_txt.py", "_generate_brand_assets.py",
+    "_generate_rebate_hub.py", "_generate_resources.py",
+    "_page_template.py", "_generate_suburb_pages.py",
+)
+
+CLAIM_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD,
+              S.S_LOWVIS, S.S_ATTR, S.S_LLMS, S.S_SVGTEXT, S.S_CITE,
+              S.S_CONST, S.S_JS)
+
+# The sentence pool every proposition rule runs over. VIS comes from the
+# whole-document TXT (so a sentence that runs through <strong> or a source line
+# break is ONE sentence, which is the entire point of TXT); every other surface
+# contributes its own text with its own locator, because surface attribution is
+# what told DCI its page contradicted its own navigation.
+POOL_KEYS = (S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS, S.S_ATTR,
+             S.S_LLMS, S.S_ROBOTS, S.S_SVGTEXT, S.S_CITE, S.S_CONST,
+             S.S_LOWVIS)
+
+
+class Ctx(object):
+    def __init__(self, key, repo, cfg, control=False):
+        self.key = key
+        self.repo = repo
+        self.cfg = cfg
+        self.control = control
+        self.artifacts = []
+        self.by_rel = {}
+        self.gen = S.GeneratorFacts()
+        self.gitfacts = GitFacts()
+        self.claim_extra = {}
+        self.corpus = None
+        self.today = cfg.get("R8", {}).get("today", "2026-09-17")
+        self._script_spans = {}
+        self._svg_text = {}
+        self._pool = {}
+        self._levels_cache = {}
+
+    # ---- config access
+    def r(self, rid):
+        return self.cfg.get(rid, {}) or {}
+
+    # ---- artifact selection
+    def read_artifacts(self):
+        return self.artifacts
+
+    def claim_artifacts(self):
+        return [a for a in self.artifacts if a.kind in ("html", "txt", "svg", "js")]
+
+    def html_artifacts(self):
+        return [a for a in self.artifacts if a.kind == "html"]
+
+    def surfaces(self, art, keys):
+        out = art.stream(keys)
+        for s in self.claim_extra.get(art.rel, []):
+            if s.key in keys:
+                out.append(s)
+        return out
+
+    def pool(self, art):
+        """(surface_key, locator, sentence) for every claim-bearing surface,
+        built ONCE per artifact and shared by every proposition rule."""
+        if art.rel in self._pool:
+            return self._pool[art.rel]
+        out = []
+        if art.kind == "html":
+            for sent in S.sentences(art.txt):
+                out.append((S.S_VIS, "txt", sent))
+        for s in self.surfaces(art, POOL_KEYS):
+            if s.key == S.S_JS and s.locator.endswith("body"):
+                continue
+            for sent in (S.sentences(s.text) or [s.text]):
+                out.append((s.key, s.locator, sent))
+        self._pool[art.rel] = out
+        return out
+
+    def script_spans(self, art):
+        if art.rel in self._script_spans:
+            return self._script_spans[art.rel]
+        spans = []
+        for m in re.finditer(
+                r"<script\b([^>]*)>(.*?)</script\s*>", art.raw,
+                re.DOTALL | re.IGNORECASE):
+            kind = "LD" if "ld+json" in m.group(1).lower() else "JS"
+            spans.append((m.start(), m.end(), kind))
+        for m in re.finditer(r"<style\b[^>]*>(.*?)</style\s*>", art.raw,
+                             re.DOTALL | re.IGNORECASE):
+            spans.append((m.start(), m.end(), "CSS"))
+        spans.sort()
+        self._script_spans[art.rel] = spans
+        return spans
+
+    def surface_at(self, art, pos):
+        for a, b, k in self.script_spans(art):
+            if a <= pos < b:
+                return k
+        return "RAW"
+
+    # ---- town scope / utilities (R2)
+    def own_towns(self, art):
+        """Towns whose OWN page this is, by the config's slug map -- never by
+        whether the town name appears in the title. GCI's fourth town-blind
+        calculator was missed because its <h1> is the only one of five without
+        'Greeley'."""
+        c = self.r("R2")
+        towns = c.get("towns", {}) or {}
+        base = art.rel.rsplit("/", 1)[-1]
+        return sorted(n for n in towns
+                      if base in (towns[n].get("page_slugs") or []))
+
+    def town_scope(self, art):
+        c = self.r("R2")
+        towns = c.get("towns", {}) or {}
+        hit = set(self.own_towns(art))
+        if hit:
+            return sorted(hit)
+        # JSON-LD areaServed + the <h1>
+        names = set()
+        for path, val in art.ld_leaves:
+            if "areaServed" in path and val in towns:
+                names.add(val)
+        m = re.search(r"<h1\b[^>]*>(.*?)</h1\s*>", art.raw, re.DOTALL | re.I)
+        h1 = S.txt(m.group(1)) if m else ""
+        for name in sorted(towns):
+            variants = [name] + list(towns[name].get("spelling_variants") or [])
+            if any(has(h1, v, ci=False) for v in variants):
+                names.add(name)
+        return sorted(names)
+
+    def canon_utility(self, name):
+        c = self.r("R2")
+        al = c.get("utility_aliases", {}) or {}
+        return al.get(name, name)
+
+    def utilities_in(self, text):
+        """Canonical utilities named in `text`. `Xcel` and `Xcel Energy` are
+        ONE utility; matching the short form and then testing it against a
+        long-form allow-list is how a single-utility property manufactures
+        1,859 findings about itself."""
+        c = self.r("R2")
+        names = sorted(c.get("utility_names", []) or [], key=len, reverse=True)
+        found = set()
+        for n in which_any(text, names, ci=False):
+            found.add(self.canon_utility(n))
+        return sorted(found)
+
+    def allowed_utilities(self, towns):
+        c = self.r("R2")
+        t = c.get("towns", {}) or {}
+        if not towns:
+            return None
+        allowed = set()
+        for name in towns:
+            d = t.get(name, {})
+            for f in ("gas", "electric"):
+                v = d.get(f)
+                if v and v not in ("UNKNOWN", "UNRESOLVED") and \
+                        not v.startswith(("SPLIT", "THREE-WAY")):
+                    allowed.add(self.canon_utility(v))
+            p = d.get("electric_program")
+            if p:
+                allowed.add(self.canon_utility(p))
+        allowed |= set(c.get("non_territorial_programs", []) or [])
+        return allowed
+
+    # ---- cited sources (claim set)
+    def key_for_cited_stat(self, art, cs):
+        best = None
+        for k in sorted(self.gen.cited_sources):
+            e = self.gen.cited_sources[k]
+            url = e.get("url")
+            if not isinstance(url, str) or url != cs["url"]:
+                continue
+            label = S.collapse(str(e.get("determiner") or "") +
+                               str(e.get("source") or ""))
+            if label and cs["label"] and S.collapse(cs["label"]) == label:
+                return k
+            best = best or k
+        return best
+
+    def svg_text_for(self, ref):
+        """Text nodes of a referenced SVG in the READ_SET (spec 2.3)."""
+        if not ref:
+            return []
+        base = ref.split("?")[0].split("#")[0].rsplit("/", 1)[-1]
+        if not base.lower().endswith(".svg"):
+            return []
+        for rel, art in sorted(self.by_rel.items()):
+            if rel.rsplit("/", 1)[-1] == base and art.kind == "svg":
+                return art.stream((S.S_SVGTEXT,))
+        return []
+
+
+def _const_probe(value):
+    """The longest placeholder-free run of a generator constant, used to decide
+    whether that constant actually rendered onto a page."""
+    t = S.collapse(S.txt(value))
+    parts = re.split(r"\{[^{}]*\}|%[sd]|__[A-Z_]+__", t)
+    parts = [p.strip() for p in parts]
+    parts.sort(key=len, reverse=True)
+    return parts[0] if parts and len(parts[0]) >= 25 else None
+
+
+def build_claim_set(ctx):
+    r2 = ctx.r("R2")
+    const_names = list(r2.get("territorial_constants", []) or [])
+    probes = {}
+    for n in sorted(set(const_names)):
+        v = ctx.gen.constants.get(n)
+        if isinstance(v, str):
+            p = _const_probe(v)
+            if p:
+                probes[n] = (p, v)
+
+    n_cite = n_const = n_asset = n_prop = 0
+    for art in ctx.html_artifacts():
+        extra = []
+        keys = set()
+        for cs in art.cited_stats:
+            k = ctx.key_for_cited_stat(art, cs)
+            if k:
+                keys.add(k)
+        base = art.rel.rsplit("/", 1)[-1]
+        for cand in (base, base[:-5] if base.endswith(".html") else base):
+            for k in ctx.gen.slug_cite_keys.get(cand, []):
+                keys.add(k)
+        art.cite_keys = sorted(keys)
+        for k in art.cite_keys:
+            e = ctx.gen.cited_sources.get(k) or {}
+            for f in ("source", "stat", "url", "determiner"):
+                v = e.get(f)
+                if isinstance(v, str) and v.strip():
+                    extra.append(S.Surface(S.S_CITE, "%s:%s" % (k, f),
+                                           S.collapse(S.dec(v))))
+                    n_prop += 1
+            n_cite += 1
+        for ref in sorted(set(art.image_refs)):
+            for s in ctx.svg_text_for(ref):
+                extra.append(S.Surface(S.S_SVGTEXT,
+                                       "%s<-%s" % (s.locator, ref), s.text))
+                n_asset += 1
+        for n in sorted(probes):
+            probe, val = probes[n]
+            if probe in art.txt:
+                extra.append(S.Surface(S.S_CONST, n, S.collapse(S.txt(val))))
+                n_const += 1
+        ctx.claim_extra[art.rel] = extra
+    ctx.claim_counts = (n_prop, n_cite, n_const, n_asset)
+
+
+# ---------------------------------------------------------------------------
+# Level counts (spec 3: a rule that reports a zero on only one normalization
+# level is a defective rule)
+# ---------------------------------------------------------------------------
+
+def level_counts(ctx, probes, ci=True, word=True):
+    """ONE alternation scan per normalization level instead of one scan per
+    term per level. Same counts, and it is the difference between three
+    whole-corpus passes and thirty."""
+    terms = sorted(set(p for p in probes if p), key=len, reverse=True)
+    if not terms:
+        return {S.NORM_RAW: 0, S.NORM_DEC: 0, S.NORM_TXT: 0}, []
+    key = (tuple(terms), ci, word)
+    cached = ctx._levels_cache.get(key)
+    if cached is not None:
+        return cached
+    alt = "|".join(_wb(t) if word else re.escape(t) for t in terms)
+    rx = re.compile(alt, re.IGNORECASE if ci else 0)
+    lut = {}
+    for t in terms:
+        lut[t.lower() if ci else t] = t
+    counts = {S.NORM_RAW: 0, S.NORM_DEC: 0, S.NORM_TXT: 0}
+    per_term = dict((t, {S.NORM_RAW: 0, S.NORM_DEC: 0, S.NORM_TXT: 0})
+                    for t in terms)
+    for level in (S.NORM_RAW, S.NORM_DEC, S.NORM_TXT):
+        for art in ctx.artifacts:
+            for m in rx.finditer(art.level_text(level)):
+                g = m.group(0)
+                t = lut.get(g.lower() if ci else g)
+                if t is None:
+                    for cand in terms:
+                        if (cand.lower() if ci else cand) in \
+                                (g.lower() if ci else g):
+                            t = cand
+                            break
+                if t is None:
+                    t = terms[0]
+                per_term[t][level] += 1
+                counts[level] += 1
+    detail = []
+    for t in sorted(terms):
+        if len(set(per_term[t].values())) > 1:
+            detail.append((t, per_term[t]))
+    ctx._levels_cache[key] = (counts, detail)
+    return counts, detail
+
+
+# ===========================================================================
+# THE RULES (spec 8)
+# ===========================================================================
+
+R1_SURF = "VIS TITLE META OG TW LD LOWVIS EMBED LLMS SVGTEXT"
+R1_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD,
+           S.S_LOWVIS, S.S_LLMS, S.S_SVGTEXT)
+
+
+def _quote_open_re(c):
+    glyphs = set()
+    for q in c.get("quote_open", []) or []:
+        g = S.dec(q)
+        if g:
+            glyphs.add(g[0])
+    glyphs.discard("'")
+    return re.compile("[" + re.escape("".join(sorted(glyphs))) + "]")
+
+
+def rule_R1(ctx, res):
+    c = ctx.r("R1")
+    verbs = c.get("attribution_verbs", []) or []
+    allow = c.get("quotation_allowlist", []) or []
+    marks = ctx.r("R7").get("correction_markers", []) or []
+    qre = _quote_open_re(c)
+
+    if not ctx.gen.provenance_present and c.get("require_provenance_block"):
+        res.degraded.append(
+            "R1 DEGRADED: provenance block not yet in the schema; asserting "
+            "quote field only (spec 12.1)")
+
+    cs_index = {}
+    for art in ctx.claim_artifacts():
+        cs_index[art.rel] = [x["txt"] for x in art.cited_stats]
+
+    raw = []
+    for art in ctx.claim_artifacts():
+        for cs in art.cited_stats:
+            if not cs["quoted"]:
+                continue
+            k = ctx.key_for_cited_stat(art, cs)
+            raw.append(Hit("R1", "A", art.rel, "CITE",
+                           "cited-stat@%d" % cs["offset"],
+                           "%s %s" % (k or "<unresolved-key>", cs["txt"]),
+                           cite_key=k, sentence=cs["txt"]))
+        for skey, loc, sent in ctx.pool(art):
+            for m in qre.finditer(sent):
+                pre = sent[max(0, m.start() - 40):m.start()]
+                v = which_any(pre, verbs, ci=True, word=False)
+                if not v:
+                    continue
+                raw.append(Hit("R1", "B", art.rel, skey, str(loc),
+                               win(sent, m.start(), 110), note=v[0],
+                               sentence=sent))
+
+    def f_explicit(h):
+        if h.sub != "A" or not h.cite_key:
+            return False
+        e = ctx.gen.cited_sources.get(h.cite_key) or {}
+        ok = e.get("quote") is True
+        if c.get("require_provenance_block") and ctx.gen.provenance_present:
+            ok = ok and isinstance(e.get("provenance"), dict)
+        return ok
+
+    def f_default(h):
+        if h.sub != "A" or not h.cite_key:
+            return False
+        return "quote" not in (ctx.gen.cited_sources.get(h.cite_key) or {})
+
+    def f_inside(h):
+        if h.sub != "B":
+            return False
+        for t in cs_index.get(h.rel, []):
+            if h.sentence and h.sentence[:60] in t:
+                return True
+        return False
+
+    def f_allow(h):
+        return has_any(h.sentence, [a.get("text", "") if isinstance(a, dict)
+                                    else a for a in allow], word=False)
+
+    def f_corr(h):
+        return has_any(h.sentence, marks, word=False)
+
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("registry-backed with explicit quote=true", f_explicit),
+        Filt("registry-backed by DEFAULT quote (field absent)", f_default,
+             removes=False),
+        Filt("inside a cited-stat block already counted in half A", f_inside),
+        Filt("config quotation_allowlist", f_allow),
+        Filt("correction marker in scope (retired wording quoted)", f_corr),
+    ])
+    res.levels, res.level_detail = level_counts(
+        ctx, ["&ldquo;", "“", "According to"], ci=False, word=False)
+    na = len([h for h in res.adjudicated if h.sub == "A"])
+    nb = len([h for h in res.adjudicated if h.sub == "B"])
+    res.notes.append("half A (CLAIM TEST) %d  ·  half B (STRING LIST -- "
+                     "cannot be a claim test) %d" % (na, nb))
+    res.notes.append("registry quote field: %d True, %d False, %d ABSENT "
+                     "(absent publishes the stat as the source's own words)"
+                     % (ctx.gen.quote_true_count, ctx.gen.quote_false_count,
+                        ctx.gen.quote_absent_count))
+    return "attributed quotations found", \
+           "quotations with no explicit provenance record"
+
+
+R2_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS,
+           S.S_LOWVIS, S.S_ATTR, S.S_LLMS, S.S_SVGTEXT, S.S_CITE, S.S_CONST)
+ELECTRIC_WORDS = ("electric", "electricity", "electrical", "kwh", "power bill")
+
+
+def rule_R2(ctx, res):
+    c = ctx.r("R2")
+    names = sorted(c.get("utility_names", []) or [], key=len, reverse=True)
+    domains = c.get("utility_domains", {}) or {}
+    aw = c.get("attribution_words", []) or []
+    locked = c.get("allowed_multi_utility_sentences", []) or []
+    gaps = c.get("known_disclosure_gaps", []) or []
+    review = c.get("review_not_fail", []) or []
+    marks = ctx.r("R7").get("correction_markers", []) or []
+    towns = c.get("towns", {}) or {}
+    elec_names = c.get("electric_utility_names", []) or []
+
+    # the known-present control (spec 3): search for a term you KNOW is
+    # present before trusting a term you believe is absent
+    anchor = c.get("known_present_control")
+    if anchor:
+        n = sum(len(occ(a.txt, anchor, ci=False)) for a in ctx.artifacts)
+        res.notes.append("known-present control: %r occurs %d times in the "
+                         "read set (0 would invalidate every absence below)"
+                         % (anchor, n))
+        if n == 0 and not ctx.control:
+            res.traps.append(
+                "KNOWN-PRESENT CONTROL FAILED: %r occurs 0 times" % anchor)
+
+    # Is this market's territory uniform? On a single-utility market every
+    # town resolves to the same allowed set, and a tool naming that utility
+    # without asking the town is correct, not town-blind.
+    per_town = [ctx.allowed_utilities([t]) or set() for t in sorted(towns)]
+    uniform_allowed = set.intersection(*per_town) if per_town else set()
+    union_allowed = set.union(*per_town) if per_town else set()
+    uniform = bool(towns) and uniform_allowed == union_allowed
+    if uniform:
+        res.notes.append("territory is UNIFORM across all %d configured towns "
+                         "(%s) -- the town-blind-tool sub-test is not run, "
+                         "because naming the one utility that serves every "
+                         "town is not a town-blind verdict"
+                         % (len(towns), ", ".join(sorted(uniform_allowed))))
+    raw = []
+    for art in ctx.claim_artifacts():
+        scope = ctx.town_scope(art)
+        allowed = ctx.allowed_utilities(scope)
+        scope_s = ",".join(scope) or "sitewide"
+        for skey, loc, sent in ctx.pool(art):
+            if not has_any(sent, aw, word=False):
+                continue
+            for u in ctx.utilities_in(sent):
+                if allowed is None or u in allowed:
+                    continue
+                raw.append(Hit("R2", "a", art.rel, skey, str(loc),
+                               "%s | scope=%s | %s" % (u, scope_s, sent),
+                               note="utility-not-serving-town",
+                               sentence=sent))
+        for h in sorted(set(art.hrefs)):
+            m = re.match(r"https?://([^/]+)", h)
+            if not m:
+                continue
+            host = m.group(1).lower()
+            for dom in sorted(domains):
+                if host == dom or host.endswith("." + dom):
+                    u = ctx.canon_utility(domains[dom])
+                    if allowed is not None and u not in allowed:
+                        raw.append(Hit("R2", "c", art.rel, "ATTR",
+                                       "href:%s" % h,
+                                       "%s | scope=%s | %s" % (u, scope_s, h),
+                                       note="wayfinding-url", sentence=h))
+        for k in art.cite_keys:
+            e = ctx.gen.cited_sources.get(k) or {}
+            blob = " ".join(str(e.get(f) or "") for f in ("source", "stat", "url"))
+            for u in ctx.utilities_in(k.replace("_", " ") + " " + blob):
+                if allowed is not None and u not in allowed:
+                    raw.append(Hit("R2", "b", art.rel, "CITE", k,
+                                   "%s | scope=%s | inherited cite key %s"
+                                   % (u, scope_s, k),
+                                   note="inherited-cite-key", sentence=blob))
+        if c.get("forbid_electric_utility_naming"):
+            for skey, loc, sent in ctx.pool(art):
+                if not has_any(sent, ELECTRIC_WORDS, word=False):
+                    continue
+                for u in sorted(set(ctx.canon_utility(x) for x in
+                                    which_any(sent, elec_names or names,
+                                              ci=False))):
+                    raw.append(Hit("R2", "e", art.rel, skey, str(loc),
+                                   "%s named beside an electric word | %s"
+                                   % (u, sent),
+                                   note="electric-utility-named",
+                                   sentence=sent))
+        # hedge preservation and the per-town qualifier are assertions about
+        # the town's OWN page.
+        own = ctx.own_towns(art)
+        for name in own:
+            d = towns.get(name, {})
+            if d.get("gas_state") != "HEDGED":
+                continue
+            for pair in (c.get("hedge_pairs") or []):
+                for half in pair:
+                    if half and half not in art.txt:
+                        raw.append(Hit("R2", "h", art.rel, "VIS", name,
+                                       "hedged town %s is missing hedge half "
+                                       "%r" % (name, half),
+                                       note="hedge-half-missing", sentence=half))
+        # per-town qualifier, verbatim and non-interchangeable
+        for name in own:
+            d = towns.get(name, {})
+            q = d.get("gas_qualifier") or ""
+            if q and q not in art.txt:
+                raw.append(Hit("R2", "q", art.rel, "VIS", name,
+                               "town %s qualifier %r absent" % (name, q),
+                               note="qualifier-absent", sentence=q))
+            for other in sorted(towns):
+                oq = towns[other].get("gas_qualifier") or ""
+                if other == name or not oq or oq == q:
+                    continue
+                for cs in S.sentences(art.txt):
+                    if oq in cs:
+                        raw.append(Hit(
+                            "R2", "x", art.rel, "VIS", name,
+                            "town %s page carries %s's qualifier %r | %s"
+                            % (name, other, oq, cs),
+                            note="qualifier-cross-contamination",
+                            sentence=cs))
+        # town-blind tool output
+        if art.kind == "html" and art.js_strings and not uniform:
+            has_town_input = bool(
+                re.search(r"id=\"[^\"]*town", art.raw, re.I) or
+                re.search(r"name=\"[^\"]*town", art.raw, re.I))
+            if not has_town_input:
+                for loc, lit in art.js_strings:
+                    for u in [x for x in ctx.utilities_in(lit)
+                              if x not in uniform_allowed]:
+                        raw.append(Hit("R2", "t", art.rel, "JS", loc,
+                                       "%s named in a verdict-reachable JS "
+                                       "literal with no town input | %s"
+                                       % (u, S.collapse(lit)),
+                                       note="town-blind-tool",
+                                       sentence=S.collapse(lit)))
+
+    def f_locked(h):
+        return has_any(h.sentence, locked, word=False)
+
+    def f_gap(h):
+        return has_any(h.sentence, gaps, word=False)
+
+    def f_review(h):
+        return has_any(h.sentence, review, word=False)
+
+    def f_corr(h):
+        return has_any(h.sentence, marks, word=False)
+
+    def f_nonterr(h):
+        return has_any(h.sentence, c.get("non_territorial_programs", []) or [],
+                       word=False) and h.sub in ("a",)
+
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("locked multi-utility sentence (gas-split fact, verbatim)", f_locked),
+        Filt("known_disclosure_gaps (Director told, not reversing)", f_gap),
+        Filt("review_not_fail -> REVIEW classification, never FAIL", f_review),
+        Filt("non_territorial_program named in the same sentence", f_nonterr),
+        Filt("correction marker in scope", f_corr),
+    ])
+    res.levels, res.level_detail = level_counts(
+        ctx, [n for n in names[:8]], ci=False)
+    res.notes.append("sibling-town artifact detection is NOT in this rule: it "
+                     "is _artifact_grep.sh's existing check (present on LGM "
+                     "and GCI, ABSENT on DCI). R2 asserts utility attribution "
+                     "and electric naming only.")
+    return "utility attributions resolved against town scope", \
+           "attributions to a utility that does not serve the town"
+
+
+def rule_R3(ctx, res):
+    c = ctx.r("R3")
+    dollar = re.compile(c.get("dollar_pattern", r"\$[0-9][0-9,.]*"))
+    rate = re.compile(c.get("rate_pattern", r"\b0\.[0-9]{1,2}\b"))
+    money = c.get("money_words", []) or []
+    ranks = c.get("rank_words", []) or []
+    wchars = int(c.get("window_chars", 120))
+    allowed = c.get("allowed_figures", []) or []
+    costs = c.get("cost_context_markers", []) or []
+    codes = c.get("code_context_markers", []) or []
+    income = c.get("income_eligibility_markers", []) or []
+    structs = c.get("allowed_structure_percentages", []) or []
+    computed = ctx.r("R5").get("computed_output_markers", []) or []
+    marks = ctx.r("R7").get("correction_markers", []) or []
+    progs = (ctx.r("R4").get("programs", []) or []) + \
+            (ctx.r("R2").get("utility_names", []) or [])
+
+    raw = []
+    for art in ctx.read_artifacts():
+        for m in dollar.finditer(art.raw):
+            w = S.collapse(S.dec(win(art.raw, m.start(), wchars)))
+            raw.append(Hit("R3", "T1", art.rel,
+                           ctx.surface_at(art, m.start()),
+                           "raw@%d" % m.start(),
+                           "%s | %s" % (m.group(0), w),
+                           note=m.group(0), sentence=w))
+        for m in re.finditer(r"\b\d{3,6}\b", art.dec):
+            w = S.collapse(win(art.dec, m.start(), wchars))
+            if not has_any(w, money, word=False):
+                continue
+            raw.append(Hit("R3", "T2", art.rel,
+                           ctx.surface_at(art, m.start()),
+                           "dec@%d" % m.start(),
+                           "%s | %s" % (m.group(0), w),
+                           note=m.group(0), sentence=w))
+        for m in rate.finditer(art.dec):
+            w = S.collapse(win(art.dec, m.start(), wchars))
+            if not has_any(w, money, word=False):
+                continue
+            raw.append(Hit("R3", "T2", art.rel,
+                           ctx.surface_at(art, m.start()),
+                           "rate@%d" % m.start(),
+                           "%s | %s" % (m.group(0), w),
+                           note=m.group(0), sentence=w))
+        for skey, loc, sent in ctx.pool(art):
+            rw = which_any(sent, ranks)
+            if not rw:
+                continue
+            if not (has_any(sent, money, word=False) or
+                    has_any(sent, progs, ci=False)):
+                continue
+            raw.append(Hit("R3", "T3", art.rel, skey, str(loc),
+                           "%s | %s" % (",".join(rw), sent),
+                           note="rank-claim", sentence=sent))
+
+    def f_allowed(h):
+        return h.note in allowed or (h.note and h.note.lstrip("$") in
+                                     [a.lstrip("$") for a in allowed])
+
+    def f_income(h):
+        return has_any(h.sentence, income, word=False)
+
+    def f_cost(h):
+        return has_any(h.sentence, costs, word=False)
+
+    def f_code(h):
+        return has_any(h.sentence, codes, word=False)
+
+    def f_year(h):
+        return bool(h.note) and re.fullmatch(r"(19|20)\d\d", h.note) is not None
+
+    def f_comp(h):
+        return has_any(h.sentence, computed, word=False)
+
+    def f_struct(h):
+        return has_any(h.sentence, structs, word=False) and h.sub != "T1"
+
+    def f_css(h):
+        return h.surface == "CSS"
+
+    def f_corr(h):
+        return has_any(h.sentence, marks, word=False)
+
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("allowed_figures (per-property Director ruling)", f_allowed),
+        Filt("income-eligibility threshold (WAP standing exception)", f_income),
+        Filt("cost_context_markers (Ruling 2 -- costs, not payouts)", f_cost),
+        Filt("code_context_markers (IECC / ENERGY STAR / R-value)", f_code),
+        Filt("four-digit year inside the 3-6 digit scan", f_year),
+        Filt("computed_output_markers (Ruling 4 -- visitor arithmetic)", f_comp),
+        Filt("allowed_structure_percentages (Ruling 2, none added)", f_struct),
+        Filt("CSS surface (stroke-width class of false positive)", f_css),
+        Filt("correction marker in scope", f_corr),
+    ])
+    res.levels, res.level_detail = level_counts(
+        ctx, ["$"] + [str(x) for x in (c.get("known_figures") or [])[:8]],
+        ci=False, word=False)
+    t4 = len([h for h in res.raw if h.surface in ("LD", "JS")])
+    res.notes.append("T1 $-anchored %d  ·  T2 bare numeral in a money window "
+                     "%d  ·  T3 rank/magnitude/superlative %d  ·  T4 (the LD "
+                     "and JS-comment subset of T1+T2) %d"
+                     % (len([h for h in raw if h.sub == "T1"]),
+                        len([h for h in raw if h.sub == "T2"]),
+                        len([h for h in raw if h.sub == "T3"]), t4))
+    return "money figures, bare numerals and rank claims found", \
+           "figures or rank claims stating what a rebate pays"
+
+
+R4_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS,
+           S.S_LOWVIS, S.S_ATTR, S.S_LLMS, S.S_CITE, S.S_CONST)
+
+
+def rule_R4(ctx, res):
+    c = ctx.r("R4")
+    toks = c.get("stacking_tokens", []) or []
+    preds = c.get("combination_predicates", []) or []
+    denials = c.get("denial_markers", []) or []
+    programs = c.get("programs", []) or []
+    legit = c.get("legitimate_uses", []) or []
+    nouns = c.get("noun_use_constants", []) or []
+    exc = c.get("attributed_exception", {}) or {}
+    marks = ctx.r("R7").get("correction_markers", []) or []
+    retired = c.get("retired_prohibition_strings", []) or []
+
+    raw = []
+    for art in ctx.claim_artifacts():
+        for skey, loc, sent in ctx.pool(art):
+            tk = which_any(sent, toks, word=False)
+            if not tk:
+                continue
+            named = which_any(sent, programs, ci=False)
+            if len(set(named)) < 2:
+                cls = "NEUTRAL"
+            elif not has_any(sent, preds, word=False):
+                cls = "NEUTRAL"
+            elif has_any(sent, denials, word=False):
+                cls = "DENIES"
+            else:
+                cls = "ASSERTS"
+            pub = exc.get("publisher")
+            if cls in ("ASSERTS", "DENIES") and pub and has(sent, pub, ci=False) \
+                    and art.cite_keys:
+                cls = "ATTRIBUTED-AND-SOURCED"
+            raw.append(Hit("R4", cls, art.rel, skey, str(loc),
+                           "%s | programs=%s | %s"
+                           % (",".join(tk), ",".join(named) or "-", sent),
+                           note=cls, sentence=sent))
+
+    def f_legit(h):
+        return has_any(h.sentence, legit, word=False)
+
+    def f_neutral(h):
+        return h.sub == "NEUTRAL"
+
+    def f_attr(h):
+        return h.sub == "ATTRIBUTED-AND-SOURCED"
+
+    def f_noun(h):
+        for n in nouns:
+            v = ctx.gen.constants.get(n)
+            if isinstance(v, str):
+                p = _const_probe(v)
+                if p and p in h.sentence:
+                    return True
+        return False
+
+    def f_retired(h):
+        return has_any(h.sentence, retired, word=False)
+
+    def f_corr(h):
+        return has_any(h.sentence, marks, word=False)
+
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("legitimate_uses (stack effect, plumbing stack, can lights)", f_legit),
+        Filt("NEUTRAL -- fewer than two distinct programs, or no predicate",
+             f_neutral),
+        Filt("ATTRIBUTED-AND-SOURCED (publisher named + cite key resolved)",
+             f_attr),
+        Filt("noun_use_constants (a noun for the program set)", f_noun),
+        Filt("retired prohibition preserved as a record", f_retired),
+        Filt("correction marker in scope", f_corr),
+    ])
+    res.levels, res.level_detail = level_counts(
+        ctx, ["stack", "on top of", "layer", "combin"], word=False)
+    res.notes.append("ASSERTS %d  ·  DENIES %d  ·  both FAIL: silence is the "
+                     "compliant state and affirmative denial is equally a "
+                     "defect" % (len([h for h in res.adjudicated
+                                      if h.sub == "ASSERTS"]),
+                                 len([h for h in res.adjudicated
+                                      if h.sub == "DENIES"])))
+    return "stacking tokens resolved to sentences", \
+           "sentences that assert or deny that programs combine"
+
+
+R5_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS,
+           S.S_LOWVIS, S.S_LLMS, S.S_SVGTEXT)
+
+
+def rule_R5(ctx, res):
+    c = ctx.r("R5")
+    pats = [re.compile(p) for p in (c.get("magnitude_patterns") or [])]
+    words = c.get("magnitude_words", []) or []
+    pubs = c.get("recognised_publishers", []) or []
+    computed = c.get("computed_output_markers", []) or []
+    known = c.get("known_uncited", []) or []
+    codes = ctx.r("R3").get("code_context_markers", []) or []
+    structs = ctx.r("R3").get("allowed_structure_percentages", []) or []
+    thresh = ctx.r("R3").get("allowed_thresholds", []) or []
+    tctx = ctx.r("R3").get("threshold_context_markers", []) or []
+    marks = ctx.r("R7").get("correction_markers", []) or []
+
+    raw = []
+    for art in ctx.claim_artifacts():
+        stats = " || ".join(x["txt"] for x in art.cited_stats)
+        cs_txt = [x["txt"] for x in art.cited_stats]
+        for skey, loc, sent in ctx.pool(art):
+            found = []
+            for p in pats:
+                for m in p.finditer(sent):
+                    found.append(m.group(0).strip())
+            if not found:
+                continue
+            if not has_any(sent, words, word=False):
+                continue
+            nums = sorted(set(found))
+            inblock = any(sent[:60] in t for t in cs_txt)
+            instat = bool(stats) and all(n in stats for n in nums)
+            ko = ""
+            for k in known:
+                if isinstance(k, dict) and k.get("text") and \
+                        k["text"] in sent:
+                    ko = "KNOWN-OPEN %s" % k.get("status", "")
+            h = Hit("R5", "mag", art.rel, skey, str(loc),
+                    "%s | %s" % (",".join(nums), sent),
+                    note=ko or "uncited", sentence=sent)
+            h.r5_inblock = inblock
+            h.r5_instat = instat
+            raw.append(h)
+
+    def _open(pred):
+        """No filter may remove a KNOWN-OPEN hit. config.known_uncited carries
+        provenance so the gate can print KNOWN-OPEN beside the hit; it does NOT
+        suppress it. A silenced hit is precisely the "filter silently dropped a
+        real hit" failure spec 4 exists to prevent."""
+        def f(h):
+            if h.note.startswith("KNOWN-OPEN"):
+                return False
+            return pred(h)
+        return f
+
+    def f_inblock(h):
+        return getattr(h, "r5_inblock", False)
+
+    def f_instat(h):
+        return getattr(h, "r5_instat", False)
+
+    def f_pub(h):
+        return has_any(h.sentence, pubs, ci=False)
+
+    def f_comp(h):
+        return has_any(h.sentence, computed, word=False)
+
+    def f_code(h):
+        return has_any(h.sentence, codes, word=False)
+
+    def f_struct(h):
+        if not has_any(h.sentence, list(structs) + list(thresh), word=False):
+            return False
+        return has_any(h.sentence, tctx, word=False)
+
+    def f_corr(h):
+        return has_any(h.sentence, marks, word=False)
+
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("the sentence IS a cited-stat block (attributed by construction)",
+             _open(f_inblock)),
+        Filt("the figure appears in a cited-stat rendered on this page "
+             "(attribution is PAGE-scoped here, not sentence-scoped)",
+             _open(f_instat)),
+        Filt("recognised_publishers named in the same sentence", _open(f_pub)),
+        Filt("computed_output_markers (Ruling 4 -- visitor arithmetic)",
+             _open(f_comp)),
+        Filt("code_context_markers (IECC / ENERGY STAR / R-value)",
+             _open(f_code)),
+        Filt("allowed structure percentage / tier threshold IN a threshold "
+             "context", _open(f_struct)),
+        Filt("correction marker in scope", _open(f_corr)),
+    ])
+    res.levels, res.level_detail = level_counts(
+        ctx, ["% reduction", "15% reduction", "20-40%"], ci=False, word=False)
+    nko = len([h for h in res.adjudicated if h.note.startswith("KNOWN-OPEN")])
+    res.notes.append("of the adjudicated hits, %d are KNOWN-OPEN from "
+                     "config.known_uncited -- carried with provenance, NEVER "
+                     "suppressed (spec R5)" % nko)
+    return "quantified magnitude claims found", \
+           "magnitude claims with no attribution on the page"
+
+
+def _js_label_chain(js_text, labels):
+    """Line-scoped conditional-chain scanner over the emitted JS. Returns
+    [(condition_idents, condition_numbers, assigned_string, interpolated_idents)].
+    Not a JS parser -- printed in R6's blind spot."""
+    chain = []
+    cur_cond = None
+    cur_nums = ()
+    for line in js_text.splitlines():
+        st = line.strip()
+        m = re.match(r"(?:\}\s*)?else\s+if\s*\((?P<c>.*)\)\s*\{", st) or \
+            re.match(r"if\s*\((?P<c>.*)\)\s*\{", st)
+        if m:
+            cond = m.group("c")
+            cur_cond = sorted(set(re.findall(r"[A-Za-z_$][A-Za-z0-9_$]*", cond))
+                              - {"true", "false", "null", "undefined"})
+            cur_nums = tuple(int(x) for x in re.findall(r"\b\d+\b", cond))
+            continue
+        if re.match(r"(?:\}\s*)?else\s*\{", st):
+            cur_cond = []
+            cur_nums = ()
+            continue
+        m2 = re.match(r"(?:var\s+)?(\w+)\s*=\s*(.+?);?$", st)
+        if not m2:
+            continue
+        rhs = m2.group(2)
+        strs = re.findall(r"'((?:[^'\\]|\\.)*)'|\"((?:[^\"\\]|\\.)*)\"", rhs)
+        flat = "".join(a or b for a, b in strs)
+        if not flat or not any(lb and lb[:18] in flat for lb in labels):
+            continue
+        idents = sorted(set(re.findall(r"[A-Za-z_$][A-Za-z0-9_$]*",
+                                       re.sub(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"",
+                                              " ", rhs))))
+        chain.append((cur_cond or [], cur_nums, flat, idents))
+    return chain
+
+
+def rule_R6(ctx, res):
+    c = ctx.r("R6")
+    chains = c.get("label_chains", []) or []
+    if not chains:
+        res.notes.append("NULL RESULT -- 0 label chains configured for this "
+                         "property. Registering one later is a config entry.")
+        res.raw = []
+        res.adjudicated, res.rows = adjudicate([], [])
+        res.levels, res.level_detail = level_counts(ctx, ["short of target"],
+                                                    ci=False, word=False)
+        return "label-emitting conditional chains examined", \
+               "chains whose branch quantity is not the printed quantity"
+
+    raw = []
+    for ch in chains:
+        labels = ch.get("labels", []) or []
+        pv = ch.get("printed_var")
+        at = ch.get("at_target_label") or ""
+        order = ch.get("severity_order", []) or []
+        targets = ch.get("targets", {}) or {}
+        texts = []
+        for p in (ch.get("surfaces") or []):
+            a = ctx.by_rel.get(p)
+            if a:
+                for i, body in enumerate(a.js_bodies):
+                    texts.append(("%s:JS[%d]" % (p, i), body))
+        gen = ch.get("generator")
+        if gen:
+            gp = os.path.join(ctx.repo, gen)
+            if os.path.isfile(gp):
+                with open(gp, "r", encoding="utf-8", errors="replace") as fh:
+                    texts.append((gen, fh.read()))
+        if not texts:
+            raw.append(Hit("R6", "UNREGISTERED", ch.get("id", "?"), "SRC",
+                           ch.get("id", "?"),
+                           "chain %s: no surface or generator text found"
+                           % ch.get("id"), note="unreachable"))
+            continue
+        for loc, body in texts:
+            found = _js_label_chain(body, labels)
+            if not found:
+                continue
+            for conds, nums, label, idents in found:
+                if at and at[:18] in label:
+                    continue
+                if pv and pv not in idents:
+                    continue
+                extra = [x for x in conds
+                         if x not in (pv, "Math", "t", "true", "false")]
+                if extra:
+                    raw.append(Hit("R6", "G1", loc, "JS", loc,
+                                   "branch reads {%s} while the printed string "
+                                   "interpolates {%s} | %s"
+                                   % (",".join(conds), pv, label[:80]),
+                                   note="G1", sentence=label))
+                    for area, tmin in sorted(targets.items()):
+                        for n in nums:
+                            if isinstance(tmin, int) and n > tmin:
+                                raw.append(Hit(
+                                    "R6", "G2", loc, "JS", "%s/%s" % (loc, area),
+                                    "threshold %d on {%s} is unreachable for "
+                                    "%s (targetMin %d) while the printed "
+                                    "quantity can reach 100"
+                                    % (n, ",".join(conds), area, tmin),
+                                    note="G2", sentence=label))
+            seq = [(nums, label) for conds, nums, label, idents in found
+                   if nums and not (at and at[:18] in label)]
+            thr = [n[0][0] for n in seq if n[0]]
+            if thr and thr != sorted(thr, reverse=True):
+                raw.append(Hit("R6", "G2", loc, "JS", loc,
+                               "branch thresholds %s are not monotone "
+                               "decreasing" % (thr,), note="G2"))
+            labs = [lb for nums, lb in seq]
+            ranks = []
+            for lb in labs:
+                for i, o in enumerate(order):
+                    if o[:18] in lb:
+                        ranks.append(i)
+            if ranks and ranks != sorted(ranks, reverse=True):
+                raw.append(Hit("R6", "G2", loc, "JS", loc,
+                               "label order %s disagrees with "
+                               "config.severity_order" % (labs,), note="G2"))
+
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [])
+    res.levels, res.level_detail = level_counts(ctx, ["short of target"],
+                                                ci=False, word=False)
+    return "label-emitting conditional chains examined", \
+           "chains whose branch quantity is not the printed quantity"
+
+
+R7_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS,
+           S.S_LOWVIS, S.S_ATTR, S.S_LLMS, S.S_CITE, S.S_CONST)
+
+
+def rule_R7(ctx, res):
+    c = ctx.r("R7")
+    ids = c.get("superseded_identifiers", []) or []
+    urls = c.get("superseded_urls", []) or []
+    props = c.get("superseded_propositions", []) or []
+    marks = c.get("correction_markers", []) or []
+
+    res.degraded.append(
+        "R7 DEGRADED: registry carries no machine-readable supersession "
+        "marker; running from config list (spec 7.4, 12.1)")
+
+    raw = []
+    id_rx = _any_pat(ids, False, True) if ids else False
+    for art in ctx.read_artifacts():
+        for level, text in ((S.NORM_RAW, art.raw), (S.NORM_TXT, art.txt)):
+            if not id_rx:
+                break
+            for m in id_rx.finditer(text):
+                term = m.group(0)
+                # A phrase that WRAPS a source line break is absent from RAW
+                # and present in TXT. Count each identifier once per artifact
+                # at the level that can actually see it.
+                if level == S.NORM_RAW and term in art.txt:
+                    continue
+                p = m.start()
+                raw.append(Hit("R7", "A", art.rel, level,
+                               "%s@%d" % (level.lower(), p),
+                               "%s | %s" % (term, S.collapse(win(text, p, 90))),
+                               note="identifier",
+                               sentence=S.collapse(win(text, p, 200))))
+        for u in urls:
+            for p in occ(art.raw, u, ci=False, word=False):
+                raw.append(Hit("R7", "A", art.rel, "ATTR", "url@%d" % p,
+                               "%s | %s" % (u, S.collapse(win(art.raw, p, 60))),
+                               note="superseded-url",
+                               sentence=S.collapse(win(art.txt, 0, 1))))
+    for art in ctx.claim_artifacts():
+        for skey, loc, sent in ctx.pool(art):
+            for pr in props:
+                allof = pr.get("all_of") or []
+                anyof = pr.get("any_of") or []
+                noneof = pr.get("none_of") or []
+                if allof and not all(has(sent, t, word=False) for t in allof):
+                    continue
+                if anyof and not has_any(sent, anyof, word=False):
+                    continue
+                if noneof and has_any(sent, noneof, word=False):
+                    continue
+                if not allof and not anyof:
+                    continue
+                raw.append(Hit("R7", "B", art.rel, skey, str(loc),
+                               "%s | %s" % (pr.get("claim_id", "?"), sent),
+                               note=pr.get("claim_id", "?"), sentence=sent))
+
+    def f_corr(h):
+        return has_any(h.sentence, marks, word=False)
+
+    def f_never403(h):
+        return has_any(h.sentence, c.get("never_retire_on_403", []) or [],
+                       word=False)
+
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("correction marker in scope (quoted in order to retire it)", f_corr),
+        Filt("never_retire_on_403 source named (403 is bot-blocking)", f_never403),
+    ])
+    res.levels, res.level_detail = level_counts(ctx, ids, ci=False)
+    res.notes.append("half A IDENTIFIER (STRING LIST) %d  ·  half B "
+                     "PROPOSITION (CLAIM TEST) %d -- a citation sweep must "
+                     "search for the CLAIM, not only for the identifier"
+                     % (len([h for h in res.adjudicated if h.sub == "A"]),
+                        len([h for h in res.adjudicated if h.sub == "B"])))
+    return "superseded identifiers and propositions found", \
+           "live claims sourced to a superseded document"
+
+
+_MONTHS = ("January", "February", "March", "April", "May", "June", "July",
+           "August", "September", "October", "November", "December")
+
+
+def _parse_long_date(s):
+    m = re.search(r"(%s)\s+(\d{1,2}),\s*(\d{4})" % "|".join(_MONTHS), s)
+    if not m:
+        return None
+    return "%s-%02d-%02d" % (m.group(3), _MONTHS.index(m.group(1)) + 1,
+                             int(m.group(2)))
+
+
+def rule_R8(ctx, res):
+    c = ctx.r("R8")
+    today = c.get("today", ctx.today)
+    exempt = set(c.get("exempt_pages", []) or [])
+    own = set(c.get("own_effective_date_pages", []) or [])
+    pinned = c.get("pinned_pages", {}) or {}
+    holds = c.get("known_holds", []) or []
+    hold_note = holds[0].get("report_as") if holds else ""
+
+    sitemap_lastmod = {}
+    for art in ctx.artifacts:
+        for loc, mod in art.sitemap_entries:
+            base = loc.rstrip("/").rsplit("/", 1)[-1] or "index.html"
+            sitemap_lastmod[base] = mod
+
+    raw = []
+    for art in ctx.html_artifacts():
+        base = art.rel.rsplit("/", 1)[-1]
+        if base in exempt or base in own:
+            continue
+        dates = {}
+        for dt, vis in art.time_elements:
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", dt or ""):
+                dates.setdefault("time[datetime]", dt)
+                v = _parse_long_date(vis)
+                if v:
+                    dates.setdefault("footer_text", v)
+        for path, val in art.ld_leaves:
+            if path.endswith(".dateModified") and \
+                    re.match(r"\d{4}-\d{2}-\d{2}", str(val)):
+                dates.setdefault("ld:dateModified", str(val)[:10])
+            if path.endswith(".datePublished") and \
+                    re.match(r"\d{4}-\d{2}-\d{2}", str(val)):
+                dates.setdefault("ld:datePublished", str(val)[:10])
+        lm = sitemap_lastmod.get(base)
+        if lm:
+            dates["sitemap:lastmod"] = lm
+        if not dates:
+            continue
+        pub = dates.get("ld:datePublished")
+        claimed = [(k, v) for k, v in sorted(dates.items())
+                   if k != "ld:datePublished"]
+        # (b) after today
+        for k, v in claimed:
+            if v > today:
+                raw.append(Hit("R8", "b", art.rel, k, k,
+                               "%s = %s is after today (%s)" % (k, v, today),
+                               note="future-date", sentence=base))
+        # (c) surfaces disagree
+        vals = sorted(set(v for _, v in claimed))
+        if len(vals) > 1:
+            raw.append(Hit("R8", "c", art.rel, "VIS", base,
+                           "date surfaces disagree: %s"
+                           % "; ".join("%s=%s" % (k, v) for k, v in claimed),
+                           note="surfaces-disagree", sentence=base))
+        if pub:
+            for k, v in claimed:
+                if pub > v:
+                    raw.append(Hit("R8", "c", art.rel, k, k,
+                                   "datePublished %s is after %s %s"
+                                   % (pub, k, v), note="ordering",
+                                   sentence=base))
+        first = ctx.gitfacts.first_seen.get(art.rel)
+        if first:
+            for k, v in claimed:
+                if v < first:
+                    raw.append(Hit("R8", "a", art.rel, k, k,
+                                   "%s = %s precedes first appearance in git "
+                                   "(%s)" % (k, v, first),
+                                   note="precedes-creation", sentence=base))
+        last = ctx.gitfacts.last_content_change(art.rel) \
+            if ctx.gitfacts.available else None
+        if last:
+            newest = max(v for _, v in claimed)
+            if newest < last:
+                note = "stale-vs-content"
+                if base in pinned:
+                    note = "pinned"
+                elif hold_note:
+                    note = hold_note
+                raw.append(Hit("R8", "d", art.rel, "VIS", base,
+                               "published review date %s precedes the last "
+                               "visible-text change %s" % (newest, last),
+                               note=note, sentence=base))
+
+    def f_pinned(h):
+        return h.note == "pinned"
+
+    def f_known(h):
+        return False
+
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("pinned_pages (visible text unchanged; JSON-LD only)", f_pinned),
+        Filt("own_effective_date_pages / exempt_pages (excluded before match)",
+             f_known),
+    ])
+    res.levels, res.level_detail = level_counts(
+        ctx, ["Last reviewed", "<lastmod>"], ci=False, word=False)
+    firsts = sorted(v for v in ctx.gitfacts.first_seen.values() if v)
+    if firsts:
+        res.notes.append("part (a) measures first appearance in THIS repo's "
+                         "git history; the earliest public/ commit here is %s, "
+                         "so on a ported property part (a) is a FLOOR and a "
+                         "hit can mean the port post-dates the content's real "
+                         "authoring date rather than that the date is invented"
+                         % firsts[0])
+    if holds:
+        res.notes.append("KNOWN-OPEN hold in force: %s -- %s"
+                         % (holds[0].get("id"), holds[0].get("note", "")))
+    if ctx.gitfacts.capped:
+        res.notes.append("part (d) history cap reached on %d file(s); the "
+                         "oldest examined commit was used"
+                         % len(ctx.gitfacts.capped))
+    if not ctx.gitfacts.available:
+        res.degraded.append("R8 DEGRADED: no git history available; parts (a) "
+                            "and (d) not evaluated")
+    return "published date surfaces compared", \
+           "dates impossible, contradicted, or preceding their content"
+
+
+def rule_R9(ctx, res):
+    c = ctx.r("R9")
+    subjects = c.get("claim_subjects", []) or []
+    hi = set(c.get("high_severity_surfaces", []) or [])
+    tools = c.get("tools", []) or []
+    marks = ctx.r("R7").get("correction_markers", []) or []
+
+    instances = {}
+    for sub in subjects:
+        sid = sub.get("id")
+        pats = [re.compile(p, re.IGNORECASE) for p in (sub.get("extract") or [])]
+        slots = sub.get("value_slots") or {}
+        ctxwords = sub.get("context") or []
+        noneof = sub.get("none_of") or []
+        prox = int(sub.get("proximity_chars", 120))
+        if not pats or not slots:
+            continue
+        for art in ctx.claim_artifacts():
+            for skey, loc, sent in ctx.pool(art):
+                spans = []
+                for p in pats:
+                    for m in p.finditer(sent):
+                        spans.append(m.start())
+                if not spans:
+                    continue
+                if ctxwords and not has_any(sent, ctxwords, word=False):
+                    continue
+                if noneof and has_any(sent, noneof, word=False):
+                    continue
+                for pos in spans:
+                    w = win(sent, pos, prox)
+                    for slot in sorted(slots):
+                        if has_any(w, slots[slot], word=False):
+                            instances.setdefault(sid, []).append(
+                                (slot, art.rel, skey, str(loc), sent))
+
+    raw = []
+    for sub in subjects:
+        sid = sub.get("id")
+        inst = sorted(set(instances.get(sid, [])))
+        if not inst:
+            continue
+        slots_seen = sorted(set(i[0] for i in inst))
+        if len(slots_seen) < 2:
+            continue
+        auth = sub.get("authoritative_value")
+        note = "authoritative=%s" % auth if auth else \
+            "NO AUTHORITATIVE VALUE IN CONFIG"
+        files = sorted(set(i[1] for i in inst))
+        for slot, rel, skey, loc, sent in inst:
+            if auth and slot == auth:
+                continue
+            n1 = len(files) > 1
+            per_file = sorted(set(i[0] for i in inst if i[1] == rel))
+            n2 = len(per_file) > 1
+            sev = "HIGH" if skey in hi else "std"
+            tags = [t for t, on in (("N1", n1), ("N2", n2)) if on]
+            if not tags:
+                continue
+            raw.append(Hit("R9", tags[0], rel, skey, loc,
+                           "%s: %d values %s | %s | sub-tests %s | %s | "
+                           "severity=%s" % (sid, len(slots_seen), slots_seen,
+                                            slot, "+".join(tags), sent, sev),
+                           note=note, sentence=sent))
+    for t in tools:
+        art = ctx.by_rel.get(t.get("page", ""))
+        if not art:
+            continue
+        vis_ids = [t.get("visible", "").lstrip("#")]
+        hidden = t.get("hidden", []) or []
+        missing = [h for h in hidden if h not in art.ids]
+        if missing and vis_ids and vis_ids[0] in art.ids:
+            raw.append(Hit("R9", "N3", art.rel, "JS", art.rel,
+                           "tool payload field(s) %s not found in the page; "
+                           "visible/hidden agreement cannot be established"
+                           % missing, note="N3-unverifiable", sentence=art.rel))
+
+    def f_corr(h):
+        return has_any(h.sentence, marks, word=False)
+
+    def f_delib(h):
+        for d in (c.get("deliberate_divergence") or []):
+            if d.get("subject") and d["subject"].split()[0].lower() in h.text.lower():
+                return True
+        return False
+
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("correction marker in scope (a retired value quoted to retire it)",
+             f_corr),
+        Filt("deliberate_divergence recorded in config", f_delib),
+    ])
+    res.levels, res.level_detail = level_counts(
+        ctx, ["CFM 50", "CFM50", "front door"], ci=False, word=False)
+    if not ctx.control:
+        res.notes.append("R9 CROSS-PROPERTY HALF SKIPPED: no --peer given")
+    hidden = {}
+    for art in ctx.html_artifacts():
+        for sel in sorted(set(art.hidden_selectors)):
+            hidden.setdefault(sel, []).append(art.rel)
+    if hidden:
+        res.traps.append(
+            "%d selector(s) set display:none / visibility:hidden across %d "
+            "artifact(s): %s. The gate reads CSS, flags this, and is NOT a "
+            "layout engine -- it computes no cascade (spec 7.8). GCI bf240f8 "
+            "found the live case: a correction inside .thank-you that the "
+            "served CSS hides until the visitor hands over a name and phone "
+            "number."
+            % (len(hidden), len(set(sum(hidden.values(), []))),
+               "; ".join("%s (%d pages)" % (k, len(hidden[k]))
+                         for k in sorted(hidden))))
+    return "contested-subject claim instances indexed", \
+           "instances contradicting the subject's other value"
+
+
+def rule_R10(ctx, res):
+    c = ctx.r("R10")
+    pats = [re.compile(p, re.IGNORECASE) for p in (c.get("promise_patterns") or [])]
+    refusals = c.get("refusal_markers", []) or []
+    reflex = c.get("reflexive_markers", []) or []
+    titles = c.get("page_titles", {}) or {}
+    dollar = re.compile(ctx.r("R3").get("dollar_pattern", r"\$[0-9][0-9,.]*"))
+    allowed = ctx.r("R3").get("allowed_figures", []) or []
+    marks = ctx.r("R7").get("correction_markers", []) or []
+    domain = (ctx.cfg.get("domain") or "").rstrip("/")
+
+    def figures_in(art):
+        n = 0
+        for m in dollar.finditer(art.raw):
+            if m.group(0) not in allowed:
+                n += 1
+        return n
+
+    total_fig = sum(figures_in(a) for a in ctx.read_artifacts())
+
+    anchors = {}
+    for art in ctx.claim_artifacts():
+        anchors[art.rel] = [
+            (m.group(1), S.collapse(S.txt(m.group(2))))
+            for m in re.finditer(r"<a\b[^>]*href=\"([^\"]*)\"[^>]*>(.*?)</a\s*>",
+                                 art.raw, re.DOTALL | re.IGNORECASE)]
+
+    raw = []
+    for art in ctx.claim_artifacts():
+        for skey, loc, sent in ctx.pool(art):
+            if not any(p.search(sent) for p in pats):
+                continue
+            dest = None
+            kind = "unresolvable"
+            for href, label in anchors.get(art.rel, []):
+                if label and len(label) > 3 and label in sent:
+                    dest, kind = href, "anchor"
+                    break
+            if dest is None:
+                for phrase in sorted(titles):
+                    if has(sent, phrase, word=False):
+                        dest, kind = titles[phrase], "page_title"
+                        break
+            if dest is None and has_any(sent, reflex, word=False):
+                dest, kind = "<whole property>", "reflexive"
+            note = kind
+            ok = False
+            if kind == "anchor":
+                if re.match(r"https?://", dest) and not dest.startswith(domain):
+                    note = "off-property"
+                    ok = True
+                else:
+                    base = dest.split("?")[0].split("#")[0].rstrip("/")
+                    base = base.rsplit("/", 1)[-1] or "index.html"
+                    tgt = ctx.by_rel.get("public/" + base) or \
+                        ctx.by_rel.get(base)
+                    if tgt is None:
+                        note = "destination-not-in-read-set"
+                    elif has_any(tgt.txt, refusals, word=False):
+                        note = "destination-refuses"
+                    elif figures_in(tgt) > 0:
+                        note = "destination-renders-a-figure"
+                        ok = True
+                    else:
+                        note = "destination-has-no-figure"
+            elif kind == "page_title":
+                tgt = ctx.by_rel.get(dest) or \
+                    ctx.by_rel.get(dest.rsplit("/", 1)[-1])
+                if tgt is None:
+                    note = "destination-not-in-read-set"
+                elif has_any(tgt.txt, refusals, word=False):
+                    note = "destination-refuses"
+                elif figures_in(tgt) > 0:
+                    note = "destination-renders-a-figure"
+                    ok = True
+                else:
+                    note = "destination-has-no-figure"
+            elif kind == "reflexive":
+                if total_fig > 0:
+                    note = "property-renders-%d-figures" % total_fig
+                    ok = True
+                else:
+                    note = "property-renders-zero-figures"
+            raw.append(Hit("R10", kind, art.rel, skey, str(loc),
+                           "dest=%s | %s | %s" % (dest, note, sent),
+                           note=note if not ok else "SATISFIED:" + note,
+                           sentence=sent))
+
+    def f_refusal_here(h):
+        return has_any(h.sentence, refusals, word=False)
+
+    def f_sat(h):
+        return h.note.startswith("SATISFIED:")
+
+    def f_unres(h):
+        return h.note == "unresolvable"
+
+    def f_notinset(h):
+        return h.note == "destination-not-in-read-set"
+
+    def f_corr(h):
+        return has_any(h.sentence, marks, word=False)
+
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("refusal marker in the promise sentence (sanctioned wayfinding)",
+             f_refusal_here),
+        Filt("destination satisfies the promise / is off-property", f_sat),
+        Filt("destination unresolvable -> REVIEW, not FAIL", f_unres),
+        Filt("destination outside the read set", f_notinset),
+        Filt("correction marker in scope", f_corr),
+    ])
+    res.levels, res.level_detail = level_counts(
+        ctx, ["quoted elsewhere", "covers the base amounts",
+              "estimates the project cost"], ci=False, word=False)
+    res.notes.append("deliberate bias: a destination that refuses in words "
+                     "the config does not know looks like a destination with "
+                     "no figures, which is still a FAIL -- the failure mode is "
+                     "a false positive, not a false negative (spec R10)")
+    return "figure-promises resolved to destinations", \
+           "promises no destination satisfies"
+
+
+def rule_R11(ctx, res):
+    c = ctx.r("R11")
+    terms = c.get("tracked_terms", []) or []
+    sel_open = '<p class="cited-stat">'
+    if not terms:
+        res.notes.append("R11: 0 tracked terms configured for %s -- reported "
+                         "as a null result, NOT as PASS" % ctx.key)
+        res.raw = []
+        res.adjudicated, res.rows = adjudicate([], [])
+        res.levels, res.level_detail = level_counts(ctx, ["cited-stat"],
+                                                    ci=False, word=False)
+        return "tracked terms configured", "tracked-term rows reported"
+
+    rows = []
+    raw = []
+    for t in terms:
+        pats = t.get("patterns", []) or []
+        tid = t.get("id", "?")
+        asserting, attributed, unattributed = set(), set(), set()
+        for art in ctx.claim_artifacts():
+            blob = art.txt + " || " + " || ".join(
+                s.text for s in ctx.surfaces(art, (S.S_LD, S.S_LOWVIS,
+                                                   S.S_META, S.S_OG, S.S_TW,
+                                                   S.S_LLMS)))
+            if has_any(blob, pats, word=False):
+                asserting.add(art.rel)
+            inblock = " || ".join(x["txt"] for x in art.cited_stats)
+            if inblock and has_any(inblock, pats, word=False):
+                attributed.add(art.rel)
+            outside = art.raw
+            for x in art.cited_stats:
+                outside = outside.replace(sel_open + x["body"] + "</p>", " ")
+            outside_txt = S.txt(outside) + " || " + " || ".join(
+                s.text for s in ctx.surfaces(art, (S.S_LD, S.S_LOWVIS,
+                                                   S.S_META, S.S_OG, S.S_TW,
+                                                   S.S_LLMS)))
+            if has_any(outside_txt, pats, word=False):
+                unattributed.add(art.rel)
+        both = sorted(attributed & unattributed)
+        # forbid_subtraction: each cell is its own query. Prove it.
+        naive = len(asserting) - len(attributed)
+        exp = t.get("expected", {}) or {}
+        rows.append((tid, t.get("label", tid), len(asserting),
+                     len(attributed), len(unattributed), len(both), naive, exp))
+        if c.get("forbid_subtraction") and len(both) and naive == len(unattributed):
+            pass
+        raw.append(Hit("R11", "row", tid, "VIS", tid,
+                       "%s asserting %d / attributed %d / unattributed %d / "
+                       "both %d  (naive subtraction would say unattributed=%d)"
+                       % (t.get("label", tid), len(asserting), len(attributed),
+                          len(unattributed), len(both), naive),
+                       note="report-only", sentence=tid))
+    res.r11_rows = rows
+    res.raw = raw
+    res.adjudicated, res.rows = adjudicate(raw, [])
+    res.levels, res.level_detail = level_counts(ctx, ["cited-stat"], ci=False,
+                                                word=False)
+    for tid, label, a, at, un, bo, naive, exp in rows:
+        q = ("asserting: pattern anywhere in the page's claim set; "
+             "attributed: pattern inside a p.cited-stat block; "
+             "unattributed: pattern OUTSIDE every p.cited-stat block "
+             "(its OWN query, never asserting minus attributed); "
+             "both: |attributed AND unattributed|")
+        d = ""
+        if exp:
+            d = "  baseline %d/%d/%d/%d  delta %+d/%+d/%+d/%+d" % (
+                exp.get("asserting", 0), exp.get("attributed", 0),
+                exp.get("unattributed", 0), exp.get("both", 0),
+                a - exp.get("asserting", 0), at - exp.get("attributed", 0),
+                un - exp.get("unattributed", 0), bo - exp.get("both", 0))
+        res.notes.append("%s  measured %d/%d/%d/%d%s" % (label, a, at, un, bo, d))
+        res.notes.append("    naive subtraction (asserting - attributed) = %d; "
+                         "measured unattributed = %d -- %s" %
+                         (naive, un,
+                          "SUBTRACTION WOULD HAVE BEEN WRONG" if naive != un
+                          else "subtraction would coincide here; not used"))
+        res.notes.append("    query: %s" % q)
+    return "tracked terms measured", "tracked-term rows reported"
+
+
+# ---------------------------------------------------------------------------
+# Rule registry (spec 8). A rule with no positive-control fixture CANNOT
+# REGISTER -- that is a hard loader error (spec 5).
+# ---------------------------------------------------------------------------
+
+def _f(*p):
+    return os.path.join("fixtures", *p)
+
+
+R2_CONTROL_TOWNS = {
+    "Severance": {"gas": "Xcel Energy", "gas_state": "CONFIRMED",
+                  "gas_qualifier": "most locations in Severance",
+                  "page_slugs": ["R2a_wrong_utility_visible.html"]},
+    "Johnstown": {"gas": "Xcel Energy", "gas_state": "CONFIRMED",
+                  "gas_qualifier": "",
+                  "page_slugs": ["R2b_wrong_utility_no_string.html"]},
+    "Milliken": {"gas": "Xcel Energy", "gas_state": "CONFIRMED",
+                 "gas_qualifier": "most of Milliken",
+                 "page_slugs": ["R2c_wrong_utility_anchor_only.html"]},
+}
+R2_CONTROL_OVERLAY = {"R2": {"towns": R2_CONTROL_TOWNS,
+                             "allowed_multi_utility_sentences": [],
+                             "known_disclosure_gaps": [],
+                             "review_not_fail": [],
+                             "forbid_electric_utility_naming": False,
+                             "known_present_control": None}}
+R3_CONTROL_OVERLAY = {"R3": {"allowed_figures": [],
+                             "allowed_structure_percentages": []}}
+R4_CONTROL_OVERLAY = {"R4": {"programs": [
+    "Colorado Weatherization Assistance Program", "Atmos Energy",
+    "Xcel Energy", "Whole Home Efficiency Bonus", "Combo Bonus",
+    "federal 25C"], "noun_use_constants": [],
+    "retired_prohibition_strings": [],
+    "attributed_exception": {"allowed": True}}}
+R6_CONTROL_OVERLAY = {"R6": {"label_chains": [{
+    "id": "control-rvalue-tier",
+    "printed_var": "pctShort",
+    "labels": ["You're already at or above code target.",
+               "Significantly under code", "Moderately under code",
+               "Close to code"],
+    "severity_order": ["Close to code", "Moderately under code",
+                       "Significantly under code"],
+    "at_target_label": "You're already at or above code target.",
+    "targets": {"basement": 15, "crawl-encap": 15, "wall-existing": 13},
+    "surfaces": ["R6_label_figure_contradiction.js"]}]}}
+R11_CONTROL_OVERLAY = {"R11": {"tracked_terms": [
+    {"id": "cfm50_20pct", "label": "CFM 50 20% reduction",
+     "patterns": ["20% reduction in CFM 50", "20% reduction in CFM50"]},
+    {"id": "whe_25pct", "label": "WHE 25% bonus",
+     "patterns": ["adds 25% on all standard rebates",
+                  "25% on all standard rebates"]}],
+    "forbid_subtraction": True}}
+R8_CONTROL_OVERLAY = {"R8": {"pinned_pages": {}, "exempt_pages": [],
+                             "own_effective_date_pages": [],
+                             "known_holds": []}}
+
+
+RULES = [
+    Rule("R1", "FABRICATED QUOTATION",
+         "CLAIM TEST (+ string list for the hand-written-prose half, declared)",
+         R1_SURF, "DEC TXT",
+         "this rule cannot read the cited PDF. It asserts the PRESENCE and "
+         "SHAPE of a provenance record, not the accuracy of the quote; and it "
+         "cannot see a missing ellipsis or a quotation that is exact and "
+         "misleading by selection.",
+         rule_R1,
+         controls=[Control("R1", "R1", _f("R1_fabricated_quotation.html"))]),
+
+    Rule("R2", "WRONG-UTILITY CLAIM", "CLAIM TEST",
+         "VIS TITLE META OG TW LD JS LOWVIS ATTR LLMS SVGTEXT EMBED",
+         "TXT for propositions; RAW for href and JS comments; SRC over the "
+         "generators",
+         "it enforces the config's territory and cannot discover that a "
+         "town's utility changed -- that is a two-legged primary-source pass. "
+         "OG image RASTERS are out of scope (spec 7.1), total on DCI.",
+         rule_R2,
+         controls=[
+             Control("R2a", "R2", _f("R2a_wrong_utility_visible.html"),
+                     R2_CONTROL_OVERLAY),
+             Control("R2b", "R2", _f("R2b_wrong_utility_no_string.html"),
+                     R2_CONTROL_OVERLAY, extra=[_f("R2b_og-image.svg")]),
+             Control("R2c", "R2", _f("R2c_wrong_utility_anchor_only.html"),
+                     R2_CONTROL_OVERLAY)]),
+
+    Rule("R3", "REBATE DOLLAR FIGURE",
+         "CLAIM TEST for the rank/magnitude half (T3); STRING+WINDOW LIST for "
+         "the numeral half (T1 T2 T4), declared",
+         "VIS TITLE META OG TW LD JS CSS LOWVIS ATTR LLMS SITEMAP EMBED SVGTEXT",
+         "RAW for T1/T2/T4; TXT for T3; SRC for the generator reachability check",
+         "T1 is anchored on `$`, so it cannot see a figure written as bare "
+         "digits -- that is what T2 exists for; and neither can see a removal "
+         "note that restates the figure in words with no numeral.",
+         rule_R3,
+         controls=[
+             Control("R3a", "R3", _f("R3a_js_comment_cap.html"),
+                     R3_CONTROL_OVERLAY),
+             Control("R3b", "R3", _f("R3b_jsonld_amount.html"),
+                     R3_CONTROL_OVERLAY),
+             Control("R3c", "R3", _f("R3c_rank_claim_no_numeral.html"),
+                     R3_CONTROL_OVERLAY)]),
+
+    Rule("R4", "STACKING ASSERTION OR DENIAL", "CLAIM TEST",
+         "VIS TITLE META OG TW LD JS LOWVIS ATTR LLMS EMBED",
+         "TXT sentence-split; SRC for the generator half",
+         "it enforces silence; it cannot verify whether stacking is actually "
+         "permitted, and it classifies rather than decides -- a NEUTRAL noun "
+         "use is reported under FILTER, never failed.",
+         rule_R4,
+         controls=[
+             Control("R4a", "R4", _f("R4a_stacking_denial_jsonld.html"),
+                     R4_CONTROL_OVERLAY),
+             Control("R4b", "R4", _f("R4b_stacking_assertion_prose.html"),
+                     R4_CONTROL_OVERLAY)]),
+
+    Rule("R5", "UNCITED STATISTIC", "CLAIM TEST",
+         "VIS TITLE META OG TW LD JS LOWVIS LLMS EMBED SVGTEXT",
+         "TXT for prose; RAW + JS string-literal extraction for JS; SRC over "
+         "the generators",
+         "it asserts attribution EXISTS and never reads the source, so an "
+         "attributed figure can still be wrong; it scopes attribution to the "
+         "sentence and the page, so a figure sourced two paragraphs away reads "
+         "as uncited; and a qualitative magnitude with no numeral is invisible "
+         "to it.",
+         rule_R5,
+         controls=[Control("R5", "R5", _f("R5_uncited_statistic.html"))]),
+
+    Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
+         "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",
+         "SRC and RAW -- not TXT, which deletes the script body",
+         "R6a reads the branch quantity statically and cannot enumerate the "
+         "rendered cross-product; R6b does that and is opt-in. G1/G2 use a "
+         "line-scoped conditional-chain scanner over the emitted JS, not a "
+         "JS parser. It asserts internal consistency, never calibration, and "
+         "never that a target value is right.",
+         rule_R6,
+         controls=[
+             Control("R6a-G1", "R6", _f("R6_label_figure_contradiction.js"),
+                     R6_CONTROL_OVERLAY, sub="G1"),
+             Control("R6a-G2", "R6", _f("R6_label_figure_contradiction.js"),
+                     R6_CONTROL_OVERLAY, sub="G2")]),
+
+    Rule("R7", "SUPERSEDED-SOURCE CLAIM",
+         "CLAIM TEST for the proposition half; STRING LIST for the identifier "
+         "half, declared",
+         "VIS TITLE META OG TW LD JS LOWVIS ATTR LLMS EMBED",
+         "RAW for identifiers and URLs; TXT sentence-split for propositions; "
+         "SRC for the generator half",
+         "it enforces a list and cannot notice a source that went stale since "
+         "the config was written -- a citation going stale independently of "
+         "the fact it supports. It must never list a source that is merely "
+         "403 (bot-blocked, not dead).",
+         rule_R7,
+         controls=[Control("R7", "R7", _f("R7_superseded_source.html"))]),
+
+    Rule("R8", "STALE REVIEW DATE", "CLAIM TEST",
+         "VIS ATTR LD SITEMAP META OG TW EMBED (+ git log as a non-artifact "
+         "input)",
+         "RAW for datetime and lastmod; DEC for the visible footer text",
+         "a date is a claim about a human act: the gate can prove a date is "
+         "impossible or contradicted and can never prove a review occurred. "
+         "Part (d) strips the review-date line before diffing so it cannot "
+         "count as its own change, and walks at most 15 commits back.",
+         rule_R8,
+         controls=[
+             Control("R8a", "R8", _f("R8a_stale_review_date.html"),
+                     R8_CONTROL_OVERLAY),
+             Control("R8b", "R8", _f("R8b_review_precedes_creation.html"),
+                     R8_CONTROL_OVERLAY),
+             Control("R8c", "R8", _f("R8c_future_review_date.html"),
+                     R8_CONTROL_OVERLAY)]),
+
+    Rule("R9", "INTERNAL CONTRADICTION", "CLAIM TEST",
+         "all surfaces, including LLMS and ATTR/LOWVIS",
+         "TXT sentence-split, plus LD leaves, plus JS string literals",
+         "it reports a contradiction and never which side is right; it is a "
+         "registry of known-contested subjects, not a semantic engine, so a "
+         "contradiction on a subject not in claim_subjects is invisible; the "
+         "cross-property half needs --peer; and it flags display:none as a "
+         "TRAP without being a layout engine.",
+         rule_R9,
+         controls=[
+             Control("R9-N1", "R9", _f("R9_cross_surface_contradiction"),
+                     sub="N1"),
+             Control("R9-N2", "R9", _f("R9_cross_surface_contradiction"),
+                     sub="N2")]),
+
+    Rule("R10", "DANGLING PROMISE", "CLAIM TEST",
+         "VIS TITLE META OG TW LD LOWVIS ATTR LLMS EMBED",
+         "TXT sentence-split for the promise; RAW for the destination's figure "
+         "count; DEC for refusal markers",
+         "it does not fetch external URLs and treats an off-property "
+         "destination as compliant by construction; it cannot see a promise of "
+         "something other than a figure; and a refusal phrased in words the "
+         "config does not know reads as a destination with no figures.",
+         rule_R10,
+         controls=[Control("R10", "R10", _f("R10_dangling_promise"))]),
+
+    Rule("R11", "ATTRIBUTION DEBT", "CLAIM TEST",
+         "VIS LD LOWVIS META OG TW LLMS",
+         "TXT, plus block-boundary resolution on RAW",
+         "it reports and never blocks; it cannot tell whether a claim is true "
+         "(all five tracked DCI terms are accurate to 25-12-215) nor whether "
+         "attribution is OWED, which is a Director judgement.",
+         rule_R11, blocking=False,
+         controls=[Control("R11", "R11", _f("R11_attribution_debt.html"),
+                           R11_CONTROL_OVERLAY)]),
+]
+
+OPT_IN_RULES = {
+    "R6b": "browser cross-product",
+}
+
+
+def validate_registry():
+    errs = []
+    for r in RULES:
+        if not r.controls:
+            errs.append("rule %s has no positive-control fixture and cannot "
+                        "register (spec 5)" % r.rid)
+        if not (r.blind_spot or "").strip():
+            errs.append("rule %s has an empty blind_spot field (spec 4.5)"
+                        % r.rid)
+        for c in r.controls:
+            p = os.path.join(_HERE, c.fixture)
+            if not os.path.exists(p):
+                errs.append("rule %s control %s: fixture missing at %s"
+                            % (r.rid, c.cid, c.fixture))
+    return errs
+
+
+# ---------------------------------------------------------------------------
+# Controls (spec 5). Run BEFORE any rule, against fixture files only.
+# ---------------------------------------------------------------------------
+
+NEGATIVES = ["NEG%02d" % i for i in range(1, 15)]
+
+
+def _fixture_paths(p):
+    if os.path.isdir(p):
+        out = []
+        for root, dirs, files in os.walk(p):
+            dirs.sort()
+            for f in sorted(files):
+                if f.endswith(".gitfacts.json"):
+                    continue
+                out.append(os.path.join(root, f))
+        return sorted(out)
+    return [p]
+
+
+def _control_ctx(base_cfg, overlay, paths, repo):
+    cfg = _deep_merge(base_cfg, overlay or {})
+    ctx = Ctx(base_cfg["key"], repo, cfg, control=True)
+    for p in paths:
+        rel = os.path.relpath(p, _HERE).replace(os.sep, "/")
+        art = S.parse_artifact(rel.rsplit("/", 1)[-1], p)
+        ctx.artifacts.append(art)
+        ctx.by_rel[art.rel] = art
+        stem = os.path.splitext(p)[0]
+        pre = os.path.join(os.path.dirname(p),
+                           os.path.basename(stem).split("_")[0])
+        for s in (p + ".gitfacts.json", stem + ".gitfacts.json",
+                  pre + ".gitfacts.json"):
+            if os.path.isfile(s):
+                with open(s, "r", encoding="utf-8") as fh:
+                    ctx.gitfacts.add_sidecar(art.rel, json.load(fh))
+    ctx.gen = base_cfg.get("_gen") or S.GeneratorFacts()
+    build_claim_set(ctx)
+    return ctx
+
+
+def mtimes(repo):
+    pub = os.path.join(repo, "public")
+    out = {}
+    if not os.path.isdir(pub):
+        return out
+    for root, dirs, files in os.walk(pub):
+        dirs.sort()
+        for f in sorted(files):
+            p = os.path.join(root, f)
+            out[p] = os.stat(p).st_mtime_ns
+    return out
+
+
+def run_controls(out, cfg, repo, opt_in, gen):
+    """Every positive control runs BEFORE any rule touches the real corpus,
+    and the gate fails loudly -- exit 2 -- if any control does not fire."""
+    before = mtimes(repo)
+    base = dict(cfg)
+    base["_gen"] = gen
+    pos_detected = pos_missed = 0
+    neg_clean = neg_false = 0
+    rows = []
+
+    for rule in RULES:
+        for c in rule.controls:
+            path = os.path.join(_HERE, c.fixture)
+            paths = _fixture_paths(path)
+            for e in c.extra:
+                paths = paths + _fixture_paths(os.path.join(_HERE, e))
+            ctx = _control_ctx(base, c.overlay, sorted(paths), repo)
+            res = RuleResult(rule)
+            try:
+                rule.fn(ctx, res)
+            except ArithmeticMismatch as exc:
+                rows.append(("+", c.cid, c.fixture,
+                             "*** MISSED *** filter arithmetic: %s" % exc))
+                pos_missed += 1
+                continue
+            hits = res.adjudicated
+            if c.sub:
+                hits = [h for h in hits if h.sub == c.sub]
+            if len(hits) >= c.expect:
+                subs = sorted(set(h.sub for h in res.adjudicated))
+                rows.append(("+", c.cid, c.fixture,
+                             "DETECTED  (%d: %s)" % (len(hits), ",".join(subs))))
+                pos_detected += 1
+            else:
+                rows.append(("+", c.cid, c.fixture, "*** MISSED ***"))
+                pos_missed += 1
+
+    for neg in NEGATIVES:
+        path = os.path.join(FIXTURES, "negative", neg + ".html")
+        ctx = _control_ctx(base, {}, _fixture_paths(path), repo)
+        alarms = []
+        for rule in RULES:
+            if not rule.blocking:
+                continue
+            res = RuleResult(rule)
+            try:
+                rule.fn(ctx, res)
+            except ArithmeticMismatch as exc:
+                alarms.append("%s arithmetic %s" % (rule.rid, exc))
+                continue
+            for h in res.adjudicated:
+                alarms.append("%s %s %s" % (rule.rid, h.sub, h.text[:90]))
+        if alarms:
+            rows.append(("-", neg, "fixtures/negative/%s.html" % neg,
+                         "*** FALSE ALARM *** " + " | ".join(sorted(alarms)[:3])))
+            neg_false += 1
+        else:
+            rows.append(("-", neg, "fixtures/negative/%s.html" % neg, "clean"))
+            neg_clean += 1
+
+    for sign, cid, fx, verdict in rows:
+        out("  canary%s %-18s %-44s %s" % (sign, cid, fx, verdict))
+
+    if "R6b" in opt_in:
+        out("  canary+ %-18s %-44s %s"
+            % ("R6b-G3", "(opt-in, browser cross-product)",
+               "*** MISSED *** R6b requires a Chrome binary this gate cannot "
+               "assume (spec 6, 7.3); no browser, no outbound requests"))
+        pos_missed += 1
+
+    after = mtimes(repo)
+    if before != after:
+        out("  *** CONTROL PHASE MUTATED public/ *** -- refusing to continue")
+        return rows, pos_detected, pos_missed, neg_clean, neg_false, False
+    out("  public/ mtimes unchanged across the control phase: %d files verified"
+        % len(before))
+    out("  CONTROLS: %d positive DETECTED, %d MISSED · %d negative clean, "
+        "%d FALSE ALARM" % (pos_detected, pos_missed, neg_clean, neg_false))
+    ok = (pos_missed == 0 and neg_false == 0)
+    return rows, pos_detected, pos_missed, neg_clean, neg_false, ok
+
+
+# ---------------------------------------------------------------------------
+# Emit one rule block (spec 4)
+# ---------------------------------------------------------------------------
+
+def emit_rule(out, rule, res, raw_label, adj_label, brief):
+    out()
+    out.head("%s  %s" % (rule.rid, rule.name))
+    out("  kind: %s" % rule.kind)
+    out("  surfaces: %s   normalization: %s" % (rule.surf, rule.norms))
+    out.field("RAW", raw_label, len(res.raw))
+    for label, count, removed in res.rows:
+        out.field("FILTER", label, count, "    (removed %d)" % len(removed))
+    out.field("ADJUDICATED", adj_label, len(res.adjudicated))
+    lv = res.levels
+    agree = "AGREE" if len(set(lv.values())) <= 1 else "DISAGREE"
+    out.field("LEVEL-DISAGREE",
+              "RAW=%d DEC=%d TXT=%d" % (lv.get("RAW", 0), lv.get("DEC", 0),
+                                        lv.get("TXT", 0)), agree)
+    for term, per in res.level_detail:
+        out("  %-16s %-46s %s" % ("", "  %r" % term,
+                                  "RAW=%d DEC=%d TXT=%d" %
+                                  (per["RAW"], per["DEC"], per["TXT"])))
+    for d in res.degraded:
+        out.field("DEGRADED", d, "")
+    for t in sorted(set(res.traps)):
+        out("  TRAP: %s" % t)
+    for n in res.notes:
+        out("  note: %s" % n)
+    out.field("VERDICT", res.verdict + " — " + res.reason, "")
+    out("  blind spot: %s" % rule.blind_spot)
+    if brief:
+        out("  --- %d hits --- ENUMERATION SUPPRESSED BY --brief"
+            % len(res.adjudicated))
+        out("  --- %d items the filters removed --- ENUMERATION SUPPRESSED BY "
+            "--brief" % sum(len(r[2]) for r in res.rows))
+        return
+    out("  --- %d hits, enumerated ---" % len(res.adjudicated))
+    if not res.adjudicated:
+        out("  (none)")
+    for h in sorted(res.adjudicated, key=lambda x: x.sortkey()):
+        out(h.line())
+    total_removed = sum(len(r[2]) for r in res.rows)
+    out("  --- %d items the filters removed, enumerated ---" % total_removed)
+    if not total_removed:
+        out("  (none)")
+    for label, count, removed in res.rows:
+        for h in sorted(removed, key=lambda x: x.sortkey()):
+            out("  [%s] %s" % (label, h.line().strip()))
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
+def build_parser():
+    p = argparse.ArgumentParser(
+        prog="claim_gate.py",
+        description="The standing claim gate. Read-only; never edits.")
+    p.add_argument("--config", required=True)
+    p.add_argument("--repo", required=True)
+    p.add_argument("--canary", action="store_true",
+                   help="run ONLY the control phase and exit with its result")
+    p.add_argument("--brief", action="store_true",
+                   help="suppress the per-hit enumerations (prints "
+                        "ENUMERATION SUPPRESSED BY --brief in their place)")
+    p.add_argument("--opt-in", action="append", default=[],
+                   metavar="RULE", help="enable an opt-in rule (R6b)")
+    p.add_argument("--peer", default=None,
+                   help="a second repo for R9's cross-property half")
+    p.add_argument("--report", default=None,
+                   help="also write the output to this path")
+    p.add_argument("--today", default=None,
+                   help="override the as-of date (default: config R8.today)")
+    return p
+
+
+def main(argv=None):
+    t0 = time.time()
+    args = build_parser().parse_args(argv)
+    out = Out()
+
+    errs = validate_registry()
+    if errs:
+        for e in errs:
+            out("CONFIG/LOADER ERROR: %s" % e)
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
+
+    try:
+        cfg = load_config(args.config)
+    except ConfigError as exc:
+        out("CONFIG ERROR: %s" % exc)
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
+
+    repo = os.path.abspath(args.repo)
+    opt_in = set()
+    for o in args.opt_in:
+        for part in o.split(","):
+            part = part.strip()
+            if part:
+                if part not in OPT_IN_RULES:
+                    out("CONFIG ERROR: unknown --opt-in rule %r (known: %s)"
+                        % (part, ", ".join(sorted(OPT_IN_RULES))))
+                    _finish(out, args, 2, t0)
+                    return 2
+                opt_in.add(part)
+
+    if args.today:
+        cfg.setdefault("R8", {})["today"] = args.today
+
+    gen = S.read_generators(repo, GEN_MODULES)
+
+    head = (git(repo, "rev-parse", "--short", "HEAD") or "unknown").strip()
+    asof = cfg.get("R8", {}).get("today", "2026-09-17")
+    out("CLAIM GATE — %s — %s — HEAD %s — as-of %s"
+        % (cfg["key"], repo, head, asof))
+
+    try:
+        corpus = enumerate_corpus(repo, cfg)
+    except ConfigError as exc:
+        out("CORPUS ERROR: %s" % exc)
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
+
+    out("corpus: git ls-files public/ = %d   find public/ -type f = %d   %s"
+        % (len(corpus.ls_files), len(corpus.found),
+           "AGREE" if corpus.agree else "DIVERGE"))
+    for d in corpus.divergence:
+        out("  corpus divergence: %s" % d)
+
+    # parse once
+    ctx = Ctx(cfg["key"], repo, cfg)
+    embeds = set(cfg.get("embed_artifacts", []) or [])
+    kinds = {"html": 0, "txt": 0, "xml": 0, "svg": 0, "js": 0}
+    for rel in corpus.read_set:
+        p = os.path.join(repo, rel)
+        if not os.path.isfile(p):
+            continue
+        art = S.parse_artifact(rel, p, embeds)
+        ctx.artifacts.append(art)
+        ctx.by_rel[rel] = art
+        kinds[art.kind] = kinds.get(art.kind, 0) + 1
+    ctx.gen = gen
+    ctx.corpus = corpus
+
+    reasons = {}
+    for rel, why in corpus.excluded:
+        reasons[why] = reasons.get(why, 0) + 1
+    out("read set: %d artifacts (%d html, %d txt, %d xml, %d svg)  |  "
+        "excluded: %d (%s)"
+        % (len(ctx.artifacts), kinds.get("html", 0), kinds.get("txt", 0),
+           kinds.get("xml", 0), kinds.get("svg", 0), len(corpus.excluded),
+           ", ".join("%s:%d" % (k, reasons[k]) for k in sorted(reasons))))
+
+    build_claim_set(ctx)
+    n_prop, n_cite, n_const, n_asset = ctx.claim_counts
+    out("claim set: %d propositions resolved from %d cited-stat blocks, %d "
+        "shared constants, %d referenced assets"
+        % (n_prop, n_cite, n_const, n_asset))
+    out("normalization levels compared: RAW DEC TXT   (+ SRC over %d "
+        "generator modules)" % len(gen.modules))
+    out("KNOWN HOLES, stated up front (spec 7): og-image RASTERS are not read "
+        "(%s); no PDF text extraction; no JS execution outside opt-in R6b; no "
+        "outbound request, so a live/repo divergence is invisible here; "
+        "index.js / operator email bodies / the leads table are out of scope."
+        % ("TOTAL on this property -- og-image.png has no SVG sibling"
+           if cfg.get("og_image_raster_only") else
+           "the SVG or .mvg source is read instead"))
+    if cfg.get("embed_artifacts"):
+        out("embed frame: %s" % ", ".join(cfg["embed_artifacts"]))
+    else:
+        out("embed frame: %s" % cfg.get(
+            "embed_artifacts_note",
+            "NULL RESULT -- this property has no embed artifact."))
+
+    exit_code = 0
+    out()
+    out.head("CONTROLS (run BEFORE any rule; see spec 5)")
+    ctx.gitfacts.load(repo, corpus.read_set)
+    rows, pd, pm, nc, nf, cok = run_controls(out, cfg, repo, opt_in, gen)
+    if not cok:
+        out()
+        out("CLAIM GATE: NOT RUN — a rule that cannot detect its own "
+            "defect is worse than no rule, because it manufactures confidence.")
+        _finish(out, args, 2, t0)
+        return 2
+
+    if args.canary:
+        out()
+        out("CLAIM GATE: CANARY OK — control phase only, no rule ran "
+            "against %s" % repo)
+        _finish(out, args, 0, t0)
+        return 0
+
+    if len(ctx.artifacts) + len(corpus.excluded) < int(cfg["min_artifacts"]):
+        out()
+        out("ZERO-ARTIFACT TRAP: corpus is %d artifacts, config min_artifacts "
+            "is %d. An empty or truncated directory passes every check "
+            "trivially; that is correct behaviour for a gate and is NOT "
+            "evidence the gate works."
+            % (len(ctx.artifacts) + len(corpus.excluded), cfg["min_artifacts"]))
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
+    if not corpus.agree:
+        out()
+        out("CORPUS DIVERGENCE is itself a finding: git ls-files and the "
+            "working tree disagree. The gate will not judge a corpus it "
+            "cannot enumerate twice the same way.")
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
+
+    summary = []
+    blocking_fail = []
+    report_only = []
+    for rule in RULES:
+        res = RuleResult(rule)
+        try:
+            raw_label, adj_label = rule.fn(ctx, res)
+        except ArithmeticMismatch as exc:
+            out()
+            out.head("%s  %s" % (rule.rid, rule.name))
+            out("  FILTER ARITHMETIC MISMATCH: %s" % exc)
+            out("  subtraction is not measurement. The gate exits 2.")
+            out()
+            out("CLAIM GATE: NOT RUN")
+            _finish(out, args, 2, t0)
+            return 2
+        n = len(res.adjudicated)
+        if not rule.blocking:
+            res.verdict = "REPORT"
+            res.reason = ("%d tracked-term row(s) reported; never changes the "
+                          "exit code" % n)
+            report_only.append(rule.rid)
+        elif n:
+            res.verdict = "FAIL"
+            res.reason = "%d adjudicated finding(s) stand after %d filter(s)" \
+                % (n, len(res.rows))
+            blocking_fail.append(rule.rid)
+        else:
+            res.verdict = "PASS"
+            res.reason = ("0 adjudicated findings from %d raw match(es) across "
+                          "%d filter(s)" % (len(res.raw), len(res.rows)))
+        emit_rule(out, rule, res, raw_label, adj_label, args.brief)
+        summary.append((rule.rid, rule.name, len(res.raw), n, res.verdict))
+
+    out()
+    out.head("SUMMARY")
+    for rid, name, raw, adj, verdict in summary:
+        tail = " (non-blocking)" if verdict == "REPORT" else ""
+        out("  %-4s%-32s RAW %-6d ADJ %-6d %s%s"
+            % (rid, name, raw, adj, verdict, tail))
+    if "R6b" not in opt_in:
+        out("  OPT-IN NOT RUN: R6b (%s). Run with --opt-in=R6b."
+            % OPT_IN_RULES["R6b"])
+    if not args.peer:
+        out("  R9 CROSS-PROPERTY HALF SKIPPED: no --peer given")
+    out("  blocking failures: %d%s"
+        % (len(blocking_fail),
+           (" (" + ", ".join(blocking_fail) + ")") if blocking_fail else ""))
+    out("  report-only findings: %d%s"
+        % (len(report_only),
+           (" (" + ", ".join(report_only) + ")") if report_only else ""))
+    out("  opt-in rules not run: %d" % (0 if "R6b" in opt_in else 1))
+    exit_code = 1 if blocking_fail else 0
+    out("CLAIM GATE: %s" % ("FAIL" if exit_code else "PASS"))
+    _finish(out, args, exit_code, t0)
+    return exit_code
+
+
+def _finish(out, args, code, t0):
+    text = out.text()
+    sys.stdout.write(text)
+    if args.report:
+        d = os.path.dirname(os.path.abspath(args.report))
+        if d and not os.path.isdir(d):
+            os.makedirs(d)
+        with open(args.report, "w", encoding="utf-8") as fh:
+            fh.write(text)
+    sys.stderr.write("claim_gate: %.2fs, exit %d\n" % (time.time() - t0, code))
+
+
+if __name__ == "__main__":
+    sys.exit(main())
