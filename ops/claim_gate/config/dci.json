@@ -362,6 +362,8 @@
     ]
   },
   "R8": {
+    "today": "2026-09-18",
+    "today_note": "Per-property as-of override, same mechanism lgm.json already uses. common.json carries today=2026-09-17, which is stale: with the per-page dates this pass derived from git, 55 DCI pages legitimately carry 2026-09-18 -- the date their content actually changed -- and every one of them reported as a [future-date] violation against the shared constant. That is the gate mis-dating itself, not the pages mis-dating their content. Set here rather than in common.json so LGM and GCI are untouched.",
     "reviewed_iso": "2026-08-24",
     "known_holds": [
       {
