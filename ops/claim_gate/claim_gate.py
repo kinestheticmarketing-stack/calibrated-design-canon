@@ -1259,6 +1259,29 @@ R2_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS,
 ELECTRIC_WORDS = ("electric", "electricity", "electrical", "kwh", "power bill")
 
 
+# Coordinating conjunctions and clause boundaries. NOT ", and" -- that is how
+# a town LIST is written ("Greeley, Evans and Eaton") and splitting there would
+# cut a clause in half.
+_CLAUSE_SPLIT = re.compile(
+    r";|\s+while\s+|,\s*whereas\s+|\s+whereas\s+|,\s*but\s+"
+    r"|\s+rather than\s+|,\s*however[,]?\s+|\s+\u2014\s+while\s+",
+    re.IGNORECASE)
+
+
+def _clauses(sent):
+    """Split a sentence into independent clauses.
+
+    `X is the gas utility in A, while Y is the gas utility in B` has
+    UNAMBIGUOUS structure. Treating it as one span and then declaring
+    nearest-binding unreliable pardoned the proposition AND its negation
+    identically -- and the original two-year wrong-utility defect took exactly
+    this sentence shape, in a shared component rendering sitewide. Parse the
+    structure; do not pardon the shape.
+    """
+    parts = [p.strip() for p in _CLAUSE_SPLIT.split(sent)]
+    return [p for p in parts if p] or [sent]
+
+
 def rule_R2(ctx, res):
     c = ctx.r("R2")
     names = sorted(c.get("utility_names", []) or [], key=len, reverse=True)
@@ -1312,106 +1335,75 @@ def rule_R2(ctx, res):
             # them (GCI f0203ad's cap shipped in one), which is the right split.
             if skey == S.S_JS and "comment@" in str(loc):
                 continue
-            uspots = ctx.utility_spots(sent)
-            bound = set()
-            for tname, tpos in ctx.town_spots(sent):
-                near = [(abs(tpos - up), uu, up) for uu, up in uspots
-                        if abs(tpos - up) <= 100]
-                if not near:
-                    continue
-                _, uu, up = sorted(near)[0]
-                bound.add((uu, up))
-                if uu in (ctx.allowed_utilities([tname]) or set()):
-                    continue
-                lo, hi = min(up, tpos), max(up, tpos)
-                span = sent[max(0, lo - 34):hi + 40]
-                if has_any(span, neg_markers, word=False) and \
-                        (set(x[0] for x in uspots) &
-                         set(ctx.allowed_utilities([tname]) or set())):
-                    hc = Hit("R2", "a", art.rel, skey, str(loc),
-                             "%s bound to %s | %s" % (uu, tname, sent),
-                             note="utility-not-serving-town-in-clause",
-                             sentence=sent)
-                    hc.r2_subject_ok = False
-                    raw.append(hc)
-                    continue
-                hb = Hit(
-                    "R2", "a", art.rel, skey, str(loc),
-                    "%s is bound to the nearest town named in its own clause, "
-                    "%s, which it does not serve | %s" % (uu, tname, sent),
-                    note="utility-not-serving-town-in-clause", sentence=sent)
-                # A SPLIT DISCLOSURE names two or more utilities AND two or
-                # more towns in one sentence, and deliberately: GCI's
-                # GAS_UTILITY_SPLIT_FACT is exactly that and renders on 35
-                # pages. Nearest-binding is not reliable inside one -- word
-                # order, not meaning, decides which utility a town lands
-                # against -- so it is a REVIEW, never a FAIL. Measured: without
-                # this, the split constant alone produced 259 of GCI's 324
-                # findings, all of them "Xcel Energy bound to Greeley/Evans/
-                # Eaton" inside a sentence that says the opposite.
-                if len(set(x[0] for x in uspots)) >= 2 and \
-                        len(set(t for t, _ in ctx.town_spots(sent))) >= 2:
-                    hb.note = "split-disclosure-review"
-                raw.append(hb)
-            for u, upos in uspots:
-                if (u, upos) in bound:
-                    continue
-                # CLAUSE-LEVEL TOWN RESOLUTION, NEAREST-BINDING.
-                #
-                # town_scope() resolved only from three PAGE-LEVEL signals --
-                # basename against page_slugs, JSON-LD areaServed, the <h1> --
-                # and llms.txt, robots.txt, sitemap.xml and a bare .svg have
-                # none of them, so those four classes could NEVER be scoped and
-                # were permanently exempt from all of R2. The wrong-utility
-                # defect shipped in shared components that render sitewide.
-                #
-                # Each TOWN mention binds to its NEAREST utility mention, not
-                # to every utility within a window. A window bound "Xcel
-                # Energy" to Greeley across the gas-split sentence -- "Atmos
-                # Energy serves Greeley, Evans and Eaton, while Xcel Energy
-                # serves Johnstown..." -- and produced 89 false positives on
-                # GCI alone. Nearest-binding reads that sentence correctly.
-                #
-                # No town bound to this mention. Ruling 5: an unscoped claim
-                # must not be indistinguishable from a clean run, so it is
-                # RAISED and cleared through a named filter with a real count
-                # rather than skipped before any counter moves.
-                if allowed is not None and u in allowed:
-                    if not scope:
-                        hh = Hit("R2", "a", art.rel, skey, str(loc),
-                                 "%s | no town bound in the clause, no town "
-                                 "scope on the page | %s" % (u, sent),
-                                 note="sitewide-no-town-in-clause",
+            for clause in _clauses(sent):
+                uspots = ctx.utility_spots(clause)
+                tspots = ctx.town_spots(clause)
+                bound = set()
+                # REVIEW is now the RESIDUE, not the default: only a CLAUSE
+                # that still carries two or more utilities AND two or more
+                # towns after splitting is genuinely ambiguous.
+                multi = (len(set(x[0] for x in uspots)) >= 2 and
+                         len(set(t for t, _ in tspots)) >= 2)
+                for tname, tpos in tspots:
+                    near = [(abs(tpos - up), uu, up) for uu, up in uspots
+                            if abs(tpos - up) <= 100]
+                    if not near:
+                        continue
+                    _, uu, up = sorted(near)[0]
+                    bound.add((uu, up))
+                    if uu in (ctx.allowed_utilities([tname]) or set()):
+                        continue
+                    lo, hi = min(up, tpos), max(up, tpos)
+                    span = clause[max(0, lo - 34):hi + 40]
+                    if has_any(span, neg_markers, word=False) and \
+                            (set(x[0] for x in uspots) &
+                             set(ctx.allowed_utilities([tname]) or set())):
+                        hc = Hit("R2", "a", art.rel, skey, str(loc),
+                                 "%s bound to %s | %s" % (uu, tname, clause),
+                                 note="utility-not-serving-town-in-clause",
                                  sentence=sent)
-                        hh.r2_sitewide = True
-                        raw.append(hh)
-                    continue
-                h = Hit("R2", "a", art.rel, skey, str(loc),
-                        "%s | scope=%s | %s" % (u, scope_s, sent),
-                        note=("utility-not-serving-town" if allowed is not None
-                              else "sitewide-scope-no-town-configured"),
+                        hc.r2_subject_ok = False
+                        raw.append(hc)
+                        continue
+                    hb = Hit(
+                        "R2", "a", art.rel, skey, str(loc),
+                        "%s is bound to the nearest town in its own clause, "
+                        "%s, which it does not serve | clause: %s"
+                        % (uu, tname, clause),
+                        note="utility-not-serving-town-in-clause",
                         sentence=sent)
-                h.r2_noscope = (allowed is None)
-                # Is this a CORRECTIVE DISCLOSURE rather than an attribution?
-                # insulation-johnstown.html says "in Johnstown the natural gas
-                # utility is Xcel Energy, NOT Atmos Energy" -- correct copy --
-                # and R2 flagged the Atmos mention. The test: a negation or
-                # contrast marker governs the flagged name within 34 chars AND
-                # the sentence also names a utility that DOES serve the scope.
-                h.r2_subject_ok = True
-                if allowed:
-                    where = list(occ(sent, u, ci=True))
-                    for alias, canon in sorted(
-                            (c.get("utility_aliases", {}) or {}).items()):
-                        if canon == u:
-                            where += occ(sent, alias, ci=True)
-                    for pos in sorted(set(where)):
-                        pre = sent[max(0, pos - 34):pos]
-                        if has_any(pre, neg_markers, word=False) and \
-                                (set(ctx.utilities_in(sent)) & set(allowed)):
-                            h.r2_subject_ok = False
-                            break
-                raw.append(h)
+                    if multi:
+                        hb.note = "split-disclosure-review"
+                    raw.append(hb)
+                for u, upos in uspots:
+                    if (u, upos) in bound:
+                        continue
+                    if allowed is not None and u in allowed:
+                        if not scope:
+                            hh = Hit("R2", "a", art.rel, skey, str(loc),
+                                     "%s | no town bound in the clause, no "
+                                     "town scope on the page | %s"
+                                     % (u, clause),
+                                     note="sitewide-no-town-in-clause",
+                                     sentence=sent)
+                            hh.r2_sitewide = True
+                            raw.append(hh)
+                        continue
+                    hp = Hit("R2", "a", art.rel, skey, str(loc),
+                             "%s | scope=%s | %s" % (u, scope_s, clause),
+                             note=("utility-not-serving-town"
+                                   if allowed is not None
+                                   else "sitewide-scope-no-town-configured"),
+                             sentence=sent)
+                    hp.r2_noscope = (allowed is None)
+                    if allowed:
+                        for pos in occ(clause, u, ci=True):
+                            pre = clause[max(0, pos - 34):pos]
+                            if has_any(pre, neg_markers, word=False) and \
+                                    (set(x[0] for x in uspots) & set(allowed)):
+                                hp.r2_subject_ok = False
+                                break
+                    raw.append(hp)
         for h in sorted(set(art.hrefs)):
             m = re.match(r"https?://([^/]+)", h)
             if not m:
