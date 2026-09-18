@@ -796,7 +796,18 @@ def names_in(text, names, aliases=None, ci=True):
     aliases = aliases or {}
     spans = []
     found = []
-    for term in sorted((t for t in names if t), key=len, reverse=True):
+    # SEARCH THE ALIASES TOO, not just canonicalise with them. Until
+    # 2026-09-18 this loop ran over `names` alone and used `aliases` purely as
+    # a lookup for terms that were ALREADY in `names` -- so "Xcel" -> "Xcel
+    # Energy" worked only because bare "Xcel" is itself in R4.programs, and an
+    # alias naming something absent from the list was never searched for at
+    # all. That is why GCI's FAQPage denial resolved one program instead of
+    # two: the page said "the free state weatherization program" and the list
+    # held only the literal "Colorado Weatherization Assistance Program".
+    # Longest-first plus span-consumption still applies across the union, so a
+    # canonical name always beats a shorter alias overlapping it.
+    terms = set(t for t in names if t) | set(a for a in aliases if a)
+    for term in sorted(terms, key=len, reverse=True):
         for m in _pat(term, ci, True).finditer(text):
             a, b = m.start(), m.end()
             if any(a < y and b > x for x, y in spans):
@@ -2260,6 +2271,14 @@ def rule_R4(ctx, res):
     exc = c.get("attributed_exception", {}) or {}
     marks = ctx.r("R7").get("correction_markers", []) or []
     retired = c.get("retired_prohibition_strings", []) or []
+    # ANAPHORIC PROGRAM-SET REFERENCES. A phrase that stands for two or more
+    # programs WITHOUT naming any of them. LGM's knob-and-tube denial said
+    # "either insulation rebate program" in one sentence and "rebate stacking"
+    # three sentences later; every stacking token fired, the sentence reached
+    # RAW on both surfaces, and it was cleared anyway with `programs=-` because
+    # the two-distinct-programs precondition had nothing to count. The phrase
+    # supplies the COUNT, never a name, and the enumerated hit says so.
+    setanaph = c.get("program_set_anaphora", []) or []
 
     raw = []
     for art in ctx.rule_artifacts("R4"):
@@ -2267,7 +2286,8 @@ def rule_R4(ctx, res):
         for skey, loc, sent in ctx.pool(art):
             tk = which_any(sent, toks, word=False)
             if not tk:
-                prev = (prev + [(skey, ctx.programs_in(sent))])[-2:]
+                prev = (prev + [(skey, ctx.programs_in(sent),
+                                 which_any(sent, setanaph, word=False))])[-2:]
                 continue
             named = ctx.programs_in(sent)
             # ANAPHORA. "The Whole Home Efficiency Bonus is worth having. It
@@ -2276,12 +2296,31 @@ def rule_R4(ctx, res):
             # from the previous two sentences OF THE SAME SURFACE carry
             # forward, marked so the enumeration says where they came from.
             carried = []
-            for pk, pn in prev:
+            carried_anaph = []
+            for pk, pn, pa in prev:
                 if pk == skey:
                     carried += pn
-            prev = (prev + [(skey, named)])[-2:]
+                    carried_anaph += pa
+            anaph = sorted(set(which_any(sent, setanaph, word=False))
+                           | set(carried_anaph))
+            prev = (prev + [(skey, named,
+                             which_any(sent, setanaph, word=False))])[-2:]
             allnamed = sorted(set(named) | set(carried))
-            if len(set(allnamed)) < 2:
+            if len(set(allnamed)) < 2 and anaph:
+                # The sentence (or one within two sentences of it on the same
+                # surface) refers to the program SET without naming it. That is
+                # two or more programs by construction, so the claim is judged
+                # on its predicate rather than pardoned for a name count it
+                # could never satisfy. Classified into its OWN sub-tests, so
+                # this loosening is visible in every enumeration and has a
+                # control of its own rather than hiding inside DENIES/ASSERTS.
+                if not has_any(sent, preds, word=False):
+                    cls = "NEUTRAL"
+                elif has_any(sent, denials, word=False):
+                    cls = "DENIES-SET"
+                else:
+                    cls = "ASSERTS-SET"
+            elif len(set(allnamed)) < 2:
                 # SINGLE-PROGRAM STACKING CLASS. R4's two-distinct-programs
                 # requirement removed the LGM knob-and-tube denial, the GCI
                 # FAQPage denial, the DCI llms.txt claim and the 70-page DCI
@@ -2331,11 +2370,13 @@ def rule_R4(ctx, res):
                     and (art.cite_keys or not need_key):
                 cls = "ATTRIBUTED-AND-SOURCED"
             raw.append(Hit("R4", cls, art.rel, skey, str(loc),
-                           "%s | programs=%s%s | %s"
+                           "%s | programs=%s%s%s | %s"
                            % (",".join(tk), ",".join(allnamed) or "-",
                               (" (carried from the previous sentence: %s)"
                                % ",".join(sorted(set(carried) - set(named))))
                               if set(carried) - set(named) else "",
+                              (" (program SET named anaphorically, not by "
+                               "name: %s)" % ",".join(anaph)) if anaph else "",
                               sent),
                            note=cls, sentence=sent))
 
@@ -2380,15 +2421,20 @@ def rule_R4(ctx, res):
     ])
     res.levels, res.level_detail = level_counts(
         ctx, ["stack", "on top of", "layer", "combin"], word=False)
+    n = lambda s: len([h for h in res.adjudicated if h.sub == s])  # noqa: E731
     res.notes.append("ASSERTS %d  ·  DENIES %d  ·  ASSERTS-1P %d  ·  "
-                     "DENIES-1P %d  ·  all four FAIL: silence is the compliant "
-                     "state and affirmative denial is equally a defect"
-                     % (len([h for h in res.adjudicated if h.sub == "ASSERTS"]),
-                        len([h for h in res.adjudicated if h.sub == "DENIES"]),
-                        len([h for h in res.adjudicated
-                             if h.sub == "ASSERTS-1P"]),
-                        len([h for h in res.adjudicated
-                             if h.sub == "DENIES-1P"])))
+                     "DENIES-1P %d  ·  ASSERTS-SET %d  ·  DENIES-SET %d  ·  "
+                     "all six FAIL: silence is the compliant state and "
+                     "affirmative denial is equally a defect"
+                     % (n("ASSERTS"), n("DENIES"), n("ASSERTS-1P"),
+                        n("DENIES-1P"), n("ASSERTS-SET"), n("DENIES-SET")))
+    res.notes.append("-SET classes are claims whose programs are named "
+                     "ANAPHORICALLY -- 'either insulation rebate program', "
+                     "'both rebate programs' -- so the phrase supplies the "
+                     "COUNT and never a name. Reported as their own sub-tests "
+                     "because that is a loosening, and a loosening that hides "
+                     "inside an existing class cannot be controlled or "
+                     "measured.")
     return "stacking tokens resolved to sentences", \
            "sentences that assert or deny that programs combine"
 
@@ -3682,6 +3728,25 @@ R4_CONTROL_OVERLAY = {"R4": {"programs": [
     "federal 25C"], "noun_use_constants": [],
     "retired_prohibition_strings": [],
     "attributed_exception": {"allowed": True}}}
+# R4c and R4d pin the alias map and the anaphora list as well as the program
+# list, because those are the values their own sub-tests depend on. Without
+# pinning, R4c would pass on GCI (whose config carries the weatherization
+# alias) and fail on DCI (whose does not), and a control whose result depends
+# on which property happens to be loaded is not a control.
+R4_INFORMAL_CONTROL_OVERLAY = {"R4": dict(
+    R4_CONTROL_OVERLAY["R4"],
+    program_aliases={"free state weatherization program":
+                     "Colorado Weatherization Assistance Program",
+                     "the Atmos rebate": "Atmos Energy",
+                     "Atmos rebate": "Atmos Energy",
+                     "Atmos": "Atmos Energy"})}
+R4_ANAPHORA_CONTROL_OVERLAY = {"R4": dict(
+    R4_CONTROL_OVERLAY["R4"],
+    program_aliases={},
+    program_set_anaphora=["either insulation rebate program",
+                          "either rebate program", "both rebate programs",
+                          "both programs", "the two programs",
+                          "these programs"])}
 R5_CONTROL_OVERLAY = {"R3": {"allowed_thresholds": [],
                              "allowed_structure_percentages": []}}
 R6_CONTROL_OVERLAY = {"R6": {"label_chains": [{
@@ -3803,7 +3868,15 @@ RULES = [
              Control("R4a", "R4", _f("R4a_stacking_denial_jsonld.html"),
                      R4_CONTROL_OVERLAY, sub="DENIES", repaired=_f("repaired", "R4a_stacking_denial_jsonld.html")),
              Control("R4b", "R4", _f("R4b_stacking_assertion_prose.html"),
-                     R4_CONTROL_OVERLAY, sub="ASSERTS", repaired=_f("repaired", "R4b_stacking_assertion_prose.html"))]),
+                     R4_CONTROL_OVERLAY, sub="ASSERTS", repaired=_f("repaired", "R4b_stacking_assertion_prose.html")),
+             Control("R4c", "R4", _f("R4c_informal_program_names.html"),
+                     R4_INFORMAL_CONTROL_OVERLAY, sub="DENIES",
+                     repaired=_f("repaired",
+                                 "R4c_informal_program_names.html")),
+             Control("R4d", "R4", _f("R4d_anaphoric_program_set.html"),
+                     R4_ANAPHORA_CONTROL_OVERLAY, sub="DENIES-SET",
+                     repaired=_f("repaired",
+                                 "R4d_anaphoric_program_set.html"))]),
 
     Rule("R5", "UNCITED STATISTIC", "CLAIM TEST",
          "VIS TITLE META OG TW LD JS LOWVIS LLMS EMBED SVGTEXT",
