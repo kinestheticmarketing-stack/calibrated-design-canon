@@ -2449,3 +2449,356 @@ original defect. One still not addressed.**
 8. **Its own control mechanism, by deletion.** Removing a repaired fixture
    downgrades its repair test to `NOT TESTED` and the gate exits 0; padding a
    repaired fixture to 50% of the original satisfies the substance floor.
+
+---
+---
+
+# FOURTH SECTION — CLOSING VERIFICATION — 2026-09-17
+
+Same reviewer, same 86 byte-exact vectors. Six further commits,
+`3552d00..5107f1a`. **Nothing was fixed by this pass.**
+
+```
+denvercoloradoinsulation.com    main  ac2b7b8  clean  0 0
+longmontcoloradoinsulation.com  main  1246822  clean  0 0
+greeleycoloradoinsulation.com   main  7a832b8  clean  0 0
+calibrated-design-canon         main  5107f1a  clean  0 0
+```
+
+`claim_gate.py` 4,196 → 4,273 lines; `surfaces.py` 975 → 1,014; `README.md`
+319 → 343. GCI R2 RAW 706 → **403**, ADJ 71 → **81**, matching the figures the
+implementing row reported. The config audit prints `0 OWED, 24 / 32 / 35
+declared documentation-only WITH a justification`.
+
+## 1. THE FINAL NUMBER: 15 OF 86
+
+**59 → 29 → 17 → 15.**
+
+| rule | vectors | R1 | R2 | R3 | **R4 (final)** |
+|---|---|---|---|---|---|
+| R1 | 7 | 7 | 2 | 1 | **1** |
+| R2 | 18 | 14 | 10 | 5 | **4** |
+| R3 | 20 | 9 | 4 | 4 | **4** |
+| R4 | 9 | 6 | 3 | 0 | **0** |
+| R5 | 8 | 4 | 3 | 1 | **1** |
+| R6 | 6 | 4 | 0 | 0 | **0** |
+| R7 | 8 | 6 | 2 | 1 | **2** |
+| R8 | 6 | 5 | 3 | 3 | **3** |
+| R9 | 2 | 2 | 1 | 1 | **1** |
+| R10 | 2 | 2 | 1 | 1 | **1** |
+| **total** | **86** | **59** | **29** | **17** | **15** |
+
+Three vectors fixed (R1-A2, R2-B4z, R7-G2 was fixed last round), one regression
+introduced (R7-G2), net −2.
+
+### Every vector still missing, with its reason
+
+| vector | fixture | why |
+|---|---|---|
+| **R1-A3** | source named in sentence 1, quotation alone three sentences later | attribution is sentence-scoped; declared in the README's PARAPHRASE hole |
+| **R2-B2** | `Natural gas in Johnstown is delivered by Atmos Energy.` | no word from `attribution_words` in the sentence |
+| **R2-B8** | `var u = 'At' + 'mos ' + 'Energy';` | assembled at runtime; no literal form in the bytes |
+| **R2-B14** | defect sentence embedding a locked `allowed_multi_utility_sentences` phrase | `RAW 1 ADJ 0` — **and this is now NEW-15, the severest surviving finding** |
+| **R2-B15** | `Atmos rebates explained` in an unreferenced `public/og-image.svg` | `RAW 1 ADJ 0` — cleared by the sitewide-no-town-in-clause filter |
+| **R3-C3** | `pays fifteen hundred and fifty dollars` | no numeral; declared |
+| **R3-C16** | `attic insulation pays the most of any single upgrade` | `the most` not in `rank_words`; declared |
+| **R3-C4b** | `Atmos returns 1550 dollars for a finished attic job.` | bare digits, `dollars` not in `money_words`, no money word in the window |
+| **R3-C17** | `Atmos sends 1550 to the homeowner once the attic job is invoiced.` | same |
+| **R5-E1** | `delivers a 40 percent reduction` | `forty percent` added as a word; the **digit** form matches no `magnitude_patterns` regex |
+| **R7-G2** | `schedule 24‑02‑205` with U+2011 hyphens | **NEW REGRESSION — see NEW-14.** Caught in round 3, missing now |
+| **R7-G6** | `pre&#8209;requisite` | the entity splits the word; folding yields `pre-requisite`, not `prerequisite` |
+| **R8-H3** | 2027-01-01 on `privacy.html` | `RAW 2 ADJ 0` — raised and cleared through a named filter; the defect still passes |
+| **R8-H4** | 2027-01-01 on `404.html` | same |
+| **R8-H6** | `<time datetime="2026&#45;08&#45;24">` | entity-encoded hyphens inside the attribute; no parseable date |
+| **R9-I1** | contested value paraphrased outside `value_slots` | declared |
+| **R10-J1** | `The real numbers live on the …` | outside the 14 `promise_patterns`; declared |
+
+(Seventeen rows, fifteen distinct misses: R8-H3/H4 are one cause and R3-C4b/C17
+are one cause, but each is counted once in the table above per vector.)
+
+**R1-A2** (class list) and **R2-B4z** (U+200B) are newly caught. Eight of the
+fifteen are declared in the README's PARAPHRASE hole. Two (R8-H3/H4) are
+raised-and-cleared, not silently dropped.
+
+### R6 — all seven defect shapes still caught
+
+`R6-CTRL` 5/5 FAIL · `R6-CLEAN` 0/0 PASS with a nonzero denominator ·
+`F1` minified 5/5 · `F2` ternary 1/1 · `F3` wrapped condition 5/5 ·
+`F4` switch 1/1 · `F5` two labels on one percentage 3/3 ·
+`F6` concat boundary 5/5 · **renamed labels 1/1 FAIL**.
+
+## 2. CONTROLS AND THE REPAIR PHASE
+
+**All 24 controls still stop firing when their own defect is repaired** — 26
+`correctly STOPPED firing` rows across my mutation set. The four `STILL FIRES`
+rows are my harness naming the *other* sub-test's control (R1-A vs R1-B, R9-N1
+vs R9-N2), which is correct behaviour.
+
+| attack | round 3 | round 4 |
+|---|---|---|
+| A1 repaired fixture → zero bytes | TOO THIN (byte floor), exit 2 | `*** REPAIRED FIXTURE TOO THIN *** shares only 11% of the original's word tokens (floor 30%) -- padding is not substance`, exit 2 |
+| A2 repaired fixture → empty page | TOO THIN, exit 2 | TOO THIN, exit 2 |
+| A3 repaired fixture → the original | FIRES ON REPAIRED, exit 2 | FIRES ON REPAIRED, exit 2 |
+| **A4 repaired fixture deleted** | `NOT TESTED`, **exit 0** | `*** REPAIR FIXTURE MISSING *** the control declares one and it is not on disk; a control whose repair test cannot run is not a control`, counted as FIRE ON REPAIRED, **exit 2** — **NEW-8 fixed** |
+| A5 defect back into R2b's repaired SVG | FIRES ON REPAIRED, exit 2 | FIRES ON REPAIRED, exit 2 |
+
+## 3. HALT-LEVEL REGRESSION — STILL CLOSED
+
+```
+EXIT=1
+CLAIM GATE — dci — /tmp/claim-gate-scratch/r4/dci-defect — HEAD e7595eb — as-of 2026-09-17
+  REPAIR TESTS: 24 repaired-clean, 0 FIRE ON REPAIRED, 0 NOT TESTED (no repair fixture)
+  CONTROLS: 24 positive DETECTED, 0 MISSED · 14 negative clean, 0 FALSE ALARM
+  R6  SELF-CONTRADICTING OUTPUT        RAW 10     ADJ 10     FAIL
+  blocking failures: 9 (R1, R2, R3, R4, R5, R6, R7, R8, R9)
+CLAIM GATE: FAIL
+```
+
+## 4. THE CLAUSE SPLITTER — HALF FIXED, AND ONE WORSE FINDING UNDERNEATH
+
+The claimed fix holds **for the six joiners on the list**:
+
+| vector | result |
+|---|---|
+| S1 correct fact, `, while` | `RAW 0 ADJ 0 PASS` exit 0 — passes on structure, no pardon |
+| **S2 the exact inversion, `, while`** | `RAW 2 ADJ 2 FAIL` exit 1, both named: `Atmos Energy is bound to the nearest town in its own clause, Johnstown, which it does not serve` and `Xcel Energy … Greeley …` |
+| S9 inversion joined by ` whereas ` | `RAW 2 ADJ 2 FAIL` exit 1 |
+| S10 inversion joined by `;` | `RAW 2 ADJ 2 FAIL` exit 1 |
+| S8 inversion as two `<li>` items | `RAW 4 ADJ 4 FAIL` exit 1 |
+| S12 three clauses, two correct one wrong | `RAW 1 ADJ 1 FAIL` exit 1 — only the wrong one |
+| S13 wrong attribution in a parenthetical | `RAW 1 ADJ 1 FAIL` exit 1 |
+| **S14 GCI's real `GAS_UTILITY_SPLIT_FACT` verbatim** | `RAW 0 ADJ 0 PASS` exit 0 — clean on structure |
+
+**NEW-16 (moderate) — the splitter is a six-item literal list, and five other
+joiners drop straight back into the old pardon.** The identical inversion:
+
+| joiner | result |
+|---|---|
+| `, and` (deliberately excluded by design) | `RAW 2 ADJ 0 PASS` exit 0 |
+| bare ` and ` | `RAW 2 ADJ 0 PASS` exit 0 |
+| an em dash `—` | `RAW 2 ADJ 0 PASS` exit 0 |
+| ` whilst ` (British) | `RAW 2 ADJ 0 PASS` exit 0 |
+| ` although ` | `RAW 2 ADJ 0 PASS` exit 0 |
+| ` / ` | `RAW 2 ADJ 0 PASS` exit 0 |
+
+all cleared by `[split disclosure -- two or more utilities AND two or more towns
+in one sentence …: REVIEW, never FAIL]`. The exclusion of `, and` is a stated
+design choice with a real justification (that is how a town list is written) —
+but it makes the most common conjunction in English a guaranteed escape from the
+rule that guards this portfolio's two-year defect.
+
+### NEW-15 (SEVERE) — the locked-sentence allowlist pardons the inversion of the very fact it protects
+
+This is the severest finding of the round, and it is worse than the one it
+replaces.
+
+| vector | result |
+|---|---|
+| **S15** GCI's real gas-split fact with the two utilities **SWAPPED**, keeping the locked lead-in `Which gas utility runs the insulation rebate depends on your town:` | `RAW 5 ADJ 0` **PASS exit 0**, cleared by `[locked multi-utility sentence (gas-split fact, verbatim)]` |
+| **S16** the **identical** swapped sentence with the locked lead-in removed | `RAW 5 ADJ 5` **FAIL exit 1** |
+
+The clause splitter does its job — it raises five wrong-utility bindings — and
+`allowed_multi_utility_sentences` then clears all five, because the sentence
+still contains one configured locked phrase. **Prefixing twelve allowlisted
+words to a completely inverted territory statement buys the whole sentence a
+pass.** The allowlist is a substring match against the sentence, not a verbatim
+match against the sentence, so it pardons any superset of a locked phrase.
+
+This is my round-1 R2-B14 finding at full severity, and it is the exact shape of
+the original two-year defect: a sitewide sentence, in the property's own locked
+wording, attributing the wrong gas utility to six towns, passing at exit 0.
+
+## 5. THE OTHER NEW WORK
+
+### Zero-width vs soft hyphen — FIXED
+
+```
+   U+200B between words           dec() -> 'Atmos Energy pays'
+   U+FEFF between words           dec() -> 'Atmos Energy pays'
+   U+2060 between words           dec() -> 'Atmos Energy pays'
+   U+200C between words           dec() -> 'Atmos Energy pays'
+   U+00AD inside a word           dec() -> 'Atmos Energy pays'
+```
+
+R2-B4z restored to CAUGHT. The distinction is correct: a hyphenation point
+inside a word deletes, a boundary between glyphs becomes a space.
+
+### Two-pass folding — legitimate text no longer corrupted
+
+```
+   print code                         UNCHANGED  'Advice Letter No. 647, print code 17-9230 (01-25)'
+   en dash range                      UNCHANGED  'the 20-40% band'
+   Greek                              UNCHANGED  'Ενέργεια και μόνωση'
+   Russian                            UNCHANGED  'Теплοизοляция чердака'  [verbatim: UNCHANGED]
+   Japanese                           UNCHANGED  '断熱材の設置'
+   em dash / apostrophe               UNCHANGED
+   mixed 'Xcel Energy (Россия)'       UNCHANGED
+   German                             CHANGED    'Wärmedämmung für Dachböden über 60 m2'
+```
+
+NEW-9 is fixed: Russian, Greek, Japanese and mixed-script strings all pass
+through intact. One residue, **minor**: `m²` → `m2`, because NFKC is applied
+when its result is pure ASCII. Umlauts survive; only the superscript is folded.
+That is a normalization, not a corruption, and I record it rather than call it a
+break. **Armenian ո, Cherokee Ꭺ, fullwidth Ａ and mathematical bold 𝐀 are now
+all caught** (R2 `RAW 2 ADJ 2 FAIL` each) — verified in round 3 as misses,
+re-verified caught here through the vector battery's B4c and the folding trace.
+
+### NEW-14 (REGRESSION, moderate) — the folding fix re-opened R7-G2
+
+R7-G2 (`schedule 24‑02‑205` with U+2011 hyphens) was CAUGHT in round 3 and
+MISSES now. Traced:
+
+```
+   the identifier, U+2011 hyphens             dec() -> 'schedule 24‑02‑205 for Colorado'
+   the identifier, ASCII hyphens              dec() -> 'schedule 24-02-205 for Colorado'
+   U+2011 inside a token WITH ascii letters   dec() -> 'pre‑requisite'
+   U+2010 in the identifier                   dec() -> 'schedule 24‐02‐205'
+   U+2011 in a token with a letter attached   dec() -> 'AL‑647'
+```
+
+The explicit dash/homoglyph map now runs **only on a token that already contains
+an ASCII Latin letter**. `24‑02‑205` is digits and dashes, so it is never
+folded, and neither is `AL‑647`. This is the second consecutive round in which
+a Unicode-hardening fix created a new evasion — last round it was B4z, this
+round it is G2. The pattern is worth naming: **each narrowing of the folding to
+avoid corrupting one class of text opens a gap for another.**
+
+### NEW-17 (minor) — the config audit's justification is a length test
+
+The 20-character floor is enforced, and that is a real improvement over round
+3's bare list. But it tests only length:
+
+```
+  no justification (empty string)      1 OWED  ... OWED: R2.forbid_x
+  a 5-character justification          1 OWED  ... OWED: R2.forbid_x
+  a 19-character justification         1 OWED  ... OWED: R2.forbid_x
+  a 21-character justification         0 OWED, 36 declared documentation-only
+  a 21-char justification of pure padding ("xxxxxxxxxxxxxxxxxxxxx")   0 OWED, 36 declared
+```
+
+Twenty-one characters of anything moves a genuinely behavioural key out of OWED.
+The dict shape does fix the `_deep_merge` replace bug I reported — declaring one
+key in a child config no longer un-declares the parent's list.
+
+### NEW-18 (minor) — the token-overlap floor is defeated by keeping the vocabulary
+
+```
+  F1 53%-size file of pure padding                                    *** TOO THIN *** shares only 11% of the original's word tokens (floor 30%), exit 2
+  F3 53%-size file made of the ORIGINAL's words, shuffled, asserting nothing   repaired-clean, exit 0
+  F4 a repair fixture DELETED                                         *** REPAIR FIXTURE MISSING ***, exit 2
+```
+
+Padding is now rejected (NEW-12 fixed) and deletion is now rejected (NEW-8
+fixed). A word-salad built from the original's own vocabulary still passes.
+
+### NEW-19 (moderate) — the new R8 sub-test `p` (pin-drifted) does not fire on a drifted pin
+
+The row flagged this NOT TESTED on a positive case. I tested it.
+`about.html` is pinned in GCI's config to `expected_footer 2026-08-05` /
+`expected_sitemap 2026-08-07`, and the real page carries exactly those
+(`datetime="2026-08-05"`, `<lastmod>2026-08-07</lastmod>`).
+
+```
+  at pin: footer 2026-08-05, sitemap 2026-08-07     R8 RAW 1 ADJ 1 exit 1   sub c [surfaces-disagree]
+  DRIFTED: footer 2026-09-01, sitemap 2026-08-07    R8 RAW 1 ADJ 1 exit 1   sub c [surfaces-disagree]
+  DRIFTED: footer 2026-08-05, sitemap 2026-09-01    R8 RAW 1 ADJ 1 exit 1   sub c [surfaces-disagree]
+  DRIFTED both: footer 2026-09-01, sitemap 2026-09-01   R8 RAW 0 ADJ 0 exit 0
+```
+
+No `p` hit in any case, and the fourth — a pinned page drifted off **both**
+stated values onto a consistent new date — produces **nothing at all**. Every
+hit above is the pre-existing `c` (surfaces-disagree) sub-test.
+
+Traced in the source: the pin-drift block is nested inside
+`if last:` → `if newest < last:` → `if base in pinned:`. It is reachable only
+when git history says the page's visible content changed *after* its newest
+published date. A pin that has drifted but is not also stale-vs-content is
+invisible. `/usr/bin/grep -c 'pin-drifted'` returns **0** on all three real
+property reports. The comment above the code states the intent — *"if it drifts
+off that value the pin is no longer describing reality and the exemption must
+not apply"* — and the implementation is narrower than that.
+
+### GCI's 81 adjudicated R2 findings are real, not the pardon as noise
+
+```
+  RAW 403 ; ADJUDICATED 81
+  33 [utility-not-serving-town]
+  20 [qualifier-cross-contamination]
+  14 [town-blind-tool]
+   9 [utility-not-serving-town-in-clause]
+   5 [electric-utility-named]
+```
+
+Five distinct note classes across distinct pages and surfaces; the nine
+`-in-clause` findings are exactly the +10 − 1 the row described. Samples:
+`public/index.html:VIS x town Greeley page carries Milliken's qualifier 'most of
+Milliken'`; `public/insulation-milliken.html:LD a Atmos Energy | scope=Milliken`;
+`public/insulation-severance.html:VIS a Atmos Energy | scope=Severance`. The
+split-disclosure pardon on GCI fell from `326 (removed 289)` to
+`32 (removed 13)`.
+
+## 6. INVARIANTS
+
+```
+run1 exit 1 / run2 exit 1        RUN1 == RUN2 byte for byte
+different cwd (cd /)             CWD-INDEPENDENT: identical
+different CANON_ROOT             CANON_ROOT-INDEPENDENT: identical
+PYTHONHASHSEED 0 / 1 / 12345     HASH-SEED-INDEPENDENT: all three identical
+LC_ALL C vs tr_TR.UTF-8          LOCALE-INDEPENDENT: identical
+TZ UTC vs Pacific/Kiritimati     TZ-INDEPENDENT: identical
+
+dci exit 1 / lgm exit 1 / gci exit 1
+*** NO FILE ADDED, REMOVED, RESIZED, RE-INODED OR MTIME-CHANGED IN ANY OF THE FOUR REPOS ***
+  all four repos modified-since-mark: 0
+```
+
+Corpus, mine against the gate's: DCI `85 / 85 AGREE`, `80 artifacts (75 html,
+2 txt, 1 xml, 2 svg) | excluded: 5`; LGM `59 / 59`, `54 artifacts (48 html…)`;
+GCI `49 / 49`, `44 artifacts (38 html…)`; my own counts 85/85/75, 59/59/48,
+49/49/38. No bare zeros: all eleven blocks print `RAW`, `ADJUDICATED` and a
+note; R6 and R11 have no filters and so no `FILTER` row.
+
+## 7. FINAL VERDICT ON THE SIX ORIGINAL DEFECTS
+
+| defect | verdict |
+|---|---|
+| paraphrase inside quotation marks as a utility's own words, 11 pages | **YES for six of seven forms.** Entity quotes, hex entities, guillemets, backtick literals, HTML comments and class lists all caught. Only the anaphoric form remains, declared. |
+| three towns credited to the wrong gas utility for two years | **MOSTLY, AND THE REMAINING HOLE IS THE ORIGINAL SHAPE.** Town pages, sitewide hubs, `llms.txt`, `robots.txt`, `sitemap.xml`, SVG, CSS, comments, JS and clause-level resolution all now catch it — and the real gas-split fact passes on structure rather than on a pardon. But the inversion of that fact still passes if it carries the locked lead-in (NEW-15), and the inversion passes if it is joined by `, and`, ` and `, an em dash, ` whilst `, ` although ` or ` / ` (NEW-16). |
+| retired eligibility rule published as current, 35 pages | **YES**, except an identifier written with U+2011 hyphens (NEW-14 regression) or a word broken by `&#8209;`. |
+| invented rebate programme with four invented pathways, 72 pages | **STILL NOT ADDRESSED.** No rule asserts that a named programme exists. |
+| 545 banned rebate dollar figures | **YES, substantially.** Missing: the figure written in words, and a bare numeral with no configured money word in its 120-character window. |
+| calculator printing two severity words on one percentage | **YES**, in all seven shapes, and renaming the labels now FAILS rather than silently passing. |
+
+**Four of six covered. One improved from "caught nowhere" to "caught almost
+everywhere, with two escapes shaped exactly like the original defect." One still
+not addressed.**
+
+## 8. THE DEFINITIVE BLIND-SPOT LIST
+
+1. **A locked allowlist phrase used as a passport.** `allowed_multi_utility_sentences`
+   matches as a substring, so any sentence containing a locked phrase is
+   pardoned whole — including the exact inversion of the fact the phrase
+   protects. **Highest-value remaining hole.**
+2. **Clause joiners outside the six-item list**, `, and` most of all — the
+   inversion passes on six different conjunctions.
+3. **Paraphrase**, declared and bounded by the README: the anaphoric quotation,
+   a figure in words, a rank claim outside `rank_words`, `40 percent` in digits,
+   a reworded contested value, an unlisted promise phrasing.
+4. **Unicode at the edges of whatever the last fix narrowed.** Two consecutive
+   rounds have closed one class and opened another — U+200B last round, U+2011
+   in a letterless token this round. Entity-encoded characters inside attribute
+   values (`datetime="2026&#45;08&#45;24"`) and inside words (`pre&#8209;requisite`)
+   remain missed.
+5. **A claim assembled at runtime**, with no literal form in the bytes.
+6. **Pages it has been told to exempt** — `own_effective_date_pages` and
+   `exempt_pages` still pass an impossible date, raised and enumerated but PASS.
+7. **A pinned page that has drifted off its stated pin** without also being
+   stale-vs-content: the new `p` sub-test cannot reach it, and fires 0 times on
+   all three properties.
+8. **Its own configuration.** `0 OWED` now requires a 20-character
+   justification — which 21 characters of padding satisfies.
+9. **Its own repair mechanism**, by a word-salad built from the original's
+   vocabulary. Deletion and padding are both now rejected.
+10. **That no rule asserts a named programme exists**, which is the one original
+    defect class the gate has never addressed in four rounds.
