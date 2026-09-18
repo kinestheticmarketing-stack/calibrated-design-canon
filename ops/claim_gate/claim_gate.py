@@ -5186,15 +5186,21 @@ def _main(args, out, t0):
                 demoted = True
                 res.notes.append(
                     "REPORT-ONLY BY MEASUREMENT: %.1f%% false positives, above "
-                    "the %.0f%% threshold. Measured %s, EXHAUSTIVELY -- %d "
-                    "finding(s) examined across the portfolio, %d TRUE, %d "
-                    "FALSE POSITIVE, %d REVIEW. %s"
+                    "the %.0f%% threshold. Measured %s at canon %s, "
+                    "EXHAUSTIVELY -- %d finding(s) examined across the "
+                    "portfolio, %d TRUE, %d FALSE POSITIVE, %d REVIEW. %s"
                     % (rate, thr, demo.get("measured_on", "?"),
+                       demo.get("measured_at_canon", "?"),
                        demo.get("examined", 0), demo.get("true", 0),
                        demo.get("false_positive", 0), demo.get("review", 0),
                        demo.get("note", "")))
+                if demo.get("per_property"):
+                    res.notes.append("  per property: %s"
+                                     % demo["per_property"])
                 for cls in demo.get("false_positive_classes", []) or []:
                     res.notes.append("  FP class: %s" % cls)
+                for cls in demo.get("review_classes", []) or []:
+                    res.notes.append("  REVIEW class: %s" % cls)
         if not blocking:
             res.verdict = "REPORT"
             res.reason = (
