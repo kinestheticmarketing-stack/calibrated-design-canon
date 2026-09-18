@@ -46,6 +46,33 @@ _SCRIPT_STYLE = re.compile(
 _COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 _TAG = re.compile(r"<[^>]+>")
 
+# BLOCK-LEVEL ELEMENTS ARE SENTENCE BOUNDARIES. txt() flattened EVERY tag to a
+# single space, so `<li>Air Sealing</li><li>Energy Audit</li>` arrived at the
+# sentence splitter as one unpunctuated run -- and since the splitter needs
+# terminal punctuation, an entire <nav> welded itself onto the first sentence
+# of body prose. GCI's eight town pages each produced an R5 "sentence" reading
+# `Skip to content Services Attic Insulation ... Project Cost Calculator` with
+# a percentage from elsewhere on the page bound into it, which is a magnitude
+# claim attributed to a navigation menu. The figures were real and the sentence
+# was an artefact.
+#
+# INLINE TAGS MUST STAY A SPACE. `Atmos <b>Energy</b> rebates` has to keep
+# reading as one phrase or every multi-word term that happens to wrap an inline
+# tag stops matching -- a false-negative factory strictly worse than the bug
+# being fixed. So the boundary is inserted for BLOCK elements only, and <a>,
+# <b>, <em>, <strong>, <span> and friends are deliberately absent below.
+_BMARK = "\x02"
+_BLOCK_TAGS = (
+    "p", "div", "li", "ul", "ol", "dl", "dt", "dd", "tr", "td", "th",
+    "table", "thead", "tbody", "tfoot", "section", "article", "nav",
+    "header", "footer", "aside", "main", "h1", "h2", "h3", "h4", "h5",
+    "h6", "br", "hr", "blockquote", "figure", "figcaption", "form",
+    "fieldset", "legend", "label", "button", "select", "option",
+    "textarea", "details", "summary", "pre", "address",
+)
+_BLOCK_TAG_RE = re.compile(
+    r"</?(?:" + "|".join(_BLOCK_TAGS) + r")\b[^>]*>", re.IGNORECASE)
+
 
 def collapse(s):
     """All whitespace runs -> one space. The single most load-bearing line in
@@ -138,13 +165,28 @@ def dec(s):
     return _TOKEN.sub(lambda m: _fold_token(m.group(0)), t)
 
 
-def txt(s):
+def txt(s, mark_blocks=False):
     """DEC with script/style bodies removed, remaining tags stripped, and all
-    whitespace runs collapsed (spec 3, TXT)."""
+    whitespace runs collapsed (spec 3, TXT).
+
+    mark_blocks=True additionally emits a _BMARK sentinel where a BLOCK-level
+    element opened or closed, so sentences() can break there. The default is
+    False and the default output is BYTE-IDENTICAL to what this function has
+    always returned -- every existing occ()/has_any() call over art.txt is
+    therefore unaffected. Only segmentation sees the marked variant.
+    """
     s = _COMMENT.sub(" ", s)
     s = _SCRIPT_STYLE.sub(" ", s)
+    if mark_blocks:
+        s = _BLOCK_TAG_RE.sub(_BMARK, s)
     s = _TAG.sub(" ", s)
-    return collapse(dec(s))
+    out = collapse(dec(s))
+    if mark_blocks:
+        # collapse() leaves the sentinel intact but may strand whitespace
+        # around it; normalise to a bare sentinel so the splitter sees one
+        # boundary rather than several.
+        out = re.sub(r"\s*" + _BMARK + r"[\s" + _BMARK + r"]*", _BMARK, out)
+    return out
 
 
 # Abbreviations whose period must NOT end a sentence. The list is not
@@ -210,6 +252,8 @@ def sentences(s):
     # in half.
     t = t.replace("\u2026", _PROT + _PROT + _PROT)
     t = _BOUND_RE.sub(lambda m: m.group(1) + _MARK, t)
+    # A block boundary ends a sentence even with no terminal punctuation.
+    t = t.replace(_BMARK, _MARK)
     out = []
     for part in t.split(_MARK):
         part = part.replace(_PROT + _PROT + _PROT, "\u2026").replace(_PROT, ".")
@@ -510,8 +554,14 @@ class Artifact(object):
             m = re.search(r"<body\b[^>]*>(.*)</body\s*>", raw,
                           re.DOTALL | re.IGNORECASE)
             self.txt = txt(m.group(1)) if m else self.doc_txt
+            # Same bytes, plus block-boundary sentinels. Used ONLY for
+            # sentence segmentation; self.txt is unchanged and every matcher
+            # that reads it is unaffected.
+            self.txt_blocks = (txt(m.group(1), mark_blocks=True) if m
+                               else txt(raw, mark_blocks=True))
         else:
             self.txt = self.doc_txt
+            self.txt_blocks = self.doc_txt
         self.surfaces = []
         self.ld_docs = []           # (index, parsed-or-None, raw)
         self.ld_leaves = []         # (path, string)
@@ -538,7 +588,7 @@ class Artifact(object):
         return [s for s in self.surfaces if s.key in want]
 
     def sentences(self):
-        return sentences(self.txt)
+        return sentences(getattr(self, "txt_blocks", None) or self.txt)
 
     def level_text(self, level):
         if level == NORM_RAW:

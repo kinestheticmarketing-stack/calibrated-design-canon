@@ -1032,7 +1032,10 @@ class Ctx(object):
             return self._pool[art.rel]
         out = []
         if art.kind == "html":
-            for sent in S.sentences(art.txt):
+            # txt_blocks, not txt: identical bytes plus block-boundary
+            # sentinels, so a <nav> cannot weld itself onto the first sentence
+            # of body prose. See surfaces._BLOCK_TAGS.
+            for sent in S.sentences(art.txt_blocks):
                 out.append((S.S_VIS, "txt", sent))
         else:
             # A non-HTML artifact's own surfaces include S_VIS, which is NOT in
@@ -2007,7 +2010,7 @@ def rule_R2(ctx, res):
                 oq = towns[other].get("gas_qualifier") or ""
                 if other == name or not oq or oq == q:
                     continue
-                for cs in S.sentences(art.txt):
+                for cs in S.sentences(art.txt_blocks):
                     if oq not in cs:
                         continue
                     # A qualifier travelling WITH ITS OWN TOWN is a disclosure,
