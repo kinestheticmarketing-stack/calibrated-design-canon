@@ -384,7 +384,11 @@
         "hidden": [
           "lf-calc-inputs",
           "lf-calc-output"
-        ]
+        ],
+        "hidden_mirrors_visible": [
+          "lf-calc-output"
+        ],
+        "hidden_mirrors_visible_reason": "The hidden field whose value is the SAME VERDICT the visible output shows, so R9's N3b may assert they agree. 'lf-calc-inputs' is deliberately NOT listed: it carries the visitor's inputs, not a verdict, and comparing it against the output element reported 'attic' as an unreachable verdict the first time N3b ran. GATE_SCORE_2026-09-17.md miss 10: the hidden field transmitted 'No project recommended - already at code.' for an R-49 homeowner while the visible output said R-60, and R9's N3 was a presence check that could never see it."
       }
     ]
   },

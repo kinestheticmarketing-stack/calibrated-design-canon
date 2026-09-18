@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head><title>R-value calculator — control fixture</title>
+<meta name="description" content="Control fixture for R9 sub-test N3b. The hidden lead-form field transmits a verdict the visible output can never show.">
+</head><body>
+<h1>R-value needed calculator</h1>
+<p>Enter your attic depth and the calculator tells you where you stand against
+the code target for this climate zone.</p>
+<div id="calcOutput"></div>
+<form>
+  <input type="hidden" id="lf-calc-inputs" name="calc_inputs" value="">
+  <input type="hidden" id="lf-calc-output" name="calc_output" value="">
+</form>
+<script>
+var out = document.getElementById('calcOutput');
+function computeResult(gap, pctShort) {
+  var headline = '';
+  if (pctShort >= 50) { headline = 'Significantly under code'; }
+  else if (pctShort >= 20) { headline = 'Moderately under code'; }
+  else { headline = 'Close to code'; }
+  out.innerHTML = headline;
+  var lead = 'No project recommended - already at code.';
+  document.getElementById('lf-calc-output').value = lead;
+  document.getElementById('lf-calc-inputs').value = 'attic';
+}
+</script>
+<p>Derived from DCI <code>81f4bca</code> / <code>4cf7a52</code>, defect 10,
+scored MISSED on both replayed trees in
+<code>GATE_SCORE_2026-09-17.md</code>. The visible output could only ever say
+one of three severity labels, while the hidden field transmitted
+&ldquo;No project recommended&rdquo; for the same homeowner. R9's N3 was a
+PRESENCE check &mdash; it fired only when a configured id was absent and was
+silent when every id was present &mdash; so the contradiction was unreachable
+by construction. A lead form is a claim surface: what it transmits about the
+homeowner is an assertion about that homeowner.</p>
+</body></html>
