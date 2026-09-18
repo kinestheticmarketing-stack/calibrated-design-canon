@@ -1028,7 +1028,16 @@
       "not enumerated on this page",
       "we can't monitor them for you",
       "we can&rsquo;t monitor them for you",
-      "we can’t monitor them for you"
+      "we can’t monitor them for you",
+      "publishes the amount",
+      "publishes the current amount on its own rebate page",
+      "publishes the current amount",
+      "publishes its own insulation and air sealing rebate terms",
+      "publishes a Greeley-specific installed price",
+      "is not going to invent one",
+      "sets out its own insulation and air sealing rebate terms",
+      "publishes its own",
+      "on its own rebate page"
     ],
     "offproperty_is_compliant": true,
     "page_titles": {},
@@ -1036,7 +1045,8 @@
       "elsewhere on this site",
       "on this site",
       "other pages here"
-    ]
+    ],
+    "refusal_markers_reason": "  EXTENDED 2026-09-18. R10's own declared bias is that a destination which refuses IN WORDS THE CONFIG DOES NOT KNOW looks like a destination with no figures, and that the failure mode is a false positive rather than a false negative. Both of GCI's adjudicated R10 findings were exactly that: insulation-attic-greeley.html refuses four different ways -- 'publishes the amount', 'publishes the current amount on its own rebate page', 'publishes its own insulation and air sealing rebate terms', and 'publishes a Greeley-specific installed price per square foot, and this site is not going to invent one' -- and carries zero dollar figures (measured: /usr/bin/grep -oIE '[$][0-9][0-9,.]*' returns 0, against a control of 60 for 'Greeley'). The bias is right and the wording list was short."
   },
   "R11": {
     "blocking": false,
