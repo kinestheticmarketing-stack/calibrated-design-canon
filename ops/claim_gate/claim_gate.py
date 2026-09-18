@@ -732,6 +732,76 @@ CLAIM_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD,
               S.S_LOWVIS, S.S_ATTR, S.S_LLMS, S.S_SVGTEXT, S.S_CITE,
               S.S_CONST, S.S_JS, S.S_COMMENT, S.S_CSS, S.S_SITEMAP)
 
+REGISTRY_REL = "docs/citation-registry.json"
+
+
+class Registry(object):
+    """The property's own docs/citation-registry.json, read for R7.
+
+    R7 printed DEGRADED on every run because the supersession record lived
+    ONLY in the gate's own config: a tool asserting a list it also owns is
+    not checking the property, it is checking itself. The registry now
+    carries `superseded_by: {id, on, reason}` on a tombstone entry per
+    retired document, and a top-level `schema.supersession_declared` flag so
+    that an ABSENT superseded_by is a positive statement ("reviewed on this
+    date, current") rather than silence the gate would have to guess about.
+
+    Read-only, and never read inside a control context -- controls get the
+    value pinned on the config by run_controls, exactly as ctx.gen is.
+    """
+
+    def __init__(self):
+        self.path = ""
+        self.present = False
+        self.parse_error = ""
+        self.declared = False
+        self.declared_on = ""
+        self.entries = 0
+        self.superseded = []      # [{id, identifiers[], url, on, by, reason}]
+        self.undeclared_ids = []  # entries with no superseded_by (= current)
+
+
+def read_citation_registry(repo):
+    reg = Registry()
+    reg.path = os.path.join(repo, REGISTRY_REL)
+    if not os.path.isfile(reg.path):
+        return reg
+    reg.present = True
+    try:
+        with open(reg.path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception as exc:
+        reg.parse_error = "%s: %s" % (exc.__class__.__name__, exc)
+        return reg
+    if not isinstance(data, dict):
+        reg.parse_error = "top level is %s, not an object" % type(data).__name__
+        return reg
+    schema = data.get("schema") or {}
+    reg.declared = bool(schema.get("supersession_declared"))
+    reg.declared_on = str(schema.get("supersession_declared_on") or "")
+    for bucket in ("sources", "unwatchable_sources"):
+        for e in data.get(bucket) or []:
+            if not isinstance(e, dict):
+                continue
+            reg.entries += 1
+            sb = e.get("superseded_by")
+            if not isinstance(sb, dict):
+                reg.undeclared_ids.append(str(e.get("id") or "?"))
+                continue
+            idents = [x for x in (e.get("identifiers") or [])
+                      if isinstance(x, str) and x.strip()]
+            reg.superseded.append({
+                "id": str(e.get("id") or "?"),
+                "identifiers": sorted(set(idents)),
+                "url": str(e.get("url") or ""),
+                "by": str(sb.get("id") or ""),
+                "on": str(sb.get("on") or ""),
+                "reason": str(sb.get("reason") or ""),
+            })
+    reg.superseded.sort(key=lambda d: d["id"])
+    reg.undeclared_ids.sort()
+    return reg
+
 # The sentence pool every proposition rule runs over. VIS comes from the
 # whole-document TXT (so a sentence that runs through <strong> or a source line
 # break is ONE sentence, which is the entire point of TXT); every other surface
@@ -751,6 +821,7 @@ class Ctx(object):
         self.artifacts = []
         self.by_rel = {}
         self.gen = S.GeneratorFacts()
+        self.registry = Registry()
         self.gitfacts = GitFacts()
         self.claim_extra = {}
         self.corpus = None
@@ -2693,9 +2764,64 @@ def rule_R7(ctx, res):
     props = c.get("superseded_propositions", []) or []
     marks = c.get("correction_markers", []) or []
 
-    res.degraded.append(
-        "R7 DEGRADED: registry carries no machine-readable supersession "
-        "marker; running from config list (spec 7.4, 12.1)")
+    # ---- the registry half of the rule (spec 7.4, 12.1) -------------------
+    # This rule used to print DEGRADED unconditionally, and it was right to:
+    # the supersession record lived only in the gate's own config, so R7 was a
+    # tool checking its own list rather than the property's record. The
+    # registry now carries `superseded_by: {id, on, reason}` on a tombstone per
+    # retired document plus a top-level `schema.supersession_declared` flag,
+    # and R7 reads it. The DEGRADED line is conditional on the debt being
+    # UNPAID -- it is not removed, and it comes back the moment a property's
+    # registry stops declaring.
+    reg = ctx.registry
+    if not reg.present:
+        res.degraded.append(
+            "R7 DEGRADED: no %s in this repo; running from config list "
+            "only (spec 7.4, 12.1)" % REGISTRY_REL)
+    elif reg.parse_error:
+        res.degraded.append(
+            "R7 DEGRADED: %s could not be parsed (%s); running from config "
+            "list only (spec 7.4, 12.1)" % (REGISTRY_REL, reg.parse_error))
+    elif not reg.declared:
+        res.degraded.append(
+            "R7 DEGRADED: registry carries no machine-readable supersession "
+            "marker; running from config list (spec 7.4, 12.1)")
+
+    reg_ids, reg_urls = [], []
+    reg_repl = {}
+    if reg.declared and not reg.parse_error:
+        for e in reg.superseded:
+            # ONLY the entry's declared `identifiers` are scanned -- never its
+            # `url`. A tombstone's url is often the publisher's CURRENT landing
+            # page (an Xcel print code is retired while co.my.xcelenergy.com
+            # stays live), and merging it turned three correct citations of the
+            # current source into R7 failures the first time this ran. If a URL
+            # is genuinely a banned string, its author says so by listing it in
+            # `identifiers`, which is a deliberate act.
+            for lit in e["identifiers"]:
+                if "/" in lit or lit.lower().endswith(".pdf"):
+                    reg_urls.append(lit)
+                else:
+                    reg_ids.append(lit)
+                    if e["by"]:
+                        reg_repl.setdefault(lit, e["by"])
+    # The registry is ADDITIVE to the config, never a replacement for it: a
+    # document the config knows about and the registry has not yet recorded
+    # must not silently stop being enforced.
+    cfg_ids, cfg_urls = set(ids), set(urls)
+    ids = sorted(cfg_ids | set(reg_ids))
+    urls = sorted(cfg_urls | set(reg_urls))
+    # Sub-test A-reg exists so the REGISTRY half has a control of its own. A
+    # hit on an identifier the config also knows is indistinguishable from the
+    # old config-only behaviour and proves nothing about the registry; a hit on
+    # an identifier ONLY the registry carries proves the registry is driving
+    # the rule. Without that split, "the debt is paid" would rest on a message
+    # no longer printing.
+    def _sub(term):
+        return "A" if term in cfg_ids or term in cfg_urls else "A-reg"
+    repl_cfg = dict(c.get("current_replacements", {}) or {})
+    for k, v in reg_repl.items():
+        repl_cfg.setdefault(k, v)
 
     raw = []
     id_rx = _any_pat(ids, False, True) if ids else False
@@ -2715,9 +2841,10 @@ def rule_R7(ctx, res):
                 if level == S.NORM_RAW and term in art.txt:
                     continue
                 p = m.start()
-                repl = (c.get("current_replacements", {}) or {}).get(term)
+                repl = repl_cfg.get(term)
                 raw.append(Hit(
-                    "R7", "A", art.rel, level, "%s@%d" % (level.lower(), p),
+                    "R7", _sub(term), art.rel, level,
+                    "%s@%d" % (level.lower(), p),
                     "%s%s | %s"
                     % (term,
                        (" -> SUPERSEDED BY %s" % repl) if repl
@@ -2728,7 +2855,7 @@ def rule_R7(ctx, res):
                     sentence=S.collapse(win(text, p, 200))))
         for u in urls:
             for p in occ(art.raw, u, ci=False, word=False):
-                raw.append(Hit("R7", "A", art.rel, "ATTR", "url@%d" % p,
+                raw.append(Hit("R7", _sub(u), art.rel, "ATTR", "url@%d" % p,
                                "%s | %s" % (u, S.collapse(win(art.raw, p, 60))),
                                note="superseded-url",
                                sentence=S.collapse(win(art.txt, 0, 1))))
@@ -2767,10 +2894,37 @@ def rule_R7(ctx, res):
         Filt("never_retire_on_403 source named (403 is bot-blocking)", f_never403),
     ])
     res.levels, res.level_detail = level_counts(ctx, ids, ci=False)
-    res.notes.append("half A IDENTIFIER (STRING LIST) %d  ·  half B "
-                     "PROPOSITION (CLAIM TEST) %d -- a citation sweep must "
-                     "search for the CLAIM, not only for the identifier"
+    if not reg.present:
+        res.notes.append("REGISTRY: %s absent -- identifier half runs from "
+                         "config only" % REGISTRY_REL)
+    elif reg.parse_error:
+        res.notes.append("REGISTRY: %s unparseable (%s) -- identifier half "
+                         "runs from config only"
+                         % (REGISTRY_REL, reg.parse_error))
+    else:
+        res.notes.append(
+            "REGISTRY: %s declares supersession machine-readably: %s  ·  %d "
+            "entr%s reviewed, %d carry superseded_by, %d assert CURRENT by "
+            "absence  ·  %d identifier(s) and %d url(s) merged into half A "
+            "FROM THE REGISTRY, additive to the config list"
+            % (REGISTRY_REL,
+               ("declared %s" % reg.declared_on) if reg.declared
+               else "NOT DECLARED",
+               reg.entries, "y" if reg.entries == 1 else "ies",
+               len(reg.superseded), len(reg.undeclared_ids),
+               len(reg_ids), len(reg_urls)))
+        for e in reg.superseded:
+            res.notes.append(
+                "  registry supersession: %s -> %s on %s  (identifiers: %s)"
+                % (e["id"], e["by"] or "<none recorded>",
+                   e["on"] or "<no date recorded>",
+                   ", ".join(e["identifiers"]) or "<none>"))
+    res.notes.append("half A IDENTIFIER (STRING LIST) %d from the config, %d "
+                     "from the REGISTRY ONLY  ·  half B PROPOSITION (CLAIM "
+                     "TEST) %d -- a citation sweep must search for the CLAIM, "
+                     "not only for the identifier"
                      % (len([h for h in res.adjudicated if h.sub == "A"]),
+                        len([h for h in res.adjudicated if h.sub == "A-reg"]),
                         len([h for h in res.adjudicated if h.sub == "B"])))
     return "superseded identifiers and propositions found", \
            "live claims sourced to a superseded document"
@@ -3427,6 +3581,42 @@ R8_CONTROL_OVERLAY = {"R8": {"pinned_pages": {}, "exempt_pages": [],
                              "known_holds": []}}
 
 
+def _r7_registry_control():
+    """A synthetic registry pinned onto the R7-REG control.
+
+    It declares ONE supersession, for a print code that appears in NO
+    `R7.superseded_identifiers` list in config/. So a hit on sub-test `A-reg`
+    against the R7_registry_supersession fixture can only have come from a
+    registry, which is what makes this a control for the registry half rather
+    than a second control for the config list.
+
+    Synthetic, not the property's real file, for the same reason every other
+    control overlay is pinned: a control must prove the RULE works, not that
+    today's data happens to contain something.
+    """
+    reg = Registry()
+    reg.path = "<control fixture: synthetic citation registry>"
+    reg.present = True
+    reg.declared = True
+    reg.declared_on = "2026-09-18"
+    reg.entries = 2
+    reg.superseded = [{
+        "id": "CONTROL_RETIRED_SCHEDULE_26_01_999",
+        "identifiers": ["26-01-999",
+                        "control-fixture/retired-schedule-26-01-999.pdf"],
+        "url": "",
+        "by": "CONTROL_CURRENT_SCHEDULE",
+        "on": "2026-01-01",
+        "reason": "Control fixture. Retired by its successor on the stated "
+                  "date; present in no config list anywhere.",
+    }]
+    reg.undeclared_ids = ["CONTROL_CURRENT_SCHEDULE"]
+    return reg
+
+
+R7_REGISTRY_CONTROL_OVERLAY = {"_registry": _r7_registry_control()}
+
+
 RULES = [
     Rule("R1", "FABRICATED QUOTATION",
          "CLAIM TEST (+ string list for the hand-written-prose half, declared)",
@@ -3530,7 +3720,11 @@ RULES = [
          rule_R7,
          controls=[
              Control("R7-A", "R7", _f("R7_superseded_source.html"), sub="A", repaired=_f("repaired", "R7_superseded_source.html")),
-             Control("R7-B", "R7", _f("R7_superseded_source.html"), sub="B", repaired=_f("repaired", "R7_superseded_source.html"))]),
+             Control("R7-B", "R7", _f("R7_superseded_source.html"), sub="B", repaired=_f("repaired", "R7_superseded_source.html")),
+             Control("R7-REG", "R7", _f("R7_registry_supersession.html"),
+                     overlay=R7_REGISTRY_CONTROL_OVERLAY, sub="A-reg",
+                     repaired=_f("repaired",
+                                 "R7_registry_supersession.html"))]),
 
     Rule("R8", "STALE REVIEW DATE", "CLAIM TEST",
          "VIS ATTR LD SITEMAP META OG TW EMBED (+ git log as a non-artifact "
@@ -3668,6 +3862,13 @@ def _control_ctx(base_cfg, overlay, paths, repo):
                 with open(s, "r", encoding="utf-8") as fh:
                     ctx.gitfacts.add_sidecar(art.rel, json.load(fh))
     ctx.gen = base_cfg.get("_gen") or S.GeneratorFacts()
+    # Pinned by run_controls exactly as _gen is. A control must never open the
+    # repo under test: that is how the R6 generator read turned one live defect
+    # into fourteen false alarms on innocent fixtures. Read off the MERGED
+    # config, not the base, so a control can pin its own synthetic registry --
+    # which is the only way to control-test the registry half without making
+    # the test depend on whichever property happens to be loaded.
+    ctx.registry = cfg.get("_registry") or Registry()
     build_claim_set(ctx)
     return ctx
 
@@ -3700,12 +3901,13 @@ def mtimes(repo):
     return out
 
 
-def run_controls(out, cfg, repo, opt_in, gen):
+def run_controls(out, cfg, repo, opt_in, gen, registry=None):
     """Every positive control runs BEFORE any rule touches the real corpus,
     and the gate fails loudly -- exit 2 -- if any control does not fire."""
     before = mtimes(repo)
     base = dict(cfg)
     base["_gen"] = gen
+    base["_registry"] = registry or Registry()
     pos_detected = pos_missed = 0
     neg_clean = neg_false = 0
     rows = []
@@ -4073,6 +4275,7 @@ def _main(args, out, t0):
         cfg.setdefault("R8", {})["today"] = args.today.strip()
 
     gen = S.read_generators(repo, GEN_MODULES)
+    registry = read_citation_registry(repo)
 
     head = (git(repo, "rev-parse", "--short", "HEAD") or "unknown").strip()
     asof = cfg.get("R8", {}).get("today", "2026-09-17")
@@ -4119,6 +4322,7 @@ def _main(args, out, t0):
         ctx.by_rel[rel] = art
         kinds[art.kind] = kinds.get(art.kind, 0) + 1
     ctx.gen = gen
+    ctx.registry = registry
     ctx.corpus = corpus
 
     reasons = {}
@@ -4161,6 +4365,20 @@ def _main(args, out, t0):
     out("claim set: %d propositions resolved from %d cited-stat blocks, %d "
         "shared constants, %d referenced assets"
         % (n_prop, n_cite, n_const, n_asset))
+    if not registry.present:
+        out("citation registry: %s ABSENT -- R7 runs from its config list "
+            "only and says so" % REGISTRY_REL)
+    elif registry.parse_error:
+        out("citation registry: %s UNPARSEABLE (%s) -- R7 runs from its "
+            "config list only and says so"
+            % (REGISTRY_REL, registry.parse_error))
+    else:
+        out("citation registry: %s -- %d entries, supersession %s, %d "
+            "superseded_by record(s) READ BY R7"
+            % (REGISTRY_REL, registry.entries,
+               ("DECLARED %s" % registry.declared_on) if registry.declared
+               else "NOT DECLARED (R7 DEGRADED)",
+               len(registry.superseded)))
     owed, noted, thin = unread_config_keys(cfg)
     out("CONFIG KEYS READ BY NO CODE PATH: %d OWED, %d declared "
         "documentation-only WITH a justification. An OWED key is a rule that "
@@ -4199,7 +4417,8 @@ def _main(args, out, t0):
     out()
     out.head("CONTROLS (run BEFORE any rule; see spec 5)")
     ctx.gitfacts.load(repo, corpus.read_set)
-    rows, pd, pm, nc, nf, cok = run_controls(out, cfg, repo, opt_in, gen)
+    rows, pd, pm, nc, nf, cok = run_controls(out, cfg, repo, opt_in, gen,
+                                             registry)
     if not cok:
         out()
         out("CLAIM GATE: NOT RUN — a rule that cannot detect its own "

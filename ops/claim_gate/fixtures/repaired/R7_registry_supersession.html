@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en"><head><title>Rebate terms — control fixture</title>
+<meta name="description" content="Repaired counterpart for R7 sub-test A-reg. The marked print code is gone; the page still says everything else it said.">
+</head><body>
+<h1>Rebate terms</h1>
+<p>The qualifying standards on this page are taken from the utility's rebate
+schedule, print code 27-04-311, and the amounts follow that schedule's own
+table.</p>
+<p class="cited-stat">According to <a href="https://example.invalid/control-fixture/schedule-27-04-311.pdf" rel="noopener" target="_blank">the published schedule</a>, the qualifying minimum standard is stated in the table.</p>
+<p>This fixture exists to prove ONE thing: that R7's identifier half is driven
+by <code>docs/citation-registry.json</code> and not only by the gate's own
+config list. The print code above appears in NO
+<code>R7.superseded_identifiers</code> list anywhere in
+<code>ops/claim_gate/config/</code>, so a hit on sub-test <code>A-reg</code>
+can only have come from a citation registry. The wording here deliberately
+avoids every string in <code>R7.correction_markers</code>, because a fixture
+that pardons itself is not a control. This is the repaired form: the one
+citation the registry marks has been swapped for the successor the registry
+records as current, and nothing else on the page changed, so R7 must return
+zero hits on <code>A-reg</code> here.</p>
+</body></html>
