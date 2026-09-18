@@ -305,7 +305,7 @@
         ],
         "generator": "_generate_calculator_pages.py:453,1102",
         "occurrences": 2,
-        "status": "OPEN — flagged to the Director 2026-09-11 in lane dci-d3-tier-label-fix",
+        "status": "OPEN \u2014 flagged to the Director 2026-09-11 in lane dci-d3-tier-label-fix",
         "audience": "grew 33 -> 54 input combinations after 37c7b29"
       }
     ]
@@ -484,5 +484,25 @@
       }
     ],
     "forbid_subtraction": true
+  },
+  "R1": {
+    "quotation_allowlist": [
+      {
+        "text": "The guidance here says \"not yet\" as often as it says \"yes,\"",
+        "why": "NOT A QUOTATION AT ALL, so there is nothing to verify and nothing to attribute. R1 half B is a STRING LIST, not a claim test: it finds a quote glyph, looks back 40 characters for an attribution verb, and fires. It has no way to ask WHO is speaking. In each entry below the speaker is a common noun -- not a publisher, not a named source, not any person -- and the quoted span is a scare quote or reported hypothetical speech, the same category of legitimate use Ruling 10 already protects for 'stack effect'. about.html. The speaker is 'the guidance here' -- this site's own editorial stance, describing how often it tells a reader NOT to buy. '\"not yet\"' and '\"yes\"' are the two answers it gives, set in quotes because they are being named as answers. No third party is quoted, paraphrased, or named. THE STRUCTURAL FIX IS OWED AND THIS IS NOT IT: R1 half B should require a RECOGNISED PUBLISHER inside the same 40-character lookback before it fires, which would clear all four of these portfolio-wide and cost no true positive, because a genuine fabricated quotation names its publisher by definition. That is a change to claim_gate.py, not to any config, and claim_gate.py had uncommitted changes from another session throughout this pass -- editing it would have risked that session's work. Allowlisted narrowly, per sentence, until the engine change lands; then delete these four entries."
+      },
+      {
+        "text": "someone at your door says they \"noticed your roof\"",
+        "why": "NOT A QUOTATION AT ALL, so there is nothing to verify and nothing to attribute. R1 half B is a STRING LIST, not a claim test: it finds a quote glyph, looks back 40 characters for an attribution verb, and fires. It has no way to ask WHO is speaking. In each entry below the speaker is a common noun -- not a publisher, not a named source, not any person -- and the quoted span is a scare quote or reported hypothetical speech, the same category of legitimate use Ruling 10 already protects for 'stack effect'. choosing-denver-insulation-contractor.html. The speaker is 'someone at your door' -- an unnamed hypothetical storm-chaser the page is warning the reader about. The quoted phrase is the sales line being reported, and reporting a scammer's pitch is the opposite of publishing it as a source's authority. THE STRUCTURAL FIX IS OWED AND THIS IS NOT IT: R1 half B should require a RECOGNISED PUBLISHER inside the same 40-character lookback before it fires, which would clear all four of these portfolio-wide and cost no true positive, because a genuine fabricated quotation names its publisher by definition. That is a change to claim_gate.py, not to any config, and claim_gate.py had uncommitted changes from another session throughout this pass -- editing it would have risked that session's work. Allowlisted narrowly, per sentence, until the engine change lands; then delete these four entries."
+      },
+      {
+        "text": "If a quote says \"blown-in cellulose\"",
+        "why": "NOT A QUOTATION AT ALL, so there is nothing to verify and nothing to attribute. R1 half B is a STRING LIST, not a claim test: it finds a quote glyph, looks back 40 characters for an attribution verb, and fires. It has no way to ask WHO is speaking. In each entry below the speaker is a common noun -- not a publisher, not a named source, not any person -- and the quoted span is a scare quote or reported hypothetical speech, the same category of legitimate use Ruling 10 already protects for 'stack effect'. insulation-dense-pack-cellulose.html. 'a quote' here is a CONTRACTOR'S WRITTEN ESTIMATE, not a quotation -- the noun collision is the whole defect. The sentence tells the reader what to do when an estimate names a material without naming a density. THE STRUCTURAL FIX IS OWED AND THIS IS NOT IT: R1 half B should require a RECOGNISED PUBLISHER inside the same 40-character lookback before it fires, which would clear all four of these portfolio-wide and cost no true positive, because a genuine fabricated quotation names its publisher by definition. That is a change to claim_gate.py, not to any config, and claim_gate.py had uncommitted changes from another session throughout this pass -- editing it would have risked that session's work. Allowlisted narrowly, per sentence, until the engine change lands; then delete these four entries."
+      },
+      {
+        "text": "If a quote says \"tape the joints\"",
+        "why": "NOT A QUOTATION AT ALL, so there is nothing to verify and nothing to attribute. R1 half B is a STRING LIST, not a claim test: it finds a quote glyph, looks back 40 characters for an attribution verb, and fires. It has no way to ask WHO is speaking. In each entry below the speaker is a common noun -- not a publisher, not a named source, not any person -- and the quoted span is a scare quote or reported hypothetical speech, the same category of legitimate use Ruling 10 already protects for 'stack effect'. insulation-duct-sealing.html. Same noun collision as the entry above: 'a quote' is a contractor's estimate. The quoted phrase is the wording a reader might find on one, offered so they can recognise it and ask about mastic instead. THE STRUCTURAL FIX IS OWED AND THIS IS NOT IT: R1 half B should require a RECOGNISED PUBLISHER inside the same 40-character lookback before it fires, which would clear all four of these portfolio-wide and cost no true positive, because a genuine fabricated quotation names its publisher by definition. That is a change to claim_gate.py, not to any config, and claim_gate.py had uncommitted changes from another session throughout this pass -- editing it would have risked that session's work. Allowlisted narrowly, per sentence, until the engine change lands; then delete these four entries."
+      }
+    ]
   }
 }
