@@ -1044,5 +1044,36 @@
     "tracked_terms": [],
     "report_registry_pages_drift": true,
     "forbid_subtraction": true
+  },
+  "false_positive_measurements": {
+    "demote_above_pct": 25,
+    "_README": "A rule measured above demote_above_pct false positives becomes REPORT-ONLY: it stops affecting the exit code and prints its measured rate in its own output every run. A rule at two thirds false positives will be ignored by every future session, and a rule that is ignored while still red manufactures the appearance of coverage while providing none. The measurement is DATA -- it lives here so the next pass RE-TAKES it rather than inheriting it. Re-measure exhaustively (every finding on every property, never sampled) and delete the entry when the rate drops, which is what happened to R2 in this same pass: 100% / 79.5% / >90% as found, 0% after the causes were fixed, so R2 is NOT listed here and stays blocking.",
+    "R3": {
+      "measured_on": "2026-09-18",
+      "measured_at_canon": "62a09c7",
+      "examined": 47,
+      "true": 9,
+      "false_positive": 32,
+      "review": 6,
+      "fp_rate_pct": 68.1,
+      "per_property": "DCI 33 examined, 9 TRUE, 23 FP, 1 REVIEW -> 69.7%.  GCI 14 examined, 0 TRUE, 9 FP, 5 REVIEW -> 64.3%.  LGM 0 findings, nothing to examine.",
+      "note": "Every adjudicated R3 finding on every property was classified; nothing was sampled. The TRUE nine are all T3 rebate-magnitude rank claims: the capped-per-measure sentence (\"Xcel rebates ... are capped per measure, so the larger the job, the smaller the percentage\") and the cooling-only tier sentence (\"Customers with cooling-only Xcel service get a much smaller flat tier\"). T1, the $-anchored half, is EXACT and is the reason this demotion is recorded per RULE rather than silently deleting the rule: T1 matched the human sweep 198/198 on DCI and 206/206 on GCI in the 2026-09-17 replay. Demoting R3 wholesale is the conservative reading of the standing 25% ruling and it costs T1's blocking power; the next pass should split the verdict per sub-type so T1 can block while T3 reports.",
+      "false_positive_classes": [
+        "T3 rank word governing a PROJECT or HOUSE size, not a rebate: \"Centennial homes average roughly 2,800 square feet, larger than the Denver-metro average\"; \"claimed as part of a larger insulation and air-sealing project\" (5 rows on insulation-rim-joist alone)",
+        "T3 rank word governing COST or SCOPE: \"The largest scope here - crawl encapsulation alone costs more than any other approach on this list\"; \"A blower door test costs a fraction of an insulation project\"",
+        "T3 rank word governing COMFORT or RETURN: \"among the highest-comfort-per-dollar upgrades available\"; \"the largest single comfort upgrade available\"; \"the highest return per dollar spray foam offers\"",
+        "T3 rank word governing HVAC CAPACITY: \"Variable-speed and modulating systems can throttle down to a fraction of rated capacity\"",
+        "T3 on an ATTRIBUTED, CITED quotation that R3's own attribution exception should spare: \"According to Xcel Energy's 2025-2026 Colorado residential rebate summary, customers can receive larger attic insulation and washer and dryer rebates\" (CITE and VIS surfaces)",
+        "T3 inside a FAQ QUESTION, which asks rather than asserts: \"Is the rebate worth the paperwork on a smaller job?\" (3 surfaces)",
+        "T3 inside a JavaScript COMMENT, which reaches no visitor: \"// smaller tier.\"",
+        "T2 four-digit YEAR read as a bare rebate numeral: \"The 2026 Xcel rebate programs\"; \"My home was built after 2010\"; \"<title>Greeley Insulation Rebates - What Actually Pays in 2026</title>\"",
+        "T2 BILL NUMBER: \"a 2025 bill that would have created Colorado's first mold-provider registry, HB25-1202\"",
+        "T2 ARITHMETIC DIVISOR in JavaScript: \"var savLo = Math.round(cost * savRange[0] / 100)\""
+      ],
+      "review_classes": [
+        "T3 rank claim about a rebate's IMPORTANCE rather than its amount: \"your gas utility's rebate is the single biggest lever on the result\" (5 rows on GCI)",
+        "T3 DENIAL of a smaller rebate: \"Work done outside the network doesn't get a smaller rebate; it gets no rebate.\""
+      ]
+    }
   }
 }
