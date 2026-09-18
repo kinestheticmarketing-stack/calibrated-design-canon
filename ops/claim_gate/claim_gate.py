@@ -1532,7 +1532,7 @@ _AND_SPLIT = re.compile(r",\s*and\s+|\s+and\s+|,\s*or\s+|\s+or\s+",
                         re.IGNORECASE)
 
 
-def _clauses(sent, has_utility=None):
+def _clauses(sent, has_utility=None, is_town=None):
     """Split a sentence into independent clauses.
 
     `X is the gas utility in A, while Y is the gas utility in B` has
@@ -1558,8 +1558,37 @@ def _clauses(sent, has_utility=None):
     # Split only when BOTH sides carry a utility mention.
     out = []
     for part in parts:
-        pieces = [x.strip() for x in _AND_SPLIT.split(part)]
+        pieces, spans = [], []
+        last = 0
+        for m in _AND_SPLIT.finditer(part):
+            pieces.append(part[last:m.start()].strip())
+            spans.append((m.start(), m.end()))
+            last = m.end()
+        pieces.append(part[last:].strip())
         pieces = [x for x in pieces if x]
+        # NEVER SPLIT INSIDE A TOWN LIST. "Atmos Energy is the natural gas
+        # utility in Greeley, Evans and Eaton, and Xcel Energy is the natural
+        # gas utility in Johnstown ..." has a utility on both sides of BOTH
+        # conjunctions, so the old all-sides-have-a-utility test cut the list
+        # at "Evans and Eaton" and left "Eaton, and Xcel Energy is ..." -- which
+        # binds Xcel to Eaton and fails a sentence that is exactly right.
+        # Measured: 7 findings on GCI, every one this artifact. A conjunction
+        # whose immediate neighbours are both TOWN NAMES is list punctuation,
+        # not a clause boundary.
+        if is_town is not None and len(pieces) > 1:
+            for a, b in spans:
+                before = part[:a].strip().rstrip(",").split()[-2:]
+                after = part[b:].strip().split()[:2]
+                if before and after and is_town(" ".join(before)) \
+                        and is_town(" ".join(after)):
+                    out.append(part)
+                    break
+            else:
+                if all(has_utility(x) for x in pieces):
+                    out.extend(pieces)
+                else:
+                    out.append(part)
+            continue
         if len(pieces) > 1 and all(has_utility(x) for x in pieces):
             out.extend(pieces)
         else:
@@ -1625,7 +1654,15 @@ def rule_R2(ctx, res):
             # them (GCI f0203ad's cap shipped in one), which is the right split.
             if skey == S.S_JS and "comment@" in str(loc):
                 continue
-            for clause in _clauses(sent, lambda t: bool(ctx.utility_spots(t))):
+            for clause in _clauses(
+                    sent, lambda t: bool(ctx.utility_spots(t)),
+                    lambda t: bool(ctx.town_spots(t))):
+                # An INTERROGATIVE clause asks; it does not attribute.
+                # "Does the Xcel insulation rebate apply to my Greeley
+                # home?" was failed as an attribution of Xcel to Greeley,
+                # on a page whose answer is no.
+                if clause.rstrip().endswith("?"):
+                    continue
                 uspots = ctx.utility_spots(clause)
                 tspots = ctx.town_spots(clause)
                 bound = set()
@@ -1726,7 +1763,14 @@ def rule_R2(ctx, res):
                     # towns Atmos serves and does not apply to a Johnstown
                     # home." is the CORRECTION the 2026-09-08 Xcel-gas pass
                     # shipped, and R2 was failing the page for carrying it.
-                    if has_any(clause, deny_bind, word=False):
+                    # Tested against the SENTENCE as well as the clause:
+                    # the clause boundary is the gate's own artifact, and
+                    # "The Atmos program described elsewhere on this site is
+                    # for the towns Atmos serves and does not apply to a
+                    # Johnstown home." puts the denial on the far side of a
+                    # split from the utility mention.
+                    if has_any(clause, deny_bind, word=False) or \
+                            has_any(sent, deny_bind, word=False):
                         continue
                     hp = Hit("R2", "a", art.rel, skey, str(loc),
                              "%s | scope=%s | %s" % (u, scope_s, clause),
