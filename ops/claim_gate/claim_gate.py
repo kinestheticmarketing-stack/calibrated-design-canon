@@ -2637,6 +2637,77 @@ def _match_paren(s, i):
     return -1
 
 
+_JS_ALIAS = re.compile(
+    r"""(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*"""
+    r"""document\s*\.\s*(?:getElementById\s*\(\s*['"]([^'"]+)['"]\s*\)"""
+    r"""|querySelector\s*\(\s*['"]#([^'"]+)['"]\s*\))""")
+_JS_VARASSIGN = re.compile(
+    r"""(?:^|[;{}\n])\s*(?:var\s+|let\s+|const\s+)?"""
+    r"""([A-Za-z_$][\w$]*)\s*(?:\+)?=\s*([^;]{0,4000}?);""", re.S)
+_JS_SINKS = r"(?:value|textContent|innerHTML|innerText)"
+_JS_STRLIT = re.compile(r"""(['"`])((?:\\.|(?!\1).)*)\1""")
+_JS_IDENT = re.compile(r"[A-Za-z_$][\w$]*")
+
+
+def _assigned_literals(js, ident):
+    """String literals that can end up in the DOM node addressed by `ident`.
+
+    Deliberately shallow and deterministic: resolve `var X = getElementById
+    ('id')` aliases, find `X.value = RHS` / `.textContent =` / `.innerHTML =`
+    / `.innerText =` and `getElementById('id').value = RHS`, then take every
+    string literal in RHS plus every string literal assigned anywhere to a
+    plain variable named in RHS. That covers the real shape -- a label chosen
+    into a variable and then written to both the visible node and the hidden
+    field -- without pretending to be an interpreter.
+
+    It does NOT evaluate. A verdict assembled arithmetically, fetched, or
+    built by a function call whose body it cannot follow is invisible to it,
+    and R9's blind-spot line says so.
+    """
+    alias = {}
+    for m in _JS_ALIAS.finditer(js):
+        alias.setdefault(m.group(2) or m.group(3), set()).add(m.group(1))
+    names = set(alias.get(ident, set()))
+    pats = [r"document\s*\.\s*getElementById\s*\(\s*['\"]%s['\"]\s*\)\s*\.\s*%s\s*=\s*([^;\n]+)"
+            % (re.escape(ident), _JS_SINKS),
+            r"document\s*\.\s*querySelector\s*\(\s*['\"]#%s['\"]\s*\)\s*\.\s*%s\s*=\s*([^;\n]+)"
+            % (re.escape(ident), _JS_SINKS)]
+    for n in sorted(names):
+        pats.append(r"\b%s\s*\.\s*%s\s*=\s*([^;\n]+)" % (re.escape(n),
+                                                         _JS_SINKS))
+    # Every literal reachable from a plain variable, plus one round of
+    # substitution so `var html = '<p>' + headline + '</p>'` carries the
+    # headline's own labels. The direction of error here is deliberate: a
+    # literal wrongly ADDED to the visible set can only SUPPRESS an N3b
+    # finding, never create one, so widening the resolver cannot manufacture a
+    # false positive on a blocking sub-test.
+    varlit, varrefs = {}, {}
+    for m in _JS_VARASSIGN.finditer(js):
+        name, rhs = m.group(1), m.group(2)
+        for lm in _JS_STRLIT.finditer(rhs):
+            if lm.group(2).strip():
+                varlit.setdefault(name, set()).add(lm.group(2))
+        blank = _JS_STRLIT.sub(" ", rhs)
+        for im in _JS_IDENT.finditer(blank):
+            if im.group(0) != name:
+                varrefs.setdefault(name, set()).add(im.group(0))
+    for name in sorted(varrefs):
+        for ref in sorted(varrefs[name]):
+            if ref in varlit:
+                varlit.setdefault(name, set()).update(varlit[ref])
+    out = set()
+    for p in pats:
+        for m in re.finditer(p, js):
+            rhs = m.group(1)
+            for lm in _JS_STRLIT.finditer(rhs):
+                if lm.group(2).strip():
+                    out.add(lm.group(2))
+            blank = _JS_STRLIT.sub(" ", rhs)
+            for im in _JS_IDENT.finditer(blank):
+                out |= varlit.get(im.group(0), set())
+    return set(x.strip() for x in out if x.strip())
+
+
 def _js_label_chain(js_text, labels):
     """POSITION-based conditional-chain scanner over the emitted JS.
 
@@ -3385,6 +3456,58 @@ def rule_R9(ctx, res):
                            "tool payload field(s) %s not found in the page; "
                            "visible/hidden agreement cannot be established"
                            % missing, note="N3-unverifiable", sentence=art.rel))
+        # N3b -- THE COMPARISON THE RULE WAS NAMED FOR.
+        # N3 above is a PRESENCE check: it fires when a configured id is
+        # ABSENT and is silent when every id is present. Either way the
+        # contradiction is unreachable by construction, which is why DCI's
+        # hidden calc_output transmitting "No project recommended -- already at
+        # code." for an R-49 homeowner, while the visible output said R-60,
+        # scored MISSED twice (GATE_SCORE_2026-09-17.md miss 10 / this lane's
+        # miss 7). A lead form is a claim surface: what it transmits about the
+        # homeowner is an assertion about that homeowner.
+        js = "\n".join(getattr(art, "js_bodies", []) or [])
+        # Only fields the config DECLARES as mirrors of the visible verdict are
+        # compared. A lead form's payload also carries the visitor's INPUTS,
+        # and "attic" is not a verdict the output element should ever have
+        # displayed -- comparing every hidden field produced exactly that false
+        # positive on the first run. Which field is the mirror is a property
+        # fact, so it lives in config, and a tool that declares none says so
+        # below rather than passing silently.
+        mirrors = [m for m in (t.get("hidden_mirrors_visible") or [])
+                   if m in hidden]
+        if not mirrors:
+            res.notes.append(
+                "N3b NOT RUN for %s: R9.tools entry declares no "
+                "`hidden_mirrors_visible`, so there is no field the gate has "
+                "been told should agree with '#%s'. This is a null result, "
+                "NOT a pass -- DCI's hidden calc_output contradicted its "
+                "visible output for weeks inside exactly this gap."
+                % (t.get("page", "?"), vis_ids[0] if vis_ids else "?"))
+            continue
+        if not js or not vis_ids or not vis_ids[0]:
+            continue
+        vis = _assigned_literals(js, vis_ids[0])
+        if not vis:
+            res.notes.append(
+                "N3b NOT RUN for %s: no string literal could be resolved to "
+                "the visible output '#%s', so there is nothing to compare "
+                "against. Null result, not a pass."
+                % (t.get("page", "?"), vis_ids[0]))
+            continue
+        for h in mirrors:
+            if h in missing:
+                continue
+            hid = _assigned_literals(js, h)
+            unreachable = sorted(hid - vis)
+            for lit in unreachable:
+                raw.append(Hit(
+                    "R9", "N3b", art.rel, "JS", "%s<-%s" % (h, vis_ids[0]),
+                    "hidden payload field '%s' can transmit a verdict the "
+                    "visible output '#%s' can never show: %r  |  the visible "
+                    "output's own verdict set is %s"
+                    % (h, vis_ids[0], lit,
+                       sorted(vis)[:6] if vis else "(none resolved)"),
+                    note="N3b-hidden-contradicts-visible", sentence=lit))
 
     def f_corr(h):
         return has_any(h.sentence, marks, word=False)
@@ -3747,6 +3870,14 @@ R4_ANAPHORA_CONTROL_OVERLAY = {"R4": dict(
                           "either rebate program", "both rebate programs",
                           "both programs", "the two programs",
                           "these programs"])}
+# The N3b control pins its own tool entry, so the comparison it proves does not
+# depend on which property's R9.tools happens to be loaded -- LGM and GCI
+# configure no tool at all.
+R9_N3B_CONTROL_OVERLAY = {"R9": {"tools": [{
+    "page": "R9_hidden_payload_contradiction.html",
+    "visible": "#calcOutput",
+    "hidden": ["lf-calc-inputs", "lf-calc-output"],
+    "hidden_mirrors_visible": ["lf-calc-output"]}]}}
 R5_CONTROL_OVERLAY = {"R3": {"allowed_thresholds": [],
                              "allowed_structure_percentages": []}}
 R6_CONTROL_OVERLAY = {"R6": {"label_chains": [{
@@ -3957,7 +4088,12 @@ RULES = [
              Control("R9-N1", "R9", _f("R9_cross_surface_contradiction"),
                      sub="N1", repaired=_f("repaired", "R9_cross_surface_contradiction")),
              Control("R9-N2", "R9", _f("R9_cross_surface_contradiction"),
-                     sub="N2", repaired=_f("repaired", "R9_cross_surface_contradiction"))]),
+                     sub="N2", repaired=_f("repaired", "R9_cross_surface_contradiction")),
+             Control("R9-N3b", "R9",
+                     _f("R9_hidden_payload_contradiction.html"),
+                     R9_N3B_CONTROL_OVERLAY, sub="N3b",
+                     repaired=_f("repaired",
+                                 "R9_hidden_payload_contradiction.html"))]),
 
     Rule("R10", "DANGLING PROMISE", "CLAIM TEST",
          "VIS TITLE META OG TW LD LOWVIS ATTR LLMS EMBED",

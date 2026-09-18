@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head><title>R-value calculator — control fixture</title>
+<meta name="description" content="Repaired counterpart for R9 sub-test N3b. The hidden field now transmits the same verdict the visitor was shown.">
+</head><body>
+<h1>R-value needed calculator</h1>
+<p>Enter your attic depth and the calculator tells you where you stand against
+the code target for this climate zone.</p>
+<div id="calcOutput"></div>
+<form>
+  <input type="hidden" id="lf-calc-inputs" name="calc_inputs" value="">
+  <input type="hidden" id="lf-calc-output" name="calc_output" value="">
+</form>
+<script>
+var out = document.getElementById('calcOutput');
+function computeResult(gap, pctShort) {
+  var headline = '';
+  if (pctShort >= 50) { headline = 'Significantly under code'; }
+  else if (pctShort >= 20) { headline = 'Moderately under code'; }
+  else { headline = 'Close to code'; }
+  out.innerHTML = headline;
+  var lead = headline;
+  document.getElementById('lf-calc-output').value = lead;
+  document.getElementById('lf-calc-inputs').value = 'attic';
+}
+</script>
+<p>Derived from DCI <code>81f4bca</code> / <code>4cf7a52</code>, defect 10,
+scored MISSED on both replayed trees in
+<code>GATE_SCORE_2026-09-17.md</code>. This is the repaired form: the page is
+unchanged except that the hidden field now carries the SAME verdict variable
+the visitor was shown, so the payload can no longer transmit a conclusion the
+visible output can never display. The inputs field still carries
+&ldquo;attic&rdquo;, which is correct and is why only fields named in
+<code>hidden_mirrors_visible</code> are compared. R9 must return zero hits on
+<code>N3b</code> here.</p>
+</body></html>
