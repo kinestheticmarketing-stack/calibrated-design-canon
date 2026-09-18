@@ -2251,9 +2251,21 @@ def rule_R2(ctx, res):
 
 _T2_PHONE = re.compile(r"\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b")
 _T2_ZIP = re.compile(r"\b8[0-1]\d{3}\b")
-_T2_PRINTCODE = re.compile(r"\b\d{2}-\d{2}-\d{3}\b|\b\d{2}-\d{4}\b"
+# The \b before \d{2} could never match a LETTER-PREFIXED identifier: in
+# "HB25-1202" there is no word boundary between "B" and "2", so Colorado bill
+# numbers sailed straight past this and were reported as rebate figures. GCI
+# published "A 2025 bill that would have created Colorado's first mold-provider
+# registry, HB25-1202, died in a House committee vote" and the gate called
+# 1202 a payout. [A-Z]{0,4}\s? covers HB/SB/HCR/SCR/HJR/SJR and leaves the bare
+# forms matching exactly as before.
+_T2_PRINTCODE = re.compile(r"\b\d{2}-\d{2}-\d{3}\b|\b[A-Z]{0,4}\s?\d{2}-\d{4}\b"
                            r"|\bPublic Law \d+-\d+\b|\b\d{2}-\d{4}\s*\("
                            r"\d{2}-\d{2}\)")
+_T2_YEARPREP = re.compile(
+    r"\b(?:built|constructed|rebuilt|homes?|houses?|dwellings?|stock|era|"
+    r"since|predates?|predating|during|circa|in|after|before|from|through)\s+"
+    r"(?:after\s+|before\s+|in\s+|since\s+)?(?:19|20)\d\d\b",
+    re.IGNORECASE)
 _T2_UNITS = ("\u00b0F", "degree", "perm", "pascal", "CFM", "sq ft",
              "square feet", "square foot", "feet", "foot", "inch", "inches",
              "BTU", "kWh", "therm", "R-value", "lb", "pound", "cubic",
@@ -2468,6 +2480,17 @@ def rule_R3(ctx, res):
         # actually plausible, and they stay.
         if not (h.note and re.fullmatch(r"(19|20)\d\d", h.note)):
             return False
+        # A YEAR PREPOSITION OUTRANKS A PAYOUT BINDER. The binder test looks
+        # 40 characters wide, so an unrelated rebate word anywhere in the
+        # window re-armed a plain calendar year: GCI's "My home was built
+        # after 2010 - is there a rebate worth chasing?" was held because
+        # "rebate" is 24 characters away, and its <title> "What Actually Pays
+        # in 2026" because "Pays" is 12 away. Neither is a payout.
+        # These prepositions cannot precede a MONEY amount in English -- an
+        # amount takes "of", "at", "up to", none of which are listed here --
+        # so clearing on them cannot hide a bare rebate figure.
+        if _T2_YEARPREP.search(getattr(h, "r3_w40", "") or ""):
+            return True
         if has_any(getattr(h, "r3_w40", "") or "", year_binders, word=False):
             return False
         return True
