@@ -528,7 +528,7 @@
   },
   "R5": {
     "magnitude_patterns": [
-      "[0-9]{1,3}\\s?%",
+      "(?<![0-9.])[0-9]{1,3}(?:\\.[0-9]+)?\\s?%",
       "[0-9]+\\s?-\\s?[0-9]+\\s?%",
       "[0-9]+ to [0-9]+ percent",
       "(?:ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|fifteen|twenty-five|thirty-five)\\s+percent",
@@ -536,8 +536,8 @@
       "by one[- ](?:third|quarter|half|fifth)",
       "[0-9](\\.[0-9])?x\\b",
       "[0-9]+ times",
-      "[0-9]{1,3}\\s*percent",
-      "[0-9]{1,3}\\s?per ?cent"
+      "(?<![0-9.])[0-9]{1,3}(?:\\.[0-9]+)?\\s*percent",
+      "(?<![0-9.])[0-9]{1,3}(?:\\.[0-9]+)?\\s?per ?cent"
     ],
     "magnitude_words": [
       "reduction",
