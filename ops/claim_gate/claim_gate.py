@@ -3602,9 +3602,16 @@ def run_controls(out, cfg, repo, opt_in, gen):
                 continue
             rpath = os.path.join(_HERE, c.repaired)
             if not os.path.exists(rpath):
+                # A CONTROL FAILURE, not a NOT TESTED. A registered control
+                # whose repair fixture is gone is the same class as a rule with
+                # no positive control, which the loader already refuses -- and
+                # reporting it as NOT TESTED with exit 0 made `rm` the cheapest
+                # way past a failing repair test.
                 rows.append(("~", c.cid, c.repaired,
-                             "NOT TESTED -- repair fixture missing from disk"))
-                rep_absent += 1
+                             "*** REPAIR FIXTURE MISSING *** the control "
+                             "declares one and it is not on disk; a control "
+                             "whose repair test cannot run is not a control"))
+                rep_fired += 1
                 continue
             paths = _fixture_paths(rpath)
             for e in c.repaired_extra:
