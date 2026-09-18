@@ -305,7 +305,7 @@
         ],
         "generator": "_generate_calculator_pages.py:453,1102",
         "occurrences": 2,
-        "status": "OPEN \u2014 flagged to the Director 2026-09-11 in lane dci-d3-tier-label-fix",
+        "status": "OPEN — flagged to the Director 2026-09-11 in lane dci-d3-tier-label-fix",
         "audience": "grew 33 -> 54 input combinations after 37c7b29"
       }
     ],
@@ -379,9 +379,9 @@
     ],
     "anomalies": [
       {
-        "page": "unidentified",
+        "page": "public/ice-dams-denver.html",
         "date": "2026-05-05",
-        "note": "one page publishes 2026-05-05 in both footer and sitemap; investigate"
+        "note": "IDENTIFIED 2026-09-18. It is ice-dams-denver.html, and it is the only artifact under public/ carrying 2026-05-05 (measured: /usr/bin/grep -rl returns that one file; 1 occurrence, against a control of 9 for 2026-05-06). It went unidentified because R8 excluded ld:datePublished from EVERY test, not merely from the surfaces-disagree comparison, so nine impossible publication dates on this property -- 35 and 36 days before the repository's first commit on 2026-06-10 -- were invisible to the rule that exists to find them. ld:datePublished is now checked for impossibility with a stated 7-day grace (a publication date may legitimately precede the commit that ships the file; a review date may not)."
       }
     ]
   },
