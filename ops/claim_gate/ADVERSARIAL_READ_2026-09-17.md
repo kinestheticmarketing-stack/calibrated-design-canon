@@ -2802,3 +2802,97 @@ not addressed.**
    vocabulary. Deletion and padding are both now rejected.
 10. **That no rule asserts a named programme exists**, which is the one original
     defect class the gate has never addressed in four rounds.
+
+---
+---
+
+# FIFTH SECTION — FINAL — 2026-09-17
+
+Same reviewer, same 86 byte-exact vectors. Five further commits,
+`752b3e5..4284975`. **Nothing was fixed by this pass.**
+
+```
+denvercoloradoinsulation.com    main  ac2b7b8  clean  0 0
+longmontcoloradoinsulation.com  main  1246822  clean  0 0
+greeleycoloradoinsulation.com   main  7a832b8  clean  0 0
+calibrated-design-canon         main  4284975  clean  0 0
+```
+
+`claim_gate.py` 4,273 → 4,361 lines; `surfaces.py` 1,014 → 1,025. Live R2:
+DCI `RAW 627 ADJ 22`, LGM `RAW 867 ADJ 78`, GCI `RAW 412 ADJ 83`. The config
+audit prints `0 OWED, 35 declared documentation-only WITH a justification`.
+
+## 1. THE FINAL NUMBER: 12 OF 86
+
+**59 → 29 → 17 → 15 → 12.**
+
+| rule | vectors | R1 | R2 | R3 | R4 | **R5 (final)** |
+|---|---|---|---|---|---|---|
+| R1 | 7 | 7 | 2 | 1 | 1 | **1** |
+| R2 | 18 | 14 | 10 | 5 | 4 | **3** |
+| R3 | 20 | 9 | 4 | 4 | 4 | **3** |
+| R4 | 9 | 6 | 3 | 0 | 0 | **0** |
+| R5 | 8 | 4 | 3 | 1 | 1 | **0** |
+| R6 | 6 | 4 | 0 | 0 | 0 | **0** |
+| R7 | 8 | 6 | 2 | 1 | 2 | **1** |
+| R8 | 6 | 5 | 3 | 3 | 3 | **3** |
+| R9 | 2 | 2 | 1 | 1 | 1 | **1** |
+| R10 | 2 | 2 | 1 | 1 | 1 | **1** |
+| **total** | **86** | **59** | **29** | **17** | **15** | **12** |
+
+**86 percent of the original adversarial set is now caught.**
+
+### NO NEW REGRESSION THIS ROUND
+
+I checked every vector that was CAUGHT in round 4 against its round-5 result.
+**None went CAUGHT → MISS.** The pattern that held for two consecutive rounds —
+B4z after the zero-width fix, G2 after the mixed-script fix — did not repeat.
+Both of the vectors the last round targeted by name are now caught:
+
+- **R2-B14** (defect sentence embedding a locked allowlist phrase):
+  round 4 `RAW 1 ADJ 0 PASS exit 0` → round 5 **`RAW 1 ADJ 1 FAIL exit 1`**.
+  The binding-scoped allowlist works on my fixture.
+- **R7-G2** (`schedule 24‑02‑205` with U+2011 hyphens):
+  round 4 `RAW 0 ADJ 0 PASS exit 0` → round 5 **`RAW 1 ADJ 1 FAIL exit 1`**.
+  The dash-folding regression I introduced into the record last round is closed.
+
+Also newly caught: **R5-E1** (`a 40 percent reduction`, `RAW 1 ADJ 1 FAIL`) and
+**R3-C4b** (`Atmos returns 1550 dollars for a finished attic job.`,
+`RAW 1 ADJ 1 FAIL`) — the two one-line regex gaps.
+
+### The 12 vectors still missing, with the reason for each
+
+| vector | fixture | why it still misses |
+|---|---|---|
+| **R1-A3** | `Xcel Energy publishes a residential rebate summary. It is the document the program runs on. The wording that matters is this. "The air sealing rebate requires a 20% reduction in CFM 50."` | R1's attribution window is sentence-scoped; the source is named three sentences earlier. Declared in the README's PARAPHRASE hole. |
+| **R2-B2** | `Natural gas in Johnstown is delivered by Atmos Energy.` | the sentence contains no word from the 21-item `R2.attribution_words` list, so R2 never looks for a utility in it |
+| **R2-B8** | `var u = 'At' + 'mos ' + 'Energy'; var verdict = u + ' pays the insulation rebate in Johnstown.';` | the claim is assembled at runtime; no literal form of `Atmos Energy` exists in the bytes |
+| **R2-B15** | `Atmos rebates explained` in a `public/og-image.svg` that no page references | `RAW 1 ADJ 0` — raised, then cleared by the sitewide-no-town-in-clause filter, because a bare SVG carries no town |
+| **R3-C3** | `The Atmos attic rebate pays fifteen hundred and fifty dollars per home.` | the figure is written entirely in words; no numeral for any pattern to anchor on. Declared. |
+| **R3-C16** | `Of the measures Atmos rebates, attic insulation pays the most of any single upgrade.` | `the most` is not in the 15-item `R3.rank_words` list. Declared. |
+| **R3-C17** | `Atmos sends 1550 to the homeowner once the attic job is invoiced.` | bare digits with **no money word at all** in the 120-character window — `dollars` was added to `money_words` this round, which fixed C4b, but this sentence does not use it |
+| **R7-G6** | `Air sealing is a pre&#8209;requisite for the Whole Home Efficiency bonus.` | the non-breaking-hyphen entity is folded to a real hyphen, giving `pre-requisite`; the configured proposition string is `prerequisite` |
+| **R8-H3** | `Last reviewed: <time datetime="2027-01-01">` on `privacy.html` | `RAW 2 ADJ 0` — an `own_effective_date_pages` entry; raised and enumerated, then cleared through a named filter. The impossible date still passes. |
+| **R8-H4** | the same on `404.html` | `RAW 2 ADJ 0` — an `exempt_pages` entry; same shape |
+| **R8-H6** | `<time datetime="2026&#45;08&#45;24">August 24, 2026</time>` | the hyphens are entity-encoded **inside the attribute value**; the date gate never sees a parseable date, so the page contributes no dates at all |
+| **R9-I1** | `Both the attic rebate and the air sealing rebate turn on the CFM 50 number.` | the contested value is paraphrased outside R9's configured `value_slots` strings. Declared. |
+
+Six of the twelve (R1-A3, R3-C3, R3-C16, R9-I1, plus R10-J1 and the R3/R5
+paraphrase family) are declared in the README as a known hole. Two (R8-H3/H4)
+are raised-and-cleared rather than silently dropped. R10-J1
+(`The real numbers live on the …`, outside the 14 `promise_patterns`) is the
+twelfth; it is counted in the R10 row above.
+
+### R6 — all seven defect shapes still caught
+
+```
+R6-CTRL              RAW 5    ADJ 5    FAIL  exit 1 => CAUGHT
+R6-CLEAN             RAW 0    ADJ 0    PASS  exit 0 => PASS (correct)
+R6-F1 minified       RAW 5    ADJ 5    FAIL  exit 1 => CAUGHT
+R6-F2 ternary        RAW 1    ADJ 1    FAIL  exit 1 => CAUGHT
+R6-F3 wrapped cond   RAW 5    ADJ 5    FAIL  exit 1 => CAUGHT
+R6-F4 switch         RAW 1    ADJ 1    FAIL  exit 1 => CAUGHT
+R6-F5 two labels     RAW 3    ADJ 3    FAIL  exit 1 => CAUGHT
+R6-F6 concat         RAW 5    ADJ 5    FAIL  exit 1 => CAUGHT
+R6 renamed labels    RAW 1    ADJ 1    FAIL  exit 1 => CAUGHT
+```
