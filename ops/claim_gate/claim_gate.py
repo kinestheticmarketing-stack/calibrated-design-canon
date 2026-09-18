@@ -1578,6 +1578,11 @@ def rule_R2(ctx, res):
     towns = c.get("towns", {}) or {}
     elec_names = c.get("electric_utility_names", []) or []
     neg_markers = c.get("corrective_disclosure_markers", []) or []
+    # Clause-level DENIALS of a binding. Separate from corrective_disclosure
+    # markers: those say "the site got this wrong, here is the correction",
+    # while these say "this utility's programme does not reach this town",
+    # which is the compliant statement R2 exists to require.
+    deny_bind = c.get("clause_denial_markers", []) or []
 
     # the known-present control (spec 3): search for a term you KNOW is
     # present before trusting a term you believe is absent
@@ -1636,6 +1641,16 @@ def rule_R2(ctx, res):
                     _, uu, up = sorted(near)[0]
                     bound.add((uu, up))
                     if uu in (ctx.allowed_utilities([tname]) or set()):
+                        continue
+                    # A clause that DENIES the binding is the compliant form,
+                    # not the defect. "Longmont's situation (a second, Longmont
+                    # Power & Communications-only rebate) doesn't apply in
+                    # Lafayette." says exactly what R2 wants said, and the
+                    # nearest-binding resolver failed it 6 times on LGM for
+                    # naming the utility and the town in one clause. A rule
+                    # that returns the same verdict for a claim and its denial
+                    # is not testing the claim.
+                    if has_any(clause, deny_bind, word=False):
                         continue
                     lo, hi = min(up, tpos), max(up, tpos)
                     span = clause[max(0, lo - 34):hi + 40]
@@ -1750,15 +1765,37 @@ def rule_R2(ctx, res):
         # Longmont's own index.html with no restriction gave RAW 0 ADJ 0 PASS.
         locked_req = c.get("locked_restriction_strings", []) or []
         req_for = c.get("locked_restriction_required_for", []) or []
+        # The restriction may be stated in the PAGE'S OWN WORDS. Measured
+        # 2026-09-18: this sub-test produced 23 adjudicated findings on LGM and
+        # 22 of them are false positives, because 16 of the flagged pages carry
+        # "Longmont Power & Communications electric customers may separately
+        # qualify for an Efficiency Works rebate - check your bill to see which
+        # utility serves your address." -- which IS the restriction, correctly
+        # stated, and matches none of the four locked literals. That is the
+        # inverse paraphrase escape: a string list that once let defects
+        # through now makes correct copy fail. A sentence satisfies the
+        # restriction if it carries a locked literal OR names the restricting
+        # utility itself; and a sentence that DENIES eligibility needs no
+        # restriction, because it grants nothing to restrict.
+        restr_equiv = c.get("locked_restriction_equivalents", []) or []
+        restr_deny = c.get("locked_restriction_denials", []) or []
+
+        def _satisfied(text):
+            return (has_any(text, locked_req, word=False)
+                    or has_any(text, restr_equiv, word=False))
+
         if locked_req and req_for and art.kind != "src":
             named_where = []
             for skey, loc, sent in ctx.pool(art):
-                if names_in(sent, req_for, None, ci=True):
-                    named_where.append((skey, str(loc), sent))
+                if not names_in(sent, req_for, None, ci=True):
+                    continue
+                if has_any(sent, restr_deny, word=False):
+                    continue
+                if _satisfied(sent):
+                    continue
+                named_where.append((skey, str(loc), sent))
             if named_where:
-                page_has = has_any(art.txt, locked_req, word=False)
-                in_sent = [x for x in named_where
-                           if has_any(x[2], locked_req, word=False)]
+                page_has = _satisfied(art.txt)
                 # ONE finding per PAGE, not per sentence. Ruling 7's clause is
                 # about the restriction travelling with the claim, and the
                 # config's own locked_restriction_reach records the standing
@@ -1766,23 +1803,16 @@ def rule_R2(ctx, res):
                 # Sentence granularity produced 190 + 871 rows on LGM, which
                 # is a number nobody acts on.
                 skey, loc, sent = named_where[0]
-                if not page_has:
-                    raw.append(Hit(
-                        "R2", "r", art.rel, skey, loc,
-                        "%s named in %d place(s) and the locked restriction "
-                        "appears NOWHERE on this page | first: %s"
-                        % (",".join(names_in(sent, req_for, None, ci=True)),
-                           len(named_where), sent),
-                        note="restriction-absent", sentence=sent))
-                elif not in_sent:
-                    raw.append(Hit(
-                        "R2", "r", art.rel, skey, loc,
-                        "%s named in %d place(s); the locked restriction is on "
-                        "the page but not in the same sentence as any of them "
-                        "| first: %s"
-                        % (",".join(names_in(sent, req_for, None, ci=True)),
-                           len(named_where), sent),
-                        note="restriction-elsewhere-on-page", sentence=sent))
+                raw.append(Hit(
+                    "R2", "r", art.rel, skey, loc,
+                    "%s named in %d unrestricted, non-denying sentence(s); "
+                    "the restriction appears %s | first: %s"
+                    % (",".join(names_in(sent, req_for, None, ci=True)),
+                       len(named_where),
+                       "elsewhere on this page but not with the claim"
+                       if page_has else "NOWHERE on this page", sent),
+                    note=("restriction-elsewhere-on-page" if page_has
+                          else "restriction-absent"), sentence=sent))
 
         # hedge preservation and the per-town qualifier are assertions about
         # the town's OWN page.
@@ -1826,9 +1856,18 @@ def rule_R2(ctx, res):
             has_town_input = bool(
                 re.search(r"(?:id|name)=\"[^\"]*(?:town|city|municipal"
                           r"|utility|provider)", art.raw, re.I) or
-                re.search(r"<label[^>]*>[^<]{0,60}(?:your town|your city|"
-                          r"gas utility|which utility|utility provider)",
+                re.search(r"<label[^>]*>[^<]{0,90}(?:your town|your city|"
+                          r"your (?:electric |gas )?utility|"
+                          r"(?:electric|gas) utility|which utility|"
+                          r"utility provider|who (?:is|provides))",
                           art.raw, re.I))
+            # LGM's calculator asks "Is your electric utility Longmont Power &
+            # Communications (LPC)?" through an input named `cc-lpc`. The old
+            # detector looked for town/city/utility INSIDE the id or name and
+            # for a short list of label phrases within 60 characters, and
+            # missed both -- so a tool that asks the strictly better question
+            # was reported 6 times as town-blind. Asking the utility is not
+            # town-blind, it is town-INDEPENDENT.
             if not has_town_input:
                 for loc, lit in art.js_strings:
                     for u in [x for x in ctx.utilities_in(lit)
