@@ -220,7 +220,27 @@
       "doesn't reach",
       "rather than"
     ],
-    "clause_denial_markers_reason": "A clause that DENIES a binding is the compliant form, not the defect. Measured 2026-09-18: LGM's \"Longmont's situation (a second, Longmont Power & Communications-only rebate) doesn't apply in Lafayette.\" was failed 6 times by the nearest-binding resolver for naming the utility and the town in one clause -- while saying exactly what R2 exists to require. A rule that returns the same verdict for a claim and its denial is not testing the claim."
+    "clause_denial_markers_reason": "A clause that DENIES a binding is the compliant form, not the defect. Measured 2026-09-18: LGM's \"Longmont's situation (a second, Longmont Power & Communications-only rebate) doesn't apply in Lafayette.\" was failed 6 times by the nearest-binding resolver for naming the utility and the town in one clause -- while saying exactly what R2 exists to require. A rule that returns the same verdict for a claim and its denial is not testing the claim.",
+    "electric_distinguishing_markers": [
+      "not the electric utility",
+      "gas utility runs",
+      "doesn't qualify",
+      "does not qualify",
+      "don't share",
+      "do not share",
+      "only surfaced for",
+      "genuinely may apply",
+      "may fall inside",
+      "worth checking with",
+      "regulatory filing",
+      "is heated electrically",
+      "if your home is heated",
+      "rather than the electric",
+      "not an electric",
+      "is a gas rebate",
+      "gas rebate, not"
+    ],
+    "electric_distinguishing_markers_reason": "A sentence that DISTINGUISHES the gas utility from the electric one, or denies that electrical work qualifies, is the compliant statement sub-test 'e' exists to require -- not the defect. Measured 2026-09-18: all 10 of GCI's adjudicated `e` findings were sentences of exactly that shape, including \"In Greeley the gas utility runs the insulation rebates, not the electric utility\" and \"The electrical work itself doesn't qualify for the Atmos Energy insulation rebate\". Zero true positives."
   },
   "R3": {
     "dollar_pattern": "\\$[0-9][0-9,.]*",

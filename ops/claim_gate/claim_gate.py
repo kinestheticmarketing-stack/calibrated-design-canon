@@ -1613,6 +1613,9 @@ def rule_R2(ctx, res):
     # while these say "this utility's programme does not reach this town",
     # which is the compliant statement R2 exists to require.
     deny_bind = c.get("clause_denial_markers", []) or []
+    # Markers that a sentence is DISTINGUISHING the electric utility from
+    # the gas one rather than attributing a rebate to it.
+    elec_deny = c.get("electric_distinguishing_markers", []) or []
 
     # the known-present control (spec 3): search for a term you KNOW is
     # present before trusting a term you believe is absent
@@ -1886,6 +1889,21 @@ def rule_R2(ctx, res):
             for skey, loc, sent in ctx.pool(art):
                 if not has_any(sent, ELECTRIC_WORDS, word=False):
                     continue
+                # A developer comment is not an attribution made to a visitor,
+                # the same exclusion R2's main path already makes.
+                if skey == S.S_JS and "comment@" in str(loc):
+                    continue
+                # A sentence that DISTINGUISHES gas from electric, or denies
+                # the electric connection, is the compliant statement -- it is
+                # what the rule wants said. Measured 2026-09-18: all 10 of
+                # GCI's adjudicated `e` findings are sentences of this shape,
+                # e.g. "In Greeley the gas utility runs the insulation rebates,
+                # NOT the electric utility", "The electrical work itself
+                # doesn't qualify for the Atmos Energy insulation rebate", and
+                # "The two scopes don't share a rebate program".
+                if has_any(sent, deny_bind, word=False) or \
+                        has_any(sent, elec_deny, word=False):
+                    continue
                 for u in names_in(sent, elec_names or names,
                                   c.get("utility_aliases", {}) or {},
                                   ci=True):
@@ -2030,7 +2048,18 @@ def rule_R2(ctx, res):
             # was reported 6 times as town-blind. Asking the utility is not
             # town-blind, it is town-INDEPENDENT.
             if not has_town_input:
-                for loc, lit in art.js_strings:
+                # Read the JS SURFACES, not the raw literals: a `+`
+                # concatenation run is now one joined surface, and the
+                # disclosure this sub-test must not fire on -- "Atmos Energy is
+                # the natural gas utility in Greeley, Evans and Eaton, and Xcel
+                # Energy is the natural gas utility in Johnstown ..." -- is
+                # split across three literals in GCI's calculators. Judging the
+                # fragments judged something the page never says.
+                js_surfaces = [(sf.locator, sf.text) for sf in art.surfaces
+                               if sf.key == S.S_JS
+                               and "comment@" not in str(sf.locator)
+                               and not str(sf.locator).endswith("body")]
+                for loc, lit in js_surfaces:
                     # A literal that names the utility TOGETHER WITH a town it
                     # serves is a disclosure, not a town-blind verdict. GCI's
                     # calculators carry "gas territory here is split: Atmos
