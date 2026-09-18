@@ -54,11 +54,16 @@
       "Longmont": {
         "gas": "Xcel Energy",
         "gas_state": "CONFIRMED",
-        "electric": "Longmont Power & Communications",
+        "electric": [
+          "Longmont Power & Communications",
+          "Xcel Energy",
+          "Poudre Valley REA",
+          "United Power"
+        ],
         "electric_state": "PARTIAL",
         "electric_qualifier": "roughly 61% of the city",
         "electric_program": "Efficiency Works",
-        "electric_note": "_shared_components.py:562 cites LPC's own statement that it serves 'Longmont, parts of Lyons and Hygiene, and some unincorporated areas' — LPC does not serve every Longmont address. Every Efficiency Works sentence must carry the LPC-customers-only restriction.",
+        "electric_note": "_shared_components.py:562 cites LPC's own statement that it serves 'Longmont, parts of Lyons and Hygiene, and some unincorporated areas' — LPC does not serve every Longmont address. Every Efficiency Works sentence must carry the LPC-customers-only restriction.  CORRECTED 2026-09-18: `electric` was the single string 'Longmont Power & Communications' and produced 38 R2 false positives against the property's own VERIFIED coverage disclosure -- 'LPC serves roughly 61% of Longmont by area, with Xcel, Poudre Valley REA, and United Power splitting the rest.' That disclosure is sourced in this repo's own CITED_SOURCES entry LONGMONT_LPC_PARTIAL_ELECTRIC_TERRITORY to the Colorado Geospatial Portal's statewide Utilities Boundaries layer, whose stat reads: 'the retail electric service territories recorded for Colorado place more than one electric provider inside the City of Longmont city limits'. The rule was flagging the property for disclosing a fact it had verified. electric_program stays Efficiency Works and the LPC-only restriction is still enforced by sub-test 'r'.",
         "page_slugs": [
           "index.html",
           "insulation-attic-longmont.html",
@@ -165,7 +170,30 @@
     "review_not_fail": [
       "Weld County"
     ],
-    "review_not_fail_reason": "Longmont sits in Boulder County with part of Erie in Weld, so every occurrence must be a deliberate Erie-split disclosure rather than a cloned Greeley reference. _artifact_grep.sh reports it as INFO by design."
+    "review_not_fail_reason": "Longmont sits in Boulder County with part of Erie in Weld, so every occurrence must be a deliberate Erie-split disclosure rather than a cloned Greeley reference. _artifact_grep.sh reports it as INFO by design.",
+    "locked_restriction_equivalents": [
+      "electric customers of Longmont Power",
+      "Longmont Power & Communications electric customers",
+      "Longmont Power &amp; Communications electric customers",
+      "LPC electric customers",
+      "check your bill to see which utility serves your address",
+      "which utility serves your address"
+    ],
+    "locked_restriction_equivalents_reason": "The restriction stated in the PAGE'S OWN WORDS. Measured 2026-09-18: sub-test 'r' returned 23 adjudicated findings on this property and 22 were FALSE POSITIVES, because 16 of the flagged pages carry 'Longmont Power & Communications electric customers may separately qualify for an Efficiency Works rebate - check your bill to see which utility serves your address.' -- which IS the restriction, correctly stated, and matches none of the four locked_restriction_strings literals. A string list that once let defects through was making correct copy fail. The literals stay: they are the Director-locked wording and the equivalents are additive.",
+    "locked_restriction_denials": [
+      "Neither Xcel",
+      "neither Xcel",
+      "does not qualify for",
+      "do not qualify for",
+      "exclude new construction",
+      "excludes new construction",
+      "itemizes a rebate for it",
+      "not a measure either",
+      "nor Efficiency Works",
+      "does not itemize",
+      "do not itemize"
+    ],
+    "locked_restriction_denials_reason": "A sentence that DENIES eligibility needs no restriction, because it grants nothing to restrict. 'Neither Xcel nor Efficiency Works itemizes a rebate for it' was flagged for missing a customers-only restriction on a rebate it says does not exist."
   },
   "R3": {
     "allowed_figures": [

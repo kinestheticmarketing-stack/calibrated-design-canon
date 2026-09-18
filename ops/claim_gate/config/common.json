@@ -200,7 +200,27 @@
     "review_not_fail": [],
     "hedge_pairs": [],
     "forbid_electric_utility_naming": false,
-    "towns": {}
+    "towns": {},
+    "clause_denial_markers": [
+      "doesn't apply in",
+      "does not apply in",
+      "do not apply in",
+      "doesn't apply to",
+      "does not apply to",
+      "does not apply here",
+      "doesn't apply here",
+      "does not serve",
+      "doesn't serve",
+      "is not the",
+      "are not the",
+      "not available in",
+      "isn't available in",
+      "only rebate) doesn",
+      "does not reach",
+      "doesn't reach",
+      "rather than"
+    ],
+    "clause_denial_markers_reason": "A clause that DENIES a binding is the compliant form, not the defect. Measured 2026-09-18: LGM's \"Longmont's situation (a second, Longmont Power & Communications-only rebate) doesn't apply in Lafayette.\" was failed 6 times by the nearest-binding resolver for naming the utility and the town in one clause -- while saying exactly what R2 exists to require. A rule that returns the same verdict for a claim and its denial is not testing the claim."
   },
   "R3": {
     "dollar_pattern": "\\$[0-9][0-9,.]*",
