@@ -1209,9 +1209,19 @@ class Ctx(object):
             d = t.get(name, {})
             for f in ("gas", "electric"):
                 v = d.get(f)
-                if v and v not in ("UNKNOWN", "UNRESOLVED") and \
-                        not v.startswith(("SPLIT", "THREE-WAY")):
-                    allowed.add(self.canon_utility(v))
+                # A fuel may be served by MORE THAN ONE utility in one town --
+                # United Power serves northern Broomfield while Xcel serves the
+                # rest. Modelling one utility per fuel made the correct
+                # service-area hedging on DCI's Broomfield page fail R2 22
+                # times, on a page whose carve-out is verified in the repo's
+                # own quarterly review, affirmed by a prior adversarial read,
+                # wired into the calculator, and confirmed against United
+                # Power's own service-area page. A list is accepted anywhere a
+                # string is.
+                for one in (v if isinstance(v, list) else [v]):
+                    if one and one not in ("UNKNOWN", "UNRESOLVED") and \
+                            not one.startswith(("SPLIT", "THREE-WAY")):
+                        allowed.add(self.canon_utility(one))
             p = d.get("electric_program")
             if p:
                 allowed.add(self.canon_utility(p))
