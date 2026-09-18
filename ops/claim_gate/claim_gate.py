@@ -1434,15 +1434,31 @@ def rule_R1(ctx, res):
                            "cited-stat@%d" % cs["offset"],
                            "%s %s" % (k or "<unresolved-key>", cs["txt"]),
                            cite_key=k, sentence=cs["txt"]))
+        # HALF B DE-DUPLICATES ON WHAT IT PRINTS.
+        # It emits one hit per QUOTE GLYPH, so a sentence carrying two quoted
+        # spans inside one 110-char window produced two -- and the same
+        # sentence reaching the pool on more than one locator multiplied that
+        # again. GCI's about.html sentence 'The guidance here says "not yet"
+        # as often as it says "yes," ...' produced FOUR findings that were
+        # character-identical in the report, inflating the adjudicated count
+        # by three and telling a reader nothing the first line had not.
+        # Two findings a human cannot tell apart are one finding. The key is
+        # exactly the tuple the enumeration renders, so anything that IS
+        # distinguishable on the page still counts separately.
+        seen_b = set()
         for skey, loc, sent in ctx.pool(art):
             for m in qre.finditer(sent):
                 pre = sent[max(0, m.start() - 40):m.start()]
                 v = which_any(pre, verbs, ci=True, word=False)
                 if not v:
                     continue
+                text = win(sent, m.start(), 110)
+                dk = (art.rel, skey, text, v[0])
+                if dk in seen_b:
+                    continue
+                seen_b.add(dk)
                 raw.append(Hit("R1", "B", art.rel, skey, str(loc),
-                               win(sent, m.start(), 110), note=v[0],
-                               sentence=sent))
+                               text, note=v[0], sentence=sent))
 
     def f_explicit(h):
         if h.sub != "A" or not h.cite_key:
