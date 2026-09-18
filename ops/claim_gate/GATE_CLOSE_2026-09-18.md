@@ -8,6 +8,131 @@ Gate under test: canon `ops/claim_gate/` at canon HEAD `eafada2`.
 
 ---
 
+## 0. THE RE-SCORE — 21 of 25, up from 16 of 25
+
+The gate was previously scored (`GATE_SCORE_2026-09-17.md`, canon `7a091a0`) by
+replaying 25 known defect instances out of git at the commit immediately before
+each fix: **16 CAUGHT, 2 PARTIAL, 7 MISSED**. That replay was repeated with the
+current gate at canon `eafada2`, same method — 20 detached worktrees in scratch,
+`--today` set to each fixing commit's date, all 20 removed and pruned afterwards.
+
+### **21 of 25 CAUGHT · 2 PARTIAL · 2 MISSED**
+
+**Five of the seven misses flipped to CAUGHT. Nothing regressed. Both PARTIALs
+improved.**
+
+**The prior score's governing finding is fixed.** §0 of `GATE_SCORE_2026-09-17.md`
+recorded that the gate exited 2 — `CLAIM GATE: NOT RUN` — on *every* DCI tree,
+because one real R6 finding in the repo under test false-alarmed all 14 negative
+controls, so no DCI row could be scored at gate level at all. **11 of the 12 DCI
+pre-fix trees now run and exit 1.** Those verdicts are real gate verdicts now,
+not harness results.
+
+### The five flips, each with the change that moved it
+
+| # | defect | repo | moved by |
+|---|---|---|---|
+| **4b** | short-form `Dec. 31, 2026` (DCI) | DCI | `7be4641` — the sentence splitter broke at the abbreviation period, so two shipped R7 patterns containing "Dec." could never fire. The gate had reproduced, inside itself, the exact trap the defect describes. |
+| **4c** | the invented fifth Xcel program | DCI | `57421dc` / `32b1ec1` — `forbidden_program_names` was dead config read by no code path; now wired as R2 sub-class `p`, firing 287 hits across 72 files |
+| **7d** | FAQPage stacking denial | GCI | `8ff3a55` + `da6663d` — new `ASSERTS-SET` class for programs named anaphorically ("these programs"), where the phrase supplies the count and never a name |
+| **7e** | knob-and-tube stacking denial | LGM | `8ff3a55` — same anaphora class, on "either insulation rebate program" |
+| **7f** | `llms.txt` "Xcel rebate-stack eligibility" | DCI | `da6663d` — bare `"Xcel"` added to `R4.programs`, span-consuming `names_in()` so `"Xcel Energy"` cannot self-satisfy the two-program test, plus the single-program `ASSERTS-1P`/`DENIES-1P` class |
+
+### The two that still miss
+
+**2b — GCI `og-image.svg`.** Verdict unchanged; cause completely changed. The
+prior diagnosis was structural — *"an artifact with no town scope produces zero
+R2 hits by construction"*. `47a50c8` closed that: the SVG is now read on a
+`SVGTEXT` surface and **does** produce an R2 hit, which is then filtered, raised
+and enumerated rather than dropped silently:
+`[sitewide artifact, no town named in the clause … (raised and enumerated, never dropped silently)] public/og-image.svg:SVGTEXT  a  Atmos Energy | no town bound in the clause, no town scope on the page | Atmos rebates explained · Local contractors · Existing-home retrofits  [sitewide-no-town-in-clause]`
+Scored MISSED because it does not block. The blindness the prior score named is
+gone; what remains is a visible ruling.
+
+**10 — DCI hidden `calc_output`.** Verdict unchanged; diagnosis now sharp enough
+to act on. `d8be8fd` implemented R9's N3b half and its positive control fires
+(`canary+ R9-N3b … DETECTED (1 N3b: N3b)`). **The rule works; the config is one
+page short.** `dci.json`'s `R9.tools` lists only
+`public/r-value-needed-calculator.html`, while on the tree where the defect is
+live the string sits on `public/attic-insulation-cost-calculator.html`. Adding
+one `R9.tools` entry closes it.
+
+### Both partials improved
+
+- **5b — LGM's 133 rebate figures: 18 → 109 of 133.** The `cost_context_markers`
+  over-removal that pardoned the entire Efficiency Works per-square-foot payout
+  schedule is substantially closed: `$1.16` 0 → 63 adjudicated rows, `$0.77`
+  0 → 31. Still removed: `$2,000` ×2, the Boulder County EnergySmart cap, by the
+  same filter.
+- **8 — DCI's `25-40%`: 14 → 15 of 16 pages.** `1bcc0b7` removed R5's blanket
+  `recognised_publishers` exemption, which had pardoned `insulation-lakewood.html`
+  because Xcel was named as the *payer*. The one remaining miss is unchanged in
+  cause: `air-sealing.html`'s sentence never enters R5 RAW because its verbs
+  ("covers", "drops") are not in `magnitude_words`.
+
+### The one thing that got worse
+
+**R3 no longer blocks.** `b00e3b1` demoted it to report-only on its own measured
+68.1% false-positive rate. Rows 5a, 5b, 5c and 5d — all four rebate-dollar-figure
+defects, 537 figures between them — are still **DETECTED** but no longer
+**BLOCK**. Detection held or improved in every case (5a `T1 $-anchored 222`;
+5c 9 of 9 distinct figures across 24 of 24 files). Every one of those trees still
+exits 1 on other rules, so no release would have shipped — but if R3 were the
+only failing rule, it would now pass.
+
+### Anachronism, stated per row rather than scored silently
+
+- **4b and 4c are anachronism-dependent.** `common.json` ships the literal
+  pattern `"invoiced by Dec. 31, 2026"`, whose own `why` field names the defect
+  being scored; `forbidden_program_names` carries the literal "Xcel IQ Program"
+  and cites commits from the same day as the tree. In both cases what genuinely
+  moved is the **machinery** — the splitter fix is general, and the key being
+  *wired at all* is the advance, since its contents were previously irrelevant.
+  Neither is evidence of forward detection.
+- **7e / 7f partially.** `program_set_anaphora`'s first entry is the exact LGM
+  phrase and `R4.programs`' note names the llms.txt line, but both sit inside
+  genuinely general mechanisms (a 14-phrase list of ordinary English anaphora; a
+  single-program class; span-consuming name matching). **7d rests on the generic
+  "these programs"** and is clean.
+- **Carried forward unchanged:** 3a/3b/4a's R7 entries still name the commits
+  being scored; `gci.json` still encodes post-fix Johnstown/Milliken/Severance
+  territory (2a); `printed_var: "pctShort"` still describes post-fix code
+  (6, G1 only — G2 is clean); R9's `tools` config still flips N3 between trees.
+- **New this pass:** `gci.json` now pins 13 pages measured at 2026-09-18 HEAD,
+  up from 2. Checked: they do not suppress row 9b — both `about.html` and
+  `contact.html` `surfaces-disagree` rows still fire on `12dfcbf`.
+
+### A NEW GATE DEFECT, found by the replay and reported not fixed
+
+One tree, `dci-4cf7a52`, still exits 2 — the same control-contamination class the
+R6 fix closed, surviving one layer over. `run_controls` (`claim_gate.py:4594`)
+does `base["_gen"] = gen` where `gen` is **the repo-under-test's own generator
+source**, and hands it to every control context. `_control_ctx`'s own docstring
+says *"A control must never open the repo under test"* and it correctly points
+`ctx.repo` at a nonexistent path — but `_gen` is still the real tree, so R9's
+repair control picks up the repo's genuine `xcel_cfm50_scope` contradiction and
+reports `*** FIRES ON REPAIRED ***` against an innocent fixture. Bisected
+empirically: with generators emptied the control is clean, with the citation
+registry emptied it still fires. **It does not bite the three properties at their
+current HEADs** — all three show `0 FALSE ALARM` — but it is live, not a replay
+artifact.
+
+### Replay method and its one config override
+
+`min_artifacts` and `expected_html` were set to `10` on all three configs for the
+replay, and nothing else — verified programmatically that those are the only two
+keys differing from canon's. Real values are DCI 85/75, LGM 59/48, GCI 49/38, and
+both are floors, so `10` preserves the empty-corpus trap while letting smaller
+historical trees run at all.
+
+**NOT TESTED in the replay:** `--opt-in=R6b` (the prior score found it forces
+exit 2 on any repo; whether `429b82c` changed that was not re-tested), and
+`--peer`, so R9's cross-property half ran on none of the 25 rows — the same as
+the prior score's method, and no row depends on it. False-positive rates were not
+re-adjudicated; this was a defect-recall re-score only.
+
+---
+
 ## 1. Gate verdicts at the new heads
 
 Command, per property: `cd ~/code/<repo> && ./ops/claim_gate.sh`
