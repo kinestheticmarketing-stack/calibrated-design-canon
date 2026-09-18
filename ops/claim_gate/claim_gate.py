@@ -1645,6 +1645,30 @@ def rule_R2(ctx, res):
         _locked_bind[text] = out
         return out
 
+    def f_gap(h):
+        """known_disclosure_gaps pardons only the BINDINGS IT CARRIES.
+
+        Same substring-passport shape as the locked allowlist, in a second
+        list. MEASURED: "Atmos Energy is the natural gas utility in Greeley,
+        Evans and Eaton, AND Atmos Energy is the natural gas utility in
+        Severance." gave RAW 2 ADJ 0 PASS at exit 0, while the wrong clause
+        ALONE gave RAW 1 ADJ 1 FAIL. Severance is an Xcel town, so that was a
+        live wrong-utility claim passing because a CORRECT phrase about Greeley,
+        Evans and Eaton happened to sit in front of it.
+
+        A declared disclosure gap describes the towns it names; it says nothing
+        about a town it does not name.
+        """
+        tb = getattr(h, "r2_binding", None)
+        for gpat in gaps:
+            if not gpat or gpat not in h.sentence:
+                continue
+            if tb is None:
+                return True
+            if tb in _bindings_of(gpat):
+                return True
+        return False
+
     def f_locked(h):
         """A locked sentence pardons only the BINDINGS IT ACTUALLY CARRIES.
 
@@ -1672,9 +1696,6 @@ def rule_R2(ctx, res):
             if tb in _bindings_of(L):
                 return True
         return False
-
-    def f_gap(h):
-        return has_any(h.sentence, gaps, word=False)
 
     def f_review(h):
         return has_any(h.sentence, review, word=False)
