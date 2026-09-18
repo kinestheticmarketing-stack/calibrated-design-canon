@@ -308,7 +308,8 @@
         "status": "OPEN \u2014 flagged to the Director 2026-09-11 in lane dci-d3-tier-label-fix",
         "audience": "grew 33 -> 54 input combinations after 37c7b29"
       }
-    ]
+    ],
+    "derivable_constants_NOT_SET_note": "R5.derivable_constants is DECLARED in claim_gate.py's key list (line 373) and READ BY NOTHING: `/usr/bin/grep -c derivable_constants claim_gate.py` returns 1, and that one occurrence IS the declaration. I wrote an entry here on 2026-09-18 for the 17%-atmospheric-pressure figure, saw no corresponding FILTER line appear in the R5 output, checked, and removed it rather than ship dead config. Recorded as a note instead so the next session does not repeat the attempt. THE FIGURE STILL NEEDS A HOME: 'Atmospheric pressure at Denver's elevation is roughly 17% lower than sea level' is a physical constant, not a marketing statistic -- ICAO standard atmosphere, P/P0 = (1 - 2.25577e-5*h)^5.25588, h = 1,609.3 m, gives 0.8234, i.e. 17.7% lower (computed 2026-09-18). There is no publisher to cite any more than there is for water's boiling point at altitude. It reports as an uncited magnitude on 6 rows and is a REVIEW, not a true positive. Either wire derivable_constants in the engine or rule the figure out of scope."
   },
   "R6": {
     "label_chains": [
