@@ -2835,6 +2835,35 @@ def rule_R8(ctx, res):
                             note="ordering", sentence=base)
                     h.r8_excluded = excluded_as
                     raw.append(h)
+        # A PINNED PAGE THAT HAS DRIFTED OFF ITS STATED PIN IS A FINDING ON
+        # ITS OWN. This block used to sit inside `if last:` -> `if newest <
+        # last:`, so it was reachable only when the page was ALSO
+        # stale-vs-content, and it never fired: at pin, footer drifted,
+        # sitemap drifted and BOTH drifted all returned sub c or nothing, and
+        # `grep -c pin-drifted` returned 0 on all three properties. A pin
+        # states a value; if the page no longer carries it, the pin is not
+        # describing reality and the exemption must not apply -- which is the
+        # whole reason expected_footer and expected_sitemap were wired.
+        if base in pinned:
+            pin = pinned.get(base) or {}
+            ef = pin.get("expected_footer")
+            es = pin.get("expected_sitemap")
+            got_f = dates.get("footer_text") or dates.get("time[datetime]")
+            got_s = dates.get("sitemap:lastmod")
+            drift = []
+            if ef and got_f and got_f != ef:
+                drift.append("footer %s != pinned %s" % (got_f, ef))
+            if es and got_s and got_s != es:
+                drift.append("sitemap %s != pinned %s" % (got_s, es))
+            if drift:
+                h = Hit("R8", "p", art.rel, "VIS", base,
+                        "pinned page has DRIFTED off its stated pin: %s -- the "
+                        "exemption describes a value the page no longer "
+                        "carries" % "; ".join(drift),
+                        note="pin-drifted", sentence=base)
+                h.r8_excluded = excluded_as
+                raw.append(h)
+
         first = ctx.gitfacts.first_seen.get(art.rel)
         if first:
             for k, v in claimed:
@@ -2853,30 +2882,6 @@ def rule_R8(ctx, res):
                 note = "stale-vs-content"
                 if base in pinned:
                     note = "pinned"
-                    # config.R8.pinned_pages[*].expected_footer /
-                    # expected_sitemap were dead. A pinned page is pinned to a
-                    # STATED value; if it drifts off that value the pin is no
-                    # longer describing reality and the exemption must not
-                    # apply.
-                    pin = pinned.get(base) or {}
-                    ef = pin.get("expected_footer")
-                    es = pin.get("expected_sitemap")
-                    got_f = dates.get("footer_text") or dates.get(
-                        "time[datetime]")
-                    got_s = dates.get("sitemap:lastmod")
-                    drift = []
-                    if ef and got_f and got_f != ef:
-                        drift.append("footer %s != pinned %s" % (got_f, ef))
-                    if es and got_s and got_s != es:
-                        drift.append("sitemap %s != pinned %s" % (got_s, es))
-                    if drift:
-                        note = "pin-drifted"
-                        raw.append(Hit(
-                            "R8", "p", art.rel, "VIS", base,
-                            "pinned page has DRIFTED off its stated pin: %s -- "
-                            "the exemption describes a value the page no "
-                            "longer carries" % "; ".join(drift),
-                            note="pin-drifted", sentence=base))
                 elif hold_note:
                     note = hold_note
                 h = Hit("R8", "d", art.rel, "VIS", base,
@@ -2887,6 +2892,7 @@ def rule_R8(ctx, res):
                 raw.append(h)
 
     def f_pinned(h):
+        # A DRIFTED pin does not grant the exemption.
         return h.note == "pinned"
 
     def f_exempt(h):
