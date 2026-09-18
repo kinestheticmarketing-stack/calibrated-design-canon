@@ -248,10 +248,38 @@
       "basis": "ground-truth.md:27-44 — EW's own 'Additional incentives' page has a column headed 'Xcel rebate' beside its own and a 'Total potential incentives' column that is the arithmetic sum. Stacking may be DESCRIBED as published by Efficiency Works, with attribution. It does NOT license the site to author its own combined total.",
       "and_the_figures_are_still_banned": true
     },
+    "legitimate_uses": [
+      "stack-effect",
+      "stack effect",
+      "plumbing stack",
+      "flue",
+      "stacks up",
+      "stacked reasons",
+      "factors stack against",
+      "hot-stacked",
+      "compacted base",
+      "can lights",
+      "chimney stack",
+      "vent stack",
+      "on top of old",
+      "on top of the old",
+      "on top of existing",
+      "on top of my existing",
+      "on top of it",
+      "stacking new insulation",
+      "thermal layer",
+      "insulation layer",
+      "flash layer",
+      "only layer between",
+      "does publish a combined figure alongside"
+    ],
+    "legitimate_uses_reason": "THE FIRST EIGHTEEN ARE COMMON.JSON'S LIST, COPIED VERBATIM AND NOT NARROWED, because _deep_merge REPLACES a list rather than unioning it -- dropping any of them here would silently un-declare a portfolio-wide legitimate use. Verified identical to common.json at canon 0b380c2 before copying. The five additions are LGM-only and each names an exact phrase, never a bare token. FOUR ARE BUILDING SCIENCE, not rebates: 'thermal layer' (insulation-attic: 'the loose-fill or batted thermal layer installed across the floor of an unconditioned attic'), 'insulation layer' (llms.txt: 'cures into a solid air-sealing insulation layer'), 'flash layer' (hybrid-flash-batt: 'what puts the flash layer's thickness under the code'), and 'only layer between' (cathedral-ceiling: 'the roof deck itself is the only layer between conditioned space and outside'). None of the four can express two programs combining; each describes a physical course of material, which is the same class of legitimate use as 'stack effect' and 'plumbing stack' already in this list, and the brief's own protected example 'add radiant barrier on top of existing insulation'. THE FIFTH is a DIRECTOR-LICENSED ATTRIBUTED DESCRIPTION held as an unrendered record: _shared_components.py ALIVE_REBATES carries stacking_published_by_this_body, whose `what` field reads 'Efficiency Works' own insulation and air sealing incentive sheet prints an \"Additional incentives\" table with three columns ... so the administrator of this program does publish a combined figure alongside Xcel's.' ground-truth.md:27-44 licenses stacking to be DESCRIBED as published by Efficiency Works, WITH that attribution -- which this record carries in the adjacent attribution_required field -- and the record names no figure. It has ZERO render sites, verified: render_alive_rebates_html() emits only name+summary+status and its own docstring states it does not show this field, and the function itself has zero call sites. The gate reaches it only through the SRC surface, which exists for pre-render claims a page assembles at runtime; this string is never assembled into anything.",
     "retired_prohibition_strings": [
       "The two programs have separate eligibility and are never combined into one figure.",
-      "These two programs must NEVER be described as stacking or combining."
+      "These two programs must NEVER be described as stacking or combining.",
+      "Author, compute or render a combined total of its own."
     ],
+    "retired_prohibition_addition_reason": "The third string is the PROHIBITION half of the same Director licence, held in _shared_components.py ALIVE_REBATES stacking_published_by_this_body.site_must_not: 'Author, compute or render a combined total of its own. Efficiency Works' \"Xcel rebate\" column reconciles with no Xcel per-measure cap this repo has verified.' It is the instruction forbidding the site from stacking, recorded so the rule is not re-litigated -- exactly what this filter row is named for, 'retired prohibition preserved as a record'. It renders nowhere (zero call sites, same verification as legitimate_uses above) and it is the opposite of a stacking claim. Failing the property for carrying the sentence that forbids the defect is the rule returning the same verdict for a claim and its prohibition.",
     "retired_prohibition_note": "The first rendered 92 times across 46 pages and was DELETED. Standing instruction: do not restore it in its old wording — 'never combined into one figure' re-ships the prohibition form the Director retracted. The second survives deliberately in _shared_components.py:25-31 as a record.",
     "programs_note": "Bare 'Xcel' added 2026-09-17. DCI's llms.txt line 'Xcel rebate-stack eligibility' -- 1 occurrence, unchanged across every tree, survivor of five stacking sweeps and ten adversarial reads -- was still missed because 'Xcel' was not in this list. Safe to add because names_in() is SPAN-CONSUMING: one mention of 'Xcel Energy' yields ONE canonical name, not two.",
     "program_aliases": {
@@ -272,7 +300,49 @@
     "program_aliases_reason": "Bare 'Xcel' and 'Xcel Energy' are ONE program. Without this map a single sentence reading 'According to Xcel Energy, its ... Xcel ...' resolved to TWO distinct program names and satisfied R4's two-distinct-programs test by itself. Span-consuming matching stops one MENTION counting twice; only an alias map stops two mentions of the same utility counting as two programs.  DESCRIPTIVE FORMS ADDED 2026-09-18 (GATE_SCORE_2026-09-17.md MISS 4): GCI's FAQPage stacking denial named its two programs as 'the free state weatherization program' and 'the Atmos rebate', while R4.programs held only the literals 'Colorado Weatherization Assistance Program' and 'Atmos Energy'. One program resolved, distinct<2, NEUTRAL, filtered. An alias is only added where its canonical program is already in THIS property's programs list."
   },
   "R5": {
-    "known_uncited": []
+    "known_uncited": [],
+    "magnitude_words": [
+      "reduction",
+      "savings",
+      "saves",
+      "save",
+      "lower",
+      "cut",
+      "increase",
+      "improvement",
+      "payback",
+      "efficiency",
+      "loss",
+      "leakage",
+      "reduce",
+      " lose",
+      "lost",
+      "performance"
+    ],
+    "magnitude_words_reason": "COMMON.JSON'S SIXTEEN WORDS, COPIED VERBATIM (verified identical at canon 0b380c2) WITH EXACTLY ONE CHARACTER CHANGED: 'lose' is now ' lose', with a leading space. _deep_merge REPLACES a list, so the whole list has to be restated to change one entry. THE REASON, measured not asserted: magnitude_words are matched with word=False, i.e. as raw substrings, and 'lose' is a substring of 'cellu-lose' and of 'c-lose to'. That single collision produced 16 of this property's 59 R5 findings on 2026-09-18 -- every cellulose-settling sentence ('Loose-fill cellulose settles 10-20% over time') and every Louisville housing-age sentence ('close to half of Louisville housing units (46.0%) predate 1990', where the pattern also extracted the numeral '0%' out of '46.0%'). Neither is a magnitude claim about energy savings, which is what R5 exists to police; both fired on a word that is not in them. THIS IS A NARROWING OF AN OVER-MATCH, NOT AN EXEMPTION OF A CLAIM: has_any() is case-insensitive, so every genuine use still matches -- ' lose', ' loses', ' Lose', ' losing' all carry the leading space in running prose. Verified after the change: 'An under-filled or settled cellulose attic loses more heat in a Longmont winter' STILL MATCHES and is still adjudicated. The only construction this cannot see is a sentence whose very first character begins the word, which the gate's own sentence pool makes vanishingly rare and which is recorded here rather than left implicit. The underlying defect is in the matcher, not the word list; this is the narrowest fix available from config alone.",
+    "recognised_publishers": [
+      "ENERGY STAR",
+      "Building Science Corporation",
+      "Colorado Energy Office",
+      "EPA",
+      "CDPHE",
+      "Building America Solution Center",
+      "ACCA",
+      "Xcel Energy",
+      "Atmos Energy",
+      "Efficiency Works",
+      "Boulder County EnergySmart",
+      "NOAA",
+      "Energy Outreach Colorado",
+      "IECC",
+      "International Energy Conservation Code",
+      "Department of Energy",
+      "NFPA",
+      "Colorado Geospatial Portal",
+      "U.S. Census Bureau",
+      "Census Bureau"
+    ],
+    "recognised_publishers_reason": "THE FIRST SEVENTEEN ARE COMMON.JSON'S LIST, COPIED VERBATIM (verified identical at canon 0b380c2); _deep_merge replaces a list, so it has to be restated to extend it. THREE ADDITIONS, all of them bodies this property already cites by name in its own CITED_SOURCES registry and none of them a loosening of what counts as attribution -- f_pub still requires an attribution VERB and still requires the publisher within 80 characters of the figure. 'Colorado Geospatial Portal' is the source of the LPC service-territory share (registry key LONGMONT_LPC_PARTIAL_ELECTRIC_TERRITORY, its statewide Utilities Boundaries layer) which this property discloses on fourteen pages and which the Director's brief records as CORRECT copy; it was absent from the list, so the sentences carrying that disclosure could not be cleared by naming their own source. 'U.S. Census Bureau' and 'Census Bureau' are the source of every town housing-age figure on this property (registry key CENSUS_ACS5_PLACE_HOUSING, ACS 5-year estimates 2020-2024); the area pages already name it inline in parentheses. A federal statistical agency and a state geospatial clearinghouse are publishers by any reading, and their absence was a gap in the list rather than a judgement about them."
   },
   "R6": {
     "label_chains": [],
