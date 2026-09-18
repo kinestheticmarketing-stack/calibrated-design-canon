@@ -351,6 +351,98 @@ class Corpus(object):
 _DOC_PREFIXES = ("_", "note", "reason", "basis", "source", "why")
 
 
+# Config keys whose VALUES are compared against ONE SENTENCE from ctx.pool().
+# Derived by reading every `for skey, loc, sent in ctx.pool(art)` loop in this
+# file and following what each compares `sent` to. Deliberately over-inclusive
+# on the rule side: a key wrongly listed costs nothing, a key wrongly omitted is
+# the defect this check exists for.
+SENTENCE_SCOPED_KEYS = {
+    "R1": ("attribution_verbs", "quotation_allowlist", "correction_markers"),
+    "R2": ("attribution_words", "allowed_multi_utility_sentences", "utilities",
+           "programs", "non_territorial_programs", "forbidden_program_names",
+           "locked_restriction_strings", "denial_markers", "qualifiers",
+           "hedge_pairs", "allowlist", "electric_words",
+           "tool_utility_questions"),
+    "R3": ("money_words", "rank_words", "cost_context_markers",
+           "code_context_markers", "allowed_figures", "attribution_words",
+           "refusal_markers", "income_eligibility_markers"),
+    "R4": ("stacking_tokens", "combination_predicates", "denial_markers",
+           "programs", "program_aliases", "legitimate_uses"),
+    "R5": ("magnitude_words", "recognised_publishers", "attribution_verbs",
+           "derivable_constants"),
+    "R7": ("superseded_propositions", "superseded_identifiers",
+           "correction_markers", "never_retire_on_403"),
+    "R8": ("footer_marker",),
+    "R9": ("claim_subjects", "value_slots", "tools"),
+    "R10": ("promise_patterns", "refusal_markers", "page_titles"),
+    "R11": ("tracked_terms", "patterns", "attributing_verbs"),
+}
+# Sub-keys inside those containers that are PROSE ANNOTATION and are never
+# compared to a sentence. Without this exclusion the check reports fifteen
+# `why` fields -- and a check that cries wolf on documentation hides the two
+# rows that matter.
+_ANNOTATION_KEYS = frozenset((
+    "why", "reason", "basis", "note", "notes", "source", "comment",
+    "provenance", "label", "id", "claim_id", "report_as", "polarity",
+    "requires_publisher_named", "requires_cited_source_key",
+    "and_the_figures_are_still_banned", "measured_at", "date",
+    "verbatim_source", "retrieved", "text_note"))
+
+
+def _pattern_strings(obj, path, out):
+    if isinstance(obj, str):
+        out.append((path, obj))
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            _pattern_strings(v, "%s[%d]" % (path, i), out)
+    elif isinstance(obj, dict):
+        for k in sorted(obj):
+            if k in _ANNOTATION_KEYS or k.endswith("_note") \
+                    or k.endswith("_reason") or k.endswith("_README") \
+                    or k.endswith("_why"):
+                continue
+            _pattern_strings(obj[k], "%s.%s" % (path, k), out)
+
+
+def unfirable_patterns(cfg):
+    """Configured patterns a sentence-scoped rule can NEVER match.
+
+    A rule that matches per sentence cannot fire on a pattern whose own text
+    the splitter cuts in two. This is not hypothetical: `invoiced by Dec. 31,
+    2026` and `installed and invoiced by Dec. 31` sat in R7's config, unfirable,
+    and they are the very claim whose config note records that the SHORT form
+    is what survived four earlier hand-written sweeps. The abbreviation guard
+    closed those two; this check is what stops the next one being written.
+
+    Returns (scanned, [(path, pattern, pieces), ...]).
+    """
+    scanned = 0
+    bad = []
+    seen = set()
+    for rid, keys in sorted(SENTENCE_SCOPED_KEYS.items()):
+        blk = cfg.get(rid) or {}
+        if not isinstance(blk, dict):
+            continue
+        for key in keys:
+            if key not in blk:
+                continue
+            out = []
+            _pattern_strings(blk[key], "%s.%s" % (rid, key), out)
+            for path, s in out:
+                t = s.strip()
+                scanned += 1
+                if len(t) < 4 or not any(ch in t for ch in ".!?…"):
+                    continue
+                if t in seen:
+                    continue
+                pieces = S.sentences(t)
+                if len(pieces) > 1:
+                    seen.add(t)
+                    bad.append((path, t, pieces))
+    bad.sort()
+    return scanned, bad
+
+
 def unread_config_keys(cfg):
     """Config keys that appear NOWHERE as a literal in the implementation.
 
@@ -4413,6 +4505,18 @@ def _main(args, out, t0):
                ("DECLARED %s" % registry.declared_on) if registry.declared
                else "NOT DECLARED (R7 DEGRADED)",
                len(registry.superseded)))
+    n_scanned, unfirable = unfirable_patterns(cfg)
+    out("SENTENCE-SCOPED CONFIG PATTERNS: %d scanned, %d UNFIRABLE (a pattern "
+        "the sentence splitter cuts in two can never match, so the rule "
+        "configured on it silently does not exist)"
+        % (n_scanned, len(unfirable)))
+    if unfirable:
+        for path, pat, pieces in unfirable:
+            out("  UNFIRABLE  %s  %r" % (path, pat))
+            out("             splits into %r" % (pieces,))
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
     owed, noted, thin = unread_config_keys(cfg)
     out("CONFIG KEYS READ BY NO CODE PATH: %d OWED, %d declared "
         "documentation-only WITH a justification. An OWED key is a rule that "
