@@ -67,7 +67,6 @@ def collapse(s):
 _ZAP = {0x00AD: None}
 _SPLIT_ZW = dict.fromkeys([0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF], " ")
 _FOLD = {
-    0x2010: "-", 0x2011: "-",                 # hyphen, NON-BREAKING hyphen
     0x0430: "a", 0x0435: "e", 0x043E: "o", 0x0440: "p", 0x0441: "c",
     0x0443: "y", 0x0445: "x", 0x0456: "i", 0x0458: "j",
     0x0410: "A", 0x0412: "B", 0x0415: "E", 0x041A: "K", 0x041C: "M",
@@ -84,8 +83,20 @@ _FOLD.update({
     0x0406: "I", 0x0408: "J", 0x04AE: "Y", 0x0405: "S",
     0x0396: "Z", 0x0397: "H", 0x0399: "I", 0x039A: "K",
 })
+# DASHES FOLD UNCONDITIONALLY, outside the script-safety gate.
+#
+# My mixed-script guard runs the explicit map only on a token that already
+# contains an ASCII Latin letter, which is right for a homoglyph and WRONG for a
+# dash: the pure-digit identifier `24\u201102\u2011205` has no Latin letter, so
+# it stopped being folded and R7-G2 regressed from CAUGHT to MISS. A dash is not
+# a script-confusable and needs no such guard. This is the second consecutive
+# round in which a Unicode-hardening fix opened the next hole, so the whole
+# family is now re-tested together, not the one case.
+_DASHES = dict.fromkeys(
+    [0x2010, 0x2011, 0x2012, 0x2013, 0x2014, 0x2015, 0x2212], "-")
 _FORMAT = dict(_ZAP)
 _FORMAT.update(_SPLIT_ZW)
+_FORMAT.update(_DASHES)
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
 
 
