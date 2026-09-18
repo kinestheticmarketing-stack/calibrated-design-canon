@@ -2138,6 +2138,12 @@ def rule_R2(ctx, res):
                     lit_ok = set()
                     for tn in sorted(lit_towns):
                         lit_ok |= (ctx.allowed_utilities([tn]) or set())
+                    # AN ATTRIBUTION WORD IS REQUIRED, the same precondition
+                    # R2's prose path uses. Without it this fired on
+                    # "Atmos Energy sponsors the county fair." -- not a
+                    # territory claim at all.
+                    if not has_any(lit, aw, word=False):
+                        continue
                     for u in [x for x in ctx.utilities_in(lit)
                               if x not in uniform_allowed
                               and not (lit_towns and x in lit_ok)]:
@@ -2248,6 +2254,22 @@ def rule_R2(ctx, res):
     def f_sentbound(h):
         return bool(getattr(h, "r2_sentence_bound", False))
 
+    def f_townblind(h):
+        # SUB-TEST `t` IS A REVIEW CLASS, NOT A FAILURE. Measured: it fires
+        # IDENTICALLY on the correct utility, on the wrong utility, and on a
+        # non-attribution, because a tool with no town input cannot be judged
+        # right or wrong ABOUT a town -- there is no town to be wrong about.
+        # Its whole recorded history is false positives: 6 on LGM (a calculator
+        # that asks the visitor's UTILITY, which is the strictly better
+        # question), 14 then 10 then 1 on GCI (the correct gas-split
+        # disclosure), and the sixth adversarial read declined to credit its
+        # one apparent catch -- vector R2-B8, a utility assembled across a JS
+        # concatenation boundary -- on exactly this ground, putting the honest
+        # miss count at 12 of 86 rather than 11. Zero true positives, ever.
+        # Raised, enumerated and cleared through this named filter: the design
+        # observation is worth printing, and it is not worth failing a build on.
+        return h.sub == "t" 
+
     def f_restr_elsewhere(h):
         return h.note == "restriction-elsewhere-on-page"
 
@@ -2264,6 +2286,11 @@ def rule_R2(ctx, res):
              "serves somewhere in this territory, so nothing is asserted "
              "against a town (raised and enumerated, never dropped silently)",
              f_sitewide),
+        Filt("town-blind tool (sub-test t) -- REVIEW, never FAIL: a tool with "
+             "no town input cannot be judged right or wrong about a town, and "
+             "this sub-test fires identically on the correct utility, the "
+             "wrong one, and a non-attribution. Zero true positives measured.",
+             f_townblind),
         Filt("no town in the clause, but the utility's OWN SENTENCE binds it "
              "to a town it DOES serve -- a fragment of a correct disclosure, "
              "not an attribution to the page's town (raised and enumerated)",
