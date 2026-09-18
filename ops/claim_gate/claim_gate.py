@@ -5168,10 +5168,42 @@ def _main(args, out, t0):
             # non-blocking. It is now READ, so a property that decides to block
             # on attribution debt can say so in its own config.
             blocking = bool(cfg.get("R11", {}).get("blocking", False))
+        # FALSE-POSITIVE DEMOTION. A rule measured above the configured
+        # threshold stops affecting the exit code and CARRIES ITS MEASURED RATE
+        # IN ITS OWN OUTPUT. Standing ruling: a rule at 68% false positives
+        # will be ignored by every future session, and a rule that is ignored
+        # while still red manufactures the appearance of coverage. The
+        # measurement is data, so it lives in config and is re-taken, not
+        # remembered.
+        demo = (cfg.get("false_positive_measurements", {}) or {}).get(rule.rid)
+        demoted = False
+        if demo and blocking:
+            rate = float(demo.get("fp_rate_pct", 0))
+            thr = float((cfg.get("false_positive_measurements", {}) or {})
+                        .get("demote_above_pct", 25))
+            if rate > thr:
+                blocking = False
+                demoted = True
+                res.notes.append(
+                    "REPORT-ONLY BY MEASUREMENT: %.1f%% false positives, above "
+                    "the %.0f%% threshold. Measured %s, EXHAUSTIVELY -- %d "
+                    "finding(s) examined across the portfolio, %d TRUE, %d "
+                    "FALSE POSITIVE, %d REVIEW. %s"
+                    % (rate, thr, demo.get("measured_on", "?"),
+                       demo.get("examined", 0), demo.get("true", 0),
+                       demo.get("false_positive", 0), demo.get("review", 0),
+                       demo.get("note", "")))
+                for cls in demo.get("false_positive_classes", []) or []:
+                    res.notes.append("  FP class: %s" % cls)
         if not blocking:
             res.verdict = "REPORT"
-            res.reason = ("%d tracked-term row(s) reported; never changes the "
-                          "exit code" % n)
+            res.reason = (
+                ("%d finding(s) reported; REPORT-ONLY by measurement "
+                 "(%.1f%% false positives); never changes the exit code"
+                 % (n, float(demo.get("fp_rate_pct", 0))))
+                if demoted else
+                ("%d tracked-term row(s) reported; never changes the "
+                 "exit code" % n))
             report_only.append(rule.rid)
         elif n:
             res.verdict = "FAIL"
