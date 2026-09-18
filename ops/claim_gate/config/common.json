@@ -220,7 +220,10 @@
       "credit",
       "discount",
       "rebate amount",
-      "amount paid"
+      "amount paid",
+      "dollars",
+      "dollar",
+      "per dollar"
     ],
     "rank_words": [
       "largest",
@@ -366,7 +369,8 @@
     ],
     "exclude_paths": [
       "docs/citation-registry.json"
-    ]
+    ],
+    "money_words_note": "'dollars' was absent, which is what left R3-C4b and C17 open: a figure described in a dollars window was not in a money window at all."
   },
   "R4": {
     "stacking_tokens": [
@@ -474,7 +478,9 @@
       "by a (?:third|quarter|half|fifth)",
       "by one[- ](?:third|quarter|half|fifth)",
       "[0-9](\\.[0-9])?x\\b",
-      "[0-9]+ times"
+      "[0-9]+ times",
+      "[0-9]{1,3}\\s*percent",
+      "[0-9]{1,3}\\s?per ?cent"
     ],
     "magnitude_words": [
       "reduction",
@@ -523,7 +529,8 @@
       "your current state",
       "the number for your"
     ],
-    "known_uncited": []
+    "known_uncited": [],
+    "magnitude_patterns_note": "'40 percent' in DIGITS matched no pattern even after 'forty percent' was added as words -- a regex gap, not paraphrase. R5-E1."
   },
   "R6": {
     "label_chains": [],

@@ -420,8 +420,18 @@ def unread_config_keys(cfg):
     decl = cfg.get("documentation_only_keys", {}) or {}
     if isinstance(decl, list):
         decl = dict((k, "") for k in decl)
-    good = set(k for k, v in decl.items()
-               if isinstance(v, str) and len(v.strip()) >= 20)
+    # A JUSTIFICATION MUST BE SOMETHING A HUMAN WROTE. A pure LENGTH test let
+    # 21 characters of "xxxxxxxxxxxxxxxxxxxxx" move a behavioural key out of
+    # OWED. Require several DISTINCT words of real length -- which is what the
+    # genuine declarations already look like, each naming where the enforceable
+    # half lives.
+    def _justified(v):
+        if not isinstance(v, str):
+            return False
+        words = re.findall(r"[A-Za-z][A-Za-z'\-]{2,}", v)
+        return len(set(w.lower() for w in words)) >= 6 and len(v.strip()) >= 40
+
+    good = set(k for k, v in decl.items() if _justified(v))
     thin = sorted(k for k, v in decl.items() if k not in good)
     owed = sorted(set(u for u in unread
                       if u not in good and u.split(".")[-1] not in good))
