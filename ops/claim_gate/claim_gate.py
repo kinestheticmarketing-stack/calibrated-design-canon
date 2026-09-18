@@ -3675,13 +3675,43 @@ def run_controls(out, cfg, repo, opt_in, gen):
                         if os.path.isfile(x))
             rsize = sum(os.path.getsize(x) for x in paths
                         if os.path.isfile(x))
-            if osize and (rsize < 120 or rsize < osize * 0.5):
+            # SUBSTANCE, NOT JUST SIZE. A byte floor alone passes a 53% file
+            # of pure padding and fails a 41% file of real prose. Token
+            # OVERLAP is the cheap structural check: a repaired fixture is the
+            # same document with the defect removed, so it must still share
+            # most of the original's words.
+            def _toks(paths_):
+                out = set()
+                for x in paths_:
+                    if not os.path.isfile(x):
+                        continue
+                    try:
+                        with open(x, "r", encoding="utf-8",
+                                  errors="replace") as fh:
+                            out |= set(re.findall(r"[A-Za-z]{3,}",
+                                                  fh.read().lower()))
+                    except OSError:
+                        pass
+                return out
+
+            otok = _toks(_fixture_paths(os.path.join(_HERE, c.fixture)))
+            rtok = _toks(paths)
+            share = (len(otok & rtok) / float(len(otok))) if otok else 1.0
+            if osize and rsize < 120:
+                why = "%d bytes, under the 120-byte floor" % rsize
+            elif otok and share < 0.30:
+                why = ("shares only %.0f%% of the original's word tokens "
+                       "(floor 30%%) -- padding is not substance"
+                       % (100.0 * share))
+            else:
+                why = ""
+            if why:
                 rows.append(("~", c.cid, c.repaired,
-                             "*** REPAIRED FIXTURE TOO THIN *** %d bytes "
-                             "against the original's %d (%.0f%%); floor is "
-                             "50%% and 120 bytes -- a gutted file passes a "
-                             "zero-hit test trivially"
-                             % (rsize, osize, 100.0 * rsize / osize)))
+                             "*** REPAIRED FIXTURE TOO THIN *** %s; %d bytes "
+                             "against the original's %d (%.0f%%). A gutted "
+                             "file passes a zero-hit test trivially"
+                             % (why, rsize, osize,
+                                100.0 * rsize / osize if osize else 0)))
                 rep_fired += 1
                 continue
             ctx = _control_ctx(base, _deep_merge({"R8": {"today": NEG_ASOF}},
