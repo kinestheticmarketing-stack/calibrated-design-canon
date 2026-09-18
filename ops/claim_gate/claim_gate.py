@@ -3592,6 +3592,18 @@ def _parse_long_date(s):
                              int(m.group(2)))
 
 
+def _days_between(a, b):
+    """Whole days from ISO date `a` to ISO date `b`. 0 if either is unparseable
+    -- an unparseable date must never silently buy a grace."""
+    import datetime as _dt
+    try:
+        da = _dt.date(*[int(x) for x in a.split("-")])
+        db = _dt.date(*[int(x) for x in b.split("-")])
+    except Exception:
+        return 0
+    return (db - da).days
+
+
 def rule_R8(ctx, res):
     c = ctx.r("R8")
     today = c.get("today", ctx.today)
@@ -3599,8 +3611,16 @@ def rule_R8(ctx, res):
     own = set(c.get("own_effective_date_pages", []) or [])
     pinned = c.get("pinned_pages", {}) or {}
     holds = c.get("known_holds", []) or []
+    pub_grace = int(c.get("published_before_git_grace_days", 7))
     hold_note = holds[0].get("report_as") if holds else ""
 
+    res.notes.append(
+        "ld:datePublished IS CHECKED for impossibility (after today, and "
+        "preceding the artifact's first appearance in git by more than %d "
+        "day(s)) and is deliberately EXCLUDED from the surfaces-disagree "
+        "test, because a publication date legitimately differs from a review "
+        "date. It was previously excluded from every test, which hid 10 "
+        "impossible dates." % pub_grace)
     sitemap_lastmod = {}
     for art in ctx.artifacts:
         for loc, mod in art.sitemap_entries:
@@ -3653,10 +3673,24 @@ def rule_R8(ctx, res):
         if not dates:
             continue
         pub = dates.get("ld:datePublished")
+        # `claimed` excludes ld:datePublished from the SURFACES-DISAGREE test,
+        # and rightly: a publication date legitimately differs from a review
+        # date, so comparing them would fire on every correctly-dated page.
         claimed = [(k, v) for k, v in sorted(dates.items())
                    if k != "ld:datePublished"]
+        # BUT IT IS STILL A PUBLISHED DATE, AND AN IMPOSSIBLE ONE IS STILL
+        # IMPOSSIBLE. Excluding it from EVERY test hid 10 impossible dates --
+        # 9 on DCI dated 35-36 days before that repository's first commit --
+        # and is what left dci.json's long-standing "unidentified" R8 anomaly
+        # unidentified. Silent exclusion is exactly how the original R8 defect
+        # survived, so it is now checked for the two IMPOSSIBILITY tests
+        # (after today, and preceding the artifact's first appearance in git)
+        # while staying out of the consistency test.
+        impossible = list(claimed)
+        if pub:
+            impossible.append(("ld:datePublished", pub))
         # (b) after today
-        for k, v in claimed:
+        for k, v in impossible:
             if v > today:
                 h = Hit("R8", "b", art.rel, k, k,
                         "%s = %s is after today (%s)" % (k, v, today),
@@ -3711,7 +3745,19 @@ def rule_R8(ctx, res):
 
         first = ctx.gitfacts.first_seen.get(art.rel)
         if first:
-            for k, v in claimed:
+            for k, v in impossible:
+                # A PUBLICATION date legitimately precedes the commit that
+                # first ships the file -- you write it, then you commit it.
+                # A REVIEW or MODIFIED date does not: it claims a review
+                # happened before the artifact existed. So ld:datePublished
+                # gets a stated grace and nothing else does. Measured: DCI's
+                # nine gaps are 35 and 36 days (2026-05-05/06 against a first
+                # commit of 2026-06-10) and stay caught; GCI's single gap is
+                # ONE day (2026-08-31 against 2026-09-01), which is an
+                # ordinary authoring gap and is not a defect.
+                if k == "ld:datePublished" and _days_between(v, first) \
+                        <= pub_grace:
+                    continue
                 if v < first:
                     h = Hit("R8", "a", art.rel, k, k,
                             "%s = %s precedes first appearance in git (%s)"
