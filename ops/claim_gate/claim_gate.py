@@ -1295,8 +1295,18 @@ _CLAUSE_SPLIT = re.compile(
     r";|\s+while\s+|\s+whilst\s+|,\s*whereas\s+|\s+whereas\s+"
     r"|,\s*but\s+|\s+but\s+|\s+although\s+|,\s*although\s+"
     r"|\s+rather than\s+|,\s*however[,]?\s+"
-    r"|\s*[\u2013\u2014]\s*|\s+/\s+",
+    r"|\s*[\u2013\u2014]\s*|\s+-\s+|\s+/\s+",
     re.IGNORECASE)
+# The SPACED ASCII hyphen is in that set because two of my own fixes from one
+# round cancelled each other: c6b9651 made dash folding UNCONDITIONAL (which is
+# what fixes R7-G2's U+2011 print code) and 3cf3d97 added the em and en dash as
+# clause boundaries (which is what fixes NEW-16). The fold runs FIRST, so by the
+# time the splitter looks there is no em dash left --
+# dec('Greeley \u2014 Atmos') is 'Greeley - Atmos' -- and the inverted
+# territory statement joined by an em dash, an en dash or a plain hyphen all
+# passed at exit 0. Recognising the POST-FOLDING form keeps both fixes: a
+# SPACED hyphen is a clause boundary, an intra-word hyphen ("24-02-205",
+# "knob-and-tube") is not, because it has no surrounding whitespace.
 # "and"/"or" are CONDITIONAL splits: they join a town LIST far more often than
 # they join two clauses.
 _AND_SPLIT = re.compile(r",\s*and\s+|\s+and\s+|,\s*or\s+|\s+or\s+",
