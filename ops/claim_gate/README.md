@@ -198,6 +198,18 @@ find ops/claim_gate/fixtures -type f -not -path '*/repaired/*' -not -path '*/neg
 find ops/claim_gate/fixtures/negative -name '*.html' | wc -l                                       -> 14
 ```
 
+**UPDATED 2026-09-18: the control count is now 29, the repair-test count 29,
+and the negative count is unchanged at 14.** Five controls were added, each
+bound to a sub-test that previously had none, each with a repaired counterpart:
+
+| control | sub | what it proves |
+|---|---|---|
+| `R2d` | `a` | the EXACT INVERSION of the property's gas-split fact FAILS while the correct fact PASSES, in the same sentence shape with the same two utilities and the same six towns |
+| `R4c` | `DENIES` | a stacking denial whose two programmes are named INFORMALLY ("the free state weatherization program", "the Atmos rebate") resolves through `program_aliases` |
+| `R4d` | `DENIES-SET` | a stacking denial whose programmes are named ANAPHORICALLY ("either insulation rebate program") is judged on its predicate |
+| `R7-REG` | `A-reg` | R7's identifier half is driven by `docs/citation-registry.json`, not only by the gate's own config list |
+| `R9-N3b` | `N3b` | a hidden lead-form field that can transmit a verdict the visible output can never show is FOUND, not merely counted |
+
 ### A bare zero is FORBIDDEN
 
 Every rule prints its **raw** match count, every **filter** with what that
@@ -265,11 +277,64 @@ live in the per-property file.
 | R10 | DANGLING PROMISE | CLAIM TEST | yes |
 | R11 | ATTRIBUTION DEBT | CLAIM TEST | **no — REPORT only, never changes the exit code** |
 
-R1 and R7 print **DEGRADED** on every run until the two schema additions
-`RULES_SPEC.md` §12.1 names land: a `provenance` block on quotable
-`CITED_SOURCES` entries (R1), and `superseded_by` on citation-registry entries
-(R7). Until then R1 asserts the `quote` field only and R7 runs off a config
-list, and both say so rather than silently passing.
+### REPORT-ONLY BY MEASUREMENT
+
+`config.false_positive_measurements` demotes any rule measured above
+`demote_above_pct` (25) false positives: it stops affecting the exit code and
+**prints its measured rate, its counts and its verbatim false-positive classes
+inside its own block, every run**. The measurement is DATA, so the next pass
+RE-TAKES it rather than inheriting it; deleting the entry re-arms the rule.
+
+Measured exhaustively on 2026-09-18 — every finding on every property, nothing
+sampled:
+
+| rule | examined | TRUE | FP | REVIEW | rate | outcome |
+|---|---|---|---|---|---|---|
+| R2 | 198 (DCI 22, LGM 78, GCI 98) | 20 | 175 | 3 | 88.4% | **fixed at the cause, not demoted** — now 0% |
+| R3 | 47 (DCI 33, GCI 14, LGM 0) | 9 | 32 | 6 | **68.1%** | **REPORT-ONLY** |
+
+R2 is the reason the threshold is not applied mechanically: its false positives
+all had *causes* — a town served by two utilities, a restriction stated in the
+page's own words, a clause splitter cutting a town list, nearest-distance
+binding running backwards — and fixing them took it to 0% with true positives
+for the first time. R3's are a rank word governing something that is not a
+rebate, which is a rule-shape problem, not a config gap.
+
+**What the R3 demotion costs, stated rather than buried:** R3's T1 half, the
+`$`-anchored figure scan, is EXACT — 198/198 on DCI and 206/206 on GCI against
+the human sweep in the 2026-09-17 replay. Demoting R3 wholesale takes T1's
+blocking power with it. The right next step is a per-sub-type verdict so T1 can
+block while T3 reports.
+
+**The two schema debts `RULES_SPEC.md` §12.1 records are PAID (2026-09-18),
+and R1 and R7 no longer print `DEGRADED` on any property.** Both messages are
+still in the source and both still fire when the debt is unpaid — the
+conditions are now real tests, not deletions:
+
+- **R1** — `provenance` = `{retrieved, artifact, extraction, verbatim_line}` on
+  every `CITED_SOURCES` entry whose `quote` is True. R1 is DEGRADED when no
+  entry carries a provenance block at all, when any `quote=True` entry's record
+  is missing or malformed (it names them), or when a property has ZERO
+  `quote=True` entries — because a property with nothing to quote has not paid
+  a debt, it has nothing to pay, and R1's claim-test half is asserting nothing
+  there. `surfaces.provenance_complete()` requires all four fields present,
+  non-empty, with `retrieved` an ISO date.
+- **R7** — `superseded_by` = `{id, on, reason}` on entries in each property's
+  `docs/citation-registry.json`, plus a top-level
+  `schema.supersession_declared` flag so an ABSENT `superseded_by` is a
+  positive statement ("reviewed on this date, current") rather than silence.
+  R7 reads the registry and merges its declared `identifiers` into half A,
+  additively to the config list. It is DEGRADED when the registry is absent,
+  unparseable, or does not declare. Sub-test **`A-reg`** tags a hit whose
+  identifier ONLY the registry knows, and control `R7-REG` is bound to it —
+  without that split, "the debt is paid" would rest on a message no longer
+  printing.
+
+`quote` is now EXPLICIT on all 87 entries portfolio-wide (23 True, all with a
+provenance block; 64 False). It used to default to True through
+`src.get('quote', True)`, so 52 entries published their `stat` inside curly
+quotation marks as the named source's own words because nobody had said
+otherwise.
 
 R6's **R6b** (the browser cross-product) is opt-in and is never silently
 dropped. When not requested the summary prints

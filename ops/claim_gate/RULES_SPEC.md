@@ -3104,17 +3104,84 @@ Every one is recorded in this portfolio, with the pass that hit it.
 Recorded here because a spec that hides its own dependencies is the same defect
 as a gate that hides its blind spot.
 
-1. **Two schema additions** are required before R1 and R7 reach full strength:
-   `provenance` on quotable `CITED_SOURCES` entries (R1), and `superseded_by` on
-   registry entries (R7). Until they land, both rules print `DEGRADED` with the
-   reason. Neither can crash `scripts/staleness_watcher.py`: `cmd_check()` reads
-   `registry.get("sources", [])` and never iterates `unwatchable_sources`, and
-   adding a field it does not read is inert.
-2. **`quote` should default to FALSE, not True.** `src.get('quote', True)` on all
-   three properties means a new entry is published as a verbatim quotation
-   unless its author knew to say otherwise, and **zero of 87 entries set it to
-   True explicitly.** Flipping the default is a one-line change per property with
-   a 52-entry blast radius, and it is not this lane's call. Recorded as owed.
+**ITEMS 1 AND 2 WERE PAID ON 2026-09-18** (lane
+`gate-close-findings-2026-09-18-canon`, row R1). They are kept here rather than
+deleted, because the reason each was owed is the reason the gate now tests for
+it, and a spec that quietly drops its own debts teaches nothing.
+
+1. ~~**Two schema additions** are required before R1 and R7 reach full
+   strength.~~ **LANDED 2026-09-18. Neither rule prints `DEGRADED` on any
+   property now.**
+   - `provenance` = `{retrieved, artifact, extraction, verbatim_line}` on every
+     `CITED_SOURCES` entry whose `quote` is True — 23 entries carry one
+     (DCI 9, LGM 4, GCI 10). `surfaces.provenance_complete()` requires all four
+     fields present and non-empty with `retrieved` an ISO date, and R1's
+     `registry-backed with explicit quote=true` filter clears a hit only when
+     the record is complete.
+   - `superseded_by` = `{id, on, reason}` on citation-registry entries, plus a
+     top-level `schema.supersession_declared` flag so an ABSENT `superseded_by`
+     is a POSITIVE statement — "reviewed on this date, current" — rather than
+     silence the gate has to infer currency from. 14 tombstones across the
+     three properties (DCI 5, LGM 4, GCI 5), parked in `unwatchable_sources[]`
+     so the watcher never fetches a retired URL. R7 merges each tombstone's
+     declared `identifiers` into half A, ADDITIVELY to the config list, and
+     tags a hit that only the registry knows as sub-test `A-reg`.
+   - **BOTH DEGRADED MESSAGES REMAIN IN THE IMPLEMENTATION AND BOTH STILL FIRE
+     WHEN THE DEBT IS UNPAID.** R1 is DEGRADED when no entry carries a
+     provenance block, when any `quote=True` entry's record is missing or
+     malformed (it names them), or when a property has ZERO `quote=True`
+     entries — a property with nothing to quote has not paid a debt, it has
+     nothing to pay. R7 is DEGRADED when the registry is absent, unparseable,
+     or does not declare. Verified against three scratch generators and against
+     a registry with the flag flipped to false; in every case the original
+     wording returned.
+   - The watcher is unaffected, exactly as this item predicted. Measured before
+     and after on all three registries: output byte-identical, exit code
+     unchanged — DCI 0 and 0, GCI 0 and 0, LGM 1 and 1, LGM's being a
+     pre-existing HTTP 404 on `BOULDER_COUNTY_ENERGYSMART` and not this
+     change.
+2. ~~**`quote` should default to FALSE, not True.**~~ **CLOSED DIFFERENTLY, and
+   better.** The default is untouched; `quote` is now set EXPLICITLY on all 87
+   entries, so the default never applies to anything and flipping it would
+   change nothing. Portfolio totals: **23 True, 64 False, 0 absent**
+   (DCI 9/12, LGM 4/27, GCI 10/25).
+
+   **A CORRECTION TO THIS ITEM'S OWN FIGURE.** It read "zero of 87 entries set
+   it to True explicitly", and that is wrong twice over. Measured with `ast` on
+   2026-09-18: **35 of 87 entries already set `quote` explicitly — every one of
+   them to False** (DCI 10, LGM 8, GCI 17). The true statement is that zero set
+   it to *True*, and that **52** did not set it at all — which is the figure
+   this item's own "52-entry blast radius" already implied. The ruling stands;
+   the arithmetic under it did not.
+
+   THE RULING APPLIED, written into every entry beside its flag: `quote=True`
+   ONLY where this portfolio's own record shows the stat is the source's own
+   words — an explicit verbatim / byte-for-byte / character-identical /
+   hand-diffed note, or a long contiguous run of the stat inside
+   `docs/citation-registry.json`'s RETRIEVED `fingerprint.sample`. The
+   registry's `claim` field was deliberately NOT used as evidence: it is seeded
+   from the site's own text, so comparing a stat against it compares a stat
+   against a copy of itself. `quote=False` everywhere else, including two
+   entries marked JUDGED, NO RECORD, because an attributed paraphrase is the
+   sanctioned form (§8, R1, "WHAT IT DELIBERATELY DOES NOT CATCH") while a
+   wrongly-True entry publishes site prose as a named source's own words.
+
+   **THE AUDIT FOUND ELEVEN LIVE DEFECTS AND THEY ARE NOT THIS LANE'S TO FIX.**
+   Each is a stat one property still publishes inside quotation marks that
+   another property already audited and corrected: LGM's
+   `ENERGYSTAR_AIR_SEALING_15PCT` (DCI removed it 2026-08-24 as VERIFIED FALSE,
+   GCI deleted it 2026-08-27, it survives only there), LGM's
+   `ENERGYSTAR_R49_R60`, `BSC_ATTIC_VENTILATION`, `BSC_AIR_LEAKAGE_MOISTURE`
+   (two of them recorded on DCI as FABRICATED QUOTATION), `ACCA_MANUAL_J`,
+   `ENERGYSTAR_SEAL_INSULATE_15PCT` and `CDPHE_ASBESTOS_REG8`; GCI's
+   `ENERGYSTAR_CZ5_HEATING_COOLING_16PCT`, `CDPHE_ASBESTOS_REG8`,
+   `CO_WAP_FREE_INSULATION` and `SEVERANCE_GAS_XCEL` — the last one's two
+   siblings from the same 2026-09-08 Xcel-gas correction both carry
+   "PARAPHRASE, NOT A QUOTATION — deliberate" and the third town was missed.
+   Setting `quote=False` stops each publishing AS a quotation once the
+   generators run; correcting the text is a copy change and belongs to the rows
+   that own copy.
+
 3. **THREE live defects this retrieval found are out of this lane's scope** and
    are reported rather than fixed, because this row is specification-only.
    (**This item read "Two" until 2026-09-17 and undercounted itself by one** —
