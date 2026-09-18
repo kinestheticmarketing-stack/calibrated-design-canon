@@ -424,6 +424,61 @@
       },
       "404.html": {
         "reason": "schema-only change; pinned"
+      },
+      "attic-mold-greeley.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
+      },
+      "contact.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
+      },
+      "frozen-pipes-greeley.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
+      },
+      "ice-dams-greeley.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
+      },
+      "insulation-attic-greeley.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
+      },
+      "insulation-ault.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
+      },
+      "insulation-crawl-space-greeley.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
+      },
+      "insulation-eaton.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
+      },
+      "insulation-lasalle.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
+      },
+      "insulation-milliken.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
+      },
+      "insulation-wall-greeley.html": {
+        "reason": "visible text did NOT change in the 2026-09-18 gate-close pass -- its only diff was the sitewide organization_schema()/person_schema() knowsAbout neutralisation, which renders on every page and which the bump rule in _shared_components.py states is NOT a content change. MEASURED, not assumed: body text extracted with the gate's own surfaces.txt() and compared against pre-pass baseline 68c3808, with every review-date line stripped from BOTH sides first so a date change cannot masquerade as a content change. 24 of 38 pages DID change visibly and were moved to 2026-09-18; this page is one of the 13 that did not. The gate's part (d) uses a RAW LINE diff and therefore counts schema, which is why the pin is needed to express a distinction the bump rule already draws. expected_footer/expected_sitemap are set so that if this page's date ever drifts off 2026-09-10 the pin-drifted check fires rather than silently granting an exemption.",
+        "expected_footer": "2026-09-10",
+        "expected_sitemap": "2026-09-10"
       }
     },
     "own_effective_date_pages": [
@@ -438,7 +493,8 @@
     ],
     "modified_xcel_gas_correction": "2026-09-09",
     "bump_rule": "MEASURE BEFORE BUMPING. Batch-stamping is forbidden. bf240f8 measured 35 of 38 pages changed visibly, 2 changed only in JSON-LD (pinned), 1 byte-identical. 348baf9 then reversed its own round-2 argument on evidence: lastmod equals the page's REAL CONTENT-REVIEW date, not its article-body-edit date. Result: 35 of 37 sitemap URLs at 2026-09-09.",
-    "d007_note": "_generate_sitemap.py's D-007 hardcode is a PORT-PARITY justification, not a truth justification. Where parity and accuracy conflict, PARITY LOSES."
+    "d007_note": "_generate_sitemap.py's D-007 hardcode is a PORT-PARITY justification, not a truth justification. Where parity and accuracy conflict, PARITY LOSES.",
+    "pinned_pages_note": "13 pinned pages as of 2026-09-18, up from 2. That is a large jump and it is deliberate and measured: a single sitewide JSON-LD correction touched every page in the repo, so the count reflects how many pages did NOT need a new date, not how many findings were excused. Each entry carries expected_footer and expected_sitemap, so a pin whose page drifts fires pin-drifted instead of silently exempting it. If a future pass changes any of these pages' VISIBLE copy, REMOVE its pin and move its date -- do not extend the pin to cover it."
   },
   "R10": {
     "page_titles": {}
