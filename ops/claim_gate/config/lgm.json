@@ -227,11 +227,21 @@
     "retired_prohibition_note": "The first rendered 92 times across 46 pages and was DELETED. Standing instruction: do not restore it in its old wording — 'never combined into one figure' re-ships the prohibition form the Director retracted. The second survives deliberately in _shared_components.py:25-31 as a record.",
     "programs_note": "Bare 'Xcel' added 2026-09-17. DCI's llms.txt line 'Xcel rebate-stack eligibility' -- 1 occurrence, unchanged across every tree, survivor of five stacking sweeps and ten adversarial reads -- was still missed because 'Xcel' was not in this list. Safe to add because names_in() is SPAN-CONSUMING: one mention of 'Xcel Energy' yields ONE canonical name, not two.",
     "program_aliases": {
-      "Xcel": "Xcel Energy",
       "Atmos": "Atmos Energy",
-      "LPC": "Longmont Power & Communications"
+      "LPC": "Longmont Power & Communications",
+      "WHE Bonus": "Whole Home Efficiency Bonus",
+      "WHE bonus": "Whole Home Efficiency Bonus",
+      "Xcel": "Xcel Energy",
+      "Xcel rebate": "Xcel Energy",
+      "free state weatherization program": "Colorado Weatherization Assistance Program",
+      "free weatherization program": "Colorado Weatherization Assistance Program",
+      "state weatherization assistance": "Colorado Weatherization Assistance Program",
+      "state weatherization program": "Colorado Weatherization Assistance Program",
+      "the Efficiency Works rebate": "Efficiency Works",
+      "the Xcel rebate": "Xcel Energy",
+      "whole home bonus": "Whole Home Efficiency Bonus"
     },
-    "program_aliases_reason": "Bare 'Xcel' and 'Xcel Energy' are ONE program. Without this map a single sentence reading 'According to Xcel Energy, its ... Xcel ...' resolved to TWO distinct program names and satisfied R4's two-distinct-programs test by itself. Span-consuming matching stops one MENTION counting twice; only an alias map stops two mentions of the same utility counting as two programs."
+    "program_aliases_reason": "Bare 'Xcel' and 'Xcel Energy' are ONE program. Without this map a single sentence reading 'According to Xcel Energy, its ... Xcel ...' resolved to TWO distinct program names and satisfied R4's two-distinct-programs test by itself. Span-consuming matching stops one MENTION counting twice; only an alias map stops two mentions of the same utility counting as two programs.  DESCRIPTIVE FORMS ADDED 2026-09-18 (GATE_SCORE_2026-09-17.md MISS 4): GCI's FAQPage stacking denial named its two programs as 'the free state weatherization program' and 'the Atmos rebate', while R4.programs held only the literals 'Colorado Weatherization Assistance Program' and 'Atmos Energy'. One program resolved, distinct<2, NEUTRAL, filtered. An alias is only added where its canonical program is already in THIS property's programs list."
   },
   "R5": {
     "known_uncited": []

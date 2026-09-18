@@ -467,7 +467,24 @@
       "requires_publisher_named": true,
       "requires_cited_source_key": true
     },
-    "retired_prohibition_strings": []
+    "retired_prohibition_strings": [],
+    "program_set_anaphora": [
+      "either insulation rebate program",
+      "either rebate program",
+      "either program",
+      "both rebate programs",
+      "both insulation rebate programs",
+      "both programs",
+      "the two programs",
+      "these programs",
+      "the two rebates",
+      "both rebates",
+      "either rebate",
+      "the rebate programs",
+      "any of these programs",
+      "any of the programs"
+    ],
+    "program_set_anaphora_reason": "A phrase that stands for two or more programs WITHOUT naming any of them. R4's two-distinct-programs precondition had nothing to count on LGM's knob-and-tube page -- 'either insulation rebate program' in sentence 1, 'rebate stacking' three sentences later -- so every stacking token fired, the sentence reached RAW on both surfaces, and it was cleared with programs=-. GATE_SCORE_2026-09-17.md MISS 5. The phrase supplies the COUNT, never a name, and a hit resolved this way is classified ASSERTS-SET / DENIES-SET so the loosening is visible in every enumeration and carries its own control."
   },
   "R5": {
     "magnitude_patterns": [

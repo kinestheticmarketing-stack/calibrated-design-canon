@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"><head><title>Insulation Rebate Hub — control fixture</title>
+<meta name="description" content="Control fixture for R4 sub-test DENIES via INFORMAL program names. Neither program is named by its configured literal.">
+</head><body>
+<h1>Insulation Rebate Hub</h1>
+<p>Two different bodies pay toward insulation here, and homeowners ask about
+both in the same breath. The answer below is the one that used to ship.</p>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Can I use the free state weatherization program and the Atmos rebate on one job?","acceptedAnswer":{"@type":"Answer","text":"Not in the way people usually hope. The free state weatherization program and the Atmos rebate come at the problem from opposite directions, so they do not combine on the same measure."}}]}</script>
+<p>Derived from GCI <code>f0203ad</code>, defect 7d, scored MISSED in
+<code>GATE_SCORE_2026-09-17.md</code>. Two compounding causes, both real: the
+stacking token sat in the JSON-LD <code>Question</code> while the denial sat in
+the <code>acceptedAnswer</code>, and the page named its two programs informally
+&mdash; &ldquo;the free state weatherization program&rdquo; and &ldquo;the
+Atmos rebate&rdquo; &mdash; while <code>R4.programs</code> held only the
+literals <code>Colorado Weatherization Assistance Program</code> and
+<code>Atmos Energy</code>. One program resolved, <code>distinct &lt; 2</code>,
+classified <code>NEUTRAL</code>, cleared by the NEUTRAL filter, verdict PASS.
+This fixture fails unless BOTH the answer is scanned AND the informal names
+resolve through <code>R4.program_aliases</code>.</p>
+</body></html>
