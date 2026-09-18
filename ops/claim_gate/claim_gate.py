@@ -4593,7 +4593,30 @@ def _control_ctx(base_cfg, overlay, paths, repo):
             if os.path.isfile(s):
                 with open(s, "r", encoding="utf-8") as fh:
                     ctx.gitfacts.add_sidecar(art.rel, json.load(fh))
-    ctx.gen = base_cfg.get("_gen") or S.GeneratorFacts()
+    # A CONTROL MUST NEVER SEE THE REPO UNDER TEST'S GENERATORS.
+    #
+    # This read `base_cfg.get("_gen")` -- the real repo's parsed generator
+    # source, handed in by run_controls four lines below a comment saying
+    # exactly this. The sixth adversarial read proved it live: adding two
+    # entries to a scratch property's CITED_SOURCES, generator source ONLY with
+    # public/ never regenerated, produced `*** FIRES ON REPAIRED ***` on
+    # R9-N2's repaired fixture and `*** FALSE ALARM ***` on NEG05, and drove
+    # the gate to exit 2 -- `CLAIM GATE: NOT RUN` -- on innocent canon
+    # fixtures. `isolation_breach()` cannot see it: it checks a hit's `rel`,
+    # and the contamination arrives as injected SURFACES ON the fixture, so the
+    # hit carries the fixture's own rel. It is watching the wrong axis.
+    #
+    # This is the same contamination class as the R6 generator read, one layer
+    # up, and it is worse now: with the gate wired into two properties'
+    # regen_all.sh under `set -e`, an ordinary edit to a generator could red a
+    # production build with a control failure that has nothing to do with the
+    # edit -- and a repo that acquired a genuine contradiction could, through
+    # the same channel, silence the control that would have caught it.
+    #
+    # Controls now get EMPTY generator facts. A control that genuinely needs
+    # them pins its own SYNTHETIC ones through its overlay, read off the merged
+    # config exactly as `_registry` is.
+    ctx.gen = cfg.get("_gen") or S.GeneratorFacts()
     # Pinned by run_controls exactly as _gen is. A control must never open the
     # repo under test: that is how the R6 generator read turned one live defect
     # into fourteen false alarms on innocent fixtures. Read off the MERGED
@@ -4638,7 +4661,10 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
     and the gate fails loudly -- exit 2 -- if any control does not fire."""
     before = mtimes(repo)
     base = dict(cfg)
-    base["_gen"] = gen
+    # DELIBERATELY NOT `base["_gen"] = gen`. See _control_ctx: handing the
+    # repo-under-test's generator source to a control is a contamination
+    # channel that turned innocent fixtures red and drove the gate to exit 2.
+    base.pop("_gen", None)
     base["_registry"] = registry or Registry()
     pos_detected = pos_missed = 0
     neg_clean = neg_false = 0
