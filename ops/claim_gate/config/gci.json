@@ -365,6 +365,29 @@
     "program_aliases_reason": "Bare 'Xcel' and 'Xcel Energy' are ONE program. Without this map a single sentence reading 'According to Xcel Energy, its ... Xcel ...' resolved to TWO distinct program names and satisfied R4's two-distinct-programs test by itself. Span-consuming matching stops one MENTION counting twice; only an alias map stops two mentions of the same utility counting as two programs.  DESCRIPTIVE FORMS ADDED 2026-09-18 (GATE_SCORE_2026-09-17.md MISS 4): GCI's FAQPage stacking denial named its two programs as 'the free state weatherization program' and 'the Atmos rebate', while R4.programs held only the literals 'Colorado Weatherization Assistance Program' and 'Atmos Energy'. One program resolved, distinct<2, NEUTRAL, filtered. An alias is only added where its canonical program is already in THIS property's programs list."
   },
   "R5": {
+    "recognised_publishers": [
+      "ENERGY STAR",
+      "Building Science Corporation",
+      "Colorado Energy Office",
+      "EPA",
+      "CDPHE",
+      "Building America Solution Center",
+      "ACCA",
+      "Xcel Energy",
+      "Atmos Energy",
+      "Efficiency Works",
+      "Boulder County EnergySmart",
+      "NOAA",
+      "Energy Outreach Colorado",
+      "IECC",
+      "International Energy Conservation Code",
+      "Department of Energy",
+      "NFPA",
+      "Census Bureau",
+      "American Community Survey",
+      "U.S. Census Bureau"
+    ],
+    "recognised_publishers_reason": "RESTATES common.json's list VERBATIM and appends three census identifiers. Restated because _deep_merge REPLACES lists rather than unioning them, so a partial list here would silently drop every shared publisher for GCI. The additions close a real gap: this property attributes its housing-age figures to '(Census Bureau American Community Survey 5-year estimates)' -- the wording already used across its town pages -- and no census identifier was in recognised_publishers, so a correctly-cited census figure adjudicated as UNCITED. Added HERE rather than in common.json deliberately: adding a publisher can only REMOVE findings, and silently masking a sibling defect is not this row's to do.",
     "computed_output_markers": [
       "your own home",
       "based on your inputs",

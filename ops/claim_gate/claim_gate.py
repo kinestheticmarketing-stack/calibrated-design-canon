@@ -2793,6 +2793,35 @@ def rule_R5(ctx, res):
                 return True
         return False
 
+    # A PARENTHETICAL CITATION IS AN ATTRIBUTION AND HAS NO VERB.
+    # f_pub below requires an attribution VERB, which is right for prose
+    # ("According to X, ...") and blind to the commonest citation form in
+    # existence: "... settles 10-20% over its life (Building America Solution
+    # Center)." Four GCI sentences were adjudicated UNCITED while naming, in
+    # parentheses immediately after the figure, a publisher already in
+    # recognised_publishers -- the gate was asking for a source that was
+    # already there, in the standard form for giving one.
+    # Narrow by construction: the publisher must sit INSIDE parentheses, and
+    # those parentheses must open within 120 characters of the figure. A
+    # publisher merely mentioned in the sentence still does not qualify, so
+    # the "Xcel Energy as the PAYER, not the publisher" false clear that
+    # motivated the verb requirement stays closed.
+    _PAREN_RE = re.compile(r"\(([^()]{0,200})\)")
+
+    def _paren_cite(sentence, nums):
+        spans = [(m.start(), m.group(1)) for m in _PAREN_RE.finditer(sentence)]
+        if not spans:
+            return False
+        for n in nums:
+            n = (n or "").strip()
+            if not n:
+                continue
+            for pos in occ(sentence, n, ci=True, word=False):
+                for start, inner in spans:
+                    if abs(start - pos) <= 120 and has_any(inner, pubs, ci=True):
+                        return True
+        return False
+
     def f_pub(h):
         # A publisher named ANYWHERE in the sentence used to exempt it. That
         # removed the only two 25-40% rows on one page because "Xcel Energy"
@@ -2802,6 +2831,9 @@ def rule_R5(ctx, res):
         if not has_any(h.sentence, pubs, ci=True):
             return False
         if not has_any(h.sentence, attrib_verbs, word=False):
+            if _paren_cite(h.sentence,
+                           (h.text.split(" | ")[0] or "").split(",")):
+                return True
             return False
         nums = (h.text.split(" | ")[0] or "").split(",")
         for n in nums:
