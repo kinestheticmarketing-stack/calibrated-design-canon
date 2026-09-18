@@ -5320,6 +5320,7 @@ def _main(args, out, t0):
     summary = []
     blocking_fail = []
     report_only = []
+    report_only_counts = []
     for rule in RULES:
         res = RuleResult(rule)
         try:
@@ -5401,6 +5402,7 @@ def _main(args, out, t0):
                 ("%d tracked-term row(s) reported; never changes the "
                  "exit code" % n))
             report_only.append(rule.rid)
+            report_only_counts.append((rule.rid, n))
         elif n:
             res.verdict = "FAIL"
             res.reason = "%d adjudicated finding(s) stand after %d filter(s)" \
@@ -5437,6 +5439,27 @@ def _main(args, out, t0):
     out("  report-only findings: %d%s"
         % (len(report_only),
            (" (" + ", ".join(report_only) + ")") if report_only else ""))
+    # WHAT REPORT-ONLY STATUS REMOVED FROM THE BLOCKING SET.
+    #
+    # R3's demotion on its measured 68.1% false-positive rate took 123 DCI
+    # findings and 20 of the 86 adversarial vectors out of the blocking set in
+    # one commit. 17 of those 20 are still DETECTED -- and every one of them now
+    # exits 0. That is defensible (the measurement stands) and it must not be
+    # INVISIBLE: a green exit that means "the rule found things and none of them
+    # count" must not read the same as "nothing was found". The rebate-dollar
+    # class produced 545 live instances and the owner's ban; a reader deciding
+    # whether to ship needs to see that it can no longer stop a release alone.
+    demoted_rows = [(rid, n) for rid, n in report_only_counts if n]
+    if demoted_rows:
+        out("  WHAT REPORT-ONLY STATUS REMOVED FROM THE BLOCKING SET: %d "
+            "finding(s) across %d rule(s) were DETECTED and do NOT affect the "
+            "exit code -- %s. A green exit here does not mean nothing was "
+            "found; it means nothing that was found is allowed to block."
+            % (sum(n for _, n in demoted_rows), len(demoted_rows),
+               ", ".join("%s %d" % (rid, n) for rid, n in demoted_rows)))
+    elif report_only:
+        out("  report-only rules found nothing this run: %s"
+            % ", ".join(report_only))
     out("  opt-in rules not run: 1 (R6b -- %s)"
         % ("requested, UNAVAILABLE, disclosed" if "R6b" in opt_in
            else "not requested"))
