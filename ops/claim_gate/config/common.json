@@ -664,9 +664,11 @@
         ],
         "any_of": [
           "Whole Home Efficiency",
-          "WHE"
+          "WHE Bonus",
+          "the WHE"
         ],
-        "why": "25-12-215 sets no such condition; air sealing is one measure that can count toward three. LGM 72e18ac; DCI eb5c939, 11 instances on 3 pages including title+og:title+twitter:title as one string."
+        "why": "25-12-215 sets no such condition; air sealing is one measure that can count toward three. LGM 72e18ac; DCI eb5c939, 11 instances on 3 pages including title+og:title+twitter:title as one string.",
+        "any_of_anchoring_note": "The bare token 'WHE' was replaced by 'WHE Bonus' and 'the WHE' on 2026-09-18. Matching here is case-insensitive SUBSTRING, so bare 'WHE' matched inside ordinary English: whether, where, when, and the town name Wheat Ridge. Measured on DCI public/vermiculite-removal-cost-denver.html, which contains the word 'prerequisite' (about ASBESTOS TESTING, not air sealing) and 24 case-insensitive 'whe' substrings, none of them the WHE Bonus: /usr/bin/grep -oiI 'whe' <file> | wc -l -> 24, while /usr/bin/grep -oiI 'WHE Bonus' <file> | wc -l -> 0. The all_of half is what kept this from firing constantly, which is luck, not design: any page saying 'prerequisite' and 'whether' satisfied both halves. This is a MEASUREMENT defect, not a claim exception -- the anchored forms still match every real use of the abbreviation on all three properties, because the site never writes 'WHE' alone."
       },
       {
         "claim_id": "installed_and_invoiced_by_dec_31_2026",
