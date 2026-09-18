@@ -168,10 +168,16 @@
       "Broomfield": {
         "gas": "Xcel Energy",
         "gas_state": "CONFIRMED",
-        "electric": "Xcel Energy",
+        "electric": [
+          "Xcel Energy",
+          "United Power"
+        ],
         "page_slugs": [
           "insulation-broomfield.html"
-        ]
+        ],
+        "electric_state": "PARTIAL",
+        "electric_qualifier": "parts of northern Broomfield, including Anthem",
+        "electric_note": "CORRECTED 2026-09-18. This entry read electric='Xcel Energy' alone and produced 22 R2 false positives -- every adjudicated R2 finding on this property -- against page copy that is CORRECT. Evidence, retrieved not assumed: (1) United Power's own service-area page, fetched 2026-09-18, names Broomfield County among the six counties it serves and 'Broomfield' among its 17 franchise communities; (2) this repo's STATE_OF_PROJECT.md verified-facts list, line 758, carries 'United Power Member Energy Efficiency (parts of N. Broomfield)' under Alive; (3) the calculator already handles util === 'united' and unshifts a United Power program; (4) docs/board/read-2026-08-25/groupC.md ruled the carve-out deliberate and correct. The config inherited its error from docs/board/ground-truth.md:5-7, 'there is no second utility and no service-area hedging required' -- the OLDEST bullet in that file, which contains the word Broomfield zero times (measured) and is an over-broad sentence about the GAS utility that was never re-tested for electric. THAT FILE IS STILL WRONG and is not this lane's to edit."
       },
       "Northglenn": {
         "gas": "Xcel Energy",
