@@ -371,23 +371,30 @@ def unread_config_keys(cfg):
             impl += fh.read()
     except OSError:
         return []
-    # DATA CONTAINERS hold values keyed by town, alias, slug or document
-    # field. Their KEYS are data, not behaviour, so descending into them would
-    # report "R2.towns.Ault" as an unread rule. Only BEHAVIOURAL positions are
-    # audited: the top level and one level inside each rule block.
+    # DATA CONTAINERS hold values keyed by town, alias, slug or document field.
+    # Their DIRECT children are data, not behaviour, so reporting them would
+    # name "R2.towns.Ault" as an unread rule. Everything BELOW that level is
+    # behavioural again -- "R2.towns.Ault.substring_trap" is a key somebody
+    # expected to do something -- so the walk RECURSES FULLY and only declines
+    # to report the container's own first level.
     DATA = ("towns", "utility_aliases", "utility_domains", "program_aliases",
             "page_titles", "pinned_pages", "allowed_occurrences",
             "current_replacements", "tariff_identity", "value_slots",
             "boundary_inclusivity", "targets", "r6b_inputs", "expected",
-            "measured_at", "own_effective_date_values", "attributed_exception",
+            "measured_at", "own_effective_date_values",
             "known_holds", "label_chains", "claim_subjects",
             "superseded_propositions", "tracked_terms", "anomalies",
             "deliberate_divergence", "deliberate_edition_divergence",
-            "tools", "draft_gate", "known_uncited", "hedge_pairs")
+            "tools", "draft_gate", "known_uncited", "hedge_pairs",
+            "documentation_only_keys")
     unread = []
 
-    def audit(node, path, depth):
-        if not isinstance(node, dict) or depth > 1:
+    def audit(node, path, in_data):
+        if isinstance(node, list):
+            for e in node:
+                audit(e, path + "[]", in_data)
+            return
+        if not isinstance(node, dict):
             return
         for k in sorted(node):
             if not isinstance(k, str):
@@ -397,18 +404,29 @@ def unread_config_keys(cfg):
                     low.endswith("_" + p) for p in _DOC_PREFIXES):
                 continue
             full = "%s.%s" % (path, k) if path else k
-            if ('"%s"' % k) not in impl and ("'%s'" % k) not in impl:
-                unread.append(full)
-            if k not in DATA:
-                audit(node[k], full, depth + 1)
+            if not in_data:
+                if ('"%s"' % k) not in impl and ("'%s'" % k) not in impl:
+                    unread.append(full)
+            audit(node[k], full, k in DATA)
 
-    audit(cfg, "", 0)
-    doc = set(cfg.get("documentation_only_keys", []) or [])
-    owed = sorted(set(u for u in unread if u not in doc
-                      and u.split(".")[-1] not in doc))
-    noted = sorted(set(u for u in unread if u in doc
-                       or u.split(".")[-1] in doc))
-    return owed, noted
+    audit(cfg, "", False)
+    # A DECLARATION MUST CARRY A JUSTIFICATION. As a bare LIST, naming a key
+    # moved it out of OWED with no check that it is documentation, and because
+    # _deep_merge REPLACES a list, one child declaration silently un-declared
+    # the parent's entire set. As a DICT of {key: why}, _deep_merge UNIONS it
+    # across the extends chain for free, and a declaration with an empty or
+    # trivial justification does not count.
+    decl = cfg.get("documentation_only_keys", {}) or {}
+    if isinstance(decl, list):
+        decl = dict((k, "") for k in decl)
+    good = set(k for k, v in decl.items()
+               if isinstance(v, str) and len(v.strip()) >= 20)
+    thin = sorted(k for k, v in decl.items() if k not in good)
+    owed = sorted(set(u for u in unread
+                      if u not in good and u.split(".")[-1] not in good))
+    noted = sorted(set(u for u in unread
+                       if u in good or u.split(".")[-1] in good))
+    return owed, noted, thin
 
 
 def enumerate_corpus(repo, cfg):
@@ -1996,7 +2014,11 @@ def rule_R4(ctx, res):
                 if has(sent, cand, ci=True):
                     pub = cand
                     break
-            if cls in ("ASSERTS", "DENIES") and pub and art.cite_keys:
+            need_pub = exc.get("requires_publisher_named", True)
+            need_key = exc.get("requires_cited_source_key", True)
+            if cls in ("ASSERTS", "DENIES") and exc.get("allowed", True) \
+                    and (pub or not need_pub) \
+                    and (art.cite_keys or not need_key):
                 cls = "ATTRIBUTED-AND-SOURCED"
             raw.append(Hit("R4", cls, art.rel, skey, str(loc),
                            "%s | programs=%s%s | %s"
@@ -2759,6 +2781,30 @@ def rule_R8(ctx, res):
                 note = "stale-vs-content"
                 if base in pinned:
                     note = "pinned"
+                    # config.R8.pinned_pages[*].expected_footer /
+                    # expected_sitemap were dead. A pinned page is pinned to a
+                    # STATED value; if it drifts off that value the pin is no
+                    # longer describing reality and the exemption must not
+                    # apply.
+                    pin = pinned.get(base) or {}
+                    ef = pin.get("expected_footer")
+                    es = pin.get("expected_sitemap")
+                    got_f = dates.get("footer_text") or dates.get(
+                        "time[datetime]")
+                    got_s = dates.get("sitemap:lastmod")
+                    drift = []
+                    if ef and got_f and got_f != ef:
+                        drift.append("footer %s != pinned %s" % (got_f, ef))
+                    if es and got_s and got_s != es:
+                        drift.append("sitemap %s != pinned %s" % (got_s, es))
+                    if drift:
+                        note = "pin-drifted"
+                        raw.append(Hit(
+                            "R8", "p", art.rel, "VIS", base,
+                            "pinned page has DRIFTED off its stated pin: %s -- "
+                            "the exemption describes a value the page no "
+                            "longer carries" % "; ".join(drift),
+                            note="pin-drifted", sentence=base))
                 elif hold_note:
                     note = hold_note
                 h = Hit("R8", "d", art.rel, "VIS", base,
@@ -3966,12 +4012,14 @@ def _main(args, out, t0):
     out("claim set: %d propositions resolved from %d cited-stat blocks, %d "
         "shared constants, %d referenced assets"
         % (n_prop, n_cite, n_const, n_asset))
-    owed, noted = unread_config_keys(cfg)
+    owed, noted, thin = unread_config_keys(cfg)
     out("CONFIG KEYS READ BY NO CODE PATH: %d OWED, %d declared "
-        "documentation-only. An OWED key is a rule that silently does not "
-        "exist (Rule 2: wire it up or delete it).%s"
+        "documentation-only WITH a justification. An OWED key is a rule that "
+        "silently does not exist (Rule 2: wire it up or delete it).%s%s"
         % (len(owed), len(noted),
-           ("  OWED: " + ", ".join(owed)) if owed else ""))
+           ("  OWED: " + ", ".join(owed)) if owed else "",
+           ("  DECLARED WITHOUT A JUSTIFICATION (not counted as declared): "
+            + ", ".join(thin)) if thin else ""))
     sr = sorted(cfg.get("src_rules", []) or [])
     out("normalization levels compared: RAW DEC TXT   (+ SRC over %d "
         "generator modules, %d string runs >=12 chars, READ BY: %s)"
