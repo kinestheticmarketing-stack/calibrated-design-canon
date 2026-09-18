@@ -76,9 +76,39 @@ _FOLD = {
     0x03BF: "o", 0x03B1: "a", 0x03BD: "v", 0x0391: "A", 0x0392: "B",
     0x0395: "E", 0x039F: "O", 0x03A1: "P", 0x03A4: "T", 0x03A7: "X",
 }
-_CONFUSABLE = dict(_ZAP)
-_CONFUSABLE.update(_SPLIT_ZW)
-_CONFUSABLE.update(_FOLD)
+_FOLD.update({
+    0x0578: "n", 0x0585: "o", 0x057D: "u", 0x0570: "h",   # Armenian
+    0x13AA: "A", 0x13AC: "E", 0x13A0: "D", 0x13C0: "G",   # Cherokee
+    0x13D9: "V", 0x13DE: "L", 0x13E2: "P", 0x13A1: "R",
+    0x04BB: "h", 0x0501: "d", 0x051B: "q", 0x0455: "s",   # more Cyrillic
+    0x0406: "I", 0x0408: "J", 0x04AE: "Y", 0x0405: "S",
+    0x0396: "Z", 0x0397: "H", 0x0399: "I", 0x039A: "K",
+})
+_FORMAT = dict(_ZAP)
+_FORMAT.update(_SPLIT_ZW)
+_TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
+
+
+def _fold_token(tok):
+    """Fold a confusable ONLY where it sits in an otherwise-Latin token.
+
+    Folding globally corrupted genuine non-Latin text: Russian and Greek words
+    were mangled inside DEC itself. Two passes, each script-safe:
+
+      A. NFKC, but only when the result is pure ASCII. That collapses fullwidth
+         and mathematical-bold letters -- including a word written entirely in
+         them -- and leaves Cyrillic and Greek untouched, because NFKC does not
+         change them.
+      B. The explicit homoglyph map, only on a token that already contains an
+         ASCII Latin letter. A wholly non-Latin word is left alone.
+    """
+    n = unicodedata.normalize("NFKC", tok)
+    if n != tok and n.isascii():
+        tok = n
+    if any("a" <= ch.lower() <= "z" for ch in tok) and \
+            any(ord(ch) in _FOLD for ch in tok):
+        tok = tok.translate(_FOLD)
+    return tok
 
 
 def dec(s):
@@ -91,8 +121,10 @@ def dec(s):
     a utility name makes the string invisible to every word-boundary matcher
     here while rendering identically to a human and to a crawler.
     """
-    return unicodedata.normalize(
-        "NFC", html.unescape(s)).translate(_CONFUSABLE)
+    t = unicodedata.normalize("NFC", html.unescape(s)).translate(_FORMAT)
+    if t.isascii():
+        return t
+    return _TOKEN.sub(lambda m: _fold_token(m.group(0)), t)
 
 
 def txt(s):
