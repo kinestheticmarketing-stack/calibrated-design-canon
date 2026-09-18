@@ -58,8 +58,14 @@ def collapse(s):
 # but are not. A soft hyphen inside "Atmos" or a Cyrillic 'а' in "Xcel" makes a
 # banned string invisible to every word-boundary matcher in this gate while
 # rendering identically to a human and to a crawler.
-_ZAP = dict.fromkeys(
-    [0x00AD, 0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF], None)
+# A SOFT HYPHEN is a hyphenation point INSIDE a word: "At\u00admos" is "Atmos",
+# so it is DELETED. A ZERO-WIDTH character is a boundary marker BETWEEN
+# glyphs: "Atmos\u200bEnergy" renders as "Atmos Energy" and must become two
+# tokens. Deleting those welded the words into "AtmosEnergy", which
+# \bAtmos Energy\b cannot match -- a vector that was CAUGHT in the first two
+# rounds and that my own folding broke.
+_ZAP = {0x00AD: None}
+_SPLIT_ZW = dict.fromkeys([0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF], " ")
 _FOLD = {
     0x2010: "-", 0x2011: "-",                 # hyphen, NON-BREAKING hyphen
     0x0430: "a", 0x0435: "e", 0x043E: "o", 0x0440: "p", 0x0441: "c",
@@ -71,6 +77,7 @@ _FOLD = {
     0x0395: "E", 0x039F: "O", 0x03A1: "P", 0x03A4: "T", 0x03A7: "X",
 }
 _CONFUSABLE = dict(_ZAP)
+_CONFUSABLE.update(_SPLIT_ZW)
 _CONFUSABLE.update(_FOLD)
 
 
