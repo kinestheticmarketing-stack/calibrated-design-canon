@@ -2896,3 +2896,241 @@ R6-F5 two labels     RAW 3    ADJ 3    FAIL  exit 1 => CAUGHT
 R6-F6 concat         RAW 5    ADJ 5    FAIL  exit 1 => CAUGHT
 R6 renamed labels    RAW 1    ADJ 1    FAIL  exit 1 => CAUGHT
 ```
+
+## 2. CONTROLS, THE REPAIR PHASE, AND THE HALT-LEVEL REGRESSION
+
+**All 24 controls still stop firing when their own defect is repaired** — 26
+`correctly STOPPED firing` rows across my mutation set. The four `STILL FIRES`
+rows are my harness naming the *other* sub-test's control (R1-A vs R1-B, R9-N1
+vs R9-N2), which is correct behaviour.
+
+**All five repair-phase attacks are now caught, each exit 2:**
+
+```
+A1 zero-byte repaired fixture   *** REPAIRED FIXTURE TOO THIN *** 0 bytes, under the 120-byte floor; 0 bytes against the original's 866 (0%)
+A2 empty-page repaired fixture  *** REPAIRED FIXTURE TOO THIN *** 91 bytes, under the 120-byte floor; 91 bytes against the original's 866 (11%)
+A3 repaired fixture = original  *** FIRES ON REPAIRED *** 5 hit(s) on sub ASSERTS
+A4 repaired fixture deleted     *** REPAIR FIXTURE MISSING *** a control whose repair test cannot run is not a control
+A5 defect back in R2b's SVG     *** FIRES ON REPAIRED *** 2 hit(s) on sub a
+```
+
+**Halt-level regression, still closed.** A DCI clone carrying the
+pre-`37c7b29` calculator defect in both the page and the embed frame:
+
+```
+EXIT=1
+CLAIM GATE — dci — /tmp/claim-gate-scratch/r4/dci-defect — HEAD e7595eb — as-of 2026-09-17
+  REPAIR TESTS: 24 repaired-clean, 0 FIRE ON REPAIRED, 0 NOT TESTED (no repair fixture)
+  CONTROLS: 24 positive DETECTED, 0 MISSED · 14 negative clean, 0 FALSE ALARM
+  R6  SELF-CONTRADICTING OUTPUT        RAW 10     ADJ 10     FAIL
+  blocking failures: 9 (R1, R2, R3, R4, R5, R6, R7, R8, R9)
+CLAIM GATE: FAIL
+```
+
+## 3. INVARIANTS
+
+```
+run1 exit 1 / run2 exit 1        RUN1 == RUN2 byte for byte
+different cwd (cd /)             CWD-INDEPENDENT: identical
+different CANON_ROOT             CANON_ROOT-INDEPENDENT: identical
+PYTHONHASHSEED 0 / 1 / 12345     HASH-SEED-INDEPENDENT: all three identical
+LC_ALL C vs tr_TR.UTF-8          LOCALE-INDEPENDENT: identical
+TZ UTC vs Pacific/Kiritimati     TZ-INDEPENDENT: identical
+
+dci exit 1 / lgm exit 1 / gci exit 1
+*** NO FILE ADDED, REMOVED, RESIZED, RE-INODED OR MTIME-CHANGED IN ANY OF THE FOUR REPOS ***
+  all four repos modified-since-mark: 0
+```
+
+Corpus, my own enumeration against the gate's: DCI `85 / 85 AGREE`,
+`80 artifacts (75 html, 2 txt, 1 xml, 2 svg) | excluded: 5`; LGM `59 / 59`,
+`54 artifacts (48 html, 2 txt, 1 xml, 3 svg)`; GCI `49 / 49`,
+`44 artifacts (38 html, 2 txt, 1 xml, 3 svg)` — against my `find`/`ls-files`/html
+counts of 85/85/75, 59/59/48, 49/49/38. No bare zeros: all eleven rule blocks
+print `RAW`, `ADJUDICATED` and a note; R6 and R11 have no filters and so no
+`FILTER` row.
+
+## 4. ATTACKING THE NEW WORK
+
+### The binding-scoped allowlist — fixed, with one surviving hole
+
+| vector | result |
+|---|---|
+| A1 the real gas-split fact **with** the lead-in | `RAW 0 ADJ 0 PASS` exit 0 |
+| A2 the real gas-split fact **without** the lead-in | `RAW 0 ADJ 0 PASS` exit 0 |
+| **A3 the SWAPPED fact with the lead-in** | **`RAW 5 ADJ 5 FAIL` exit 1** |
+| **A4 the SWAPPED fact without the lead-in** | **`RAW 5 ADJ 5 FAIL` exit 1** |
+| A5 lead-in + a different wrong claim it does not carry | `RAW 1 ADJ 1 FAIL` exit 1 |
+| A7 the real fact quoted, then a wrong claim appended | `RAW 1 ADJ 1 FAIL` exit 1 |
+
+**NEW-15 is fixed.** The passport is gone: twelve allowlisted words no longer
+buy a pass for an inverted territory statement, and the correct fact still
+passes both with and without its lead-in.
+
+**NEW-21 (moderate) — a wrong attribution written as a trailing `and`-clause
+after a correct town list is still pardoned.**
+
+```
+  A6  'Atmos Energy is the natural gas utility in Greeley, Evans and Eaton, and
+       Atmos Energy is the natural gas utility in Severance.'          RAW 2 ADJ 0 PASS exit 0
+  A6b the SAME wrong clause ALONE                                      RAW 1 ADJ 1 FAIL exit 1
+  A6c the same shape with the wrong clause reworded                    RAW 2 ADJ 0 PASS exit 0
+```
+
+Severance is an Xcel town, so A6 is a genuinely wrong attribution. The pardon is
+**not** the allowlist — the enumerated removal reads
+`[sitewide artifact, no town named in the clause -- the utility serves somewhere
+in this territory, so nothing is asserted against a town]`. The conditional
+`and` split fires (both sides name a utility) but the resulting clause loses its
+town binding, so the Severance attribution is judged as a townless sitewide
+mention and cleared. A6b proves the same sentence alone is caught.
+
+### The conditional `and`/`or` split — fixed, except where the dash fix erases the boundary
+
+| joiner | round 4 | round 5 |
+|---|---|---|
+| `, and` | PASS | **`RAW 2 ADJ 2 FAIL`** |
+| bare ` and ` | PASS | **`RAW 2 ADJ 2 FAIL`** |
+| ` whilst ` | PASS | **`RAW 2 ADJ 2 FAIL`** |
+| ` although ` | PASS | **`RAW 2 ADJ 2 FAIL`** |
+| ` / ` | PASS | **`RAW 2 ADJ 2 FAIL`** |
+| ` or ` (both sides name a utility) | not tested | **`RAW 2 ADJ 2 FAIL`** |
+| `, but` | not tested | **`RAW 2 ADJ 2 FAIL`** |
+| **em dash `—`** | PASS | **still `RAW 2 ADJ 0 PASS` exit 0** |
+| **en dash `–`** | not tested | **`RAW 2 ADJ 0 PASS` exit 0** |
+| **plain ASCII hyphen `-`** | not tested | **`RAW 2 ADJ 0 PASS` exit 0** |
+
+And the legitimate town lists correctly stay one clause and PASS:
+`Greeley, Evans, and Eaton` `RAW 0`; `Greeley, Evans or Eaton` `RAW 0`; a
+five-town list `RAW 0`; while `Greeley, Evans and Johnstown` — a list with one
+wrong town in it — is **CAUGHT** `RAW 1 ADJ 1 FAIL`. That is the exact
+discrimination the conditional split was built for, and it works.
+
+**NEW-20 (moderate) — the dash folding and the em-dash clause boundary are
+mutually defeating.** Traced:
+
+```
+   dec('Greeley — Atmos') -> 'Greeley - Atmos'
+```
+
+`c6b9651` made dashes U+2010–U+2015 and U+2212 fold unconditionally to an ASCII
+hyphen, to fix my NEW-14. `3cf3d97` added the em dash and en dash to the
+unconditional clause-boundary set, to fix my NEW-16. The folding runs first, so
+by the time the splitter looks for an em dash there is none left — only a
+hyphen, which is not a boundary. **Two fixes shipped in the same round cancel
+each other.** The inversion joined by an em dash, an en dash or a plain hyphen
+all pass at exit 0.
+
+### The unconditional dash folding, and the Cyrillic distinction — verified
+
+```
+   U+2011 in a letterless token   FOLDED     'schedule 24-02-205'
+   U+2010 / U+2012 / U+2013 / U+2014 / U+2015 / U+2212   all FOLDED to '24-02-205'
+   PURE Cyrillic                  UNCHANGED  'Теплоизоляция чердака'
+   SPLICED Latin T/e into Cyrillic FOLDED    'Teплoизoляция'
+   PURE Greek                     UNCHANGED  'Ενέργεια και μόνωση'
+   German                         FOLDED     'Wärmedämmung über 60 m2'
+   print code                     UNCHANGED  'print code 17-9230 (01-25)'
+```
+
+**I accept the row's reasoning on the Cyrillic distinction.** Pure
+`Теплоизоляция` passes untouched; `Tеплоизоляция` — Latin `T` and `e` spliced
+into a Cyrillic word — folds, and that *is* the attack shape. Folding it is
+correct. German umlauts survive; `m²` → `m2` is the one residue and it is a
+normalization, not a corruption.
+
+### `pin-drifted` — fixed and verified on a positive case
+
+```
+  at pin (footer 2026-08-05, sitemap 2026-08-07)   R8 RAW 1 ADJ 1 exit 1  subs=['c']
+  footer DRIFTED to 2026-09-01                     R8 RAW 2 ADJ 2 exit 1  subs=['c', 'p']
+  sitemap DRIFTED to 2026-09-01                    R8 RAW 2 ADJ 2 exit 1  subs=['c', 'p']
+  BOTH drifted to 2026-09-01                       R8 RAW 1 ADJ 1 exit 1  subs=['p']
+```
+
+The fourth row is the case that gave `RAW 0 ADJ 0 exit 0` in round 4 — a pinned
+page drifted off both stated values onto a consistent new date, producing
+nothing. It now fires sub `p`. **NEW-19 is fixed.**
+
+### NEW-18, not taken — I accept the reasoning
+
+The token-overlap floor still passes a word salad built from the original's own
+vocabulary. The row declined to harden it further on the grounds that a
+tag-shape check is unreliable across a fixture set containing a bare `.js`, two
+directories and one intentionally byte-identical file, and would risk failing
+legitimate repairs. **I accept that.** It is hardening of the control mechanism,
+not a live hole: exploiting it requires write access to `fixtures/repaired/`,
+which is the same access that would let you edit the rule itself. The three
+cheap routes — gutting, padding and deletion — are all now closed, and that is
+where the real risk was.
+
+## 5. FINAL VERDICT ON THE SIX ORIGINAL DEFECTS
+
+*Written for a reader who has never seen this project. Six defects shipped live
+on three lead-generation websites between 2026-09-01 and 2026-09-11. Each was
+found by a hand-written one-off search, and each of those searches was blind to
+what the next one found, because they all matched surface text while the defects
+were defined by meaning. The claim gate was built to replace them. This is
+whether it would have stopped them.*
+
+| # | the defect as it shipped | would the gate stop it now |
+|---|---|---|
+| 1 | A paraphrase printed inside quotation marks and presented as a named utility's own words, on 11 pages | **YES, in six of the seven forms I could write it in** — including HTML entity-encoded quote marks, guillemets, a JavaScript template literal, an HTML comment, and a CSS class list. The one surviving form is anaphoric: the source named in one sentence and the quotation standing alone three sentences later. That form is declared in the tool's own documentation as a known hole. |
+| 2 | Three towns credited to the wrong gas utility, live for two years | **YES almost everywhere, and this is where the gate improved most.** It now catches the claim on a town's own page, on sitewide hub pages, in `llms.txt`, `robots.txt`, `sitemap.xml`, an SVG image, a CSS `content:` rule, an HTML comment, a JavaScript string, and clause by clause inside a single sentence — and it distinguishes the property's real six-town gas-split statement (which passes) from the same statement with the two utilities swapped (which fails). Two escapes remain: a wrong attribution written as a trailing `and`-clause after a correct town list, and a two-clause sentence joined by a dash. |
+| 3 | A retired eligibility rule published as current, on 35 pages | **YES.** Including the abbreviated date form (`Dec. 31, 2026`) that survived four earlier hand-written sweeps because every one of them searched the long form, and including identifiers written with typographic rather than ASCII hyphens. One form survives: a word broken by a non-breaking-hyphen entity. |
+| 4 | An invented rebate programme with four invented eligibility pathways, on 72 pages | **NO. Not addressed, in five rounds.** No rule asserts that a named programme exists. The gate can only match a false claim someone has already written into its configuration — which means it catches this class after a human has found it, not before. |
+| 5 | 545 rebate dollar figures the owner had banned | **YES, substantially.** Including figures hidden behind HTML entity-encoded dollar signs, bare four-digit amounts that an earlier version mistook for years, figures rendered only through CSS, and figures split across a line break mid-number. Two forms survive: a figure written entirely in words, and a bare numeral in a sentence containing no money-related word at all. |
+| 6 | A calculator printing two different severity words beside the same percentage | **YES, in all seven shapes I could write it in** — minified onto one line, as a ternary, as a `switch`, with the label split across a string-concatenation boundary, and as duplicate thresholds producing two labels at one value. Renaming the severity words, which in an earlier version silently switched the whole rule off while it reported PASS, now fails loudly. |
+
+**Four of six are genuinely covered. One went from caught nowhere to caught
+almost everywhere. One has never been addressed.**
+
+The measured trajectory across five adversarial rounds, against a fixed set of
+86 hand-written evasion fixtures: **59 missed → 29 → 17 → 15 → 12.** Eighty-six
+percent of the set is now caught. In three of those rounds a fix introduced a
+new evasion elsewhere, each caught by re-running the same fixtures; in this
+final round none did, though two fixes shipped together cancel each other.
+
+## 6. THE DEFINITIVE BLIND-SPOT LIST
+
+*What this tool cannot see, stated plainly, for someone deciding how much to
+trust it.*
+
+1. **That a thing it is told about exists at all.** No rule tests whether a
+   named programme, rebate or eligibility pathway is real. The gate compares
+   pages against a configured list of known-false claims; it cannot originate
+   the finding. This is the one original defect class untouched in five rounds,
+   and it is the gap a human pass still has to fill.
+2. **Meaning, wherever the configured words run out.** The gate matches strings,
+   configured predicates and code structure. A claim rewritten in words the
+   configuration does not contain is invisible: a quotation attributed in the
+   previous sentence, a dollar figure spelled out, a rank claim phrased outside
+   the configured list, a contested value paraphrased, a promise worded
+   differently. The tool's own documentation declares this and names the
+   surviving forms, which is the right way to hold it.
+3. **Two specific sentence shapes in the wrong-utility rule** — a wrong
+   attribution trailing a correct town list after `and`, and two clauses joined
+   by a dash. Both pass at exit 0 today.
+4. **Character-level edges, which move each time they are narrowed.** Three of
+   five rounds closed one Unicode class and opened another. Today: entity-encoded
+   characters inside an HTML attribute value and inside a word are still missed,
+   and the dash-folding fix erases the dash the clause splitter needs.
+5. **A claim assembled at runtime by the page's own JavaScript**, which has no
+   literal form in the bytes the gate reads.
+6. **Pages it has been configured to exempt.** An impossible review date on an
+   exempt page is raised and printed but still passes — visible to a reader, not
+   to the exit code.
+7. **Its own configuration being empty.** Every rule depends on lists a human
+   maintains. The gate now audits itself for configuration keys no code reads
+   and requires a written justification for each declared exception, which is a
+   real check — but the justification is tested for length and word count, not
+   for truth.
+8. **Anything outside `public/`, and anything inside a binary file.** The read
+   set is stated and the exclusions are printed every run; a defect placed in a
+   `.png`, `.pdf` or the search-engine key file is invisible by design.
+
+**The honest summary:** this is a strong instrument for re-detecting a defect
+class someone has already characterised, and a weak one for finding a class
+nobody has described yet. It will stop the six defects that produced it from
+shipping again in almost every form they could take. It will not tell you about
+the seventh.
