@@ -1671,9 +1671,75 @@ def rule_R2(ctx, res):
                 # towns after splitting is genuinely ambiguous.
                 multi = (len(set(x[0] for x in uspots)) >= 2 and
                          len(set(t for t, _ in tspots)) >= 2)
+                # DIRECTION MATTERS. "<utility> is the natural gas utility in
+                # <town>" puts the town AFTER the utility, and English does
+                # that overwhelmingly often. Pure nearest-distance binding read
+                # "... Greeley, Evans and Eaton, and Xcel Energy is the natural
+                # gas utility in Johnstown ..." as Xcel-bound-to-Eaton, because
+                # Eaton is ten characters behind Xcel and Johnstown is
+                # forty-four ahead. Measured: 7 findings on GCI, all false, on
+                # the sentence that states the split CORRECTLY.
+                # A utility that has a town AFTER it within the window binds
+                # forward; only a utility with no following town falls back to
+                # the nearest preceding one. This also keeps the inversion
+                # failing, which is the whole point: "Xcel Energy is the
+                # natural gas utility in Greeley" binds forward to Greeley,
+                # which Xcel does not serve, and FAILS.
+                # A utility binds forward to EVERY town in the list that
+                # follows it, up to the next utility mention. "X is the gas
+                # utility in A, B and C" attributes X to all three, and binding
+                # only the nearest let "Atmos ... in Greeley, Evans and
+                # Johnstown" pass on Greeley while Johnstown went unexamined.
+                upos_sorted = sorted(p for _, p in uspots)
+                fwd = {}
+                for uu, up in uspots:
+                    nxt = min([p for p in upos_sorted if p > up] or [10 ** 9])
+                    tl = sorted(set(tn for tn, tp in tspots
+                                    if up < tp < nxt and tp - up <= 160))
+                    if tl:
+                        fwd[(uu, up)] = tl
+                tpos_of = {}
+                for tn, tp in tspots:
+                    tpos_of.setdefault(tn, []).append(tp)
+                for (uu, up), tl in sorted(fwd.items()):
+                    bound.add((uu, up))
+                    for tname in tl:
+                        if uu in (ctx.allowed_utilities([tname]) or set()):
+                            continue
+                        # A town the clause EXCLUDES is not a town the clause
+                        # attributes to. LGM's index says "Longmont Power &
+                        # Communications electric customers only, not every
+                        # Longmont address, and not Lafayette, Louisville, or
+                        # Niwot:" -- three forward bindings, all of them to
+                        # towns the sentence has just ruled out.
+                        if any(re.search(r"\b(?:not|nor|except|excluding)\b"
+                                         r"[^.;]{0,60}$", clause[:tp])
+                               for tp in tpos_of.get(tname, [])):
+                            continue
+                        if has_any(clause, deny_bind, word=False) or \
+                                has_any(sent, deny_bind, word=False):
+                            continue
+                        hf = Hit(
+                            "R2", "a", art.rel, skey, str(loc),
+                            "%s is bound to %s, a town named AFTER it in its "
+                            "own clause, which it does not serve | clause: %s"
+                            % (uu, tname, clause),
+                            note="utility-not-serving-town-in-clause",
+                            sentence=sent)
+                        hf.r2_binding = (uu, tname)
+                        # DELIBERATELY NOT downgraded by `multi`. The
+                        # split-disclosure REVIEW class exists because
+                        # nearest-binding is decided by word order rather than
+                        # meaning -- but a utility FOLLOWED BY its own town
+                        # list is not ambiguous, it is the standard English
+                        # construction. Downgrading it is what let the EXACT
+                        # INVERSION of GCI's gas-split fact pass at exit 0,
+                        # which the 2026-09-17 adversarial read recorded as the
+                        # highest-value surviving hole in the whole gate.
+                        raw.append(hf)
                 for tname, tpos in tspots:
                     near = [(abs(tpos - up), uu, up) for uu, up in uspots
-                            if abs(tpos - up) <= 100]
+                            if abs(tpos - up) <= 100 and (uu, up) not in fwd]
                     if not near:
                         continue
                     _, uu, up = sorted(near)[0]
@@ -4007,6 +4073,20 @@ R2_CONTROL_OVERLAY = {"R2": {"towns": R2_CONTROL_TOWNS,
                              "review_not_fail": [],
                              "forbid_electric_utility_naming": False,
                              "known_present_control": None}}
+# R2d needs BOTH sides of a split territory pinned: the inversion it tests only
+# means something where some towns are Atmos and others are Xcel.
+R2_SPLIT_CONTROL_TOWNS = dict(R2_CONTROL_TOWNS)
+R2_SPLIT_CONTROL_TOWNS.update({
+    "Greeley": {"gas": "Atmos Energy", "gas_state": "CONFIRMED",
+                "gas_qualifier": "",
+                "page_slugs": ["R2d_inverted_split_fact.html"]},
+    "Evans": {"gas": "Atmos Energy", "gas_state": "CONFIRMED",
+              "gas_qualifier": ""},
+    "Eaton": {"gas": "Atmos Energy", "gas_state": "CONFIRMED",
+              "gas_qualifier": ""},
+})
+R2_SPLIT_CONTROL_OVERLAY = {"R2": dict(R2_CONTROL_OVERLAY["R2"],
+                                       towns=R2_SPLIT_CONTROL_TOWNS)}
 R3_CONTROL_OVERLAY = {"R3": {"allowed_figures": [],
                              "allowed_structure_percentages": []}}
 R4_CONTROL_OVERLAY = {"R4": {"programs": [
@@ -4133,7 +4213,10 @@ RULES = [
                      R2_CONTROL_OVERLAY, extra=[_f("R2b_og-image.svg")],
                      sub="a", repaired=_f("repaired", "R2b_wrong_utility_no_string.html"), repaired_extra=[_f("repaired", "R2b_og-image.svg")]),
              Control("R2c", "R2", _f("R2c_wrong_utility_anchor_only.html"),
-                     R2_CONTROL_OVERLAY, sub="c", repaired=_f("repaired", "R2c_wrong_utility_anchor_only.html"))]),
+                     R2_CONTROL_OVERLAY, sub="c", repaired=_f("repaired", "R2c_wrong_utility_anchor_only.html")),
+             Control("R2d", "R2", _f("R2d_inverted_split_fact.html"),
+                     R2_SPLIT_CONTROL_OVERLAY, sub="a",
+                     repaired=_f("repaired", "R2d_inverted_split_fact.html"))]),
 
     Rule("R3", "REBATE DOLLAR FIGURE",
          "CLAIM TEST for the rank/magnitude half (T3); STRING+WINDOW LIST for "
