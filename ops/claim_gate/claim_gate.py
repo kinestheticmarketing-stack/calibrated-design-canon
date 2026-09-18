@@ -1282,12 +1282,18 @@ ELECTRIC_WORDS = ("electric", "electricity", "electrical", "kwh", "power bill")
 # a town LIST is written ("Greeley, Evans and Eaton") and splitting there would
 # cut a clause in half.
 _CLAUSE_SPLIT = re.compile(
-    r";|\s+while\s+|,\s*whereas\s+|\s+whereas\s+|,\s*but\s+"
-    r"|\s+rather than\s+|,\s*however[,]?\s+|\s+\u2014\s+while\s+",
+    r";|\s+while\s+|\s+whilst\s+|,\s*whereas\s+|\s+whereas\s+"
+    r"|,\s*but\s+|\s+but\s+|\s+although\s+|,\s*although\s+"
+    r"|\s+rather than\s+|,\s*however[,]?\s+"
+    r"|\s*[\u2013\u2014]\s*|\s+/\s+",
     re.IGNORECASE)
+# "and"/"or" are CONDITIONAL splits: they join a town LIST far more often than
+# they join two clauses.
+_AND_SPLIT = re.compile(r",\s*and\s+|\s+and\s+|,\s*or\s+|\s+or\s+",
+                        re.IGNORECASE)
 
 
-def _clauses(sent):
+def _clauses(sent, has_utility=None):
     """Split a sentence into independent clauses.
 
     `X is the gas utility in A, while Y is the gas utility in B` has
@@ -1298,7 +1304,28 @@ def _clauses(sent):
     structure; do not pardon the shape.
     """
     parts = [p.strip() for p in _CLAUSE_SPLIT.split(sent)]
-    return [p for p in parts if p] or [sent]
+    parts = [p for p in parts if p] or [sent]
+    if has_utility is None:
+        return parts
+    # CONDITIONAL "and"/"or". Excluding them outright was a stated design
+    # choice with a real justification -- "Greeley, Evans and Eaton" is a LIST
+    # -- but it made the commonest conjunction in English a guaranteed escape:
+    # the same inversion passed on ", and", bare " and", an em dash, "whilst",
+    # "although" and " / ". Resolve it instead of omitting it:
+    #   "Atmos serves Greeley, Evans, and Eaton"  -> a LIST: the conjoined
+    #      items are bare town names and only one side carries a utility.
+    #   "X is the utility in A, and Y is the utility in B" -> TWO CLAUSES:
+    #      each side carries its own utility.
+    # Split only when BOTH sides carry a utility mention.
+    out = []
+    for part in parts:
+        pieces = [x.strip() for x in _AND_SPLIT.split(part)]
+        pieces = [x for x in pieces if x]
+        if len(pieces) > 1 and all(has_utility(x) for x in pieces):
+            out.extend(pieces)
+        else:
+            out.append(part)
+    return out
 
 
 def rule_R2(ctx, res):
@@ -1354,7 +1381,7 @@ def rule_R2(ctx, res):
             # them (GCI f0203ad's cap shipped in one), which is the right split.
             if skey == S.S_JS and "comment@" in str(loc):
                 continue
-            for clause in _clauses(sent):
+            for clause in _clauses(sent, lambda t: bool(ctx.utility_spots(t))):
                 uspots = ctx.utility_spots(clause)
                 tspots = ctx.town_spots(clause)
                 bound = set()
@@ -1588,7 +1615,7 @@ def rule_R2(ctx, res):
         if text in _locked_bind:
             return _locked_bind[text]
         out = set()
-        for cl in _clauses(text):
+        for cl in _clauses(text, lambda t: bool(ctx.utility_spots(t))):
             us = ctx.utility_spots(cl)
             for tn, tp in ctx.town_spots(cl):
                 near = [(abs(tp - up), uu, up) for uu, up in us
