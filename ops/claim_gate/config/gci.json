@@ -298,7 +298,9 @@
       "blower-door",
       "leakage reduction",
       "reduction in leakage",
-      "leakage"
+      "leakage",
+      "reduction",
+      "rebates rim joist work at"
     ],
     "threshold_context_markers_reason": "RESTATES common.json's nine markers verbatim and appends five. Restated because _deep_merge REPLACES lists rather than unioning them, so a partial list here would silently DROP the nine shared markers for GCI -- a config edit that reads as additive and is actually subtractive. The five additions are the vocabulary GCI's prose actually uses around the blower-door threshold; 'CFM' alone does not fire on sentences written as 'a 20% reduction in leakage'. PROPERTY-LOCAL: this key lives in gci.json, so common.json is untouched and DCI and LGM are unaffected.",
     "detector_machinery_deleted": [
@@ -363,6 +365,19 @@
     "program_aliases_reason": "Bare 'Xcel' and 'Xcel Energy' are ONE program. Without this map a single sentence reading 'According to Xcel Energy, its ... Xcel ...' resolved to TWO distinct program names and satisfied R4's two-distinct-programs test by itself. Span-consuming matching stops one MENTION counting twice; only an alias map stops two mentions of the same utility counting as two programs.  DESCRIPTIVE FORMS ADDED 2026-09-18 (GATE_SCORE_2026-09-17.md MISS 4): GCI's FAQPage stacking denial named its two programs as 'the free state weatherization program' and 'the Atmos rebate', while R4.programs held only the literals 'Colorado Weatherization Assistance Program' and 'Atmos Energy'. One program resolved, distinct<2, NEUTRAL, filtered. An alias is only added where its canonical program is already in THIS property's programs list."
   },
   "R5": {
+    "computed_output_markers": [
+      "your own home",
+      "based on your inputs",
+      "you entered",
+      "estimates to roughly",
+      "short of target",
+      "for your",
+      "your current state",
+      "the number for your",
+      "scales with 1/R",
+      "modeled here at"
+    ],
+    "computed_output_markers_reason": "RESTATES common.json's eight markers VERBATIM and appends two. Restated because _deep_merge REPLACES lists rather than unioning them, so a partial list here would silently drop the eight shared markers for GCI. The two additions are Ruling 4 (visitor arithmetic) applied to arithmetic the page SHOWS ITS WORKING FOR, which is the same principle: (1) 'scales with 1/R' governs 'Conductive loss through a ceiling scales with 1/R, so going from R-15 to R-49 removes roughly 69% of it' -- the sentence states the method and both inputs, so a reader can check 1-15/49 themselves; the 69% is derived in front of them, not asserted about the world. (2) 'modeled here at' governs 'The ceiling's share of total household heat loss is modeled here at 8.5% to 23.5%' -- 'modeled HERE' explicitly labels the span as this calculator's own assumption rather than a published finding, and the same sentence names ENERGY STAR's Climate Zone 5 figure as the centre it was built around. Neither marker can clear a figure about a REBATE: both are anchored on method vocabulary that no rebate sentence on this property uses.",
     "known_uncited": [],
     "note": "MEASURED 2026-09-17: '15% reduction' returns 0 occurrences in GCI public/. STILL EMPTY 2026-09-18, deliberately: the 20% blower-door cluster was closed by registering it as an ALLOWED THRESHOLD under R3.allowed_thresholds, which is what it actually is, NOT by listing it here. known_uncited carries a figure with no attribution and asks the gate to tolerate it; allowed_thresholds records that a figure is a program QUALIFYING CONDITION the Director ruled may stay. Using known_uncited would have been suppression wearing a config key."
   },
