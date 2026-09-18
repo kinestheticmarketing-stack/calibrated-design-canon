@@ -410,6 +410,8 @@
     "note": "NULL RESULT — no severity-label chain remains. e6cb44e made the four calculators' verdicts utility-neutral, naming no payer and carrying no amount, and deleted CAP/RATE/money() once the amounts left. A new tool with a severity label needs a config entry."
   },
   "R8": {
+    "today": "2026-09-18",
+    "today_reason": "PER-PROPERTY AS-OF OVERRIDE, added 2026-09-18. common.json pins R8.today to 2026-09-17 and the calendar rolled over, so the gate was measuring GCI as-of YESTERDAY. R8 part (b) fails any published date LATER than the as-of, which means a page carrying a truthful date of today reads as publishing a date in the future -- and, worse, a genuinely invented future date becomes indistinguishable from a correct one. DCI and LGM each carry this override; GCI had none and silently inherited the stale shared value. MEASURED, NOT ASSUMED, on this property: GCI has ZERO part-(b) findings at either as-of, because every published date here is 2026-09-10 or earlier, so this override changes GCI's count by nothing today. It is correctness hygiene, not a count fix -- the day a GCI page legitimately carries today's date, the stale as-of would have turned a true date into a finding. Verified before and after: R8 ADJ 35 -> 35, all sub-test (d). This is NOT a tolerance and suppresses nothing.",
     "reviewed_iso": "2026-09-09",
     "static_page_constant": "STATIC_PAGE_REVIEWED_ISO",
     "static_page_value": "2026-08-05",
