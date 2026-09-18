@@ -2097,3 +2097,355 @@ sitewide hole, one still not addressed.**
    defeat every name match.
 5. **A repaired fixture that was gutted rather than repaired**, which silences
    the very mechanism this document produced.
+
+---
+---
+
+# THIRD SECTION — FINAL VERIFICATION AFTER THE SECOND FIX ROUND — 2026-09-17
+
+Same reviewer, same scratch dir, same 86 byte-exact vectors. The second section
+drove seven more commits, `66bf1dd..32b1ec1`. **Nothing was fixed by this pass.**
+
+```
+denvercoloradoinsulation.com    main  ac2b7b8cbeee41d6bafd5ebd48aa9473d3879cc6  clean  0 0
+longmontcoloradoinsulation.com  main  124682275e2e3b1859314a5a51c409199cb078a6  clean  0 0
+greeleycoloradoinsulation.com   main  7a832b80022a1a63b16bd6c6eb1f6fe9ef345ec9  clean  0 0
+calibrated-design-canon         main  32b1ec1ef36a586bc4c1c5b1a40bc0b1b7565bbe  clean  0 0
+```
+
+`claim_gate.py` 3,894 → 4,196 lines; `surfaces.py` 913 → 975; `README.md`
+291 → 319. Baselines: DCI exit 1 / 8 blocking failures, LGM exit 1 / 5,
+GCI exit 1 / 6. R2 RAW 600/831/706 ADJ 19/78/71 and R5 ADJ 261/57/55 match the
+figures the implementing row reported.
+
+## 0. THE HEADLINE NUMBER
+
+**17 of 86 vectors still miss.** 59 → 29 → **17**.
+
+| rule | vectors | missed R1 | missed R2 | **missed R3** | fixed this round |
+|---|---|---|---|---|---|
+| R1 | 7 | 7 | 2 | **1** | 1 |
+| R2 | 18 | 14 | 10 | **5** | 6 (and 1 regression) |
+| R3 | 20 | 9 | 4 | **4** | 0 |
+| R4 | 9 | 6 | 3 | **0** | 3 |
+| R5 | 8 | 4 | 3 | **1** | 2 |
+| R6 | 6 | 4 | 0 | **0** | 0 |
+| R7 | 8 | 6 | 2 | **1** | 1 |
+| R8 | 6 | 5 | 3 | **3** | 0 |
+| R9 | 2 | 2 | 1 | **1** | 0 |
+| R10 | 2 | 2 | 1 | **1** | 0 |
+| **total** | **86** | **59** | **29** | **17** | **13, minus 1 regression** |
+
+### Every vector still missing, with its reason
+
+| vector | fixture | reason it still misses |
+|---|---|---|
+| **R1-A3** | source named in sentence 1, quotation stands alone three sentences later | attribution is sentence-scoped; declared in the README's PARAPHRASE hole |
+| **R2-B2** | `Natural gas in Johnstown is delivered by Atmos Energy.` | no word from the 21-item `attribution_words` list in the sentence |
+| **R2-B4z** | `Atmos​Energy` (U+200B between the words) | **REGRESSION — see NEW-10.** Caught in rounds 1 and 2, missing now |
+| **R2-B8** | `var u = 'At' + 'mos ' + 'Energy';` | assembled at runtime; no literal form in the bytes |
+| **R2-B14** | defect sentence embedding a locked `allowed_multi_utility_sentences` phrase | `RAW 1 ADJ 0` — blanket pardon, unchanged |
+| **R2-B15** | `Atmos rebates explained` in an unreferenced `public/og-image.svg` | `RAW 1 ADJ 0` — now raised, then cleared by the sitewide-no-town-in-clause filter |
+| **R3-C3** | `pays fifteen hundred and fifty dollars` | no numeral; declared in the README's PARAPHRASE hole |
+| **R3-C16** | `attic insulation pays the most of any single upgrade` | `the most` not in `rank_words`; declared |
+| **R3-C4b** | `Atmos returns 1550 dollars for a finished attic job.` | bare digits, `dollars` still not in `money_words`, no money word in the 120-char window |
+| **R3-C17** | `Atmos sends 1550 to the homeowner once the attic job is invoiced.` | same |
+| **R5-E1** | `delivers a 40 percent reduction` | `forty percent` (the word) was added to config; the **digit** form `40 percent` still matches no `magnitude_patterns` regex |
+| **R7-G6** | `pre&#8209;requisite` | the non-breaking-hyphen entity splits the word; `dec()` folds U+2011 between characters but the word is still `pre-requisite`, not `prerequisite` |
+| **R8-H3** | 2027-01-01 on `privacy.html` (`own_effective_date_pages`) | `RAW 2 ADJ 0` — raised and cleared through a named filter; the defect still passes |
+| **R8-H4** | 2027-01-01 on `404.html` (`exempt_pages`) | same |
+| **R8-H6** | `<time datetime="2026&#45;08&#45;24">` | entity-encoded hyphens inside the attribute value; the date gate never sees a parseable date |
+| **R9-I1** | the contested value paraphrased outside `value_slots` | declared in the README's PARAPHRASE hole |
+| **R10-J1** | `The real numbers live on the …` | outside the 14 `promise_patterns`; declared |
+
+Eight of the seventeen (R1-A3, R3-C3, R3-C16, R5-E1, R9-I1, R10-J1, and by
+extension R3-C4b/C17) are now **declared in the README as a known hole**. Two
+(R8-H3, R8-H4) are raised-and-cleared rather than silently dropped. One
+(R2-B4z) is a **new regression introduced by this round's fix**.
+
+### Newly caught this round
+
+**R1-A2** class-list membership. **R2-B1** sitewide hub page, **R2-B4** soft
+hyphen, **R2-B4c** Cyrillic homoglyph, **R2-B7** `sitemap.xml`, **R2-B11**
+`llms.txt`, **R2-B12** `robots.txt` — all `RAW ≥1 ADJ ≥1 FAIL` exit 1.
+**R4-D2/D3/D3b** the three paraphrased stacking assertions. **R5-E2** `by a
+third`, **R5-E3** the `ENERGY STAR` blanket pardon. **R7-G2** U+2011 hyphens
+in `24‑02‑205`. **R6** all six defect shapes remain caught.
+
+### R6, and the correction inside the correction
+
+My NEW-1 is fixed. The renamed-severity-words vector now reads:
+
+```
+  RAW              label-emitting conditional chains examined     1
+  TRAP: R6 read 1 JS text(s) and found ZERO label assignments matching the configured labels. Treat this rule's PASS as unproven on this property.
+  note: DENOMINATOR  chains examined 1 · JS texts read 1 · conditions located 4 · label assignments found 0 · branches bound to a condition 0 · configured labels seen in text 0
+  VERDICT          FAIL — 1 adjudicated finding(s) stand after 0 filter(s)
+  adv-rvalue-tier:SRC  UNREGISTERED  chain adv-rvalue-tier: 1 surface text(s) were READ (4 conditions, 0 label assignments) and ZERO of its 4 configured labels appear in ANY of them.  [zero-denominator]
+```
+
+and DCI's real chain reads `RAW 0 … PASS` with a **nonzero** denominator
+(`chains examined 1 · JS texts read 4 · conditions located 166 · label
+assignments found 9 · branches bound to a condition 9 · configured labels seen
+in text 3`), confirming the per-chain correction in `2a36b1f`. LGM and GCI,
+which configure no chain, print `DENOMINATOR chains examined 0 … -- RAW 0 here
+means NOTHING WAS REGISTERED, not 'clean'`.
+
+`2a36b1f`'s commit message also retracts a false claim in `6a9cd4e`'s own
+message — *"No live movement: DCI's real chain still reports RAW 0 PASS"*,
+written before the verification was run, when the run returned
+`RAW 1 ADJ 1 FAIL`. I verified the retraction is accurate: the current state is
+the one `2a36b1f` describes. That is the seventh recorded instance of this
+portfolio's own defect class, and the second in this document — mine was the
+sixth.
+
+## 1. THE 24-CONTROL REPAIR TEST AND THE HARDENED REPAIR PHASE
+
+**All 24 controls still stop firing when their own defect is repaired**, each
+printing `*** MISSED *** (0 hits on the sub-test this control proves: <sub>)`.
+No control regressed.
+
+| attack | round 2 | round 3 |
+|---|---|---|
+| **A1** repaired fixture → zero-byte file | fooled, exit 0 | `*** REPAIRED FIXTURE TOO THIN *** 0 bytes against the original's 866 (0%); floor is 50% and 120 bytes`, **exit 2** — fixed |
+| **A2** repaired fixture → empty page | fooled, exit 0 | `*** REPAIRED FIXTURE TOO THIN *** 91 bytes against the original's 866 (11%)`, **exit 2** — fixed |
+| **A3** repaired fixture → the original, still defective | caught, exit 2 | `*** FIRES ON REPAIRED *** 5 hit(s) on sub ASSERTS`, exit 2 — still caught |
+| **A4** repaired fixture deleted | crashed loudly, exit 2 | `NOT TESTED -- repair fixture missing from disk`, `23 repaired-clean, 0 FIRE ON REPAIRED, 1 NOT TESTED`, **exit 0 `CANARY OK`** — **NEW-8** |
+| **A5** defect put back into R2b's repaired SVG | caught, exit 2 | `*** FIRES ON REPAIRED *** 2 hit(s) on sub a`, exit 2 — still caught |
+
+## 2. THE HALT-LEVEL REGRESSION, RE-CONFIRMED
+
+DCI clone carrying the pre-`37c7b29` defect in both the page and the embed:
+
+```
+EXIT=1
+CLAIM GATE — dci — /tmp/claim-gate-scratch/r4/dci-defect — HEAD e7595eb — as-of 2026-09-17
+  REPAIR TESTS: 24 repaired-clean, 0 FIRE ON REPAIRED, 0 NOT TESTED (no repair fixture)
+  CONTROLS: 24 positive DETECTED, 0 MISSED · 14 negative clean, 0 FALSE ALARM
+  R6  SELF-CONTRADICTING OUTPUT        RAW 10     ADJ 10     FAIL
+  blocking failures: 9 (R1, R2, R3, R4, R5, R6, R7, R8, R9)
+CLAIM GATE: FAIL
+```
+
+Still closed.
+
+## 3. NEW BREAKS
+
+### NEW-11 (SEVERE) — the split-disclosure REVIEW class hides the exact defect the gate was built after
+
+The row named this loosening and asked me to attack it. It fails on the single
+most obvious sentence. GCI's ground truth is *Atmos for Greeley/Evans/Eaton,
+Xcel for Johnstown/Milliken/Severance*. Both sentences below are sitewide hub
+prose:
+
+| | sentence | result |
+|---|---|---|
+| D1 | `Atmos Energy is the natural gas utility in Greeley, while Xcel Energy is the natural gas utility in Johnstown.` — **correct** | `RAW 2 ADJ 0 PASS` exit 0 |
+| D2 | `Xcel Energy is the natural gas utility in Greeley, while Atmos Energy is the natural gas utility in Johnstown.` — **the exact inversion, both attributions wrong** | `RAW 2 ADJ 0 PASS` exit 0 |
+
+Both cleared by
+`[split disclosure -- two or more utilities AND two or more towns in one
+sentence, where nearest-binding is decided by word order rather than meaning:
+REVIEW, never FAIL]`. **The filter cannot distinguish the correct gas-split fact
+from its exact inversion.** A rule that returns the same verdict for a
+proposition and its negation is not testing the proposition.
+
+Its reach is not theoretical: on GCI it is the largest pardon in R2,
+`326 (removed 289)` of 706 raw hits. DCI `0 (removed 0)`, LGM `3 (removed 3)`.
+
+The nearest-binding resolver is otherwise good — it catches the wrong utility
+with a *decoy correct town nearer in the sentence* (D6), a wrong claim hidden
+behind a correct one (D4), and a three-town sentence with one wrong attribution
+(D7, `RAW 2 ADJ 1 FAIL`). The hole is specifically ≥2 utilities **and** ≥2 towns.
+The README does not name this loosening anywhere — `grep -i 'split
+disclosure|REVIEW, never FAIL|nearest-binding' README.md` returns nothing.
+
+### NEW-10 (REGRESSION, moderate) — `dec()`'s invisible-character folding turned a catch into a miss
+
+R2-B4z was CAUGHT in rounds 1 and 2 and MISSES now. `dec()` now **deletes**
+zero-width characters instead of replacing them with a separator, welding two
+words into one token:
+
+```
+    U+200B zero-width space        dec() -> 'AtmosEnergy pays the rebate'
+    U+FEFF zero-width no-break     dec() -> 'AtmosEnergy pays the rebate'
+    U+2060 word joiner             dec() -> 'AtmosEnergy pays the rebate'
+    U+200C zero-width non-joiner   dec() -> 'AtmosEnergy pays the rebate'
+    U+00AD soft hyphen             dec() -> 'Atmos Energy pays the rebate'   (correct)
+```
+
+`\bAtmos Energy\b` cannot match `AtmosEnergy`, and neither can `\bAtmos\b`.
+Previously `collapse()` treated U+200B as a separator and the hit fired. Four
+invisible characters now work as an evasion where before they did not.
+
+### NEW-9 (moderate) — the homoglyph folding corrupts legitimate non-Latin text
+
+`dec()` folds Cyrillic and Greek to Latin unconditionally, in the DEC
+normalization every rule reads:
+
+```
+    a real ASCII hyphen in a print code    UNCHANGED  'Advice Letter No. 647, print code 17-9230 (01-25)'
+    a real en dash in a range              UNCHANGED  'the 20-40% band'
+    a genuine non-English string (German)  UNCHANGED  'Wärmedämmung für Dachböden über 60 m²'
+    an em dash used as punctuation         UNCHANGED  'CFM 50 — cubic feet per minute'
+    a real apostrophe                      UNCHANGED  'Xcel’s rebate summary'
+    a genuine non-English string (Greek)   CHANGED    'Evέργειa κaι μόvωση'
+    a genuine Cyrillic string (Russian)    CHANGED    'Teплoизoляция чepдaкa'
+```
+
+Print codes, dashes, German umlauts and curly apostrophes survive — good. But a
+genuine Russian or Greek string is mangled, so a rule cannot match it and the
+enumerated hit text printed to a human is corrupted. Latent on these
+English-only properties; live in `dec()` itself.
+
+Confusables still missed, with the wrong utility on Johnstown's own page:
+
+```
+    Cyrillic о / а / Е, Greek ο            R2 RAW 2 ADJ 2 exit 1 => CAUGHT
+    Armenian ո (U+0578)                    R2 RAW 0 ADJ 0 exit 0 => MISS
+    Cherokee Ꭺ (U+13AA)                    R2 RAW 0 ADJ 0 exit 0 => MISS
+    Fullwidth Ａ (U+FF21)                  R2 RAW 0 ADJ 0 exit 0 => MISS
+    Mathematical bold 𝐀 (U+1D400)          R2 RAW 0 ADJ 0 exit 0 => MISS
+```
+
+### NEW-13 (moderate) — the config self-audit's `0 OWED` rests on an unchecked escape hatch, and skips whole containers
+
+The gate now prints `CONFIG KEYS READ BY NO CODE PATH: 0 OWED, N declared
+documentation-only` every run (N = 23/26/32). Two ways past it:
+
+**(a) the escape hatch is a bare config list.** A brand-new behavioural key
+nobody reads is correctly reported:
+
+```
+  (1) not declared:  CONFIG KEYS READ BY NO CODE PATH: 1 OWED, 32 declared documentation-only.  OWED: R2.forbid_atmos_on_xcel_towns_entirely
+  (2) the SAME key declared in documentation_only_keys:
+      CONFIG KEYS READ BY NO CODE PATH: 32 OWED, 1 declared documentation-only.  OWED: R1.attribution_template, R1.quote_close, … svg_readable
+```
+
+Naming it in `documentation_only_keys` moves it out of OWED with **no check that
+it is documentation**. (The count flip to 32 OWED is a second, separate bug:
+`_deep_merge` replaces the inherited list rather than merging it, so declaring
+one key in a child config silently un-declares all 32 in `common.json`.)
+
+**(b) whole containers are never audited.** The audit descends at most one level
+and skips 29 named DATA containers. Behavioural sub-keys inside them are
+invisible to it — verified dead in the implementation and absent from the OWED
+list:
+
+```
+  requires_publisher_named     referenced in code: 0 <-- DEAD AND NEVER AUDITED
+  requires_cited_source_key    referenced in code: 0 <-- DEAD AND NEVER AUDITED
+  expected_sitemap             referenced in code: 0 <-- DEAD AND NEVER AUDITED
+  expected_footer              referenced in code: 0 <-- DEAD AND NEVER AUDITED
+  r6b_expected_histogram       referenced in code: 0 <-- DEAD AND NEVER AUDITED
+  substring_trap               referenced in code: 0 <-- DEAD AND NEVER AUDITED
+  gas_qualifier_rule           referenced in code: 0 <-- DEAD AND NEVER AUDITED
+  proximity_reason             referenced in code: 0 <-- DEAD AND NEVER AUDITED
+```
+
+`requires_publisher_named` and `requires_cited_source_key` are the two I
+reported dead in the first section. They are still dead and the audit that
+exists to find them says `0 OWED`.
+
+### NEW-8 (moderate) — deleting a repaired fixture now silences its repair test and the gate exits 0
+
+Round 2 it crashed loudly (exit 2). Now it degrades to
+`NOT TESTED -- repair fixture missing from disk`, `1 NOT TESTED`, and
+**`CLAIM GATE: CANARY OK`, exit 0.** The counter is printed, so it is disclosed
+— but the mechanism can be disabled per control by deleting one file and the run
+still passes. Given `A3` (a defective repaired fixture) exits 2, the cheapest way
+past a failing repair test is now `rm`.
+
+### NEW-12 (minor) — the repaired-fixture floor measures bytes, not substance
+
+```
+  F1: a 53%-size file of pure padding ("xxxx…"), no defect, no substance   repaired-clean, exit 0
+  F2: a 41%-size file of REAL prose naming both programs and asserting nothing  *** TOO THIN ***, exit 2
+```
+
+The floor rejects the honest short repair and accepts the padded one.
+
+### Attacks that failed to break anything
+
+- **The segment-based `llms.txt` parser.** My round-2 regression is closed:
+  `E5` wrapped bullet `R7 RAW 1 ADJ 1 FAIL`, and `E8` wrapped with no indent
+  also caught. Unrelated bullets are correctly **not** joined (`E12`, `E13` →
+  `RAW 0`). Three wrap shapes still split — a continuation line beginning `-`
+  (E9), one that looks like `Key:` (E10), and one across a blank line (E11) —
+  all genuinely ambiguous by construction. The join/split trade-off is now sane.
+- **The nearest-binding resolver**, except for the ≥2-utility/≥2-town class:
+  D4, D6 and D7 all caught.
+- **The last Ruling-5 violation is CLOSED.** The unscoped-page R2 claim now
+  gives `RAW 3 ADJ 3 FAIL` exit 1 with three enumerated hits
+  (`Atmos Energy is bound to the nearest town named in its own clause,
+  Johnstown, which it does not serve` and the same for Milliken and Severance),
+  not a block identical to a clean run.
+- **The README's PARAPHRASE hole declaration** is honest and names specific
+  surviving forms, several of which are among my 17.
+
+## 4. INVARIANTS
+
+```
+run1 exit 1 / run2 exit 1        RUN1 == RUN2 byte for byte
+different cwd (cd /)             CWD-INDEPENDENT: identical
+different CANON_ROOT             CANON_ROOT-INDEPENDENT: identical
+PYTHONHASHSEED 0 / 1 / 12345     HASH-SEED-INDEPENDENT: all three identical
+LC_ALL C vs tr_TR.UTF-8          LOCALE-INDEPENDENT: identical
+TZ UTC vs Pacific/Kiritimati     TZ-INDEPENDENT: identical
+
+dci exit 1 / lgm exit 1 / gci exit 1
+*** NO FILE ADDED, REMOVED, RESIZED, RE-INODED OR MTIME-CHANGED IN ANY OF THE FOUR REPOS ***
+  denvercoloradoinsulation.com modified-since-mark: 0
+  longmontcoloradoinsulation.com modified-since-mark: 0
+  greeleycoloradoinsulation.com modified-since-mark: 0
+  calibrated-design-canon modified-since-mark: 0
+```
+
+Corpus, mine against the gate's, unchanged and exact: DCI `85 / 85 AGREE`,
+`80 artifacts (75 html, 2 txt, 1 xml, 2 svg) | excluded: 5`; LGM `59 / 59`,
+`54 artifacts (48 html…)`; GCI `49 / 49`, `44 artifacts (38 html…)`; my own
+`find`/`ls-files`/html counts 85/85/75, 59/59/48, 49/49/38.
+
+No bare zeros: all eleven blocks print `RAW`, `ADJUDICATED` and a note. R6 and
+R11 print no `FILTER` row because they have no filters.
+
+## 5. FINAL VERDICT ON THE SIX ORIGINAL DEFECTS
+
+| defect | verdict |
+|---|---|
+| paraphrase inside quotation marks as a utility's own words, 11 pages | **YES for six of seven forms.** Entity quotes, guillemets, backticks, HTML comments and class lists all caught. Only the anaphoric form remains, declared. |
+| three towns credited to the wrong gas utility for two years | **YES on the town's own page and on most sitewide artifacts** — hub pages, `llms.txt`, `robots.txt`, `sitemap.xml` all now caught by clause-level nearest binding. **NO for the specific sentence shape the original defect took**: two utilities and two or more towns in one sentence is pardoned as REVIEW, and the pardon cannot tell the correct gas-split fact from its exact inversion. On GCI that pardon clears 289 hits. **This is the surviving hole that matters.** |
+| retired eligibility rule published as current, 35 pages | **YES.** |
+| invented rebate programme with four invented pathways, 72 pages | **STILL NOT ADDRESSED.** No rule asserts that a named programme exists. |
+| 545 banned rebate dollar figures | **YES, substantially.** Missing: the figure in words, and a bare numeral with no configured money word in its window. |
+| calculator printing two severity words on one percentage | **YES**, and renaming the labels now FAILS instead of silently passing. |
+
+**Four of six covered. One improved but with a hole shaped exactly like the
+original defect. One still not addressed.**
+
+## 6. WHAT THIS GATE IS STILL BLIND TO — the definitive list
+
+1. **A sentence that names two utilities and two towns.** Pardoned as REVIEW,
+   verdict identical for the true statement and its negation. This is the
+   highest-value remaining hole and it is undeclared in the README.
+2. **Paraphrase**, declared and bounded by the README: the anaphoric quotation,
+   a figure in words, a rank claim outside `rank_words`, `40 percent` in
+   digits, a reworded contested value, an unlisted promise phrasing, the next
+   three stacking phrasings.
+3. **Its own configuration being wrong or absent.** `0 OWED` is produced by an
+   unchecked config list and an audit that skips 29 containers; at least eight
+   behavioural sub-keys are dead and invisible to it. A child config declaring
+   one documentation-only key silently un-declares the parent's 32.
+4. **Exotic Unicode.** Armenian, Cherokee, fullwidth and mathematical-alphabet
+   homoglyphs defeat every name match; four zero-width characters now defeat a
+   two-word name that they did not defeat before; and the folding corrupts
+   genuine Cyrillic and Greek text.
+5. **Entity-encoded characters inside attribute values and inside words** —
+   `<time datetime="2026&#45;08&#45;24">` and `pre&#8209;requisite`.
+6. **A claim assembled at runtime**, with no literal form in the bytes.
+7. **Pages it has been told to exempt.** `own_effective_date_pages` and
+   `exempt_pages` still pass an impossible date — now raised and enumerated
+   rather than silently dropped, but still PASS.
+8. **Its own control mechanism, by deletion.** Removing a repaired fixture
+   downgrades its repair test to `NOT TESTED` and the gate exits 0; padding a
+   repaired fixture to 50% of the original satisfies the substance floor.
