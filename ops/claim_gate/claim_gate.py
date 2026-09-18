@@ -87,7 +87,7 @@ class Hit(object):
                  "cite_key", "sentence", "r5_inblock", "r5_instat",
                  "r8_excluded", "r2_noscope", "r2_subject_ok", "r3_kind",
                  "on_embed", "r3_w60", "r3_w40", "r3_struct", "r5_stats",
-                 "r2_sitewide", "r2_binding")
+                 "r2_sitewide", "r2_binding", "r2_sentence_bound")
 
     def __init__(self, rid, sub, rel, surface, locator, text, note="",
                  cite_key=None, sentence=""):
@@ -113,6 +113,7 @@ class Hit(object):
         self.r5_stats = []
         self.r2_sitewide = False
         self.r2_binding = None
+        self.r2_sentence_bound = False
 
     def sortkey(self):
         return (self.rel, self.sub, self.surface, self.locator, self.text)
@@ -1675,8 +1676,39 @@ def rule_R2(ctx, res):
                     if multi:
                         hb.note = "split-disclosure-review"
                     raw.append(hb)
+                # THE SENTENCE BINDS BEFORE THE PAGE DOES. A clause with no
+                # town of its own falls back to the PAGE's town -- which is
+                # right for a standalone claim and wrong for a fragment of a
+                # correct disclosure. GCI's sitewide gas-split sentence ends
+                # "... the natural gas utility is Xcel Energy in Johnstown,
+                # for most of Milliken, and for most locations in Severance --
+                # Xcel sets out its own insulation and air sealing rebate
+                # terms on its rebate page", and the splitter orphans that last
+                # clause. Bound to the page, it read as "Xcel attributed to
+                # Greeley" on every Atmos town: 47 findings, measured, one
+                # sentence, all false. If the SENTENCE binds the utility to a
+                # town it does serve, the clause asserts nothing against the
+                # page's town.
+                sent_towns = set(t for t, _ in ctx.town_spots(sent))
+                sent_ok = set()
+                for tn in sorted(sent_towns):
+                    sent_ok |= (ctx.allowed_utilities([tn]) or set())
                 for u, upos in uspots:
                     if (u, upos) in bound:
+                        continue
+                    if not tspots and sent_towns and u in sent_ok:
+                        hs = Hit("R2", "a", art.rel, skey, str(loc),
+                                 "%s | no town in this clause, but its own "
+                                 "SENTENCE binds it to %s, which it does "
+                                 "serve | %s"
+                                 % (u, ",".join(sorted(
+                                     t for t in sent_towns
+                                     if u in (ctx.allowed_utilities([t])
+                                              or set()))), clause),
+                                 note="bound-by-sentence-not-page",
+                                 sentence=sent)
+                        hs.r2_sentence_bound = True
+                        raw.append(hs)
                         continue
                     if allowed is not None and u in allowed:
                         if not scope:
@@ -1688,6 +1720,13 @@ def rule_R2(ctx, res):
                                      sentence=sent)
                             hh.r2_sitewide = True
                             raw.append(hh)
+                        continue
+                    # The same denial test the clause-binding path uses. "The
+                    # Atmos program described elsewhere on this site is for the
+                    # towns Atmos serves and does not apply to a Johnstown
+                    # home." is the CORRECTION the 2026-09-08 Xcel-gas pass
+                    # shipped, and R2 was failing the page for carrying it.
+                    if has_any(clause, deny_bind, word=False):
                         continue
                     hp = Hit("R2", "a", art.rel, skey, str(loc),
                              "%s | scope=%s | %s" % (u, scope_s, clause),
@@ -1841,13 +1880,25 @@ def rule_R2(ctx, res):
                 if other == name or not oq or oq == q:
                     continue
                 for cs in S.sentences(art.txt):
-                    if oq in cs:
-                        raw.append(Hit(
-                            "R2", "x", art.rel, "VIS", name,
-                            "town %s page carries %s's qualifier %r | %s"
-                            % (name, other, oq, cs),
-                            note="qualifier-cross-contamination",
-                            sentence=cs))
+                    if oq not in cs:
+                        continue
+                    # A qualifier travelling WITH ITS OWN TOWN is a disclosure,
+                    # not contamination. GCI's sitewide gas-split sentence
+                    # names all nine towns and each town's qualifier, and every
+                    # town page carries it -- correctly. Flagging Greeley's
+                    # page for saying "for most of Milliken" IN A SENTENCE
+                    # THAT NAMES MILLIKEN produced 20 findings, measured, all
+                    # false. Contamination is the qualifier arriving WITHOUT
+                    # the town it belongs to.
+                    if has(cs, other, ci=True):
+                        continue
+                    raw.append(Hit(
+                        "R2", "x", art.rel, "VIS", name,
+                        "town %s page carries %s's qualifier %r, and %s is "
+                        "NOT named in that sentence | %s"
+                        % (name, other, oq, other, cs),
+                        note="qualifier-cross-contamination",
+                        sentence=cs))
         # town-blind tool output
         if art.kind == "html" and art.js_strings and not uniform:
             # Satisfied by a town input OR by the tool asking for the utility
@@ -1870,8 +1921,21 @@ def rule_R2(ctx, res):
             # town-blind, it is town-INDEPENDENT.
             if not has_town_input:
                 for loc, lit in art.js_strings:
+                    # A literal that names the utility TOGETHER WITH a town it
+                    # serves is a disclosure, not a town-blind verdict. GCI's
+                    # calculators carry "gas territory here is split: Atmos
+                    # Energy is the natural gas utility in Greeley, Evans and
+                    # Eaton, and Xcel Energy is the natural gas utility in
+                    # Johnstown ..." -- one of them says outright "which this
+                    # checker does not ask about". Measured: 14 findings on
+                    # GCI, every one of them the split disclosure.
+                    lit_towns = set(t for t, _ in ctx.town_spots(lit))
+                    lit_ok = set()
+                    for tn in sorted(lit_towns):
+                        lit_ok |= (ctx.allowed_utilities([tn]) or set())
                     for u in [x for x in ctx.utilities_in(lit)
-                              if x not in uniform_allowed]:
+                              if x not in uniform_allowed
+                              and not (lit_towns and x in lit_ok)]:
                         raw.append(Hit("R2", "t", art.rel, "JS", loc,
                                        "%s named in a verdict-reachable JS "
                                        "literal with no town input | %s"
@@ -1976,6 +2040,9 @@ def rule_R2(ctx, res):
     def f_split(h):
         return h.note == "split-disclosure-review"
 
+    def f_sentbound(h):
+        return bool(getattr(h, "r2_sentence_bound", False))
+
     def f_restr_elsewhere(h):
         return h.note == "restriction-elsewhere-on-page"
 
@@ -1992,6 +2059,10 @@ def rule_R2(ctx, res):
              "serves somewhere in this territory, so nothing is asserted "
              "against a town (raised and enumerated, never dropped silently)",
              f_sitewide),
+        Filt("no town in the clause, but the utility's OWN SENTENCE binds it "
+             "to a town it DOES serve -- a fragment of a correct disclosure, "
+             "not an attribution to the page's town (raised and enumerated)",
+             f_sentbound),
         Filt("corrective disclosure -- a negation or contrast marker governs "
              "the flagged utility and the sentence names one that DOES serve "
              "the scope (correct territory copy, not an attribution)",
