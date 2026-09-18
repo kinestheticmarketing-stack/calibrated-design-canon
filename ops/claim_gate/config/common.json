@@ -1,75 +1,199 @@
 {
   "_README": "SHARED VALUES ONLY. No property name, no territory, no per-property figure appears in this file -- those live in dci.json / lgm.json / gci.json, which each carry \"extends\": \"common.json\". One copy exists because _artifact_grep.sh is the recorded counter-example: GCI's copy and LGM's copy diverged into two files that must be maintained twice, and LGM's still names a five-town lock where the property has had four towns since 3ca991f. The implementation still holds the RULES; this file holds values, exactly as RULES_SPEC.md section 1 requires.",
   "schema_version": 1,
-  "documentation_only_keys": [
-    "schema_version", "measured_at", "repo", "domain", "gates_present",
-    "gates_absent", "svg_readable", "atomic_answer_band", "reviewed_iso",
-    "static_page_reviewed_iso", "og_image_source", "og_image_history",
-    "market", "gas_utility", "electric_utility", "gas_structure",
-    "electric_structure", "hedge_rule", "gas_utility_split_fact",
-    "sibling_artifacts_forbidden", "locked_restriction_reach",
-    "DISCREPANCY_AGAINST_BRIEF", "allowlist", "forbidden_elevations",
-    "elevation_anchor", "exclude_paths", "bare_numeral_gate",
-    "detector_machinery_deleted", "director_desk", "date_surfaces",
-    "reviewed_iso_constant", "self_dated_sources", "static_page_constant",
-    "static_page_value", "measured_debt", "bump_rule",
-    "modified_xcel_gas_correction", "attribution_template", "quote_close",
-    "require_explicit_quote_field", "attributing_block_selector",
-    "report_registry_pages_drift", "opt_in", "town_count_note",
-    "known_disclosure_gaps_reason", "allowed_occurrences_note",
-    "allowed_structure_percentages", "allowed_thresholds"
-  ],
+  "documentation_only_keys": {
+    "schema_version": "Config format version. Structural, read by nobody at runtime by design.",
+    "measured_at": "The date and HEAD the per-property figures in this config were measured at. Provenance for every number below it.",
+    "repo": "The property repo's directory name, recorded so a config can be identified without its filename.",
+    "domain": "The property's public origin, used by R10's off-property test and recorded here for identification.",
+    "gates_present": "The property's OTHER gates, recorded because a null result is an artifact: DCI has no _artifact_grep.sh.",
+    "gates_absent": "Which gates this property does NOT have. Established by find + git ls-files, never assumed.",
+    "svg_readable": "Which SVGs in public/ carry readable text nodes. Descriptive; the gate discovers SVGs by extension.",
+    "atomic_answer_band": "The property's enforced atomic-answer word band, enforced by its own generator, not by this gate.",
+    "reviewed_iso": "The property's REVIEWED_ISO constant at measurement time. Provenance for R8's debt figures.",
+    "static_page_reviewed_iso": "GCI's STATIC_PAGE_REVIEWED_ISO at measurement time. Provenance.",
+    "og_image_source": "Where the og-image is generated from. Records why the raster hole is partial here.",
+    "og_image_history": "The e6cb44e OG_FOOTER correction. Records why this asset is a territorial claim surface.",
+    "market": "The property's market in prose. Identification, not a rule input.",
+    "gas_utility": "The market's gas utility in prose. The MACHINE-READABLE form is R2.towns[*].gas.",
+    "electric_utility": "The market's electric utility in prose. The machine-readable form is R2.towns[*].electric.",
+    "gas_structure": "Prose summary of the gas split. The machine-readable form is R2.towns.",
+    "electric_structure": "Prose summary of the electric split. The machine-readable form is R2.towns.",
+    "hedge_rule": "The presence-not-exclusivity ruling in prose. Its enforceable half is R2.towns[*].gas_state.",
+    "gas_utility_split_fact": "The locked sitewide sentence, recorded verbatim. Its enforceable form is allowed_multi_utility_sentences.",
+    "sibling_artifacts_forbidden": "Sibling-town strings. NOT tested by R2 by decision: that is _artifact_grep.sh's existing check.",
+    "locked_restriction_reach": "How many pages carried the locked restriction when measured. Provenance for the R2 sub-test r.",
+    "DISCREPANCY_AGAINST_BRIEF": "A recorded disagreement between the kickoff brief and ground-truth. Recorded, not reconciled.",
+    "allowlist": "GCI's Director-granted DRCOG exception, recorded. Enforcement lives in non_territorial_programs.",
+    "forbidden_elevations": "Sibling-property elevation figures. Not tested by R2 by the same decision as sibling_artifacts_forbidden.",
+    "elevation_anchor": "The property's own elevation. READ by R3's structural classifier; listed here because it is also documentation.",
+    "exclude_paths": "Paths outside public/ that must never be swept. Out of scope by construction: the gate reads public/.",
+    "bare_numeral_gate": "The grep command GCI f0203ad installed, recorded verbatim. Its semantics are implemented as R3's T2.",
+    "detector_machinery_deleted": "Constants deleted in 2cecf33, recorded so nobody resurrects them. A do-not-restore list.",
+    "director_desk": "An open Director decision recorded beside the rule it affects. Not a rule input.",
+    "date_surfaces": "The date surfaces R8 compares, in prose. The implementation enumerates them directly.",
+    "reviewed_iso_constant": "The generator constant name holding the review date. Descriptive.",
+    "self_dated_sources": "Generator constants that date their own pages. Descriptive; R8 reads the rendered dates.",
+    "static_page_constant": "The generator constant pinning schema-only pages. Descriptive.",
+    "static_page_value": "That constant's value at measurement time. Provenance.",
+    "measured_debt": "LGM's measured R8 debt at 2026-09-17. Provenance for a figure a future pass would otherwise re-derive.",
+    "bump_rule": "GCI's MEASURE-BEFORE-BUMPING rule in prose, with the bf240f8 and 348baf9 evidence. A standing instruction.",
+    "modified_xcel_gas_correction": "The date of GCI's Xcel-gas correction. Provenance.",
+    "attribution_template": "The rendered cite_inline template, recorded. R1 matches the rendered block, not this string.",
+    "quote_close": "Closing quote glyphs, recorded for symmetry. R1 keys on the OPENING glyph plus an attribution verb.",
+    "require_explicit_quote_field": "Records that quote must be explicitly true. R1 asserts this unconditionally today.",
+    "attributing_block_selector": "The attributing block in CSS-selector form. The live value is R1.cited_stat_class.",
+    "report_registry_pages_drift": "Records that registry pages drift is an R11 concern. The registry is outside public/ and unread.",
+    "opt_in": "Which R6 sub-rule is opt-in. The implementation holds the OPT_IN_RULES registry.",
+    "town_count_note": "LGM's four-town measurement and the stale _artifact_grep.sh comment. Provenance.",
+    "known_disclosure_gaps_reason": "Why the three-of-nine disclosure gap is not a defect. A Director ruling, recorded.",
+    "allowed_occurrences_note": "The measured occurrence counts behind the allowlist caps. Provenance for R3's cap enforcement.",
+    "allowed_structure_percentages": "Structure percentages kept under Ruling 2. READ by R3 and R5; listed here as it is also a record.",
+    "allowed_thresholds": "LGM's four tier thresholds. READ by R5's threshold filter; listed here as it is also a record.",
+    "municipal_program": "Golden's own municipal match programme, recorded so nobody attributes it to Xcel. Enforcement is via non_territorial_programs.",
+    "efficiency_works_access": "Whether the town can reach Efficiency Works at all. Enforcement is via R2.locked_restriction_required_for plus the town's electric_program being null.",
+    "electric_qualifier": "LPC's measured coverage of Longmont, recorded. The enforceable half is locked_restriction_strings.",
+    "electric_state": "That LPC coverage is PARTIAL, recorded. The enforceable half is locked_restriction_strings.",
+    "substring_trap": "The measured grep -ci 'ault' = 8 vs 1 trap. The gate always uses word-boundary, case-sensitive town matching, so the trap is closed by construction rather than by this key.",
+    "corollary": "That Atmos in Greeley is CONFIRMED but NOT EXCLUSIVE. A ruling recorded beside the town it governs; gas_state carries the enforceable form.",
+    "gas_qualifier_rule": "NEVER INVENT A QUALIFIER FOR JOHNSTOWN, recorded. Enforced by gas_qualifier being empty, which the qualifier sub-test reads.",
+    "and_the_figures_are_still_banned": "Records that the attributed-stacking exception licenses DESCRIBING Efficiency Works' published combination and does NOT license republishing its figures. The figures stay banned by R3, which is a separate rule; this key is the cross-reference, not the enforcement."
+  },
   "documentation_only_keys_note": "Keys that are DELIBERATELY descriptive: measured provenance, null-result records, and fields RULES_SPEC.md section 10 defines as part of the config's documented shape. They are listed here so the gate's own dead-config detector can tell them apart from keys that read as live rules and are not. Anything NOT on this list and not referenced in the implementation is reported as OWED every run.",
-  "src_rules": ["R2", "R3-T3", "R4", "R5", "R7"],
+  "src_rules": [
+    "R2",
+    "R3-T3",
+    "R4",
+    "R5",
+    "R7"
+  ],
   "src_rules_note": "Which rules read the SRC normalization (the tokenize-joined string runs of the property's own generators). Scoped per Ruling B 2026-09-17: NOT R3's T1/T2 numeral halves, because the generators embed the citation registry's own deliberately-kept dollar figures (DCI 7786ce5 records why the registry keeps them) and a $-anchored or bare-numeral scan over them would flood with figures that are correct where they sit. R3's T3 rank-claim half DOES read SRC, because 'the largest rebate' lived in _generate_service_pages.py CROSS_CONTEXT['attic'] and shipped to six pages from there. R7 half A (identifiers) also stays off SRC: the 2026-09-07 four-repo sweep measured DCI 62 / LGM 64 hits for the superseded print codes of which only NINE were live defects.",
-
   "R1": {
     "cited_stat_class": "cited-stat",
     "attribution_template": "According to {determiner}{source}, ",
-    "quote_open": ["&ldquo;", "“", "&quot;", "\"", "&#8220;", "&#x201C;",
-                   "«", "&laquo;", "&#171;"],
-    "quote_close": ["&rdquo;", "”", "&quot;", "\"", "&#8221;", "&#x201D;",
-                    "»", "&raquo;", "&#187;"],
-    "attribution_verbs": ["According to", "accord to", "says", "stated", "states",
-                          "per ", "'s own", "&rsquo;s own", "’s own",
-                          "reports", "found that", "writes", "notes that",
-                          "confirms", "wording is", "puts it"],
+    "quote_open": [
+      "&ldquo;",
+      "“",
+      "&quot;",
+      "\"",
+      "&#8220;",
+      "&#x201C;",
+      "«",
+      "&laquo;",
+      "&#171;"
+    ],
+    "quote_close": [
+      "&rdquo;",
+      "”",
+      "&quot;",
+      "\"",
+      "&#8221;",
+      "&#x201D;",
+      "»",
+      "&raquo;",
+      "&#187;"
+    ],
+    "attribution_verbs": [
+      "According to",
+      "accord to",
+      "says",
+      "stated",
+      "states",
+      "per ",
+      "'s own",
+      "&rsquo;s own",
+      "’s own",
+      "reports",
+      "found that",
+      "writes",
+      "notes that",
+      "confirms",
+      "wording is",
+      "puts it"
+    ],
     "require_explicit_quote_field": true,
     "require_provenance_block": true,
     "quotation_allowlist": []
   },
-
   "R2": {
-    "utility_names": ["Atmos Energy", "Atmos", "Xcel Energy", "Xcel",
-                      "Longmont Power & Communications",
-                      "Longmont Power and Communications", "LPC",
-                      "Poudre Valley REA", "PVREA", "United Power",
-                      "Efficiency Works"],
-    "utility_aliases": { "Xcel": "Xcel Energy",
-                         "Atmos": "Atmos Energy",
-                         "LPC": "Longmont Power & Communications",
-                         "Longmont Power and Communications": "Longmont Power & Communications",
-                         "PVREA": "Poudre Valley REA" },
-    "electric_utility_names": ["Longmont Power & Communications",
-                               "Longmont Power and Communications", "LPC",
-                               "Poudre Valley REA", "PVREA", "United Power",
-                               "Xcel Energy", "Xcel"],
-    "utility_domains": { "atmosenergy.com": "Atmos Energy",
-                         "xcelenergy.com": "Xcel Energy",
-                         "co.my.xcelenergy.com": "Xcel Energy",
-                         "efficiencyworks.org": "Efficiency Works",
-                         "efficiencyworks.com": "Efficiency Works",
-                         "longmontcolorado.gov": "Longmont Power & Communications" },
-    "attribution_words": ["rebate", "rebates", "incentive", "incentives",
-                          "program", "programs", "paperwork", "files", "file",
-                          "apply", "application", "bonus", "pays", "paid",
-                          "serves", "provides", "utility", "supplied",
-                          "customers", "qualifies", "eligibility"],
-    "corrective_disclosure_markers": ["not ", "n't ", "is not", "are not",
-                                      "rather than", "instead of",
-                                      "no longer", "unlike", "whereas",
-                                      "as opposed to", "never ", "neither ",
-                                      "nor ", "does not", "do not"],
+    "utility_names": [
+      "Atmos Energy",
+      "Atmos",
+      "Xcel Energy",
+      "Xcel",
+      "Longmont Power & Communications",
+      "Longmont Power and Communications",
+      "LPC",
+      "Poudre Valley REA",
+      "PVREA",
+      "United Power",
+      "Efficiency Works"
+    ],
+    "utility_aliases": {
+      "Xcel": "Xcel Energy",
+      "Atmos": "Atmos Energy",
+      "LPC": "Longmont Power & Communications",
+      "Longmont Power and Communications": "Longmont Power & Communications",
+      "PVREA": "Poudre Valley REA"
+    },
+    "electric_utility_names": [
+      "Longmont Power & Communications",
+      "Longmont Power and Communications",
+      "LPC",
+      "Poudre Valley REA",
+      "PVREA",
+      "United Power",
+      "Xcel Energy",
+      "Xcel"
+    ],
+    "utility_domains": {
+      "atmosenergy.com": "Atmos Energy",
+      "xcelenergy.com": "Xcel Energy",
+      "co.my.xcelenergy.com": "Xcel Energy",
+      "efficiencyworks.org": "Efficiency Works",
+      "efficiencyworks.com": "Efficiency Works",
+      "longmontcolorado.gov": "Longmont Power & Communications"
+    },
+    "attribution_words": [
+      "rebate",
+      "rebates",
+      "incentive",
+      "incentives",
+      "program",
+      "programs",
+      "paperwork",
+      "files",
+      "file",
+      "apply",
+      "application",
+      "bonus",
+      "pays",
+      "paid",
+      "serves",
+      "provides",
+      "utility",
+      "supplied",
+      "customers",
+      "qualifies",
+      "eligibility"
+    ],
+    "corrective_disclosure_markers": [
+      "not ",
+      "n't ",
+      "is not",
+      "are not",
+      "rather than",
+      "instead of",
+      "no longer",
+      "unlike",
+      "whereas",
+      "as opposed to",
+      "never ",
+      "neither ",
+      "nor ",
+      "does not",
+      "do not"
+    ],
     "corrective_disclosure_markers_reason": "R2 measured 100%/82.7%/79.6% false positives with ZERO true positives, and the headline example was insulation-johnstown.html: 'in Johnstown the natural gas utility is Xcel Energy, not Atmos Energy' -- correct territory copy -- flagged as utility-not-serving-town. A hit is cleared when one of these governs the flagged name within 34 chars AND the sentence also names a utility that DOES serve the scope.",
     "allowed_multi_utility_sentences": [],
     "known_disclosure_gaps": [],
@@ -78,324 +202,778 @@
     "forbid_electric_utility_naming": false,
     "towns": {}
   },
-
   "R3": {
     "dollar_pattern": "\\$[0-9][0-9,.]*",
     "rate_pattern": "\\b0\\.[0-9]{1,2}\\b",
-    "money_words": ["rebate", "incentive", "bonus", "cap", "capped", "pays",
-                    "paid", "payout", "reimburse", "per measure", "up to",
-                    "credit", "discount", "rebate amount", "amount paid"],
-    "rank_words": ["largest", "biggest", "smallest", "larger", "smaller",
-                   "highest", "lowest", "second-largest", "greater of",
-                   "lesser of", "the larger of the two", "small fraction",
-                   "a fraction of", "ranks", "exceeds"],
+    "money_words": [
+      "rebate",
+      "incentive",
+      "bonus",
+      "cap",
+      "capped",
+      "pays",
+      "paid",
+      "payout",
+      "reimburse",
+      "per measure",
+      "up to",
+      "credit",
+      "discount",
+      "rebate amount",
+      "amount paid"
+    ],
+    "rank_words": [
+      "largest",
+      "biggest",
+      "smallest",
+      "larger",
+      "smaller",
+      "highest",
+      "lowest",
+      "second-largest",
+      "greater of",
+      "lesser of",
+      "the larger of the two",
+      "small fraction",
+      "a fraction of",
+      "ranks",
+      "exceeds"
+    ],
     "window_chars": 120,
     "allowed_figures": [],
     "known_figures": [],
-    "cost_context_markers": ["installed cost", "install cost", "project cost",
-                             "what it costs", "cost rate", "typical cost"],
-    "cost_unit_markers": ["per square foot", "per sq ft", "/sf", "per sf",
-                          "loose-fill", "dense-pack", "setup", "materials",
-                          "labor", "price"],
+    "cost_context_markers": [
+      "installed cost",
+      "install cost",
+      "project cost",
+      "what it costs",
+      "cost rate",
+      "typical cost"
+    ],
+    "cost_unit_markers": [
+      "per square foot",
+      "per sq ft",
+      "/sf",
+      "per sf",
+      "loose-fill",
+      "dense-pack",
+      "setup",
+      "materials",
+      "labor",
+      "price"
+    ],
     "cost_unit_markers_reason": "A per-unit marker is NOT sufficient on its own. LGM's cost_context_markers listed 'per square foot' while Efficiency Works DENOMINATES ITS PAYOUT per square foot, and that one marker removed 103 of the 133 banned figures (65 x $1.16 and 38 x $0.77). These require a cost noun from cost_noun_markers in the same window.",
-    "cost_noun_markers": ["cost", "costs", "price", "priced", "quote",
-                          "installed", "installation", "material", "labor",
-                          "setup", "spend", "budget", "invoice"],
-    "year_payout_binders": ["up to", "pays", "paid", "payout", "capped at",
-                            "cap of", "amount of", "rebate of", "worth",
-                            "receive", "reimburse", "credit of", "bonus of",
-                            "flat", "per measure"],
+    "cost_noun_markers": [
+      "cost",
+      "costs",
+      "price",
+      "priced",
+      "quote",
+      "installed",
+      "installation",
+      "material",
+      "labor",
+      "setup",
+      "spend",
+      "budget",
+      "invoice"
+    ],
+    "year_payout_binders": [
+      "up to",
+      "pays",
+      "paid",
+      "payout",
+      "capped at",
+      "cap of",
+      "amount of",
+      "rebate of",
+      "worth",
+      "receive",
+      "reimburse",
+      "credit of",
+      "bonus of",
+      "flat",
+      "per measure"
+    ],
     "year_payout_binders_reason": "A four-digit number in 1900-2099 is cleared as a year UNLESS one of these sits within 40 chars. Requiring a DATE word instead was measurably worse: DCI R3 went 68 -> 237 adjudicated, 162 of them the bare year in 'the 2026 Xcel rebate programs', because a year needs no date word to be a year. The residual blind spot -- a bare rebate amount between 1900 and 2099 with no binder -- is printed in the filter label every run rather than hidden.",
-    "code_context_markers": ["IECC", "R402", "ENERGY STAR", "Climate Zone",
-                             "ceiling minimum", "top plate", "eave", "R-value",
-                             "R-13", "R-15", "R-19", "R-20", "R-30", "R-38",
-                             "R-49", "R-60", "IRC", "NEC", "code requirement",
-                             "recommends R", "retrofit"],
-    "code_noun_markers": ["code", "minimum", "requirement", "requires",
-                          "recommend", "recommends", "recommended", "table",
-                          "zone", "rating", "standard", "edition", "adopted",
-                          "prescriptive", "R-value", "retrofit"],
+    "code_context_markers": [
+      "IECC",
+      "R402",
+      "ENERGY STAR",
+      "Climate Zone",
+      "ceiling minimum",
+      "top plate",
+      "eave",
+      "R-value",
+      "R-13",
+      "R-15",
+      "R-19",
+      "R-20",
+      "R-30",
+      "R-38",
+      "R-49",
+      "R-60",
+      "IRC",
+      "NEC",
+      "code requirement",
+      "recommends R",
+      "retrofit"
+    ],
+    "code_noun_markers": [
+      "code",
+      "minimum",
+      "requirement",
+      "requires",
+      "recommend",
+      "recommends",
+      "recommended",
+      "table",
+      "zone",
+      "rating",
+      "standard",
+      "edition",
+      "adopted",
+      "prescriptive",
+      "R-value",
+      "retrofit"
+    ],
     "code_noun_markers_reason": "code_context_markers had become the blanket pardon f_pub used to be: naming ENERGY STAR anywhere in a sentence cleared any uncited statistic in it, through a filter whose stated purpose is CODE CONTEXT. 'ENERGY STAR homes differ, but our crews measure a 35% reduction in heating costs' was pardoned by it. The marker must now sit within 60 chars of the figure AND one of these nouns must be present, so the marker has to actually govern the number.",
-    "income_eligibility_markers": ["at or below", "income-qualified",
-                                   "income qualified", "Weatherization is free",
-                                   "household of four", "for one person",
-                                   "state median income", "area median income",
-                                   "federal poverty level",
-                                   "income-eligibility", "income eligibility"],
+    "income_eligibility_markers": [
+      "at or below",
+      "income-qualified",
+      "income qualified",
+      "Weatherization is free",
+      "household of four",
+      "for one person",
+      "state median income",
+      "area median income",
+      "federal poverty level",
+      "income-eligibility",
+      "income eligibility"
+    ],
     "allowed_structure_percentages": [],
     "allowed_thresholds": [],
-    "threshold_context_markers": ["tier", "threshold", "measured reduction",
-                                  "of project cost", "qualifying minimum",
-                                  "CFM", "capped at", "up to 100%",
-                                  "structure of the rebate"],
-    "exclude_paths": ["docs/citation-registry.json"]
-  },
-
-  "R4": {
-    "stacking_tokens": ["stack", "stacks", "stacked", "stacking", "combin",
-                        "combined", "combine", "on top of", "on top",
-                        "alongside", "layer", "layers", "bundl", "unlock",
-                        "unlocks", "add-on", "plus the", "in addition to",
-                        "together with", "both programs", "either program",
-                        "cumulative", "at once", "concurrently",
-                        "same measure"],
-    "combination_predicates": ["stack", "combine", "combined", "layer",
-                               "layers", "unlock", "apply together",
-                               "both apply", "add to", "on top of", "bundl",
-                               "in addition to", "together with",
-                               "are cumulative", "cumulative on the same",
-                               "at once", "run concurrently",
-                               "pay for the same measure",
-                               "both pay", "each pay"],
-    "denial_markers": ["not ", "cannot", "can't", "never", "neither", "no ",
-                       "are not designed", "not in the way",
-                       "separate eligibility", "are never combined",
-                       "do not combine", "does not combine", "won't",
-                       "will not"],
-    "programs": [],
-    "legitimate_uses": ["stack-effect", "stack effect", "plumbing stack",
-                        "flue", "stacks up", "stacked reasons",
-                        "factors stack against", "hot-stacked",
-                        "compacted base", "can lights", "chimney stack",
-                        "vent stack", "on top of old", "on top of the old",
-                        "on top of existing", "on top of my existing",
-                        "on top of it", "stacking new insulation"],
-    "noun_use_constants": ["REBATE_ACKNOWLEDGMENT"],
-    "attributed_exception": { "allowed": true,
-                              "requires_publisher_named": true,
-                              "requires_cited_source_key": true },
-    "retired_prohibition_strings": []
-  },
-
-  "R5": {
-    "magnitude_patterns": ["[0-9]{1,3}\\s?%",
-                           "[0-9]+\\s?-\\s?[0-9]+\\s?%",
-                           "[0-9]+ to [0-9]+ percent",
-                           "(?:ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|fifteen|twenty-five|thirty-five)\\s+percent",
-                           "by a (?:third|quarter|half|fifth)",
-                           "by one[- ](?:third|quarter|half|fifth)",
-                           "[0-9](\\.[0-9])?x\\b",
-                           "[0-9]+ times"],
-    "magnitude_words": ["reduction", "savings", "saves", "save", "lower",
-                        "cut", "increase", "improvement", "payback",
-                        "efficiency", "loss", "leakage", "reduce", "lose", "lost", "performance"],
-    "recognised_publishers": ["ENERGY STAR", "Building Science Corporation",
-                              "Colorado Energy Office", "EPA", "CDPHE",
-                              "Building America Solution Center", "ACCA",
-                              "Xcel Energy", "Atmos Energy", "Efficiency Works",
-                              "Boulder County EnergySmart", "NOAA",
-                              "Energy Outreach Colorado", "IECC",
-                              "International Energy Conservation Code",
-                              "Department of Energy", "NFPA"],
-    "computed_output_markers": ["your own home", "based on your inputs",
-                                "you entered", "estimates to roughly",
-                                "short of target", "for your",
-                                "your current state", "the number for your"],
-    "known_uncited": []
-  },
-
-  "R6": { "label_chains": [], "opt_in": ["R6b"] },
-
-  "R7": {
-    "superseded_identifiers": ["24-02-205", "24_02_205", "23-11-205",
-                               "19-06-612", "25-10-417",
-                               "Advice Letter No. 544", "No. 544",
-                               "nrel.gov", "NREL",
-                               "National Renewable Energy Laboratory"],
-    "superseded_urls": ["Residential-Insulation-Air-Sealing-Rebate-24-02-205.pdf",
-                        "CO-Residential-Rebate-Summary-Sheet.pdf",
-                        "nrel.gov/gis/solar.html"],
-    "current_replacements": { "24-02-205": "25-12-215",
-                              "24_02_205": "25-12-215",
-                              "23-11-205": "25-12-215",
-                              "19-06-612": "25-12-215",
-                              "25-10-417": "25-12-215",
-                              "Advice Letter No. 544": "Advice Letter No. 647",
-                              "No. 544": "No. 647",
-                              "nrel.gov": "nlr.gov",
-                              "NREL": "nlr.gov (the whole nrel.gov zone returns authoritative NXDOMAIN from the .gov registry's own nameserver, and the lab renamed to nlr.gov)",
-                              "National Renewable Energy Laboratory": "nlr.gov (renamed)" },
-    "superseded_propositions": [
-      { "claim_id": "newest_schedule_is_jan_2024",
-        "all_of": ["effective January 1, 2024"],
-        "any_of": ["newest rebate schedule", "could not be retrieved",
-                   "could not be confirmed"],
-        "why": "January 1, 2024 IS the superseded 24-02-205 sheet; 25-12-215 was retrieved and hash-verified the same pass. GCI 44d638c, live HTTP 200." },
-      { "claim_id": "whe_audit_entry_path_hes_plus",
-        "any_of": ["Home Energy Squad"],
-        "why": "Verbatim from the superseded 2024 sheet; 25-12-215 drops it entirely. Home Energy Squad returns 0 in the current sheet. DCI b47a3c2, 35 pages." },
-      { "claim_id": "whe_audit_entry_path_begin_with",
-        "all_of": ["begin with"],
-        "any_of": ["blower door audit", "infrared audit", "audit to be eligible"],
-        "why": "The retired entry path stated as a condition. LGM 72e18ac -- a retired rule wearing a live citation." },
-      { "claim_id": "air_sealing_is_a_prerequisite",
-        "all_of": ["prerequisite"],
-        "any_of": ["Whole Home Efficiency", "WHE"],
-        "why": "25-12-215 sets no such condition; air sealing is one measure that can count toward three. LGM 72e18ac; DCI eb5c939, 11 instances on 3 pages including title+og:title+twitter:title as one string." },
-      { "claim_id": "installed_and_invoiced_by_dec_31_2026",
-        "any_of": ["invoiced by December 31, 2026", "invoiced by Dec. 31, 2026",
-                   "installed and invoiced by December 31",
-                   "installed and invoiced by Dec. 31"],
-        "why": "In NO Xcel artifact retrieved. DCI 38 pages; the short form Dec. 31, 2026 survived four further rounds because every sweep searched the long form." },
-      { "claim_id": "payout_on_third_measure",
-        "any_of": ["as soon as the third qualifying upgrade",
-                   "when the third qualifying measure completes",
-                   "paid out as soon as the third"],
-        "why": "25-12-215 publishes NO payout schedule at all. DCI b47a3c2 then f83d421 -- removed in prose, alive in a FAQ and its JSON-LD acceptedAnswer." },
-      { "claim_id": "25pct_of_rebate_already_paid",
-        "any_of": ["25% of the rebate already paid"],
-        "why": "Current sheet says a 25% bonus on all standard rebates. DCI 41 pages." },
-      { "claim_id": "three_or_more_bundled_no_clock",
-        "all_of": ["three or more measures"],
-        "any_of": ["bundled", "are bundled"],
-        "none_of": ["within two years", "of enrolling"],
-        "why": "Drops the source's binding clock, within two years of enrolling. DCI b47a3c2." },
-      { "claim_id": "gas_heat_multiplier_expired",
-        "any_of": ["the multiplier is expired", "multiplier has expired",
-                   "multiplier is no longer"],
-        "why": "25-12-215 REINSTATES the 1.5x gas-heat bonus: 'Invoice must be dated in 2025 or 2026 to receive the bonus'. LGM a2ba5a6, 4 live instances." },
-      { "claim_id": "no_audit_dollar_figure_published",
-        "any_of": ["neither Xcel nor Efficiency Works publishes a dollar figure"],
-        "why": "An unrestricted universal negative, refuted by 25-12-215's own HOME ENERGY AUDIT / REBATE AMOUNT table. LGM 58646f0, 8 places." },
-      { "claim_id": "xcel_approved_audit",
-        "all_of": ["Xcel-approved"],
-        "any_of": ["audit"],
-        "why": "A category the sheet does not define. DCI eb5c939." },
-      { "claim_id": "completed_in_one_project",
-        "any_of": ["completed in one project"],
-        "why": "Narrower than the source and materially misleading -- it tells a homeowner spreading three measures over eighteen months they do not qualify, when the sheet says they do. DCI eb5c939." },
-      { "claim_id": "within_two_years_of_the_audit",
-        "any_of": ["within two years of the audit"],
-        "why": "The wrong clock. The sheet says 'of enrolling'. DCI eb5c939." },
-      { "claim_id": "xcel_rvalue_less_than_15",
-        "any_of": ["R-value of less than 15"],
-        "why": "25-12-215 says pre-job less than 24 and post-job 60 or greater, corroborated by print code 17-9230 (01-25). Xcel's own live HTML still shows the old 15/49 values; the print-coded dated PDF wins -- do not fix that backwards. LGM: 0 instances, a NULL RESULT." }
+    "threshold_context_markers": [
+      "tier",
+      "threshold",
+      "measured reduction",
+      "of project cost",
+      "qualifying minimum",
+      "CFM",
+      "capped at",
+      "up to 100%",
+      "structure of the rebate"
     ],
-    "correction_markers": ["SUPERSEDED", "SUPERSESSION", "CORRECTED",
-                          "RETIRED", "[CORRECTED", "do NOT act on",
-                          "retired figure", "~~", "no longer current",
-                          "this wording was retired", "was retired",
-                          "superseded by", "no longer says"],
-    "never_retire_on_403": ["NOAA_FRONT_RANGE_WIND", "CDPHE_ASBESTOS_REG8",
-                            "NOAA", "CDPHE"],
-    "deliberate_edition_divergence": [
-      { "key": "IRC_P2603_5", "gci": "2021 IRC", "lgm": "2024 IRC",
-        "reason": "GCI matches its dict's other IRC citations; LGM verified the 2024 text is word-for-word identical." }
+    "exclude_paths": [
+      "docs/citation-registry.json"
     ]
   },
-
+  "R4": {
+    "stacking_tokens": [
+      "stack",
+      "stacks",
+      "stacked",
+      "stacking",
+      "combin",
+      "combined",
+      "combine",
+      "on top of",
+      "on top",
+      "alongside",
+      "layer",
+      "layers",
+      "bundl",
+      "unlock",
+      "unlocks",
+      "add-on",
+      "plus the",
+      "in addition to",
+      "together with",
+      "both programs",
+      "either program",
+      "cumulative",
+      "at once",
+      "concurrently",
+      "same measure"
+    ],
+    "combination_predicates": [
+      "stack",
+      "combine",
+      "combined",
+      "layer",
+      "layers",
+      "unlock",
+      "apply together",
+      "both apply",
+      "add to",
+      "on top of",
+      "bundl",
+      "in addition to",
+      "together with",
+      "are cumulative",
+      "cumulative on the same",
+      "at once",
+      "run concurrently",
+      "pay for the same measure",
+      "both pay",
+      "each pay"
+    ],
+    "denial_markers": [
+      "not ",
+      "cannot",
+      "can't",
+      "never",
+      "neither",
+      "no ",
+      "are not designed",
+      "not in the way",
+      "separate eligibility",
+      "are never combined",
+      "do not combine",
+      "does not combine",
+      "won't",
+      "will not"
+    ],
+    "programs": [],
+    "legitimate_uses": [
+      "stack-effect",
+      "stack effect",
+      "plumbing stack",
+      "flue",
+      "stacks up",
+      "stacked reasons",
+      "factors stack against",
+      "hot-stacked",
+      "compacted base",
+      "can lights",
+      "chimney stack",
+      "vent stack",
+      "on top of old",
+      "on top of the old",
+      "on top of existing",
+      "on top of my existing",
+      "on top of it",
+      "stacking new insulation"
+    ],
+    "noun_use_constants": [
+      "REBATE_ACKNOWLEDGMENT"
+    ],
+    "attributed_exception": {
+      "allowed": true,
+      "requires_publisher_named": true,
+      "requires_cited_source_key": true
+    },
+    "retired_prohibition_strings": []
+  },
+  "R5": {
+    "magnitude_patterns": [
+      "[0-9]{1,3}\\s?%",
+      "[0-9]+\\s?-\\s?[0-9]+\\s?%",
+      "[0-9]+ to [0-9]+ percent",
+      "(?:ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|fifteen|twenty-five|thirty-five)\\s+percent",
+      "by a (?:third|quarter|half|fifth)",
+      "by one[- ](?:third|quarter|half|fifth)",
+      "[0-9](\\.[0-9])?x\\b",
+      "[0-9]+ times"
+    ],
+    "magnitude_words": [
+      "reduction",
+      "savings",
+      "saves",
+      "save",
+      "lower",
+      "cut",
+      "increase",
+      "improvement",
+      "payback",
+      "efficiency",
+      "loss",
+      "leakage",
+      "reduce",
+      "lose",
+      "lost",
+      "performance"
+    ],
+    "recognised_publishers": [
+      "ENERGY STAR",
+      "Building Science Corporation",
+      "Colorado Energy Office",
+      "EPA",
+      "CDPHE",
+      "Building America Solution Center",
+      "ACCA",
+      "Xcel Energy",
+      "Atmos Energy",
+      "Efficiency Works",
+      "Boulder County EnergySmart",
+      "NOAA",
+      "Energy Outreach Colorado",
+      "IECC",
+      "International Energy Conservation Code",
+      "Department of Energy",
+      "NFPA"
+    ],
+    "computed_output_markers": [
+      "your own home",
+      "based on your inputs",
+      "you entered",
+      "estimates to roughly",
+      "short of target",
+      "for your",
+      "your current state",
+      "the number for your"
+    ],
+    "known_uncited": []
+  },
+  "R6": {
+    "label_chains": [],
+    "opt_in": [
+      "R6b"
+    ]
+  },
+  "R7": {
+    "superseded_identifiers": [
+      "24-02-205",
+      "24_02_205",
+      "23-11-205",
+      "19-06-612",
+      "25-10-417",
+      "Advice Letter No. 544",
+      "No. 544",
+      "nrel.gov",
+      "NREL",
+      "National Renewable Energy Laboratory"
+    ],
+    "superseded_urls": [
+      "Residential-Insulation-Air-Sealing-Rebate-24-02-205.pdf",
+      "CO-Residential-Rebate-Summary-Sheet.pdf",
+      "nrel.gov/gis/solar.html"
+    ],
+    "current_replacements": {
+      "24-02-205": "25-12-215",
+      "24_02_205": "25-12-215",
+      "23-11-205": "25-12-215",
+      "19-06-612": "25-12-215",
+      "25-10-417": "25-12-215",
+      "Advice Letter No. 544": "Advice Letter No. 647",
+      "No. 544": "No. 647",
+      "nrel.gov": "nlr.gov",
+      "NREL": "nlr.gov (the whole nrel.gov zone returns authoritative NXDOMAIN from the .gov registry's own nameserver, and the lab renamed to nlr.gov)",
+      "National Renewable Energy Laboratory": "nlr.gov (renamed)"
+    },
+    "superseded_propositions": [
+      {
+        "claim_id": "newest_schedule_is_jan_2024",
+        "all_of": [
+          "effective January 1, 2024"
+        ],
+        "any_of": [
+          "newest rebate schedule",
+          "could not be retrieved",
+          "could not be confirmed"
+        ],
+        "why": "January 1, 2024 IS the superseded 24-02-205 sheet; 25-12-215 was retrieved and hash-verified the same pass. GCI 44d638c, live HTTP 200."
+      },
+      {
+        "claim_id": "whe_audit_entry_path_hes_plus",
+        "any_of": [
+          "Home Energy Squad"
+        ],
+        "why": "Verbatim from the superseded 2024 sheet; 25-12-215 drops it entirely. Home Energy Squad returns 0 in the current sheet. DCI b47a3c2, 35 pages."
+      },
+      {
+        "claim_id": "whe_audit_entry_path_begin_with",
+        "all_of": [
+          "begin with"
+        ],
+        "any_of": [
+          "blower door audit",
+          "infrared audit",
+          "audit to be eligible"
+        ],
+        "why": "The retired entry path stated as a condition. LGM 72e18ac -- a retired rule wearing a live citation."
+      },
+      {
+        "claim_id": "air_sealing_is_a_prerequisite",
+        "all_of": [
+          "prerequisite"
+        ],
+        "any_of": [
+          "Whole Home Efficiency",
+          "WHE"
+        ],
+        "why": "25-12-215 sets no such condition; air sealing is one measure that can count toward three. LGM 72e18ac; DCI eb5c939, 11 instances on 3 pages including title+og:title+twitter:title as one string."
+      },
+      {
+        "claim_id": "installed_and_invoiced_by_dec_31_2026",
+        "any_of": [
+          "invoiced by December 31, 2026",
+          "invoiced by Dec. 31, 2026",
+          "installed and invoiced by December 31",
+          "installed and invoiced by Dec. 31"
+        ],
+        "why": "In NO Xcel artifact retrieved. DCI 38 pages; the short form Dec. 31, 2026 survived four further rounds because every sweep searched the long form."
+      },
+      {
+        "claim_id": "payout_on_third_measure",
+        "any_of": [
+          "as soon as the third qualifying upgrade",
+          "when the third qualifying measure completes",
+          "paid out as soon as the third"
+        ],
+        "why": "25-12-215 publishes NO payout schedule at all. DCI b47a3c2 then f83d421 -- removed in prose, alive in a FAQ and its JSON-LD acceptedAnswer."
+      },
+      {
+        "claim_id": "25pct_of_rebate_already_paid",
+        "any_of": [
+          "25% of the rebate already paid"
+        ],
+        "why": "Current sheet says a 25% bonus on all standard rebates. DCI 41 pages."
+      },
+      {
+        "claim_id": "three_or_more_bundled_no_clock",
+        "all_of": [
+          "three or more measures"
+        ],
+        "any_of": [
+          "bundled",
+          "are bundled"
+        ],
+        "none_of": [
+          "within two years",
+          "of enrolling"
+        ],
+        "why": "Drops the source's binding clock, within two years of enrolling. DCI b47a3c2."
+      },
+      {
+        "claim_id": "gas_heat_multiplier_expired",
+        "any_of": [
+          "the multiplier is expired",
+          "multiplier has expired",
+          "multiplier is no longer"
+        ],
+        "why": "25-12-215 REINSTATES the 1.5x gas-heat bonus: 'Invoice must be dated in 2025 or 2026 to receive the bonus'. LGM a2ba5a6, 4 live instances."
+      },
+      {
+        "claim_id": "no_audit_dollar_figure_published",
+        "any_of": [
+          "neither Xcel nor Efficiency Works publishes a dollar figure"
+        ],
+        "why": "An unrestricted universal negative, refuted by 25-12-215's own HOME ENERGY AUDIT / REBATE AMOUNT table. LGM 58646f0, 8 places."
+      },
+      {
+        "claim_id": "xcel_approved_audit",
+        "all_of": [
+          "Xcel-approved"
+        ],
+        "any_of": [
+          "audit"
+        ],
+        "why": "A category the sheet does not define. DCI eb5c939."
+      },
+      {
+        "claim_id": "completed_in_one_project",
+        "any_of": [
+          "completed in one project"
+        ],
+        "why": "Narrower than the source and materially misleading -- it tells a homeowner spreading three measures over eighteen months they do not qualify, when the sheet says they do. DCI eb5c939."
+      },
+      {
+        "claim_id": "within_two_years_of_the_audit",
+        "any_of": [
+          "within two years of the audit"
+        ],
+        "why": "The wrong clock. The sheet says 'of enrolling'. DCI eb5c939."
+      },
+      {
+        "claim_id": "xcel_rvalue_less_than_15",
+        "any_of": [
+          "R-value of less than 15"
+        ],
+        "why": "25-12-215 says pre-job less than 24 and post-job 60 or greater, corroborated by print code 17-9230 (01-25). Xcel's own live HTML still shows the old 15/49 values; the print-coded dated PDF wins -- do not fix that backwards. LGM: 0 instances, a NULL RESULT."
+      }
+    ],
+    "correction_markers": [
+      "SUPERSEDED",
+      "SUPERSESSION",
+      "CORRECTED",
+      "RETIRED",
+      "[CORRECTED",
+      "do NOT act on",
+      "retired figure",
+      "~~",
+      "no longer current",
+      "this wording was retired",
+      "was retired",
+      "superseded by",
+      "no longer says"
+    ],
+    "never_retire_on_403": [
+      "NOAA_FRONT_RANGE_WIND",
+      "CDPHE_ASBESTOS_REG8",
+      "NOAA",
+      "CDPHE"
+    ],
+    "deliberate_edition_divergence": [
+      {
+        "key": "IRC_P2603_5",
+        "gci": "2021 IRC",
+        "lgm": "2024 IRC",
+        "reason": "GCI matches its dict's other IRC citations; LGM verified the 2024 text is word-for-word identical."
+      }
+    ]
+  },
   "R8": {
     "today": "2026-09-17",
     "reviewed_iso_constant": "REVIEWED_ISO",
     "static_page_constant": "STATIC_PAGE_REVIEWED_ISO",
     "footer_marker": "Last reviewed:",
-    "date_surfaces": ["time[datetime]", "footer_text", "ld:dateModified",
-                      "ld:datePublished", "sitemap:lastmod"],
+    "date_surfaces": [
+      "time[datetime]",
+      "footer_text",
+      "ld:dateModified",
+      "ld:datePublished",
+      "sitemap:lastmod"
+    ],
     "pinned_pages": {},
-    "own_effective_date_pages": ["privacy.html"],
-    "exempt_pages": ["404.html"],
+    "own_effective_date_pages": [
+      "privacy.html"
+    ],
+    "exempt_pages": [
+      "404.html"
+    ],
     "self_dated_sources": [],
     "known_holds": []
   },
-
   "R9": {
     "claim_subjects": [
-      { "id": "xcel_cfm50_scope",
-        "extract": ["CFM ?50"],
+      {
+        "id": "xcel_cfm50_scope",
+        "extract": [
+          "CFM ?50"
+        ],
         "value_slots": {
-          "insulation_and_airsealing": ["insulation and air sealing rebates require",
-                                        "both the insulation and air sealing",
-                                        "insulation and air-sealing rebates require"],
-          "airsealing_only": ["air sealing rebate is",
-                              "qualified by post-job R-value, not by leakage",
-                              "binds the air sealing row"] },
+          "insulation_and_airsealing": [
+            "insulation and air sealing rebates require",
+            "both the insulation and air sealing",
+            "insulation and air-sealing rebates require"
+          ],
+          "airsealing_only": [
+            "air sealing rebate is",
+            "qualified by post-job R-value, not by leakage",
+            "binds the air sealing row"
+          ]
+        },
         "authoritative_value": "airsealing_only",
-        "authority": "DCI docs/board/ground-truth.md:148-152; LGM 183378f first-party read of the DSM product write-up" },
-      { "id": "whe_audit_precondition",
-        "extract": ["front door", "precondition", "prerequisite"],
+        "authority": "DCI docs/board/ground-truth.md:148-152; LGM 183378f first-party read of the DSM product write-up"
+      },
+      {
+        "id": "whe_audit_precondition",
+        "extract": [
+          "front door",
+          "precondition",
+          "prerequisite"
+        ],
         "value_slots": {
-          "required": ["front door of the WHE", "program's front door",
-                       "program’s front door", "is a prerequisite for",
-                       "is the prerequisite step"],
-          "not_required": ["does not name an audit as a precondition",
-                           "no audit is a precondition",
-                           "sets no such condition",
-                           "not a precondition"] },
+          "required": [
+            "front door of the WHE",
+            "program's front door",
+            "program’s front door",
+            "is a prerequisite for",
+            "is the prerequisite step"
+          ],
+          "not_required": [
+            "does not name an audit as a precondition",
+            "no audit is a precondition",
+            "sets no such condition",
+            "not a precondition"
+          ]
+        },
         "authoritative_value": "not_required",
-        "authority": "25-12-215 lines 123-130: one condition, three measures within two years of enrolling" },
-      { "id": "whe_measure_count",
-        "extract": ["qualifying measure", "qualifying upgrade"],
-        "value_slots": { "two": ["two qualifying measures", "two measures earn"],
-                         "three": ["three qualifying measures",
-                                   "three or more qualifying measures",
-                                   "three or more measures"] },
-        "authoritative_value": "three" },
-      { "id": "vermiculite_test_trigger",
-        "extract": ["vermiculite"],
-        "context": ["test", "sample", "assume", "presum", "abatement trigger"],
+        "authority": "25-12-215 lines 123-130: one condition, three measures within two years of enrolling"
+      },
+      {
+        "id": "whe_measure_count",
+        "extract": [
+          "qualifying measure",
+          "qualifying upgrade"
+        ],
+        "value_slots": {
+          "two": [
+            "two qualifying measures",
+            "two measures earn"
+          ],
+          "three": [
+            "three qualifying measures",
+            "three or more qualifying measures",
+            "three or more measures"
+          ]
+        },
+        "authoritative_value": "three"
+      },
+      {
+        "id": "vermiculite_test_trigger",
+        "extract": [
+          "vermiculite"
+        ],
+        "context": [
+          "test",
+          "sample",
+          "assume",
+          "presum",
+          "abatement trigger"
+        ],
         "proximity_chars": 40,
         "proximity_reason": "the era phrase must sit beside the word vermiculite, not merely in the same sentence. 'Pre-1980 builds may need asbestos vermiculite testing, and pre-1940 homes...' names two eras for two different hazards and is correct copy.",
-        "value_slots": { "pre_1940": ["before 1940", "pre-1940"],
-                         "pre_1980": ["before 1980", "pre-1980"],
-                         "pre_1990": ["before 1990", "pre-1990"] } },
-      { "id": "audit_price_range",
-        "extract": ["audit"],
+        "value_slots": {
+          "pre_1940": [
+            "before 1940",
+            "pre-1940"
+          ],
+          "pre_1980": [
+            "before 1980",
+            "pre-1980"
+          ],
+          "pre_1990": [
+            "before 1990",
+            "pre-1990"
+          ]
+        }
+      },
+      {
+        "id": "audit_price_range",
+        "extract": [
+          "audit"
+        ],
         "proximity_chars": 90,
-        "value_slots": { "200_500": ["$200-$500", "$200 to $500"],
-                         "300_600": ["$300-$600", "$300 to $600"] } },
-      { "id": "rim_joist_price_range",
-        "extract": ["rim joist"],
-        "value_slots": { "400_1200": ["$400-$1,200", "$400 to $1,200"],
-                         "800_3500": ["$800-$3,500", "$800 to $3,500"] } },
-      { "id": "pre1990_attic_rvalue",
-        "extract": ["pre-1990", "before 1990"],
+        "value_slots": {
+          "200_500": [
+            "$200-$500",
+            "$200 to $500"
+          ],
+          "300_600": [
+            "$300-$600",
+            "$300 to $600"
+          ]
+        }
+      },
+      {
+        "id": "rim_joist_price_range",
+        "extract": [
+          "rim joist"
+        ],
+        "value_slots": {
+          "400_1200": [
+            "$400-$1,200",
+            "$400 to $1,200"
+          ],
+          "800_3500": [
+            "$800-$3,500",
+            "$800 to $3,500"
+          ]
+        }
+      },
+      {
+        "id": "pre1990_attic_rvalue",
+        "extract": [
+          "pre-1990",
+          "before 1990"
+        ],
         "proximity_chars": 45,
-        "none_of": ["Current insulation level", "mid-century ranches"],
+        "none_of": [
+          "Current insulation level",
+          "mid-century ranches"
+        ],
         "none_of_reason": "the calculator's own dropdown OPTION LIST prints every era band in one run of text; an options list is not a claim about one era",
-        "value_slots": { "r11_r19": ["R-11 to R-19"],
-                         "r11_r30": ["R-11 to R-30"] } },
-      { "id": "xcel_rebate_basis",
-        "extract": ["rebate"],
-        "value_slots": { "bounded_dollar_amount": ["a bounded dollar amount, not a share of the job"],
-                         "share_of_project_cost": ["30% of project cost against per-measure caps"] } }
+        "value_slots": {
+          "r11_r19": [
+            "R-11 to R-19"
+          ],
+          "r11_r30": [
+            "R-11 to R-30"
+          ]
+        }
+      },
+      {
+        "id": "xcel_rebate_basis",
+        "extract": [
+          "rebate"
+        ],
+        "value_slots": {
+          "bounded_dollar_amount": [
+            "a bounded dollar amount, not a share of the job"
+          ],
+          "share_of_project_cost": [
+            "30% of project cost against per-measure caps"
+          ]
+        }
+      }
     ],
-    "high_severity_surfaces": ["speakable", "TITLE", "OG", "TW", "LD"],
+    "high_severity_surfaces": [
+      "speakable",
+      "TITLE",
+      "OG",
+      "TW",
+      "LD"
+    ],
     "tools": [],
     "deliberate_divergence": [
-      { "subject": "IRC_P2603_5 edition", "gci": "2021", "lgm": "2024" },
-      { "subject": "atomic_answer_band", "dci": "40-60", "lgm": "54-60",
-        "gci": "54-60" }
+      {
+        "subject": "IRC_P2603_5 edition",
+        "gci": "2021",
+        "lgm": "2024"
+      },
+      {
+        "subject": "atomic_answer_band",
+        "dci": "40-60",
+        "lgm": "54-60",
+        "gci": "54-60"
+      }
     ]
   },
-
   "R10": {
-    "promise_patterns": ["covers the (base )?amounts", "for current amounts",
-                         "the figures are on", "the amounts are on",
-                         "how much .{0,30} pays", "quoted elsewhere",
-                         "see the (current )?(amounts|figures|caps)",
-                         "estimates the project cost",
-                         "gives you the (number|amount)", "lists the amounts",
-                         "publishes the amount", "the amounts (are|can be) found",
-                         "full amounts", "the caps are",
-                         "the (Atmos|Xcel) (figures|amounts|caps)"],
-    "refusal_markers": ["deliberately not enumerated",
-                        "does not compute a dollar estimate",
-                        "doesn&rsquo;t republish the figures",
-                        "doesn't republish the figures",
-                        "doesn’t republish the figures",
-                        "amounts are not estimated here", "no dollar figure",
-                        "we don&rsquo;t publish the amounts",
-                        "we don't publish the amounts", "carries no amount",
-                        "names no payer", "not enumerated on this page",
-                        "we can't monitor them for you",
-                        "we can&rsquo;t monitor them for you",
-                        "we can’t monitor them for you"],
+    "promise_patterns": [
+      "covers the (base )?amounts",
+      "for current amounts",
+      "the figures are on",
+      "the amounts are on",
+      "how much .{0,30} pays",
+      "quoted elsewhere",
+      "see the (current )?(amounts|figures|caps)",
+      "estimates the project cost",
+      "gives you the (number|amount)",
+      "lists the amounts",
+      "publishes the amount",
+      "the amounts (are|can be) found",
+      "full amounts",
+      "the caps are",
+      "the (Atmos|Xcel) (figures|amounts|caps)"
+    ],
+    "refusal_markers": [
+      "deliberately not enumerated",
+      "does not compute a dollar estimate",
+      "doesn&rsquo;t republish the figures",
+      "doesn't republish the figures",
+      "doesn’t republish the figures",
+      "amounts are not estimated here",
+      "no dollar figure",
+      "we don&rsquo;t publish the amounts",
+      "we don't publish the amounts",
+      "carries no amount",
+      "names no payer",
+      "not enumerated on this page",
+      "we can't monitor them for you",
+      "we can&rsquo;t monitor them for you",
+      "we can’t monitor them for you"
+    ],
     "offproperty_is_compliant": true,
     "page_titles": {},
-    "reflexive_markers": ["elsewhere on this site", "on this site",
-                          "other pages here"]
+    "reflexive_markers": [
+      "elsewhere on this site",
+      "on this site",
+      "other pages here"
+    ]
   },
-
   "R11": {
     "blocking": false,
     "attributing_block_selector": "p.cited-stat",
