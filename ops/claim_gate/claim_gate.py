@@ -87,7 +87,7 @@ class Hit(object):
                  "cite_key", "sentence", "r5_inblock", "r5_instat",
                  "r8_excluded", "r2_noscope", "r2_subject_ok", "r3_kind",
                  "on_embed", "r3_w60", "r3_w40", "r3_struct", "r5_stats",
-                 "r2_sitewide")
+                 "r2_sitewide", "r2_binding")
 
     def __init__(self, rid, sub, rel, surface, locator, text, note="",
                  cite_key=None, sentence=""):
@@ -112,6 +112,7 @@ class Hit(object):
         self.r3_struct = ""
         self.r5_stats = []
         self.r2_sitewide = False
+        self.r2_binding = None
 
     def sortkey(self):
         return (self.rel, self.sub, self.surface, self.locator, self.text)
@@ -1390,6 +1391,7 @@ def rule_R2(ctx, res):
                         % (uu, tname, clause),
                         note="utility-not-serving-town-in-clause",
                         sentence=sent)
+                    hb.r2_binding = (uu, tname)
                     if multi:
                         hb.note = "split-disclosure-review"
                     raw.append(hb)
@@ -1578,8 +1580,51 @@ def rule_R2(ctx, res):
     def f_wayfind(h):
         return has_any(h.sentence, refusals, word=False)
 
+    _locked_bind = {}
+
+    def _bindings_of(text):
+        """The (utility, town) bindings a locked sentence itself carries,
+        resolved with the SAME clause-split and nearest-binding logic."""
+        if text in _locked_bind:
+            return _locked_bind[text]
+        out = set()
+        for cl in _clauses(text):
+            us = ctx.utility_spots(cl)
+            for tn, tp in ctx.town_spots(cl):
+                near = [(abs(tp - up), uu, up) for uu, up in us
+                        if abs(tp - up) <= 100]
+                if near:
+                    out.add((sorted(near)[0][1], tn))
+        _locked_bind[text] = out
+        return out
+
     def f_locked(h):
-        return has_any(h.sentence, locked, word=False)
+        """A locked sentence pardons only the BINDINGS IT ACTUALLY CARRIES.
+
+        This matched as a SUBSTRING, so any sentence CONTAINING a locked phrase
+        was pardoned whole -- including the inversion of the very fact the
+        phrase exists to protect. GCI's real gas-split fact with the two
+        utilities SWAPPED, keeping the twelve-word lead-in, gave RAW 5 ADJ 0
+        PASS at exit 0, while the identical swapped sentence WITHOUT the
+        lead-in gave RAW 5 ADJ 5 FAIL. Prefixing twelve allowlisted words to a
+        fully inverted territory statement bought a sitewide pass -- the exact
+        shape of the original two-year defect. The filter's own label said
+        "verbatim" and the behaviour was not.
+
+        A hit that reports a utility->town BINDING is now pardoned only when
+        some locked entry both appears in the sentence AND carries that same
+        binding itself. A lead-in phrase naming no utility and no town carries
+        no bindings and therefore pardons nothing.
+        """
+        tb = getattr(h, "r2_binding", None)
+        for L in locked:
+            if not L or L not in h.sentence:
+                continue
+            if tb is None:
+                return True
+            if tb in _bindings_of(L):
+                return True
+        return False
 
     def f_gap(h):
         return has_any(h.sentence, gaps, word=False)
