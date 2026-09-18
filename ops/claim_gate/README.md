@@ -119,6 +119,30 @@ embed frame: …
 CLAIM GATE: PASS | FAIL
 ```
 
+### R2's REVIEW classes, declared
+
+Two R2 outcomes are reported and enumerated but never fail the gate. Both are
+loosenings and both are named here, to the same standard as the paraphrase hole
+below.
+
+**SPLIT DISCLOSURE.** A sentence is first split into independent clauses on its
+coordinating conjunctions (`;`, `, while`, `whereas`, `, but`, `rather than`,
+`, however`) and each clause is resolved on its own, with its own utility and
+its own town. `X is the gas utility in A, while Y is the gas utility in B` has
+unambiguous structure and is judged, not pardoned: the correct sentence PASSES
+and its inversion FAILS with both attributions named. Only a clause that STILL
+carries two or more utilities AND two or more towns after splitting is reported
+as REVIEW, because there word order rather than meaning decides which utility a
+town binds to. That residue is small and is printed with a count every run —
+measured 2026-09-17: DCI 0, LGM 3, GCI 13, down from GCI 289 when the whole
+sentence shape was pardoned.
+
+**SITEWIDE, NO TOWN IN THE CLAUSE.** An artifact with no resolvable town scope
+— `llms.txt`, `robots.txt`, `sitemap.xml`, a bare `.svg` — that names a utility
+with no town anywhere in its clause asserts nothing against a town, because the
+utility serves somewhere in the configured territory. Raised, counted and
+enumerated rather than skipped, so it can never be mistaken for a clean run.
+
 ### PARAPHRASE IS A KNOWN HOLE, and this instrument cannot close it
 
 This gate matches **strings, configured predicates and structure**. It does not
