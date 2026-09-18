@@ -926,6 +926,11 @@ class Ctx(object):
         self.by_rel = {}
         self.gen = S.GeneratorFacts()
         self.registry = Registry()
+        # Cited-stat blocks whose registry key could not be resolved.
+        # Reported, never guessed at: binding one to the nearest
+        # candidate is what spliced the CFM 50 sentence onto nine DCI
+        # pages that do not contain it.
+        self.unresolved_cited_stats = []
         self.gitfacts = GitFacts()
         self.claim_extra = {}
         self.corpus = None
@@ -1234,18 +1239,60 @@ class Ctx(object):
 
     # ---- cited sources (claim set)
     def key_for_cited_stat(self, art, cs):
-        best = None
+        """Resolve a rendered cited-stat block to its CITED_SOURCES key.
+
+        TWO DEFECTS LIVED HERE AND THEY FABRICATED EVIDENCE.
+
+        1. THE COMPARISON WAS ASYMMETRIC. The page-side label is stored
+           dec()-normalized (surfaces.py, `collapse(dec(...))`); the registry
+           side got collapse() only. DCI's XCEL_WHOLE_HOME_EFFICIENCY carries
+           an EN DASH (U+2013) in "2025-2026" where the rendered page carries
+           an ASCII hyphen, because dec() folds it. So
+           collapse(page) == collapse(registry) was False while
+           collapse(dec(page)) == collapse(dec(registry)) is True, and that key
+           could NEVER match by label.
+
+        2. THE FALLBACK WAS SILENT. `best = best or k` bound the block to the
+           alphabetically first key sharing the URL. With (1), every DCI page
+           citing the Xcel insulation-air-sealing URL fell through to
+           XCEL_BLOWER_DOOR, whose stat is the CFM 50 sentence -- and
+           build_claim_set then spliced that sentence onto the page as a
+           synthetic CITE surface that every proposition rule reads AS IF IT
+           WERE ON THE PAGE. Result: 9 of DCI's 46 blocking R5 findings quoted
+           a sentence that does not appear on the file they name. Measured
+           independently: the substring `CFM` occurs 0 times on all nine,
+           against `Denver` controls of 24-69.
+
+        A verification tool that synthesizes claim surfaces and attributes them
+        to artifacts that do not contain them cannot adjudicate what an
+        artifact says. Both sides are now normalized identically, and a block
+        that cannot be resolved returns None and is REPORTED as unresolved --
+        never bound to the nearest candidate.
+        """
+        def norm(s):
+            return S.collapse(S.dec(str(s or "")))
+
+        page_label = norm(cs.get("label"))
+        candidates = []
         for k in sorted(self.gen.cited_sources):
             e = self.gen.cited_sources[k]
             url = e.get("url")
             if not isinstance(url, str) or url != cs["url"]:
                 continue
-            label = S.collapse(str(e.get("determiner") or "") +
-                               str(e.get("source") or ""))
-            if label and cs["label"] and S.collapse(cs["label"]) == label:
+            candidates.append(k)
+            label = norm(str(e.get("determiner") or "")
+                         + str(e.get("source") or ""))
+            if label and page_label and page_label == label:
                 return k
-            best = best or k
-        return best
+        # Exactly one entry owns this URL: the label is redundant and binding
+        # is unambiguous. More than one, and no label matched: UNRESOLVED.
+        if len(candidates) == 1:
+            return candidates[0]
+        if candidates:
+            self.unresolved_cited_stats.append(
+                (art.rel, cs.get("url", ""), cs.get("label", ""),
+                 tuple(candidates)))
+        return None
 
     def svg_text_for(self, ref):
         """Text nodes of a referenced SVG in the READ_SET (spec 2.3)."""
@@ -5050,6 +5097,22 @@ def _main(args, out, t0):
     out("claim set: %d propositions resolved from %d cited-stat blocks, %d "
         "shared constants, %d referenced assets"
         % (n_prop, n_cite, n_const, n_asset))
+    # A cited-stat block the gate cannot bind to a registry key is REPORTED.
+    # It used to be bound to the alphabetically first key sharing its URL, and
+    # that key's `stat` was then spliced onto the page as a synthetic CITE
+    # surface which every proposition rule read as though the page contained
+    # it. Nine DCI R5 findings quoted a sentence absent from the file they
+    # named. Splicing nothing is a smaller error than splicing the wrong thing,
+    # but it is still an error, so it is stated rather than absorbed.
+    if ctx.unresolved_cited_stats:
+        out("UNRESOLVED CITED-STAT BLOCKS: %d. Each names a URL owned by two "
+            "or more CITED_SOURCES keys and carries a label matching none of "
+            "them, so NO registry text was spliced onto the artifact. Its "
+            "claims are judged from the page's own bytes only."
+            % len(ctx.unresolved_cited_stats))
+        for rel, url, label, cands in sorted(set(ctx.unresolved_cited_stats)):
+            out("  %s  label=%r  url=%s  candidates=%s"
+                % (rel, label[:70], url[:90], ",".join(cands)))
     if not registry.present:
         out("citation registry: %s ABSENT -- R7 runs from its config list "
             "only and says so" % REGISTRY_REL)
