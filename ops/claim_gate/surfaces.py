@@ -587,12 +587,50 @@ def _parse_html(art):
                 Surface(S_JS, "JS[%d]comment@%d" % (i, m.start()),
                         collapse(m.group(0))))
         stripped = _JS_COMMENT.sub(lambda m: " " * len(m.group(0)), body)
-        for m in _JS_STRING.finditer(stripped):
-            lit = m.group(0)[1:-1]
-            art.js_strings.append(("JS[%d]str@%d" % (i, m.start()), lit))
+        lits = [(m.start(), m.group(0)[1:-1], m.end())
+                for m in _JS_STRING.finditer(stripped)]
+        for start, lit, _e in lits:
+            art.js_strings.append(("JS[%d]str@%d" % (i, start), lit))
+        # Group into `+` concatenation runs FIRST, then emit surfaces: a
+        # literal that is part of a run contributes only through the JOINED
+        # text. Emitting both double-scans the same claim and, worse, feeds
+        # every rule a FRAGMENT -- "Greeley, Evans and Eaton, and Xcel Energy
+        # is the natural gas utility in" begins with three towns and ends on a
+        # dangling preposition, and R2 bound Xcel backwards to Eaton off it six
+        # times.
+        runs, run = [], []
+        prev_end = None
+        for start, lit, end in lits:
+            # CONCATENATION RUNS. A claim split across a JavaScript `+`
+            # boundary is exactly the failure this file's own collapse()
+            # docstring calls the most load-bearing line in it, one layer
+            # further in: GCI's payback calculator carries "gas territory here
+            # is split: Atmos Energy is the natural gas utility in" in one
+            # literal and "Greeley, Evans and Eaton, and Xcel Energy is the
+            # natural gas utility in Johnstown ..." in the next, so the second
+            # fragment begins with three towns and no utility before them --
+            # and R2 bound Xcel backwards to Eaton, six times, on a sentence
+            # that states the split correctly. The same join the SRC level
+            # already does for Python implicit concatenation.
+            if prev_end is not None and \
+                    re.fullmatch(r"[\s+]*", stripped[prev_end:start]) and \
+                    "+" in stripped[prev_end:start]:
+                run.append((start, lit))
+            else:
+                runs.append(run)
+                run = [(start, lit)]
+            prev_end = end
+        runs.append(run)
+        for j, r in enumerate([x for x in runs if x]):
+            if len(r) == 1:
+                start, lit = r[0]
+                art.surfaces.append(
+                    Surface(S_JS, "JS[%d]str@%d" % (i, start),
+                            collapse(dec(txt(lit)))))
+                continue
+            joined = collapse(dec(txt("".join(l for _s, l in r))))
             art.surfaces.append(
-                Surface(S_JS, "JS[%d]str@%d" % (i, m.start()),
-                        collapse(dec(txt(lit)))))
+                Surface(S_JS, "JS[%d]concat@%d" % (i, r[0][0]), joined))
 
     for i, body in enumerate(art.css_bodies):
         art.surfaces.append(Surface(S_CSS, "CSS[%d]body" % i, collapse(body)))
