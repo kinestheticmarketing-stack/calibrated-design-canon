@@ -279,6 +279,28 @@
       "30%",
       "100% of project cost"
     ],
+    "allowed_thresholds": [
+      "20%",
+      "20 percent"
+    ],
+    "allowed_thresholds_reason": "ADDED 2026-09-18 (claim gate R5, the largest single cluster on this property). The 20% CFM(50) air-sealing and 20% CFM(25) duct-sealing blower-door figures are QUALIFYING CONDITIONS, not amounts: they say what a homeowner must MEASURE to be eligible, and say nothing whatever about what any program pays. _shared_components.py carves them out of the 2026-09-09 no-rebate-figure ruling BY NAME, in the same breath as the R-value thresholds and the 75%/50% structure percentages: 'WHAT IS NOT COVERED BY THIS BAN ... the 20% CFM(50) and 20% CFM(25) blower-door thresholds'. The config had allowed_structure_percentages populated and allowed_thresholds EMPTY, so half of one Director ruling was wired and the other half was not -- which is why ~30 sentences stating a sanctioned threshold were adjudicated as uncited statistics. This registers the ruling that already exists; it does not create an exemption. Both spellings are listed because the prose uses '20 percent' as well as '20%', and the threshold_context_markers below still have to fire for either to clear.",
+    "threshold_context_markers": [
+      "tier",
+      "threshold",
+      "measured reduction",
+      "of project cost",
+      "qualifying minimum",
+      "CFM",
+      "capped at",
+      "up to 100%",
+      "structure of the rebate",
+      "blower door",
+      "blower-door",
+      "leakage reduction",
+      "reduction in leakage",
+      "leakage"
+    ],
+    "threshold_context_markers_reason": "RESTATES common.json's nine markers verbatim and appends five. Restated because _deep_merge REPLACES lists rather than unioning them, so a partial list here would silently DROP the nine shared markers for GCI -- a config edit that reads as additive and is actually subtractive. The five additions are the vocabulary GCI's prose actually uses around the blower-door threshold; 'CFM' alone does not fire on sentences written as 'a 20% reduction in leakage'. PROPERTY-LOCAL: this key lives in gci.json, so common.json is untouched and DCI and LGM are unaffected.",
     "detector_machinery_deleted": [
       "ATMOS_REBATE_AMOUNTS",
       "REBATE_VERIFICATION_NOTE",
@@ -342,7 +364,7 @@
   },
   "R5": {
     "known_uncited": [],
-    "note": "MEASURED 2026-09-17: '15% reduction' returns 0 occurrences in GCI public/."
+    "note": "MEASURED 2026-09-17: '15% reduction' returns 0 occurrences in GCI public/. STILL EMPTY 2026-09-18, deliberately: the 20% blower-door cluster was closed by registering it as an ALLOWED THRESHOLD under R3.allowed_thresholds, which is what it actually is, NOT by listing it here. known_uncited carries a figure with no attribution and asks the gate to tolerate it; allowed_thresholds records that a figure is a program QUALIFYING CONDITION the Director ruled may stay. Using known_uncited would have been suppression wearing a config key."
   },
   "R6": {
     "label_chains": [],
@@ -356,7 +378,8 @@
       "about.html": {
         "reason": "visible text did not change — JSON-LD only — so 2026-08-07 remains its true content date and its footer stays pinned at 2026-08-05; neither value is false and the 2-day divergence is pre-existing",
         "expected_sitemap": "2026-08-07",
-        "expected_footer": "2026-08-05"
+        "expected_footer": "2026-08-07",
+        "expected_footer_note": "WAS 2026-08-05 until 2026-09-18. The pin is unchanged in KIND -- about.html is still pinned because its 2026-09-08 change was JSON-LD only -- but the VALUE it pinned to was impossible: 2026-08-05 precedes about.html's first appearance in git (2026-08-07), so the page claimed a content review two days before the file existed. It read sc.STATIC_PAGE_REVIEWED_ISO, shared with 404.html, for which 2026-08-05 IS correct; GCI split sc.ABOUT_PAGE_REVIEWED_ISO out rather than change the shared value. Both of about.html's surfaces now read that one constant, so expected_footer and expected_sitemap agree at 2026-08-07. This is a pin CORRECTION, not a new exemption -- no finding is suppressed by it."
       },
       "404.html": {
         "reason": "schema-only change; pinned"
