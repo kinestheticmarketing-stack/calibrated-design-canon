@@ -1273,10 +1273,35 @@ def rule_R1(ctx, res):
     marks = ctx.r("R7").get("correction_markers", []) or []
     qre = _quote_open_re(c)
 
-    if not ctx.gen.provenance_present and c.get("require_provenance_block"):
-        res.degraded.append(
-            "R1 DEGRADED: provenance block not yet in the schema; asserting "
-            "quote field only (spec 12.1)")
+    # DEGRADED is CONDITIONAL on the debt being unpaid, and the test is not
+    # "does any entry carry a provenance key" -- one entry with one key would
+    # silence the message while 21 quotable sources still asserted nothing.
+    # The debt is paid when EVERY entry that publishes its stat as the source's
+    # own words (quote is True) carries a complete {retrieved, artifact,
+    # extraction, verbatim_line} record, AND at least one such entry exists:
+    # a property that simply has no verbatim quotations has not paid a debt,
+    # it has nothing to pay, and R1's claim test is asserting nothing.
+    if c.get("require_provenance_block"):
+        if not ctx.gen.provenance_present:
+            res.degraded.append(
+                "R1 DEGRADED: provenance block not yet in the schema; "
+                "asserting quote field only (spec 12.1)")
+        elif ctx.gen.provenance_owed:
+            res.degraded.append(
+                "R1 DEGRADED: %d entr%s the stat as the source's own words "
+                "(quote=True) with no complete provenance record (spec 12.1 "
+                "requires retrieved + artifact + extraction + "
+                "verbatim_line): %s"
+                % (len(ctx.gen.provenance_owed),
+                   "y publishes" if len(ctx.gen.provenance_owed) == 1
+                   else "ies publish",
+                   ", ".join(ctx.gen.provenance_owed)))
+        elif not ctx.gen.quote_true_count:
+            res.degraded.append(
+                "R1 DEGRADED: the provenance schema is present but NO entry "
+                "on this property sets quote=True, so R1's claim-test half "
+                "asserts nothing here. That is a null result, not a pass "
+                "(spec 12.1)")
 
     cs_index = {}
     for art in ctx.claim_artifacts():
@@ -1308,7 +1333,9 @@ def rule_R1(ctx, res):
         e = ctx.gen.cited_sources.get(h.cite_key) or {}
         ok = e.get("quote") is True
         if c.get("require_provenance_block") and ctx.gen.provenance_present:
-            ok = ok and isinstance(e.get("provenance"), dict)
+            # Not merely "a dict is there". The four fields are the record;
+            # anything less is a shape that looks like provenance.
+            ok = ok and S.provenance_complete(e.get("provenance"))
         return ok
 
     def f_default(h):
@@ -1350,6 +1377,13 @@ def rule_R1(ctx, res):
                      "(absent publishes the stat as the source's own words)"
                      % (ctx.gen.quote_true_count, ctx.gen.quote_false_count,
                         ctx.gen.quote_absent_count))
+    res.notes.append(
+        "provenance records: %d complete {retrieved, artifact, extraction, "
+        "verbatim_line} of %d quote=True entr%s%s"
+        % (ctx.gen.provenance_ok, ctx.gen.quote_true_count,
+           "y" if ctx.gen.quote_true_count == 1 else "ies",
+           ("  ·  OWED: " + ", ".join(ctx.gen.provenance_owed))
+           if ctx.gen.provenance_owed else "  ·  0 OWED"))
     return "attributed quotations found", \
            "quotations with no explicit provenance record"
 

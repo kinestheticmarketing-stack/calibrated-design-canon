@@ -877,6 +877,28 @@ def src_artifact(module, runs):
     return art
 
 
+PROVENANCE_FIELDS = ("retrieved", "artifact", "extraction", "verbatim_line")
+
+
+def provenance_complete(p):
+    """RULES_SPEC.md 12.1: a provenance block is
+    {retrieved, artifact (sha256 or URL), extraction, verbatim_line}.
+
+    All four must be present and non-empty strings. A block with a key whose
+    value is blank asserts nothing, and the point of the schema addition is
+    that R1 can assert the PRESENCE AND SHAPE of a provenance record.
+    `retrieved` must be an ISO date, because "retrieved: recently" is the kind
+    of value that makes a record look complete and prove nothing.
+    """
+    if not isinstance(p, dict):
+        return False
+    for f in PROVENANCE_FIELDS:
+        v = p.get(f)
+        if not isinstance(v, str) or not v.strip():
+            return False
+    return bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", p["retrieved"].strip()))
+
+
 class GeneratorFacts(object):
     """Everything the gate needs from the generators: CITED_SOURCES, the
     slug->cite_keys maps, module-level string constants, and the SRC text."""
@@ -892,6 +914,13 @@ class GeneratorFacts(object):
         self.quote_true_count = 0
         self.quote_false_count = 0
         self.quote_absent_count = 0
+        # Keys whose quote is True but whose provenance block is missing or
+        # malformed. R1 is DEGRADED while this is non-empty: "some entry
+        # somewhere has a provenance key" is not the debt being paid, and a
+        # rule that stops saying DEGRADED on that basis has had its message
+        # removed rather than its debt settled.
+        self.provenance_owed = []
+        self.provenance_ok = 0
 
 
 def _ast_str(node):
@@ -1011,8 +1040,13 @@ def read_generators(repo, module_names):
             facts.quote_absent_count += 1
         elif e.get("quote") is True:
             facts.quote_true_count += 1
+            if provenance_complete(e.get("provenance")):
+                facts.provenance_ok += 1
+            else:
+                facts.provenance_owed.append(key)
         else:
             facts.quote_false_count += 1
+    facts.provenance_owed.sort()
     # keep only slug maps whose values are real citation keys
     known = set(facts.cited_sources)
     if known:
