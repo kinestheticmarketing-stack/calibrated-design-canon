@@ -4863,7 +4863,7 @@ def validate_registry():
 # Controls (spec 5). Run BEFORE any rule, against fixture files only.
 # ---------------------------------------------------------------------------
 
-NEGATIVES = ["NEG%02d" % i for i in range(1, 16)]
+NEGATIVES = ["NEG%02d" % i for i in range(1, 17)]
 # The reference date the negative fixtures were written against. Fixed on
 # purpose: see the neg_overlay comment in run_controls().
 NEG_ASOF = "2026-09-17"

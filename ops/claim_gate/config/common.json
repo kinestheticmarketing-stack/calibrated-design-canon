@@ -846,6 +846,13 @@
           "precondition",
           "prerequisite"
         ],
+        "context": [
+          "audit",
+          "Whole Home Efficiency",
+          "WHE Bonus",
+          "WHE program"
+        ],
+        "context_note": "THE ONLY SUBJECT IN THIS LIST WHOSE extract TOKENS CARRY NONE OF ITS OWN SUBJECT. Every other subject extracts on something that names it -- 'CFM 50', 'vermiculite', 'rim joist', 'pre-1990', 'qualifying measure', 'rebate', 'audit'. This one extracts on 'front door', 'precondition' and 'prerequisite', which are ordinary English, and its `required` slot pattern 'is the prerequisite step' names neither an audit nor the WHE Bonus. So it bound DCI ba2fc22's vermiculite-removal-cost-denver.html sentence -- 'the identification guide is the prerequisite step', about whether a homeowner should test their attic before reading a removal-cost page -- to the proposition that an energy audit is a precondition of the Whole Home Efficiency Bonus, and failed the build on a contradiction that did not exist. Same class as the R4 repair at 86b4ffd: a pattern that imports its meaning from whatever sentence happens to contain the words. The guard is the subject itself, so a sentence that is genuinely about the WHE audit precondition necessarily passes it -- all four existing R9 control fixture sentences do. NOT a suppression: the one true instance on DCI ('Xcel's current rebate summary does not name an audit as a precondition') still indexes, and with the false one gone the subject holds a single value, which is the correct reading of this property's copy.",
         "value_slots": {
           "required": [
             "front door of the WHE",
