@@ -830,6 +830,60 @@ def win(text, pos, n):
     return text[max(0, pos - n):pos + n]
 
 
+# A URL IS AN ADDRESS, NOT A PROPOSITION.
+#
+# A slug is chosen for search, and a word inside one asserts nothing. Both of
+# DCI's two standing R4 findings (2026-09-18) were URL text read as prose:
+#
+#   public/llms.txt          '- [WHE Bonus Guide](https://denvercoloradoinsul
+#                             ation.com/whole-home-efficiency-bonus-stacking-
+#                             denver.html): The 25% bonus turns on ...'
+#   src:_educational_pages.py '... the <a href="/whole-home-efficiency-bonus-
+#                             stacking-denver.html">Whole Home Efficiency
+#                             Bonus</a> adding a 25% bonus ...'
+#
+# In BOTH, the token `stacking` occurs exactly once in the sentence and that
+# occurrence is inside the URL: masking the URL takes the count 1 -> 0. The
+# page those URLs point at carries the same defect in its own surfaces -- on
+# whole-home-efficiency-bonus-stacking-denver.html, across all 608 surfaces,
+# `stack`/`stacking` appear in 0 prose surfaces and 6 url-valued ones (its own
+# canonical link[href], og:url, and four JSON-LD fields: mainEntityOfPage.@id,
+# url, breadcrumb itemListElement[2].item, and a second url), while `bonus`
+# has 48 prose surfaces, `rebate` 42 and `Xcel` 37 on the same page.
+#
+# SPANS, NOT SURFACES. Dropping url-VALUED surfaces would cure the six-surface
+# half and neither of the two live findings, because in both of those the URL
+# is EMBEDDED in a prose sentence -- a markdown link target, and an href inside
+# HTML held in generator source. Masking the span covers both: a surface whose
+# whole value is a URL masks to blank, and a prose sentence keeps its prose.
+#
+# Replacement is spaces of the SAME LENGTH, so every offset in the masked text
+# still indexes the original -- R4's single-program branch reads positions out
+# of one and windows out of the other.
+_URL_SPAN = re.compile(
+    r"""(?xi)
+      (?:https?|ftp)://[^\s"'<>()\[\]]*                  # scheme-led, absolute
+    | (?:mailto|tel):[^\s"'<>()\[\]]*                    # non-slashed schemes
+    | (?<![A-Za-z0-9])//[A-Za-z0-9.-]+/[^\s"'<>()\[\]]*  # protocol-relative
+    | (?<=["'(])/[^\s"'<>()\[\]]*                        # quoted root-relative
+    | (?<![A-Za-z0-9./?#-])
+      /?[A-Za-z0-9._~%+-]+(?:/[A-Za-z0-9._~%+-]+)*
+      \.(?:html?|xml|txt|svg|png|jpe?g|webp|gif|css|js)
+      (?![A-Za-z0-9])                                    # bare or rooted slug
+    """)
+
+
+def mask_urls(text):
+    """`text` with every URL span replaced by spaces of the same length.
+
+    Length-preserving on purpose: see _URL_SPAN. Returns `text` unchanged when
+    it holds no URL, so callers can test `masked is not text` cheaply.
+    """
+    if not text:
+        return text
+    return _URL_SPAN.sub(lambda m: " " * (m.end() - m.start()), text)
+
+
 def names_in(text, names, aliases=None, ci=True):
     """Canonical names present in `text`, longest-first, SPAN-CONSUMING.
 
@@ -2686,6 +2740,14 @@ def rule_R3(ctx, res):
 R4_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS,
            S.S_LOWVIS, S.S_ATTR, S.S_LLMS, S.S_CITE, S.S_CONST)
 
+# Every R4 class that FAILS. Silence is the compliant state, so a denial fails
+# exactly as an assertion does, and the -1P and -SET variants fail exactly as
+# their two-named-program parents do. Named ONCE because it is read in three
+# places -- the attributed exception, the class counter in the notes, and the
+# spec -- and the three had drifted: the exception listed two of the six.
+R4_FAIL_CLASSES = ("ASSERTS", "DENIES", "ASSERTS-1P", "DENIES-1P",
+                   "ASSERTS-SET", "DENIES-SET")
+
 
 def rule_R4(ctx, res):
     c = ctx.r("R4")
@@ -2708,31 +2770,54 @@ def rule_R4(ctx, res):
     setanaph = c.get("program_set_anaphora", []) or []
 
     raw = []
+    # Diagnostics for the two 2026-09-18 repairs, reported rather than silent:
+    # a rule that quietly stops seeing something is indistinguishable from a
+    # rule that was never wired up.
+    n_url_only = 0      # sentences whose ONLY stacking token sat inside a URL
     for art in ctx.rule_artifacts("R4"):
         prev = []
-        for skey, loc, sent in ctx.pool(art):
+        for skey, loc, src_sent in ctx.pool(art):
+            # DEFECT A, 2026-09-18. URL TEXT IS NOT PROSE. See mask_urls().
+            # Every match below -- token, predicate, denial, program name,
+            # anaphor -- runs against the MASKED sentence; the hit still
+            # reports, and the filters still judge, the sentence as written.
+            sent = mask_urls(src_sent)
             tk = which_any(sent, toks, word=False)
             if not tk:
-                prev = (prev + [(skey, ctx.programs_in(sent),
-                                 which_any(sent, setanaph, word=False))])[-2:]
+                if sent is not src_sent and \
+                        has_any(src_sent, toks, word=False):
+                    n_url_only += 1
+                prev = (prev
+                        + [(skey, which_any(sent, setanaph, word=False))])[-2:]
                 continue
             named = ctx.programs_in(sent)
-            # ANAPHORA. "The Whole Home Efficiency Bonus is worth having. It
-            # layers on top of the standard rebate." names one program in the
-            # first sentence and makes the claim in the second. Program names
-            # from the previous two sentences OF THE SAME SURFACE carry
-            # forward, marked so the enumeration says where they came from.
-            carried = []
+            # DEFECT B, 2026-09-18. NO PROGRAM NAME CROSSES A SENTENCE
+            # BOUNDARY. R4 used to carry program names forward from the
+            # previous two sentences of the same surface and count them toward
+            # its own two-distinct-programs precondition. Both of DCI's
+            # standing findings printed "(carried from the previous sentence:
+            # ...)", and the first of them -- llms.txt S76 -- named exactly one
+            # program, "Whole Home Efficiency Bonus", and had "Xcel Energy"
+            # imported from its neighbour to reach two. A claim is made by a
+            # sentence; a name in the sentence before it is not part of that
+            # claim. Both programs must now be named in the flagged sentence.
+            #
+            # The ANAPHOR carry stays. "either insulation rebate program" is
+            # not a program NAME -- it supplies a COUNT and nothing else -- and
+            # control R4d exists precisely because LGM wrote the anaphor in one
+            # sentence and "rebate stacking" two sentences later
+            # (GATE_SCORE_2026-09-17.md MISS 5). Removing that carry would
+            # delete a scored detection, which is the failure mode this repair
+            # is not allowed to cause.
             carried_anaph = []
-            for pk, pn, pa in prev:
+            for pk, pa in prev:
                 if pk == skey:
-                    carried += pn
                     carried_anaph += pa
             anaph = sorted(set(which_any(sent, setanaph, word=False))
                            | set(carried_anaph))
-            prev = (prev + [(skey, named,
-                             which_any(sent, setanaph, word=False))])[-2:]
-            allnamed = sorted(set(named) | set(carried))
+            prev = (prev
+                    + [(skey, which_any(sent, setanaph, word=False))])[-2:]
+            allnamed = sorted(set(named))
             if len(set(allnamed)) < 2 and anaph:
                 # The sentence (or one within two sentences of it on the same
                 # surface) refers to the program SET without naming it. That is
@@ -2792,20 +2877,49 @@ def rule_R4(ctx, res):
                     break
             need_pub = exc.get("requires_publisher_named", True)
             need_key = exc.get("requires_cited_source_key", True)
-            if cls in ("ASSERTS", "DENIES") and exc.get("allowed", True) \
+            # THE EXCEPTION APPLIES TO ALL SIX FAILING CLASSES, not just the
+            # two that existed when it was written.
+            #
+            # This read `cls in ("ASSERTS", "DENIES")`. The -1P classes landed
+            # 2026-09-17 and the -SET classes 2026-09-18, and neither was wired
+            # into the exception this same loop already computes for every hit,
+            # so "attributed" was reachable only from the two-named-programs
+            # branch. Nothing about the exception depends on how many programs
+            # a sentence names: it asks whether the publisher is named in THIS
+            # sentence and whether THIS artifact resolved a cite key, and both
+            # questions are answered above, identically, in every branch.
+            #
+            # Found BY the Defect B repair, which is what makes it a real gap
+            # and not a tidy-up. Dropping the cross-sentence name carry moved
+            # LGM's attributed Efficiency Works hedge -- "Ask your contractor
+            # or the programs directly before counting on Efficiency Works'
+            # combined figure", 3 pages x 2 surfaces -- out of ASSERTS, where
+            # it was licensed by lgm.json's attributed_exception (publisher
+            # "Efficiency Works", basis ground-truth.md:27-44), into
+            # ASSERTS-1P, where the identical attribution could not be seen.
+            # Same sentence, same publisher, same resolved cite key, opposite
+            # verdict -- and LGM is wired into regen_all.sh under `set -e`.
+            # Held by control R4g and its repaired counterpart.
+            if cls in R4_FAIL_CLASSES and exc.get("allowed", True) \
                     and (pub or not need_pub) \
                     and (art.cite_keys or not need_key):
                 cls = "ATTRIBUTED-AND-SOURCED"
+            # The hit REPORTS the sentence as written -- URLs and all -- so the
+            # reader adjudicates the real line. `sentence=` is likewise the
+            # written form, because the seven filters below are filters: they
+            # only ever REMOVE a hit, and src_dup() in particular probes the
+            # first 48 characters against the rendered corpus, which is the
+            # written form too.
             raw.append(Hit("R4", cls, art.rel, skey, str(loc),
                            "%s | programs=%s%s%s | %s"
                            % (",".join(tk), ",".join(allnamed) or "-",
-                              (" (carried from the previous sentence: %s)"
-                               % ",".join(sorted(set(carried) - set(named))))
-                              if set(carried) - set(named) else "",
+                              (" (URL text masked before matching; the tokens "
+                               "above are from prose only)")
+                              if sent is not src_sent else "",
                               (" (program SET named anaphorically, not by "
                                "name: %s)" % ",".join(anaph)) if anaph else "",
-                              sent),
-                           note=cls, sentence=sent))
+                              src_sent),
+                           note=cls, sentence=src_sent))
 
     def f_srcdup(h):
         return ctx.src_dup(h)
@@ -2849,12 +2963,10 @@ def rule_R4(ctx, res):
     res.levels, res.level_detail = level_counts(
         ctx, ["stack", "on top of", "layer", "combin"], word=False)
     n = lambda s: len([h for h in res.adjudicated if h.sub == s])  # noqa: E731
-    res.notes.append("ASSERTS %d  ·  DENIES %d  ·  ASSERTS-1P %d  ·  "
-                     "DENIES-1P %d  ·  ASSERTS-SET %d  ·  DENIES-SET %d  ·  "
-                     "all six FAIL: silence is the compliant state and "
+    res.notes.append("%s  ·  all six FAIL: silence is the compliant state and "
                      "affirmative denial is equally a defect"
-                     % (n("ASSERTS"), n("DENIES"), n("ASSERTS-1P"),
-                        n("DENIES-1P"), n("ASSERTS-SET"), n("DENIES-SET")))
+                     % "  ·  ".join("%s %d" % (s, n(s))
+                                    for s in R4_FAIL_CLASSES))
     res.notes.append("-SET classes are claims whose programs are named "
                      "ANAPHORICALLY -- 'either insulation rebate program', "
                      "'both rebate programs' -- so the phrase supplies the "
@@ -2862,6 +2974,22 @@ def rule_R4(ctx, res):
                      "because that is a loosening, and a loosening that hides "
                      "inside an existing class cannot be controlled or "
                      "measured.")
+    res.notes.append("URL TEXT IS NOT PROSE (2026-09-18): %d sentence(s) "
+                     "carried a stacking token ONLY inside a URL and were "
+                     "dropped before classification. A slug is chosen for "
+                     "search and asserts nothing; controls R4e (fires) and "
+                     "repaired/R4e (must not) hold this. TIGHTENING, so it is "
+                     "counted rather than silent -- a rule that quietly stops "
+                     "seeing something reads exactly like a rule that was "
+                     "never wired up." % n_url_only)
+    res.notes.append("NO PROGRAM NAME CROSSES A SENTENCE BOUNDARY "
+                     "(2026-09-18): both programs must be named in the "
+                     "flagged sentence. R4 used to import names from the "
+                     "previous two sentences of the same surface to reach its "
+                     "own two-distinct-programs count. The ANAPHOR carry is "
+                     "unaffected -- an anaphor is a count, not a name, and "
+                     "control R4d depends on it. Controls R4f (fires) and "
+                     "repaired/R4f (must not) hold this.")
     return "stacking tokens resolved to sentences", \
            "sentences that assert or deny that programs combine"
 
@@ -4389,6 +4517,37 @@ R4_ANAPHORA_CONTROL_OVERLAY = {"R4": dict(
                           "either rebate program", "both rebate programs",
                           "both programs", "the two programs",
                           "these programs"])}
+# R4e and R4f test the two 2026-09-18 repairs -- URL text is not prose, and no
+# program name crosses a sentence boundary. Both pin an EMPTY anaphora list as
+# well as an empty alias map, because neither repair is about anaphora and a
+# control that could be satisfied through the -SET branch would not be testing
+# what its name says. Each names its two programmes by their configured
+# literals, so the result cannot depend on which property is loaded.
+R4_LITERAL_CONTROL_OVERLAY = {"R4": dict(
+    R4_CONTROL_OVERLAY["R4"],
+    program_aliases={},
+    program_set_anaphora=[])}
+# R4g pins the attributed exception itself, because that is what it tests.
+# `publishers` is pinned as a LIST and not just `publisher`, because rule_R4
+# reads `publishers` FIRST and the property configs disagree about which key
+# they set -- DCI carries a three-entry `publishers` list, LGM a scalar
+# `publisher` -- so pinning only the scalar would leave the control reading
+# whichever property happened to be loaded, which is the exact failure the R4c
+# and R4d pins exist to prevent. requires_cited_source_key is False because a
+# fixture has no citation registry to resolve a key against; the cite-key half
+# of the exception is already exercised on the live properties. The publisher
+# is deliberately one that is NOT in the pinned programs list -- crediting
+# "Atmos Energy" would have added a SECOND program name to the sentence and
+# moved it into the two-named-programs branch, where the exception has always
+# been reachable, so the repaired half would have gone clean without testing
+# the extension at all.
+R4_ATTRIBUTED_CONTROL_OVERLAY = {"R4": dict(
+    R4_LITERAL_CONTROL_OVERLAY["R4"],
+    attributed_exception={"allowed": True,
+                          "publishers": ["Building Science Corporation"],
+                          "publisher": "Building Science Corporation",
+                          "requires_publisher_named": True,
+                          "requires_cited_source_key": False})}
 # The N3b control pins its own tool entry, so the comparison it proves does not
 # depend on which property's R9.tools happens to be loaded -- LGM and GCI
 # configure no tool at all.
@@ -4529,7 +4688,28 @@ RULES = [
              Control("R4d", "R4", _f("R4d_anaphoric_program_set.html"),
                      R4_ANAPHORA_CONTROL_OVERLAY, sub="DENIES-SET",
                      repaired=_f("repaired",
-                                 "R4d_anaphoric_program_set.html"))]),
+                                 "R4d_anaphoric_program_set.html")),
+             # THE TWO 2026-09-18 REPAIRS, each held by its own pair. The
+             # FIRING half proves the rule still sees the real claim; the
+             # repaired half is the false positive the repair removed, and it
+             # FIRED ON REPAIRED before the repair and is clean after it. That
+             # is the whole test: without the firing half a repair is
+             # indistinguishable from switching the rule off.
+             Control("R4e", "R4", _f("R4e_url_is_not_prose.html"),
+                     R4_LITERAL_CONTROL_OVERLAY, sub="ASSERTS",
+                     repaired=_f("repaired", "R4e_url_is_not_prose.html")),
+             Control("R4f", "R4", _f("R4f_two_programs_one_sentence.html"),
+                     R4_LITERAL_CONTROL_OVERLAY, sub="ASSERTS",
+                     repaired=_f("repaired",
+                                 "R4f_two_programs_one_sentence.html")),
+             # The attributed exception, reached from the ONE-PROGRAMME class.
+             # It was reachable only from ASSERTS/DENIES until 2026-09-18; this
+             # pair is what makes that extension a measured loosening rather
+             # than a silent one.
+             Control("R4g", "R4", _f("R4g_one_program_attributed.html"),
+                     R4_ATTRIBUTED_CONTROL_OVERLAY, sub="ASSERTS-1P",
+                     repaired=_f("repaired",
+                                 "R4g_one_program_attributed.html"))]),
 
     Rule("R5", "UNCITED STATISTIC", "CLAIM TEST",
          "VIS TITLE META OG TW LD JS LOWVIS LLMS EMBED SVGTEXT",
