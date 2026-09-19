@@ -3039,6 +3039,86 @@ R5_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS,
            S.S_LOWVIS, S.S_LLMS, S.S_SVGTEXT)
 
 
+_R5_STOP = frozenset((
+    "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "is",
+    "are", "was", "were", "be", "by", "with", "that", "this", "it", "as",
+    "at", "from", "your", "you", "we", "our", "can", "will", "not", "but",
+    "than", "then", "so", "if", "most", "more", "up"))
+
+# Suffixes folded so that a restatement is not penalised for English
+# morphology. Longest first, and only when at least four characters survive,
+# so `less` does not fold to `le` and `costs` does fold to `cost`.
+_R5_SUFFIX = ("ements", "ement", "ings", "ing", "ies", "ied", "ers", "er",
+              "ed", "es", "ly", "s")
+_R5_ALNUM = re.compile(r"(?<=[a-z])(?=[0-9])")
+# Named, not inlined, so the before/after of any future re-derivation can be
+# run without editing the predicate. See f_instat for the measured sweep.
+_R5_INSTAT_MIN = 4
+
+
+def _r5_fold(w):
+    for suf in _R5_SUFFIX:
+        if w.endswith(suf) and len(w) - len(suf) >= 4:
+            return w[:-len(suf)]
+    if w.endswith("e") and len(w) >= 5:
+        # settle -> settl, so settle/settles/settled/settling all agree
+        return w[:-1]
+    return w
+
+
+def _r5_words(s):
+    """Content words of a sentence, folded so that the same word written two
+    ways is one token.
+
+    TWO FOLDS, EACH WITH A MEASURED ROW BEHIND IT:
+      * `CFM50` splits at the letter/digit boundary, because DCI writes the
+        unit as `CFM50` in prose and `CFM 50` in the quotation that sources it,
+        and the unshifted tokenizer scored those as two unrelated words.
+      * `settles` / `settling` / `settled` / `settle` fold to one stem, because
+        DCI restates the Building America Solution Center's `will settle from
+        10 to 20 percent` as `settles 10 to 20 percent` and was condemned for
+        the conjugation.
+    Deliberately crude: this is a same-claim test between two sentences on one
+    page, not a search index. A wrong fold can only move the overlap count, and
+    the threshold it feeds is measured against the one pair it must separate.
+    """
+    out = set()
+    for w in re.findall(r"[a-z]+", _R5_ALNUM.sub(" ", s.lower())):
+        if len(w) >= 3 and w not in _R5_STOP:
+            out.add(_r5_fold(w))
+    return out
+
+
+# An interrogative OPENER. A sentence that ends in `?` and starts with one of
+# these is asking, not telling.
+_R5_QOPEN = re.compile(
+    r"^\W*(?:what|why|how|when|where|who|whom|whose|which|"
+    r"do|does|did|is|are|was|were|can|could|will|would|should|shall|"
+    r"may|might|must|has|have|had|am)\b", re.IGNORECASE)
+# FACTIVE AND RHETORICAL FRAMES PRESUPPOSE THEIR COMPLEMENT. "Did you know X?"
+# commits the page to X exactly as "X" does, so these are NOT cleared. The list
+# is the guard's own blind-spot statement: a rhetorical question built on a
+# frame not named here reads as a plain question and is cleared.
+_R5_QFACTIVE = (
+    "did you know", "do you know", "didn't you know", "did you realize",
+    "did you realise", "do you realize", "do you realise",
+    "ever wonder", "guess what", "isn't it true", "is it any wonder",
+    "would you believe", "can you believe", "how is it that")
+
+
+def _is_plain_question(sent):
+    t = (sent or "").strip()
+    if not t.endswith("?"):
+        return False
+    if not _R5_QOPEN.match(t):
+        return False
+    low = t.lower()
+    for frame in _R5_QFACTIVE:
+        if frame in low:
+            return False
+    return True
+
+
 def rule_R5(ctx, res):
     c = ctx.r("R5")
     pats = [re.compile(p) for p in (c.get("magnitude_patterns") or [])]
@@ -3101,31 +3181,67 @@ def rule_R5(ctx, res):
     def f_inblock(h):
         return getattr(h, "r5_inblock", False)
 
-    _STOP = frozenset((
-        "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "is",
-        "are", "was", "were", "be", "by", "with", "that", "this", "it", "as",
-        "at", "from", "your", "you", "we", "our", "can", "will", "not", "but",
-        "than", "then", "so", "if", "most", "more", "up"))
-
     def f_instat(h):
         # A numeral SUBSTRING present in ANY cited-stat on the page cleared the
         # hit page-wide. That is how DCI's live uncited "15% reduction in
         # heating and cooling costs" was nearly cleared by an UNRELATED ENERGY
-        # STAR 15% on the same page. The figure must now share at least FIVE
-        # content words with the stat that is supposed to attribute it. Three
-        # was still too loose: "see a 15% reduction in heating and cooling
-        # costs" and "save an average of 15% on heating and cooling costs"
-        # share exactly heating/cooling/costs and are different claims.
+        # STAR 15% on the same page. The figure must therefore share content
+        # words with the stat that is supposed to attribute it.
+        #
+        # THE THRESHOLD IS 4, AND IT IS 4 BECAUSE IT WAS MEASURED, NOT PICKED.
+        # It was 3, then raised to 5 to separate "see a 15% reduction in
+        # heating and cooling costs" from "save an average of 15% on heating
+        # and cooling costs" -- the same numeral, a different claim, overlap
+        # exactly 3. Five was too coarse in the other direction: a SHORT
+        # restatement of a LONG verbatim quotation cannot reach five shared
+        # words no matter how plainly the quotation attributes it.
+        #
+        # MEASURED NEAR-MISS SWEEP, 2026-09-19, all three properties, every
+        # live hit that reaches this filter (DCI 237, LGM 49, GCI 32 -- the
+        # instat-eligible raw hits not already cleared by src_dup or inblock):
+        #
+        #   normalization   min overlap   left uncleared at threshold 3/4/5/6
+        #   DCI  shipped          3          0 /  7 / 17 / 26
+        #   DCI  +fold            3          0 /  3 / 11 / 20
+        #   LGM  shipped          6          0 /  0 /  0 /  0
+        #   LGM  +fold            7          0 /  0 /  0 /  0
+        #   GCI  shipped          3          0 /  3 /  5 /  7
+        #   GCI  +fold            3          0 /  1 /  5 /  5
+        #
+        # NOT ONE live hit on any property scores below 3, and every hit read
+        # at 3, 4 and 5 is a genuine same-page attribution of the same figure
+        # by the same publisher about the same subject. So 3 is the floor the
+        # corpus shows -- and 3 is exactly where the documented false clear
+        # sits, which is why the threshold is 4 and not 3. Four is the smallest
+        # value that keeps that pair separated. Measured on the pair itself,
+        # under all three tokenizations tried: overlap 3.
+        #
+        # THE TOKENIZER, NOT THE THRESHOLD, WAS MOST OF THE DEFECT.
+        # `settles` and `settle` were different tokens, and `CFM50` and
+        # `CFM 50` were different tokens, so a restatement was penalised for
+        # English morphology rather than for saying something else. Folding
+        # both (see _r5_words) moves DCI's uncleared count at threshold 4 from
+        # 7 to 3 and does not move the false-clear pair off 3.
         if not getattr(h, "r5_instat", False):
             return False
-        sw = set(w for w in re.findall(r"[a-z]{3,}", h.sentence.lower())
-                 if w not in _STOP)
+        sw = _r5_words(h.sentence)
         for st in getattr(h, "r5_stats", []) or []:
-            tw = set(w for w in re.findall(r"[a-z]{3,}", st.lower())
-                     if w not in _STOP)
-            if len(sw & tw) >= 5:
+            if len(sw & _r5_words(st)) >= _R5_INSTAT_MIN:
                 return True
         return False
+
+    def f_question(h):
+        # A QUESTION ASSERTS NO PROPOSITION, SO IT CANNOT BE AN UNCITED ONE.
+        # Three DCI rows were the FAQ heading "What happens if the after test
+        # does not reach a 20% CFM50 reduction?" -- R5 read the numeral and
+        # condemned the page for not sourcing a claim the page never made.
+        # NARROW BY CONSTRUCTION, because a question CAN smuggle an assertion:
+        # "Did you know insulation cuts bills 35%?" presupposes what it
+        # pretends to ask. The guard therefore requires a real interrogative
+        # opener AND refuses the factive frames that presuppose their
+        # complement. It is a blindfold in exactly one direction, and
+        # control R5-Q-FACTIVE is what proves that direction stays open.
+        return _is_plain_question(h.sentence)
 
     # A PARENTHETICAL CITATION IS AN ATTRIBUTION AND HAS NO VERB.
     # f_pub below requires an attribution VERB, which is right for prose
@@ -3219,6 +3335,9 @@ def rule_R5(ctx, res):
              _open(f_srcdup)),
         Filt("the sentence IS a cited-stat block (attributed by construction)",
              _open(f_inblock)),
+        Filt("the sentence is a QUESTION (a question asserts no proposition; "
+             "factive frames such as \"did you know\" are excluded)",
+             _open(f_question)),
         Filt("the figure appears in a cited-stat rendered on this page "
              "(attribution is PAGE-scoped here, not sentence-scoped)",
              _open(f_instat)),
@@ -4824,7 +4943,30 @@ RULES = [
          "to it.",
          rule_R5,
          controls=[Control("R5", "R5", _f("R5_uncited_statistic.html"),
-                           R5_CONTROL_OVERLAY, sub="mag", repaired=_f("repaired", "R5_uncited_statistic.html"))]),
+                           R5_CONTROL_OVERLAY, sub="mag", repaired=_f("repaired", "R5_uncited_statistic.html")),
+                   # f_instat's threshold, both directions. The fixture's
+                   # "see a 15% reduction in heating and cooling costs" is a
+                   # DIFFERENT claim from the ENERGY STAR "save an average of
+                   # 15% on heating and cooling costs" quoted on the same page
+                   # -- overlap 3, below the measured threshold of 4, so it
+                   # MUST still fire. The repaired page restates the
+                   # quotation instead, and MUST clear. Its cellulose
+                   # paragraph is the tokenizer half: "settles" against
+                   # "will settle" scores 4 unfolded and 5 folded, so before
+                   # the fold it FIRED ON REPAIRED and the control failed.
+                   Control("R5-INSTAT", "R5", _f("R5b_restated_quotation.html"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired",
+                                       "R5b_restated_quotation.html")),
+                   # The interrogative guard, both directions. "Did you know
+                   # ...20%...?" is factive -- it presupposes the figure, so
+                   # the guard must NOT clear it and the fixture must fire.
+                   # "What happens if ...20%...?" asserts nothing and the
+                   # repaired page must be clean.
+                   Control("R5-QUESTION", "R5", _f("R5c_factive_question.html"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired",
+                                       "R5c_factive_question.html"))]),
 
     Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
          "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",
