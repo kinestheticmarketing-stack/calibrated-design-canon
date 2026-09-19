@@ -87,7 +87,6 @@ class ArithmeticMismatch(Exception):
 class Hit(object):
     __slots__ = ("rid", "sub", "rel", "surface", "locator", "text", "note",
                  "cite_key", "sentence", "r5_inblock", "r5_instat",
-                 "r5_srccode",
                  "r8_excluded", "r2_noscope", "r2_subject_ok", "r3_kind",
                  "on_embed", "r3_w60", "r3_w40", "r3_struct", "r5_stats",
                  "r2_sitewide", "r2_binding", "r2_sentence_bound")
@@ -105,7 +104,6 @@ class Hit(object):
         self.sentence = S.collapse(sentence or text)
         self.r5_inblock = False
         self.r5_instat = False
-        self.r5_srccode = False
         self.r8_excluded = ""
         self.r2_noscope = False
         self.r2_subject_ok = True
@@ -1049,6 +1047,7 @@ class Ctx(object):
         self._pool = {}
         self._levels_cache = {}
         self.src_artifacts = []
+        self.src_code_surfaces = []   # (rel, locator, chars) excluded by pool()
         self._rendered = None
         self.peer_ctx = None
 
@@ -1110,34 +1109,27 @@ class Ctx(object):
         # Portfolio-wide the unnormalized probe missed 106 distinct SRC
         # restatements. NEG15 is the control: correct copy, markup and an em
         # dash inside the first 48 characters.
-        # KNOWN OPEN, MEASURED, NOT CLOSED HERE -- THE 48-CHARACTER PREFIX IS A
-        # LIVE SILENT MISS.
+        # THE 48-CHARACTER PREFIX WAS A LIVE SILENT MISS. CLOSED 2026-09-19.
         # Two generator strings sharing their first 48 normalized characters
-        # are indistinguishable to this probe, so a string whose OPENING
-        # matches rendered prose is cleared no matter what it goes on to
+        # were indistinguishable to this probe, so a string whose OPENING
+        # matched rendered prose was cleared no matter what it went on to
         # assert. Reproduced by injecting into _shared_components.py a string
         # that renders NOWHERE and carries a fresh uncited figure:
         #     '<p>Loose-fill cellulose settles 10 to 20 percent; rebate
         #      paperwork cuts your bill by 47% in the first year.</p>'
         # whose first 48 normalized characters are DCI's real, attributed
         # settling sentence.
-        #     prefix probe (this code): DCI R5 RAW 533 ADJ 31 -- CLEARED, MISSED
-        #     full-sentence probe:      DCI R5 RAW 533 ADJ 33 -- CAUGHT
-        # THE ONE-LINE REPAIR IS `S.collapse(S.txt(hit.sentence))` WITH NO
-        # SLICE. It is not applied because it REDS LGM, which is wired into
-        # that property's regen_all.sh under `set -e`:
-        #     LGM R5 ADJ 0 -> 2, exit 0 -> 1
-        # and both new rows are a DIFFERENT, pre-existing R5 defect that the
-        # prefix was accidentally masking -- CODE READ AS PROSE on the SRC
-        # surface. src_artifact() emits every string run >= 12 chars in a
-        # generator module, including CSS blocks and JS bundles, and R5 reads
-        # a `width: 1px ... 0% ... 100% ... 50%` CSS rule and an `8%` inside a
-        # scroll-reveal IntersectionObserver as quantified magnitude claims.
-        # DCI shows the same class (one extra row, the same 8% bundle).
-        # ORDER OF REPAIR: stop R5 reading code as prose on SRC, THEN drop the
-        # slice. Doing it in the other order trades a silent miss for a red
-        # production build on a property with no defect.
-        probe = S.collapse(S.txt(hit.sentence))[:48]
+        #     prefix probe:        DCI R5 ADJ 31 -- CLEARED, MISSED
+        #     full-sentence probe: DCI R5 ADJ 33 -- CAUGHT
+        # The repair is this expression with NO SLICE. A previous pass applied
+        # it and had to REVERT it, because it reddened LGM -- which is wired
+        # into that property's regen_all.sh under `set -e` -- with two rows
+        # that were a DIFFERENT, pre-existing R5 defect the prefix had been
+        # accidentally masking: CODE READ AS PROSE on the SRC surface.
+        # That defect is now fixed in its own right (see _src_is_code), so the
+        # slice comes off. ORDER MATTERS AND WAS OBSERVED: the code/prose split
+        # landed first, then this.
+        probe = S.collapse(S.txt(hit.sentence))
         if len(probe) < 20:
             return False
         return probe in self.rendered_index()
@@ -1202,6 +1194,27 @@ class Ctx(object):
                     out.append((S.S_VIS, sf.locator, sent))
         for s in self.surfaces(art, POOL_KEYS):
             if s.key in (S.S_JS, S.S_CSS) and s.locator.endswith("body"):
+                continue
+            # THE SAME POLICY, ON THE SRC SURFACE. The line above says a
+            # <script> or <style> BODY is not a proposition surface on a
+            # rendered page -- only the string LITERALS inside it are. The SRC
+            # surface had no such rule, so a generator's stylesheet and its
+            # script bundles arrived as ordinary prose and every proposition
+            # rule read their numerals and their DEVELOPER COMMENTS as claims.
+            # Measured, on the same bytes:
+            #   public/insulation-rebate-eligibility-checker.html  R2 clean
+            #   src:_generate_calculator_pages.py                  R2 FAIL
+            # on one JS comment recording a wrong-utility bug FIXED on
+            # 2026-09-08 -- the repair note read as the defect. The rendered
+            # copy is judged and the pre-render copy is not double-judged
+            # through a surface the rendered one does not have.
+            # NOT A BLINDFOLD: the string literals inside those bundles ship
+            # into public/ and are read there as S_JS surfaces. Measured across
+            # all three properties, this removes 31/16/21 RAW candidates for R2,
+            # 7/3/3 for R4, 5/2/4 for R5 and 3/0/0 for R3, and changes exactly
+            # ONE adjudicated finding anywhere: the GCI R2 comment above.
+            if art.kind == "src" and _src_is_code(s.text):
+                self.src_code_surfaces.append((art.rel, s.locator, len(s.text)))
                 continue
             for sent in (S.sentences(s.text) or [s.text]):
                 out.append((s.key, s.locator, sent))
@@ -3351,17 +3364,6 @@ def rule_R5(ctx, res):
     for art in ctx.rule_artifacts("R5"):
         stats = " || ".join(x["txt"] for x in art.cited_stats)
         cs_txt = [x["txt"] for x in art.cited_stats]
-        # SRC surfaces that are a stylesheet or a script bundle rather than
-        # prose. Computed per SURFACE, never per sentence: the sentence
-        # splitter chops a 27 kB stylesheet into fragments, and a fragment
-        # cannot be judged on its own. Marked, not dropped -- the removal
-        # goes through a named filter so it is counted and enumerated like
-        # every other one. See _src_is_code for the measured separation.
-        code_locs = set()
-        if art.kind == "src":
-            for sf in art.surfaces:
-                if _src_is_code(sf.text):
-                    code_locs.add(sf.locator)
         for skey, loc, sent in ctx.pool(art):
             found = []
             for p in pats:
@@ -3384,13 +3386,9 @@ def rule_R5(ctx, res):
                     note=ko or "uncited", sentence=sent)
             h.r5_inblock = inblock
             h.r5_instat = instat
-            h.r5_srccode = str(loc) in code_locs
             h.r5_stats = [x["txt"] for x in art.cited_stats
                           if any(n in x["txt"] for n in nums)]
             raw.append(h)
-
-    def f_srccode(h):
-        return getattr(h, "r5_srccode", False)
 
     def f_srcdup(h):
         return ctx.src_dup(h)
@@ -3603,9 +3601,6 @@ def rule_R5(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
-        Filt("the generator SRC surface is a STYLESHEET or SCRIPT BUNDLE, not "
-             "prose (brace density >= 0.40 with CSS or JS corroboration)",
-             _open(f_srccode)),
         Filt("generator SRC restatement of prose that already renders in "
              "public/ (counted once, against the rendered artifact)",
              _open(f_srcdup)),
@@ -5162,7 +5157,20 @@ RULES = [
                      R2_CONTROL_OVERLAY, sub="c", repaired=_f("repaired", "R2c_wrong_utility_anchor_only.html")),
              Control("R2d", "R2", _f("R2d_inverted_split_fact.html"),
                      R2_SPLIT_CONTROL_OVERLAY, sub="a",
-                     repaired=_f("repaired", "R2d_inverted_split_fact.html"))]),
+                     repaired=_f("repaired", "R2d_inverted_split_fact.html")),
+             # THE SRC CODE/PROSE SPLIT, on R2. Both fixtures are generator
+             # modules holding a script bundle AND prose. The bundle's
+             # developer COMMENT records a wrong-utility bug fixed on
+             # 2026-09-08; the fixture's PROSE still makes the claim for real
+             # and MUST fire, which is the proof that excluding the bundle did
+             # not blind R2 to the generator. The repaired module names the
+             # right utility and keeps the identical bundle, so it MUST be
+             # clean -- before ctx.pool() learned that a script bundle is not
+             # a proposition surface, the repair note itself fired there and
+             # took GCI's whole gate red.
+             Control("R2e", "R2", _f("R2e_src_js_comment.py"),
+                     R2_CONTROL_OVERLAY, sub="a",
+                     repaired=_f("repaired", "R2e_src_js_comment.py"))]),
 
     Rule("R3", "REBATE DOLLAR FIGURE",
          "CLAIM TEST for the rank/magnitude half (T3); STRING+WINDOW LIST for "
@@ -5302,7 +5310,20 @@ RULES = [
                    # fired there and the control failed.
                    Control("R5-SRCCODE", "R5", _f("R5g_src_code.py"),
                            R5_CONTROL_OVERLAY, sub="mag",
-                           repaired=_f("repaired", "R5g_src_code.py"))]),
+                           repaired=_f("repaired", "R5g_src_code.py")),
+                   # src_dup's 48-character prefix, both directions. The
+                   # fixture's generator string OPENS with the rendered page's
+                   # real attributed sentence and then adds a figure that
+                   # renders nowhere and is sourced by nothing: under the
+                   # prefix probe it was CLEAN, which is the silent miss, and
+                   # under the full-sentence probe it MUST fire. The repaired
+                   # generator string is a true restatement and MUST clear, so
+                   # the repair cannot have turned src_dup off. NEG15 remains
+                   # the other half -- correct copy with markup and an em dash
+                   # inside the first 48 characters, which must stay clean.
+                   Control("R5-SRCPREFIX", "R5", _f("R5h_src_prefix"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired", "R5h_src_prefix"))]),
 
     Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
          "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",
@@ -6113,6 +6134,25 @@ def _main(args, out, t0):
         % (len(gen.modules),
            sum(len(a.surfaces) for a in ctx.src_artifacts),
            ", ".join(sr) if sr else "NO RULE -- SRC is computed and unused"))
+    # STATED, NEVER SILENT. ctx.pool() drops generator string runs that are a
+    # stylesheet or a script bundle, for the same reason it drops a <script>
+    # BODY on a rendered page: it is not a proposition surface. A drop nobody
+    # can count is indistinguishable from a rule going blind, so it is counted
+    # and its surfaces are named here.
+    for a in ctx.src_artifacts:
+        ctx.pool(a)
+    if ctx.src_code_surfaces:
+        tot = sum(n for _, _, n in ctx.src_code_surfaces)
+        out("SRC CODE SURFACES EXCLUDED FROM THE PROPOSITION POOL: %d run(s), "
+            "%d chars -- a stylesheet or a script bundle is not prose, and the "
+            "string LITERALS inside it are read on the rendered page instead. "
+            "%s" % (len(ctx.src_code_surfaces), tot,
+                    ", ".join("%s(%d)" % (loc, n) for _, loc, n
+                              in sorted(ctx.src_code_surfaces))))
+    else:
+        out("SRC CODE SURFACES EXCLUDED FROM THE PROPOSITION POOL: 0 -- NULL "
+            "RESULT, no generator string run on this property is a stylesheet "
+            "or a script bundle")
     out("KNOWN HOLES, stated up front (spec 7): og-image RASTERS are not read "
         "(%s); no PDF text extraction; no JS execution outside opt-in R6b; no "
         "outbound request, so a live/repo divergence is invisible here; "
