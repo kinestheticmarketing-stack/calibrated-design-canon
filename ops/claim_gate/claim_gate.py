@@ -87,6 +87,7 @@ class ArithmeticMismatch(Exception):
 class Hit(object):
     __slots__ = ("rid", "sub", "rel", "surface", "locator", "text", "note",
                  "cite_key", "sentence", "r5_inblock", "r5_instat",
+                 "r5_srccode",
                  "r8_excluded", "r2_noscope", "r2_subject_ok", "r3_kind",
                  "on_embed", "r3_w60", "r3_w40", "r3_struct", "r5_stats",
                  "r2_sitewide", "r2_binding", "r2_sentence_bound")
@@ -104,6 +105,7 @@ class Hit(object):
         self.sentence = S.collapse(sentence or text)
         self.r5_inblock = False
         self.r5_instat = False
+        self.r5_srccode = False
         self.r8_excluded = ""
         self.r2_noscope = False
         self.r2_subject_ok = True
@@ -3107,6 +3109,79 @@ _R5_QFACTIVE = (
     "would you believe", "can you believe", "how is it that")
 
 
+# ---------------------------------------------------------------------------
+# R5: A STYLESHEET IS NOT PROSE AND A SCRIPT BUNDLE IS NOT A FINDING.
+#
+# surfaces.src_artifact() emits EVERY tokenize-joined string run of 12 or more
+# characters in a generator module. That is right for R2, R3-T3, R4 and R7,
+# which are looking for a program name or a dollar figure wherever it hides.
+# It is wrong for R5, which asks whether a quantified magnitude PRESENTED AS A
+# FINDING ABOUT THE WORLD carries an attribution -- and a generator's inline
+# stylesheet and its scroll-reveal bundle are neither findings nor about the
+# world:
+#
+#   .form-row--cw { position: absolute; left: -9999px; top: 0; width: 1px;
+#                   height: 1px; overflow: hidden; }        -> 0%, 100%, 50%
+#   new IntersectionObserver(..., { threshold: 0.15,
+#                   rootMargin: '0px 0px -8% 0px' });       -> 8%
+#
+# MEASURED, not guessed. Over all 6,203 generator string runs of 40+ characters
+# on the three properties, the fraction of characters lying inside a braced
+# block separates cleanly and with a wide empty gap:
+#
+#   6,166 runs at 0.00        prose, markup, JSON-LD, copy
+#       1 run  at 0.074       a citation-provenance note that quotes a regex
+#      --- nothing at all between 0.08 and 0.67 ---
+#      36 runs at 0.67-1.00   stylesheets and script bundles, every one of them
+#
+# The threshold is 0.40, in the middle of an empty gap nine times its own
+# width, and it is CORROBORATED: a run must also carry at least five CSS
+# declarations or at least three JavaScript markers. Density alone would be a
+# single number to fool; density plus corroboration means a run has to look
+# like code twice, in two unrelated ways.
+#
+# BLIND SPOT, STATED: a generator string that is MOSTLY prose with a small
+# script tag inside it is prose to this test, so a figure inside that script
+# still reads as a claim. That is the safe direction -- this filter can only
+# fail to exclude, never exclude a page claim -- and control R5-SRCCODE's
+# fixture half is what proves the prose direction stays open.
+# ---------------------------------------------------------------------------
+
+_SRC_CSS_DECL = re.compile(
+    r"[{;]\s*[-a-zA-Z][-a-zA-Z0-9]{1,30}\s*:\s*[^;{}]{1,200};")
+_SRC_JS_MARK = re.compile(
+    r"\bfunction\s*\(|=>|\bvar\s+\w+\s*=|\blet\s+\w+\s*=|\bconst\s+\w+\s*=|"
+    r"document\s*\.|window\s*\.|addEventListener|querySelector|"
+    r"'use strict'|\"use strict\"|\breturn\b|\btypeof\b|JSON\.parse|"
+    r"\.classList|\.forEach\(|\bnew [A-Z]\w+\(")
+_SRC_CODE_MIN_DENSITY = 0.40
+
+
+def _src_brace_density(t):
+    """Fraction of characters that sit INSIDE a braced block."""
+    if not t:
+        return 0.0
+    depth = inside = 0
+    for ch in t:
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            if depth:
+                depth -= 1
+        elif depth:
+            inside += 1
+    return inside / float(len(t))
+
+
+def _src_is_code(t):
+    if not t or len(t) < 40:
+        return False
+    if _src_brace_density(t) < _SRC_CODE_MIN_DENSITY:
+        return False
+    return (len(_SRC_CSS_DECL.findall(t)) >= 5
+            or len(_SRC_JS_MARK.findall(t)) >= 3)
+
+
 def _is_plain_question(sent):
     t = (sent or "").strip()
     if not t.endswith("?"):
@@ -3276,6 +3351,17 @@ def rule_R5(ctx, res):
     for art in ctx.rule_artifacts("R5"):
         stats = " || ".join(x["txt"] for x in art.cited_stats)
         cs_txt = [x["txt"] for x in art.cited_stats]
+        # SRC surfaces that are a stylesheet or a script bundle rather than
+        # prose. Computed per SURFACE, never per sentence: the sentence
+        # splitter chops a 27 kB stylesheet into fragments, and a fragment
+        # cannot be judged on its own. Marked, not dropped -- the removal
+        # goes through a named filter so it is counted and enumerated like
+        # every other one. See _src_is_code for the measured separation.
+        code_locs = set()
+        if art.kind == "src":
+            for sf in art.surfaces:
+                if _src_is_code(sf.text):
+                    code_locs.add(sf.locator)
         for skey, loc, sent in ctx.pool(art):
             found = []
             for p in pats:
@@ -3298,9 +3384,13 @@ def rule_R5(ctx, res):
                     note=ko or "uncited", sentence=sent)
             h.r5_inblock = inblock
             h.r5_instat = instat
+            h.r5_srccode = str(loc) in code_locs
             h.r5_stats = [x["txt"] for x in art.cited_stats
                           if any(n in x["txt"] for n in nums)]
             raw.append(h)
+
+    def f_srccode(h):
+        return getattr(h, "r5_srccode", False)
 
     def f_srcdup(h):
         return ctx.src_dup(h)
@@ -3513,6 +3603,9 @@ def rule_R5(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("the generator SRC surface is a STYLESHEET or SCRIPT BUNDLE, not "
+             "prose (brace density >= 0.40 with CSS or JS corroboration)",
+             _open(f_srccode)),
         Filt("generator SRC restatement of prose that already renders in "
              "public/ (counted once, against the rendered artifact)",
              _open(f_srcdup)),
@@ -5198,7 +5291,18 @@ RULES = [
                            _f("R5f_derivable_constant.html"),
                            R5_DERIV_CONTROL_OVERLAY, sub="mag",
                            repaired=_f("repaired",
-                                       "R5f_derivable_constant.html"))]),
+                                       "R5f_derivable_constant.html")),
+                   # The SRC code/prose split, both directions. Both fixtures
+                   # are generator modules holding a stylesheet AND prose. The
+                   # fixture's prose carries an uncited 35% and MUST fire --
+                   # that is the proof the stylesheet exclusion did not blind
+                   # R5 to the generator. The repaired module attributes that
+                   # figure and keeps the identical stylesheet, so it MUST be
+                   # clean: before this fix the stylesheet's own 0%/50%/100%
+                   # fired there and the control failed.
+                   Control("R5-SRCCODE", "R5", _f("R5g_src_code.py"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired", "R5g_src_code.py"))]),
 
     Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
          "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",
