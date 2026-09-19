@@ -3263,6 +3263,7 @@ def rule_R5(ctx, res):
     subj_verbs = c.get("subject_attribution_verbs", []) or []
     attrib_verbs = ctx.r("R1").get("attribution_verbs", []) or []
     computed = c.get("computed_output_markers", []) or []
+    derivs = c.get("derivable_constants", []) or []
     known = c.get("known_uncited", []) or []
     codes = ctx.r("R3").get("code_context_markers", []) or []
     code_nouns = ctx.r("R3").get("code_noun_markers", []) or []
@@ -3380,6 +3381,47 @@ def rule_R5(ctx, res):
         # control R5-Q-FACTIVE is what proves that direction stays open.
         return _is_plain_question(h.sentence)
 
+    def f_deriv(h):
+        # R5.derivable_constants WAS DECLARED IN THE KEY LIST AND READ BY NO
+        # CODE PATH. A previous session wrote an entry for the atmospheric
+        # pressure figure, watched no FILTER line appear, and removed it rather
+        # than ship dead config -- correctly, and the gap stayed open. This is
+        # the code path.
+        #
+        # A PHYSICAL CONSTANT IS NOT A STATISTIC. R5 asks for an attribution
+        # because a percentage presented as a finding about the world has a
+        # publisher who found it. "Atmospheric pressure at Denver's elevation
+        # is roughly 17% lower than sea level" has no publisher any more than
+        # water's boiling point at altitude does: it follows from the ICAO
+        # standard atmosphere, P/P0 = (1 - 2.25577e-5*h)^5.25588, which at
+        # h = 1,609.3 m gives 0.8234 -- 17.7% lower.
+        #
+        # NARROW BY CONSTRUCTION, three ways, because this is the filter shape
+        # most likely to become an allowlist:
+        #   * the entry must name the FIGURE, and the hit's numerals must
+        #     include it, so the entry cannot pardon a different number;
+        #   * the entry must name a SUBJECT PHRASE present in the sentence, so
+        #     it cannot pardon a different claim that happens to carry 17%;
+        #   * the entry must carry a DERIVATION. An entry with no derivation is
+        #     an assertion that something is derivable, which is the thing being
+        #     claimed, so it is ignored and reported rather than honoured.
+        nums = [x.strip() for x in
+                (h.text.split(" | ")[0] or "").split(",") if x.strip()]
+        for d in derivs:
+            if not isinstance(d, dict):
+                continue
+            fig = (d.get("figure") or "").strip()
+            phrases = [p for p in (d.get("subject_phrases") or []) if p]
+            if not fig or not phrases:
+                continue
+            if not (d.get("derivation_note") or "").strip():
+                continue
+            if fig not in nums:
+                continue
+            if has_any(h.sentence, phrases, ci=True, word=False):
+                return True
+        return False
+
     # A PARENTHETICAL CITATION IS AN ATTRIBUTION AND HAS NO VERB.
     # f_pub below requires an attribution VERB, which is right for prose
     # ("According to X, ...") and blind to the commonest citation form in
@@ -3479,6 +3521,9 @@ def rule_R5(ctx, res):
         Filt("the sentence is a QUESTION (a question asserts no proposition; "
              "factive frames such as \"did you know\" are excluded)",
              _open(f_question)),
+        Filt("R5.derivable_constants -- a physical constant with a recorded "
+             "derivation, not a finding with a publisher",
+             _open(f_deriv)),
         Filt("the figure appears in a cited-stat rendered on this page "
              "(attribution is PAGE-scoped here, not sentence-scoped)",
              _open(f_instat)),
@@ -4920,6 +4965,18 @@ R9_N3B_CONTROL_OVERLAY = {"R9": {"tools": [{
     "hidden_mirrors_visible": ["lf-calc-output"]}]}}
 R5_CONTROL_OVERLAY = {"R3": {"allowed_thresholds": [],
                              "allowed_structure_percentages": []}}
+# A SYNTHETIC derivable-constants entry, pinned the way every other control
+# overlay is pinned: the control must prove the RULE works, not that DCI's
+# config happens to carry an entry today. Without this the derivable-constant
+# filter would be control-tested on one property and untested on the other two.
+R5_DERIV_CONTROL_OVERLAY = _deep_merge(R5_CONTROL_OVERLAY, {"R5": {
+    "derivable_constants": [{
+        "figure": "17%",
+        "subject_phrases": ["Atmospheric pressure"],
+        "derivation_note": "CONTROL FIXTURE ENTRY. ICAO standard atmosphere, "
+                           "P/P0 = (1 - 2.25577e-5*h)^5.25588; at h = 1609.3 m "
+                           "this gives 0.8234, i.e. 17.7% lower than sea "
+                           "level."}]}})
 R6_CONTROL_OVERLAY = {"R6": {"label_chains": [{
     "id": "control-rvalue-tier",
     "printed_var": "pctShort",
@@ -5130,7 +5187,18 @@ RULES = [
                            _f("R5e_publisher_short_form.html"),
                            R5_CONTROL_OVERLAY, sub="mag",
                            repaired=_f("repaired",
-                                       "R5e_publisher_short_form.html"))]),
+                                       "R5e_publisher_short_form.html")),
+                   # R5.derivable_constants, both directions. The fixture
+                   # carries the SAME figure, 17%, as an ordinary marketing
+                   # claim about heating bills -- the entry must NOT pardon it,
+                   # which is what stops the key becoming an allowlist for a
+                   # number. The repaired page is the physical constant with
+                   # its subject phrase, and MUST clear.
+                   Control("R5-DERIVABLE", "R5",
+                           _f("R5f_derivable_constant.html"),
+                           R5_DERIV_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired",
+                                       "R5f_derivable_constant.html"))]),
 
     Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
          "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",
