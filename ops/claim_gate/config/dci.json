@@ -370,8 +370,9 @@
       {
         "id": "DCI-D-003",
         "scope": "all pages",
-        "note": "No per-page date machinery. Auditor HOLD governs. Debt measured at 70 of 72 pages; sitemap shows 70 x 2026-08-24 while content was corrected through 2026-09-11.",
-        "report_as": "KNOWN-OPEN"
+        "note": "CORRECTED 2026-09-18 -- the previous note was STALE PROSE printed into every run. It asserted 'Debt measured at 70 of 72 pages; sitemap shows 70 x 2026-08-24 while content was corrected through 2026-09-11.' RE-MEASURED today: sitemap.xml carries 73 <loc> entries and ZERO at 2026-08-24 -- the lastmod values are 61 x 2026-09-18 and 12 x 2026-09-10, against a last public/*.html commit of 2026-09-18 (33f8244). 73 of 73 check out. The stale-vs-content debt this hold was raised for is DISCHARGED. The hold is kept, narrowed to what is still true: this property has no per-page date machinery -- DCI and LGM drive most pages from one sitewide REVIEWED_ISO constant -- so a future content correction can go stale again in one step. A figure asserted in a note and never re-taken is the defect class this portfolio keeps producing; re-measure this one before quoting it.",
+        "report_as": "KNOWN-OPEN",
+        "measured_on": "2026-09-18"
       }
     ],
     "own_effective_date_pages": [
