@@ -1093,7 +1093,21 @@ class Ctx(object):
         """
         if not str(hit.rel).startswith("src:"):
             return False
-        probe = S.collapse(hit.sentence)[:48]
+        # THE PROBE MUST BE NORMALIZED THE WAY THE INDEX IS.
+        # rendered_index() is built from `a.txt`, which is collapse(dec(...))
+        # with script/style bodies dropped and remaining TAGS STRIPPED -- so
+        # every em dash is folded to "-" and no markup survives. The probe was
+        # collapse() ONLY, straight off the generator byte string. Any hit
+        # whose first 48 characters contained an HTML tag or a typographic
+        # dash therefore could not match a rendered page that contains the
+        # sentence verbatim: the filter was comparing two different alphabets.
+        # Measured on DCI at ba2fc22 -- of the seven SRC findings R5 carried,
+        # SIX were prose that renders in public/ and one (the ENERGY STAR
+        # Climate Zone 5 registry stat, which renders on no page) was real.
+        # Portfolio-wide the unnormalized probe missed 106 distinct SRC
+        # restatements. NEG15 is the control: correct copy, markup and an em
+        # dash inside the first 48 characters.
+        probe = S.collapse(S.txt(hit.sentence))[:48]
         if len(probe) < 20:
             return False
         return probe in self.rendered_index()
@@ -4849,7 +4863,7 @@ def validate_registry():
 # Controls (spec 5). Run BEFORE any rule, against fixture files only.
 # ---------------------------------------------------------------------------
 
-NEGATIVES = ["NEG%02d" % i for i in range(1, 15)]
+NEGATIVES = ["NEG%02d" % i for i in range(1, 16)]
 # The reference date the negative fixtures were written against. Fixed on
 # purpose: see the neg_overlay comment in run_controls().
 NEG_ASOF = "2026-09-17"
@@ -4887,6 +4901,24 @@ def _control_ctx(base_cfg, overlay, paths, repo):
     ctx = Ctx(base_cfg["key"], CONTROL_NO_REPO, cfg, control=True)
     for p in paths:
         rel = os.path.relpath(p, _HERE).replace(os.sep, "/")
+        # A `.py` IN A FIXTURE SET IS AN SRC PSEUDO-ARTIFACT, NOT A .txt PAGE.
+        # Without this branch the control harness could not host the SRC
+        # normalization at all: parse_artifact falls through to kind="txt" for
+        # any unknown extension, so a generator fixture arrived as a rendered
+        # page and ctx.src_artifacts stayed empty. That left every filter that
+        # reads SRC -- src_dup above all -- with NO control, which is exactly
+        # how src_dup shipped comparing raw markup against tag-stripped prose.
+        # This is NOT the contamination channel the comment below closes: that
+        # one handed the control the REPO UNDER TEST's generators. This one
+        # reads a file that is IN the fixture set, so isolation is unchanged.
+        if p.endswith(".py"):
+            with open(p, "r", encoding="utf-8") as fh:
+                src = fh.read()
+            a = S.src_artifact(os.path.basename(p), S.src_string_runs(src))
+            if a.surfaces:
+                ctx.src_artifacts.append(a)
+                ctx.by_rel[a.rel] = a
+            continue
         art = S.parse_artifact(rel.rsplit("/", 1)[-1], p)
         ctx.artifacts.append(art)
         ctx.by_rel[art.rel] = art
@@ -5129,7 +5161,14 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
     # against the fixture reference date.
     neg_overlay = {"R8": {"today": NEG_ASOF}}
     for neg in NEGATIVES:
-        path = os.path.join(FIXTURES, "negative", neg + ".html")
+        # A negative fixture may be ONE .html or a DIRECTORY. The directory
+        # form exists because a correct-copy vector can need more than one
+        # file to be stated at all: NEG15's whole point is a generator string
+        # and the page it renders into, and one .html cannot express that.
+        path = os.path.join(FIXTURES, "negative", neg)
+        if not os.path.isdir(path):
+            path = path + ".html"
+        label = "fixtures/negative/%s" % os.path.basename(path)
         ctx = _control_ctx(base, neg_overlay, _fixture_paths(path), repo)
         alarms = []
         for rule in RULES:
@@ -5153,11 +5192,11 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
             for h in res.adjudicated:
                 alarms.append("%s %s %s" % (rule.rid, h.sub, h.text[:90]))
         if alarms:
-            rows.append(("-", neg, "fixtures/negative/%s.html" % neg,
+            rows.append(("-", neg, label,
                          "*** FALSE ALARM *** " + " | ".join(sorted(alarms)[:3])))
             neg_false += 1
         else:
-            rows.append(("-", neg, "fixtures/negative/%s.html" % neg, "clean"))
+            rows.append(("-", neg, label, "clean"))
             neg_clean += 1
 
     for sign, cid, fx, verdict in rows:
