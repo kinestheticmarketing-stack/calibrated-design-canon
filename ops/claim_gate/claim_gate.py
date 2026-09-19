@@ -35,6 +35,8 @@ import json  # noqa: E402
 import os  # noqa: E402
 import re  # noqa: E402
 import subprocess  # noqa: E402
+import tokenize  # noqa: E402
+import ast  # noqa: E402
 import time  # noqa: E402
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -457,14 +459,30 @@ def unread_config_keys(cfg):
     Keys whose name ends in a documentation suffix (_note, _reason, _basis,
     _source, _why) are provenance by construction and are not reported.
     """
+    # HOLE 1: A KEY NAMED IN A COMMENT USED TO COUNT AS READ. The audit
+    # substring-searched the raw source, so `# R5.derivable_constants is
+    # declared and read by nothing` marked that key as read -- live for three
+    # canon entries at the time this was found. An audit that a comment can
+    # satisfy is an audit a comment can defeat. The implementation is now
+    # TOKENIZED and only real STRING LITERALS count; COMMENT tokens are
+    # discarded outright, and a literal long enough to be prose (>60 chars) is
+    # discarded too, because that is a docstring, not a key lookup.
+    lits = set()
     try:
-        with open(os.path.abspath(__file__), "r", encoding="utf-8") as fh:
-            impl = fh.read()
-        with open(os.path.join(_HERE, "surfaces.py"), "r",
-                  encoding="utf-8") as fh:
-            impl += fh.read()
+        srcs = [os.path.abspath(__file__), os.path.join(_HERE, "surfaces.py")]
+        for path in srcs:
+            with open(path, "rb") as fh:
+                for tok in tokenize.tokenize(fh.readline):
+                    if tok.type != tokenize.STRING:
+                        continue
+                    try:
+                        v = ast.literal_eval(tok.string)
+                    except Exception:
+                        continue
+                    if isinstance(v, str) and 0 < len(v) <= 60:
+                        lits.add(v)
     except OSError:
-        return []
+        return [], [], []
     # DATA CONTAINERS hold values keyed by town, alias, slug or document field.
     # Their DIRECT children are data, not behaviour, so reporting them would
     # name "R2.towns.Ault" as an unread rule. Everything BELOW that level is
@@ -482,6 +500,7 @@ def unread_config_keys(cfg):
             "tools", "draft_gate", "known_uncited", "hedge_pairs",
             "documentation_only_keys")
     unread = []
+    empties = []
 
     def audit(node, path, in_data):
         if isinstance(node, list):
@@ -499,8 +518,17 @@ def unread_config_keys(cfg):
                 continue
             full = "%s.%s" % (path, k) if path else k
             if not in_data:
-                if ('"%s"' % k) not in impl and ("'%s'" % k) not in impl:
+                if k not in lits:
                     unread.append(full)
+            # HOLE 3: THE AUDIT NEVER LOOKED AT VALUES. A key the code reads
+            # whose value is EMPTY configures a rule that cannot fire --
+            # emptying R5.magnitude_words leaves the audit green at 0 OWED
+            # while the rule goes blind. Reported separately from OWED,
+            # because an empty list is sometimes a deliberate null result.
+            if not in_data and k in lits:
+                v = node[k]
+                if isinstance(v, (list, dict, str)) and len(v) == 0:
+                    empties.append(full)
             audit(node[k], full, k in DATA)
 
     audit(cfg, "", False)
@@ -526,11 +554,35 @@ def unread_config_keys(cfg):
 
     good = set(k for k, v in decl.items() if _justified(v))
     thin = sorted(k for k, v in decl.items() if k not in good)
-    owed = sorted(set(u for u in unread
-                      if u not in good and u.split(".")[-1] not in good))
-    noted = sorted(set(u for u in unread
-                       if u in good or u.split(".")[-1] in good))
-    return owed, noted, thin
+
+    # HOLE 2: A BARE-LEAF DECLARATION SILENCED EVERY RULE'S COPY OF THAT KEY.
+    # `u.split(".")[-1] in good` meant declaring the leaf `refusal_markers`
+    # silenced R3's AND R10's, so one justified exemption bought an unbounded
+    # number of unjustified ones. A bare leaf now covers a key only when
+    # EXACTLY ONE unread key carries that leaf name -- otherwise it is
+    # ambiguous and the full dotted path must be written.
+    leaf_count = {}
+    for u in unread:
+        leaf_count[u.split(".")[-1]] = leaf_count.get(u.split(".")[-1], 0) + 1
+
+    def _declared(u):
+        if u in good:
+            return True
+        leaf = u.split(".")[-1]
+        return leaf in good and leaf_count.get(leaf, 0) == 1
+
+    owed = sorted(set(u for u in unread if not _declared(u)))
+    noted = sorted(set(u for u in unread if _declared(u)))
+    # Only warn where the bare leaf is actually LOAD-BEARING: several unread
+    # keys share it AND at least one of them is not declared by its own full
+    # path. A leaf that happens to collide while every colliding key is
+    # separately declared is not ambiguous, it is fully specified.
+    ambiguous = sorted(set(
+        u.split(".")[-1] for u in unread
+        if u.split(".")[-1] in good
+        and leaf_count.get(u.split(".")[-1], 0) > 1
+        and u not in good))
+    return owed, noted, thin, sorted(set(empties)), ambiguous
 
 
 def enumerate_corpus(repo, cfg):
@@ -5238,7 +5290,7 @@ def _main(args, out, t0):
         out("CLAIM GATE: NOT RUN")
         _finish(out, args, 2, t0)
         return 2
-    owed, noted, thin = unread_config_keys(cfg)
+    owed, noted, thin, empties, ambiguous = unread_config_keys(cfg)
     out("CONFIG KEYS READ BY NO CODE PATH: %d OWED, %d declared "
         "documentation-only WITH a justification. An OWED key is a rule that "
         "silently does not exist (Rule 2: wire it up or delete it).%s%s"
@@ -5246,6 +5298,18 @@ def _main(args, out, t0):
            ("  OWED: " + ", ".join(owed)) if owed else "",
            ("  DECLARED WITHOUT A JUSTIFICATION (not counted as declared): "
             + ", ".join(thin)) if thin else ""))
+    if empties:
+        out("CONFIG KEYS READ BY CODE BUT EMPTY: %d. The rule each configures "
+            "cannot fire on a value it does not have -- emptying a live list "
+            "leaves the OWED audit green while the rule goes blind. Stated, "
+            "not failed: an empty list is sometimes a deliberate null result. "
+            "%s" % (len(empties), ", ".join(empties)))
+    if ambiguous:
+        out("DOCUMENTATION-ONLY DECLARATIONS THAT ARE AMBIGUOUS: %d. A bare "
+            "leaf name covers a key only when exactly one unread key carries "
+            "it; these cover several, so the full dotted path must be written "
+            "or the keys stay OWED. %s" % (len(ambiguous),
+                                           ", ".join(ambiguous)))
     sr = sorted(cfg.get("src_rules", []) or [])
     out("normalization levels compared: RAW DEC TXT   (+ SRC over %d "
         "generator modules, %d string runs >=12 chars, READ BY: %s)"
