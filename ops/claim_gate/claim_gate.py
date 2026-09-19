@@ -372,7 +372,8 @@ SENTENCE_SCOPED_KEYS = {
     "R4": ("stacking_tokens", "combination_predicates", "denial_markers",
            "programs", "program_aliases", "legitimate_uses"),
     "R5": ("magnitude_words", "recognised_publishers", "attribution_verbs",
-           "derivable_constants"),
+           "derivable_constants", "publisher_short_forms",
+           "subject_attribution_verbs"),
     "R7": ("superseded_propositions", "superseded_identifiers",
            "correction_markers", "never_retire_on_403"),
     "R8": ("footer_marker",),
@@ -3119,11 +3120,147 @@ def _is_plain_question(sent):
     return True
 
 
+# ---------------------------------------------------------------------------
+# R5: THE PUBLISHER AS THE FIGURE'S SUBJECT, NOT AS ITS NEIGHBOUR.
+#
+# f_pub cleared a hit when a recognised publisher sat within 80 characters of
+# the figure AND the sentence carried a verb from R1.attribution_verbs. That
+# list has no "estimates", so
+#
+#   "ENERGY STAR estimates a 15% heating-and-cooling cost reduction from
+#    adequate insulation plus air sealing."
+#
+# was condemned for lacking the attribution it plainly has. Adding "estimates"
+# to the verb list was PROBED AND REFUSED: it silently clears
+#
+#   "ENERGY STAR estimates vary, but our crews measure a 35% reduction in
+#    heating costs."
+#
+# where the publisher sits 47 characters from the figure, well inside the
+# window, and proximity launders the site's own unsourced measurement behind a
+# name that never made the claim. (Measured: DCI R5 ADJ 32 -> 28 with
+# "estimates" added, and that probe cleared.)
+#
+# What separates them is not distance and not vocabulary. It is GRAMMAR: in the
+# first, the publisher is the SUBJECT of the verb and the figure is inside the
+# verb's complement. In the second, "estimates" is a plural NOUN, the real
+# subject of the figure's clause is "our crews", and a contrastive clause
+# boundary sits between the publisher and the figure. So:
+#
+#   S1  publisher (optionally possessive, optionally with its own noun phrase)
+#       IMMEDIATELY followed by an attributing verb, the figure AFTER that verb,
+#       and NO clause boundary between the verb and the figure.
+#   S2  the reduced-relative form the llms.txt index uses -- the figure, then
+#       within 80 characters a POSSESSIVE publisher with its noun phrase and a
+#       verb, and no clause boundary between: "the before-and-after 20% CFM50
+#       reduction Xcel's air sealing rebate requires."
+#
+# BLIND SPOT, STATED: this is adjacency and punctuation, not a parser. A
+# publisher separated from its verb by an appositive longer than four words
+# reads as no attribution, and a clause boundary written without punctuation or
+# a coordinator ("ENERGY STAR estimates vary our crews measure 35%") is
+# invisible to it. Controls R5-SUBJECT (fires) and repaired/R5-SUBJECT (must
+# not) hold both directions.
+# ---------------------------------------------------------------------------
+
+_R5_CLAUSE_BREAK = re.compile(
+    r"[;:]"
+    r"|\s[-‐-―]+\s"
+    r"|,\s*(?:but|and|yet|so|while|whereas|though|although|however|"
+    r"nevertheless|still|then|or)\b"
+    r"|\s(?:but|however|whereas|although|though|nevertheless)\s",
+    re.IGNORECASE)
+# A possessive tail: "'s <up to four words>" -- "ENERGY STAR's duct sealing
+# guidance says", "Xcel's air sealing rebate requires".
+_R5_POSS = r"(?:'s|’s|&rsquo;s|&#8217;s)"
+_R5_ADV = r"(?:also\s+|further\s+|now\s+|currently\s+|separately\s+)?"
+_R5_NP = r"(?:[A-Za-z0-9][\w.-]*\s+){0,4}"
+
+
+def _r5_subject_pat(name, verbs):
+    key = ("S1", name, tuple(verbs))
+    p = _R5_SUBJ_CACHE.get(key)
+    if p is None:
+        p = re.compile(
+            r"%s\b\s*(?:%s\s+%s)?%s(%s)\b"
+            % (re.escape(name), _R5_POSS, _R5_NP, _R5_ADV,
+               "|".join(re.escape(v) for v in sorted(verbs, key=len,
+                                                     reverse=True))),
+            re.IGNORECASE)
+        _R5_SUBJ_CACHE[key] = p
+    return p
+
+
+def _r5_relative_pat(name, verbs):
+    key = ("S2", name, tuple(verbs))
+    p = _R5_SUBJ_CACHE.get(key)
+    if p is None:
+        p = re.compile(
+            r"%s\s*%s\s+%s(%s)\b"
+            % (re.escape(name), _R5_POSS, _R5_NP,
+               "|".join(re.escape(v) for v in sorted(verbs, key=len,
+                                                     reverse=True))),
+            re.IGNORECASE)
+        _R5_SUBJ_CACHE[key] = p
+    return p
+
+
+_R5_SUBJ_CACHE = {}
+
+
+def _pub_subject(sentence, nums, pubs, shorts, verbs):
+    """True when a recognised publisher is the SUBJECT that attributes one of
+    `nums`, by S1 or S2 above. `shorts` are possessive short forms
+    (config R5.publisher_short_forms) and are usable ONLY here -- they are
+    deliberately NOT added to recognised_publishers, because "Xcel" alone is
+    the PAYER on almost every page in this portfolio and widening the
+    proximity path with it would re-open the false clear the verb requirement
+    was added to close."""
+    if not verbs:
+        return False
+    positions = []
+    for n in nums:
+        n = (n or "").strip()
+        if not n:
+            continue
+        positions.extend(occ(sentence, n, ci=True, word=False))
+    if not positions:
+        return False
+
+    # S1 -- publisher as the subject of the verb, figure in its complement.
+    for name in list(pubs) + list(shorts):
+        if not name:
+            continue
+        # a short form is written possessively; strip the possessive so the
+        # S1 pattern can attach its own.
+        base = re.sub(r"(?:'s|’s)$", "", name)
+        for m in _r5_subject_pat(base, verbs).finditer(sentence):
+            v = m.end()
+            for p in positions:
+                if p > v and not _R5_CLAUSE_BREAK.search(sentence[v:p]):
+                    return True
+
+    # S2 -- the figure, then the possessive publisher that requires it.
+    for name in list(pubs) + list(shorts):
+        if not name:
+            continue
+        base = re.sub(r"(?:'s|’s)$", "", name)
+        for m in _r5_relative_pat(base, verbs).finditer(sentence):
+            s = m.start()
+            for p in positions:
+                if 0 < s - p <= 80 and \
+                        not _R5_CLAUSE_BREAK.search(sentence[p:s]):
+                    return True
+    return False
+
+
 def rule_R5(ctx, res):
     c = ctx.r("R5")
     pats = [re.compile(p) for p in (c.get("magnitude_patterns") or [])]
     words = c.get("magnitude_words", []) or []
     pubs = c.get("recognised_publishers", []) or []
+    shorts = c.get("publisher_short_forms", []) or []
+    subj_verbs = c.get("subject_attribution_verbs", []) or []
     attrib_verbs = ctx.r("R1").get("attribution_verbs", []) or []
     computed = c.get("computed_output_markers", []) or []
     known = c.get("known_uncited", []) or []
@@ -3278,6 +3415,10 @@ def rule_R5(ctx, res):
         # appears there as the PAYER, not as the publisher of the figure. An
         # attribution needs an attribution VERB and the publisher near the
         # figure -- not merely an organisation's name somewhere in the clause.
+        if _pub_subject(h.sentence,
+                        (h.text.split(" | ")[0] or "").split(","),
+                        pubs, shorts, subj_verbs):
+            return True
         if not has_any(h.sentence, pubs, ci=True):
             return False
         if not has_any(h.sentence, attrib_verbs, word=False):
@@ -4966,7 +5107,30 @@ RULES = [
                    Control("R5-QUESTION", "R5", _f("R5c_factive_question.html"),
                            R5_CONTROL_OVERLAY, sub="mag",
                            repaired=_f("repaired",
-                                       "R5c_factive_question.html"))]),
+                                       "R5c_factive_question.html")),
+                   # The publisher-as-subject predicate, both directions.
+                   # The fixture is the probe that refused "estimates" as a
+                   # plain attribution verb: the publisher sits 47 characters
+                   # from the figure, inside the proximity window, and did not
+                   # make the claim -- it MUST fire. The repaired page makes
+                   # the same publisher the subject of the same verb and MUST
+                   # clear.
+                   Control("R5-SUBJECT", "R5",
+                           _f("R5d_publisher_not_subject.html"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired",
+                                       "R5d_publisher_not_subject.html")),
+                   # The possessive short form, both directions. The fixture
+                   # names Xcel as the PAYER beside the figure and MUST still
+                   # fire -- that is the whole reason the bare token is not in
+                   # recognised_publishers. The repaired page is llms.txt's
+                   # real shape, where Xcel's rebate is what requires the
+                   # figure, and MUST clear.
+                   Control("R5-SHORTFORM", "R5",
+                           _f("R5e_publisher_short_form.html"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired",
+                                       "R5e_publisher_short_form.html"))]),
 
     Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
          "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",
