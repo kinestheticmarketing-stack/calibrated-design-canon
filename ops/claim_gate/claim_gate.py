@@ -1107,6 +1107,33 @@ class Ctx(object):
         # Portfolio-wide the unnormalized probe missed 106 distinct SRC
         # restatements. NEG15 is the control: correct copy, markup and an em
         # dash inside the first 48 characters.
+        # KNOWN OPEN, MEASURED, NOT CLOSED HERE -- THE 48-CHARACTER PREFIX IS A
+        # LIVE SILENT MISS.
+        # Two generator strings sharing their first 48 normalized characters
+        # are indistinguishable to this probe, so a string whose OPENING
+        # matches rendered prose is cleared no matter what it goes on to
+        # assert. Reproduced by injecting into _shared_components.py a string
+        # that renders NOWHERE and carries a fresh uncited figure:
+        #     '<p>Loose-fill cellulose settles 10 to 20 percent; rebate
+        #      paperwork cuts your bill by 47% in the first year.</p>'
+        # whose first 48 normalized characters are DCI's real, attributed
+        # settling sentence.
+        #     prefix probe (this code): DCI R5 RAW 533 ADJ 31 -- CLEARED, MISSED
+        #     full-sentence probe:      DCI R5 RAW 533 ADJ 33 -- CAUGHT
+        # THE ONE-LINE REPAIR IS `S.collapse(S.txt(hit.sentence))` WITH NO
+        # SLICE. It is not applied because it REDS LGM, which is wired into
+        # that property's regen_all.sh under `set -e`:
+        #     LGM R5 ADJ 0 -> 2, exit 0 -> 1
+        # and both new rows are a DIFFERENT, pre-existing R5 defect that the
+        # prefix was accidentally masking -- CODE READ AS PROSE on the SRC
+        # surface. src_artifact() emits every string run >= 12 chars in a
+        # generator module, including CSS blocks and JS bundles, and R5 reads
+        # a `width: 1px ... 0% ... 100% ... 50%` CSS rule and an `8%` inside a
+        # scroll-reveal IntersectionObserver as quantified magnitude claims.
+        # DCI shows the same class (one extra row, the same 8% bundle).
+        # ORDER OF REPAIR: stop R5 reading code as prose on SRC, THEN drop the
+        # slice. Doing it in the other order trades a silent miss for a red
+        # production build on a property with no defect.
         probe = S.collapse(S.txt(hit.sentence))[:48]
         if len(probe) < 20:
             return False
@@ -4097,12 +4124,65 @@ def rule_R9(ctx, res):
             continue
         vis_ids = [t.get("visible", "").lstrip("#")]
         hidden = t.get("hidden", []) or []
-        missing = [h for h in hidden if h not in art.ids]
+        # `art.ids` HOLDS STATIC MARKUP IDS ONLY. A hidden field built by
+        # document.createElement never appears there, and this gate does not
+        # execute JS outside opt-in R6b -- it says so in its own KNOWN HOLES
+        # header. So a presence check keyed on static ids cannot tell "the
+        # field does not exist" from "the field is created at runtime", and
+        # this one resolved that ambiguity as a BLOCKING failure.
+        #
+        # Measured on DCI ba2fc22. Every one of the six calculator pages
+        # carries id="calcTool" exactly once, and the shared lead-form script
+        # reads:
+        #     if (document.getElementById('calcTool')) {
+        #       ['calc_inputs','calc_output'].forEach(function (n) {
+        #         var h = document.createElement('input'); h.type='hidden';
+        #         h.name=n; h.id='lf-'+n.replace('_','-');
+        #         form.appendChild(h); }); }
+        # The fields DO exist in the DOM and NEVER in static markup. N3
+        # therefore reported N3-unverifiable on every run, that unverifiable
+        # was adjudicated, and it blocked: DCI could not reach exit 0 by any
+        # change to any page, because no copy edit can put a runtime-created
+        # id into static markup. A rule blocking a production build on its own
+        # declared blind spot is a false positive with no reachable remedy.
+        #
+        # It was worse than noise. N3b below skips any mirror in `missing`, so
+        # the same stale set ALSO disabled the one sub-test that does the real
+        # comparison -- the rule R9 was named for was silently off on the only
+        # property that has ever carried the defect.
+        #
+        # SPLIT THE VERDICT ON THE EVIDENCE:
+        #   absent   -- the id is in no static markup AND is named by no JS
+        #               string literal on the page. Nothing references it; the
+        #               config and the page genuinely disagree. Still a
+        #               finding, still blocks.
+        #   runtime  -- the id is absent from static markup but the page's own
+        #               JS names it as a literal. The gate has evidence the
+        #               page references the field and NO evidence either way
+        #               about whether it exists when the visitor sees it. That
+        #               is the definition of unverifiable, and an unverifiable
+        #               is raised, enumerated and filtered -- never blocked on.
+        js_lits = "  ".join(
+            [S.collapse(lit) for _, lit in (getattr(art, "js_strings", []) or [])]
+            + list(getattr(art, "js_bodies", []) or []))
+        absent, runtime = [], []
+        for h in hidden:
+            if h in art.ids:
+                continue
+            (runtime if h in js_lits else absent).append(h)
+        missing = absent + runtime
         if missing and vis_ids and vis_ids[0] in art.ids:
             raw.append(Hit("R9", "N3", art.rel, "JS", art.rel,
                            "tool payload field(s) %s not found in the page; "
                            "visible/hidden agreement cannot be established"
-                           % missing, note="N3-unverifiable", sentence=art.rel))
+                           % missing,
+                           note=("N3-unverifiable" if absent
+                                 else "N3-runtime-constructed"),
+                           sentence=art.rel))
+        # N3b compares what it CAN resolve. A runtime-constructed mirror is
+        # still a JS identifier the static literal scan can read, so it is no
+        # longer excluded -- only a genuinely absent one is.
+        missing = absent
         # N3b -- THE COMPARISON THE RULE WAS NAMED FOR.
         # N3 above is a PRESENCE check: it fires when a configured id is
         # ABSENT and is silent when every id is present. Either way the
@@ -4170,6 +4250,14 @@ def rule_R9(ctx, res):
         Filt("correction marker in scope (a retired value quoted to retire it)",
              f_corr),
         Filt("deliberate_divergence recorded in config", f_delib),
+        Filt("N3 payload field is absent from STATIC markup but named by the "
+             "page's own JS, i.e. constructed at runtime -- the gate does not "
+             "execute JS outside opt-in R6b (its own KNOWN HOLES header), so "
+             "it has no evidence either way and REPORTS rather than blocks. A "
+             "field named by NO markup and NO script is still `absent` and "
+             "still blocks; only this one evidentiary state is filtered, and "
+             "it is enumerated below like every other.",
+             lambda h: h.note == "N3-runtime-constructed"),
     ])
     res.levels, res.level_detail = level_counts(
         ctx, ["CFM 50", "CFM50", "front door"], ci=False, word=False)
@@ -4863,7 +4951,7 @@ def validate_registry():
 # Controls (spec 5). Run BEFORE any rule, against fixture files only.
 # ---------------------------------------------------------------------------
 
-NEGATIVES = ["NEG%02d" % i for i in range(1, 17)]
+NEGATIVES = ["NEG%02d" % i for i in range(1, 18)]
 # The reference date the negative fixtures were written against. Fixed on
 # purpose: see the neg_overlay comment in run_controls().
 NEG_ASOF = "2026-09-17"
@@ -4875,7 +4963,7 @@ def _fixture_paths(p):
         for root, dirs, files in os.walk(p):
             dirs.sort()
             for f in sorted(files):
-                if f.endswith(".gitfacts.json"):
+                if f.endswith(".gitfacts.json") or f == "overlay.json":
                     continue
                 out.append(os.path.join(root, f))
         return sorted(out)
@@ -5169,7 +5257,19 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
         if not os.path.isdir(path):
             path = path + ".html"
         label = "fixtures/negative/%s" % os.path.basename(path)
-        ctx = _control_ctx(base, neg_overlay, _fixture_paths(path), repo)
+        # A negative fixture DIRECTORY may carry an `overlay.json`. Without it
+        # a config-KEYED rule cannot be exercised by a negative control at all:
+        # R9's tool check looks its page up by the rel named in R9.tools, which
+        # in the real config is a public/ path no fixture can ever match, so
+        # the rule silently did nothing on every negative fixture. Same sidecar
+        # idiom as <fixture>.gitfacts.json, and excluded from the read set the
+        # same way.
+        ov = dict(neg_overlay)
+        ovp = os.path.join(path, "overlay.json")
+        if os.path.isdir(path) and os.path.isfile(ovp):
+            with open(ovp, "r", encoding="utf-8") as fh:
+                ov = _deep_merge(ov, json.load(fh))
+        ctx = _control_ctx(base, ov, _fixture_paths(path), repo)
         alarms = []
         for rule in RULES:
             if not rule.blocking:
