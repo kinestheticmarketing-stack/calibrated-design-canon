@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head><title>Negative control</title></head><body>
+<!-- CORRECT PAGE. The two lead-payload fields this fixture's overlay.json
+     declares are built by document.createElement below and exist in the DOM
+     only after the script runs. They are therefore absent from static markup
+     by design, not by defect, and no edit to this page could put them there.
+     Reduced from DCI ba2fc22's shared lead-form script. -->
+<div id="calcTool">
+  <p id="calcOutput">Current code is met for your attic.</p>
+</div>
+<form id="leadForm"><input type="text" name="name"></form>
+<script>
+(function () {
+  var form = document.getElementById('leadForm');
+  if (document.getElementById('calcTool')) {
+    ['calc_inputs', 'calc_output'].forEach(function (n) {
+      var h = document.createElement('input');
+      h.type = 'hidden';
+      h.name = n;
+      h.id = 'lf-' + n.replace('_', '-');
+      form.appendChild(h);
+    });
+  }
+  function writeHidden(inputs, output) {
+    var i = document.getElementById('lf-calc-inputs'),
+        o = document.getElementById('lf-calc-output');
+    if (i) i.value = JSON.stringify(inputs);
+    if (o) o.value = output;
+  }
+  var calcOutput = 'Current code is met for your attic.';
+  writeHidden({}, calcOutput);
+}());
+</script>
+</body></html>

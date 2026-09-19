@@ -1,0 +1,13 @@
+{
+  "_note": "Points R9's tool check at this fixture. Without it R9.tools names a public/ path that no fixture context contains, ctx.by_rel.get() returns None, and the whole tool half of R9 is unreachable from any control.",
+  "R9": {
+    "tools": [
+      {
+        "page": "page.html",
+        "visible": "#calcOutput",
+        "hidden": ["lf-calc-inputs", "lf-calc-output"],
+        "hidden_mirrors_visible": ["lf-calc-output"]
+      }
+    ]
+  }
+}
