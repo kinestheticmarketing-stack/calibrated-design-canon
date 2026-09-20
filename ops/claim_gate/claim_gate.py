@@ -3191,6 +3191,105 @@ def _r5_words(s):
     return out
 
 
+def _r5_local_overlap(a, b, num):
+    """Shared content words in the WINDOW AROUND `num` in `a` and in `b`.
+
+    ONE MECHANISM, TWO CALLERS, ON PURPOSE. This is the body that used to sit
+    inline inside `f_instat`, lifted out verbatim so that `f_question` asks the
+    SAME question of a question/anchor pair that `f_instat` asks of a
+    sentence/cited-stat pair. The eighth adversarial read's finding A1 was
+    precisely that the two did not ask the same question: `f_instat` demanded
+    four shared content words in a window and `f_question` demanded ZERO,
+    matching on the bare numeral token alone. A second, weaker same-claim test
+    is how an unrelated attributed figure came to license an uncited claim that
+    merely shared a numeral, so there is no second test any more -- there is
+    this function, and both callers compare its result against
+    `_R5_INSTAT_MIN`.
+
+    Returns the BEST overlap over every pairing of occurrences of `num`, which
+    is what the inlined loop did by returning True on the first pairing to
+    reach the threshold.
+    """
+    best = 0
+    for sp in occ(a, num, ci=True, word=False):
+        sw = _r5_words(win(a, sp, _R5_INSTAT_WIN))
+        if not sw:
+            continue
+        for tp in occ(b, num, ci=True, word=False):
+            n = len(sw & _r5_words(win(b, tp, _R5_INSTAT_WIN)))
+            if n > best:
+                best = n
+    return best
+
+
+# WHAT COUNTS AS AN INTERROGATIVE AT ALL -- AND WHY THIS LIST IS SAFE WHERE
+# THE 2026-09-19 GUARD'S LIST WAS NOT.
+#
+# A TAG QUESTION IS A FLAT ASSERTION PLUS ONE CHARACTER. `f_question` tested
+# `sentence.endswith("?")` and nothing else, so
+#
+#   "Attic insulation cuts your heating bill by 20%, right?"
+#   "Homes lose 40% of their heat through the attic, right?"
+#
+# received the interrogative pardon while asserting their figures as flatly as
+# any declarative on the site. Ending in `?` is punctuation, not grammar.
+#
+# THE DIRECTION OF THE TEST IS THE WHOLE DIFFERENCE FROM THE GUARD THAT WAS
+# REMOVED. That guard enumerated 24 interrogatives and CLEARED anything opening
+# with one; an incomplete enumeration therefore FAILED OPEN, and worse, `Why
+# does X?` and `How does X?` presuppose X, so the enumeration cleared ten
+# sentences that assert their figure. This list is a NECESSARY CONDITION for
+# `f_question` to apply at all, never a sufficient one: a sentence that does not
+# open with one of these tokens is treated as an ASSERTION and is judged by
+# every other filter exactly as a declarative would be. An incomplete
+# enumeration here therefore FAILS SHUT -- the cost of a missing token is a
+# genuine question judged as an assertion, which fires, which is the direction
+# an adversarial read cannot exploit.
+#
+# PRESUPPOSITION IS NOT HANDLED HERE AND DOES NOT NEED TO BE. "Why settle for
+# less when our crews measure a 36% reduction in heating costs?" opens with
+# `Why` and is an interrogative by this test -- and it still fires, because
+# `f_question` goes on to require an ATTRIBUTED SAME-CLAIM ANCHOR that a site
+# asserting its own unsourced measurement does not have. The anchor
+# requirement, not the opener list, is what closes presupposition.
+_R5_Q_OPENERS = frozenset((
+    # wh-words
+    "who", "whom", "whose", "what", "whatever", "which", "whichever",
+    "when", "where", "why", "how", "howto",
+    # auxiliaries and modals, inverted
+    "is", "are", "was", "were", "am", "be", "been",
+    "do", "does", "did", "have", "has", "had",
+    "can", "could", "will", "would", "shall", "should",
+    "may", "might", "must", "ought", "need", "dare",
+    # the negated contractions of the same, first alpha run only
+    "isn", "aren", "wasn", "weren", "don", "doesn", "didn", "hasn",
+    "haven", "hadn", "can", "couldn", "won", "wouldn", "shouldn",
+    "mustn", "mightn", "shan", "needn", "ain",
+))
+# A trailing TAG -- a comma, then a short coda, then the question mark.
+# "…, right?", "…, no?", "…, correct?", "…, or not?", "…, don't you think?".
+# Matched AFTER the opener test and OR-ed with it, because a sentence can open
+# with an auxiliary and still end in a tag: "Does it matter that homes lose 40%
+# of their heat through the attic, or not?" presupposes the 40% just as flatly.
+_R5_TAG_RE = re.compile(r",\s*[A-Za-z'][A-Za-z']{0,11}"
+                        r"(?:\s+[A-Za-z'][A-Za-z']{0,11}){0,2}\s*\?\s*$")
+
+
+def _r5_is_interrogative(s):
+    """True only for a sentence that is interrogative in FORM, not merely in
+    punctuation. See `_R5_Q_OPENERS` for why this is restrictive and why an
+    omission fails shut."""
+    s = (s or "").strip()
+    if not s.endswith("?"):
+        return False
+    if _R5_TAG_RE.search(s):
+        return False
+    m = re.match(r"[^A-Za-z]*([A-Za-z]+)", s)
+    if not m:
+        return False
+    return m.group(1).lower() in _R5_Q_OPENERS
+
+
 # ---------------------------------------------------------------------------
 # R5: A STYLESHEET IS NOT PROSE AND A SCRIPT BUNDLE IS NOT A FINDING.
 #
@@ -3643,16 +3742,16 @@ def rule_R5(ctx, res):
             return False
         nums = [x.strip() for x in
                 (h.text.split(" | ")[0] or "").split(",") if x.strip()]
+        #
+        # THE LOOP THAT USED TO BE INLINE HERE IS NOW `_r5_local_overlap`, so
+        # that f_question asks the identical same-claim question of its
+        # question/anchor pair. Behaviour here is unchanged: the helper returns
+        # the best overlap over every pairing of occurrences and this compares
+        # it against the same `_R5_INSTAT_MIN`.
         for st in getattr(h, "r5_stats", []) or []:
             for n in nums:
-                for sp in occ(h.sentence, n, ci=True, word=False):
-                    sw = _r5_words(win(h.sentence, sp, _R5_INSTAT_WIN))
-                    if not sw:
-                        continue
-                    for tp in occ(st, n, ci=True, word=False):
-                        tw = _r5_words(win(st, tp, _R5_INSTAT_WIN))
-                        if len(sw & tw) >= _R5_INSTAT_MIN:
-                            return True
+                if _r5_local_overlap(h.sentence, st, n) >= _R5_INSTAT_MIN:
+                    return True
         return False
 
     def f_deriv(h):
@@ -3857,21 +3956,96 @@ def rule_R5(ctx, res):
     # A question can smuggle a claim -- "Did you know homes lose 40% of their
     # heat through the attic?" is an assertion wearing a question mark -- so a
     # blanket interrogative skip is precisely the blindfold that must not be
-    # built. This filter requires a NON-INTERROGATIVE ANCHOR on the same page:
-    # another sentence carrying the same figure that ALREADY CLEARED R5
-    # THROUGH AN ATTRIBUTION FILTER -- f_inblock (it IS a cited-stat),
-    # f_instat (the page's cited-stat attributes that figure) or f_pub (it
-    # names the publisher that made the claim). The question is judged through
-    # the sentence that actually makes the claim, and that sentence has
-    # already had to answer for it.
+    # built. This filter requires a NON-INTERROGATIVE ANCHOR that is on the
+    # same FILE and the same SURFACE, that ALREADY CLEARED R5 THROUGH AN
+    # ATTRIBUTION FILTER -- f_inblock (it IS a cited-stat), f_instat (the
+    # page's cited-stat attributes that figure) or f_pub (it names the
+    # publisher that made the claim) -- and that makes THE SAME CLAIM,
+    # measured by the same window overlap f_instat uses.
+    #
+    # ============================================================= A1 =======
+    # WHAT THE 2026-09-19 SHIPMENT OF THIS FILTER ACTUALLY DID, AND WHY IT WAS
+    # A LAUNDERING ROUTE. As shipped it collected the bare NUMERAL TOKENS of
+    # every cleared non-interrogative on the FILE and cleared a question when
+    # `all(n in anchors)`. No content relation between the question and its
+    # anchor was required at all. The same rule's f_instat demanded four shared
+    # content words in a window around the figure; f_question demanded ZERO.
+    # Measured 2026-09-20, every one of these cleared before this rewrite and
+    # fires after it (fixtures/R5k_question_numeral_laundering.html):
+    #
+    #   attributed anchor (unrelated claim)      uncited question sharing only
+    #                                            the numeral
+    #   EPA, 42% of pre-1980 homes have attic    "Did our crews really measure a
+    #   bypasses                                  42% reduction in attic heat
+    #                                             loss after air sealing?"
+    #   Xcel, 20% CFM 50 rebate threshold        "Did you know attic insulation
+    #                                             cuts your heating bill by 20%?"
+    #   Xcel, 63% call-centre wait time          63% attic moisture
+    #   NOAA, 71% Front Range solar output       71% furnace efficiency
+    #   ENERGY STAR, 28% duct leakage            28% whole-house heat loss
+    #   EPA 34% + NOAA 57%, jointly              one two-figure question
+    #   ENERGY STAR, 40% duct-sealing efficiency "Did you know homes lose 40% of
+    #                                             their heat through the attic?"
+    #
+    # THE LAST ROW IS THIS RULE'S OWN SPEC BEING VIOLATED. RULES_SPEC.md says
+    # that question "must keep firing" and that "the 40% example above fires".
+    # With ONE unrelated attributed 40% anywhere on the page it did not fire.
+    #
+    # AND THE FIX PROOF CONTAINED THE HOLE. repaired/R5j paired an ENERGY STAR
+    # statistic about ANNUAL SPACE-CONDITIONING ENERGY USE with a question about
+    # WINTER HEATING COSTS -- different claims -- and bfbad20's own commit
+    # message recorded that pair's local overlap as 0. The pass measured the
+    # hole and recorded it as proof the control exercises the filter. That
+    # fixture's anchor is rewritten here to state the claim its question asks
+    # about, so the control tests a same-claim anchor rather than a numeral.
+    #
+    # ANCHORING WAS ALSO CROSS-SURFACE. `_anchored` filtered on h2.rel, the
+    # FILE, and never on the SURFACE, so a <meta name="description">, a JSON-LD
+    # string leaf or an inline <script> template literal could anchor a claim
+    # made in visible prose, and visible prose could anchor a claim buried in
+    # JSON-LD FAQ markup. The spec's src_code/src_dup exclusion covers GENERATOR
+    # SRC surfaces only and never closed this. Both directions are measured in
+    # fixtures/R5m_cross_surface_anchor.html and both now fire.
+    #
+    # A TAG QUESTION IS A FLAT ASSERTION PLUS ONE CHARACTER, and the old test
+    # was `endswith("?")`. See _r5_is_interrogative above, and
+    # fixtures/R5l_tag_question.html.
+    #
+    # THE THRESHOLD IS NOT NEGOTIABLE DOWNWARD AND THE BLOWER-DOOR ROW IS NOT
+    # RESCUED HERE. Measured 2026-09-20 with _r5_local_overlap, window 110:
+    #
+    #   pair                                                        overlap
+    #   DCI's CFM50 question vs the cited-stat that sources it          3
+    #   the documented false-clear pair (15% save vs 15% reduction)     3
+    #   the seventh read's 42% counterexample                           3
+    #   the eighth read's 42% INTERROGATIVE counterexample              3
+    #
+    # A question/anchor overlap rule CANNOT separate them: at 4 the blower-door
+    # row fires, at 3 the 42% interrogative evasion clears. That is a measured
+    # conclusion, not a preference, and lowering _R5_INSTAT_MIN to rescue the
+    # blower-door row would reopen the pair the threshold exists to keep shut.
+    # The blower-door row is therefore closed by the instrument the spec
+    # ALREADY declares for it -- R3.allowed_thresholds, per-property and
+    # figure-scoped, requiring a threshold_context_marker in the same sentence
+    # (f_struct above). See RULES_SPEC 10.2 and the R5 exclusion list, which
+    # names "the 20% CFM 50 threshold -- same exclusion set as R3, same
+    # classifier". DCI's entry was empty, which lanes.md recorded as an open
+    # finding on 2026-09-19; it is filled in here.
+    # ========================================================================
     #
     # WHAT IT CANNOT HIDE -- STRUCTURALLY, NOT BY ASSERTION:
-    #   * No same-page sentence carries the figure -> no anchor -> the
-    #     question fires. The 40% example above fires.
+    #   * No same-surface sentence carries the figure -> no anchor -> the
+    #     question fires.
+    #   * A same-surface sentence carries the figure, is attributed, but makes
+    #     a DIFFERENT claim -> local overlap below _R5_INSTAT_MIN -> the
+    #     question fires. This is the whole of A1.
     #   * A companion sentence carries the figure but is ITSELF uncited -> it
     #     is not in the cleared set, so it anchors nothing, AND R5 fires on
     #     it. The figure is caught either way; it is merely caught at the
     #     sentence that asserts it.
+    #   * The anchor is on another SURFACE of the same file -> it anchors
+    #     nothing. A meta description does not source visible prose and
+    #     visible prose does not source JSON-LD.
     #   * The other filters are deliberately NOT anchors. src_code and
     #     src_dup mean "judged elsewhere", not "attributed";
     #     computed_output_markers means "the visitor's own arithmetic", which
@@ -3879,47 +4053,65 @@ def rule_R5(ctx, res):
     #     finding, which is a statement about THAT sentence and does not
     #     transfer. Only the three filters that assert an attribution EXISTS
     #     may anchor.
-    #   * An interrogative can never anchor anything, including another
-    #     interrogative, so two questions cannot clear each other.
-    #   * EVERY figure in the hit must be anchored, so a second, unsourced
-    #     numeral cannot ride along inside the same question.
+    #   * A sentence ending in `?` can never anchor anything -- including a TAG
+    #     question, which this filter treats as an assertion when deciding
+    #     whether it FIRES but still refuses as an anchor. Deliberately
+    #     asymmetric, and asymmetric in the only safe direction: it can add
+    #     hits, never remove them.
+    #   * EVERY figure in the hit must be anchored BY A SAME-CLAIM ANCHOR, so a
+    #     second, unsourced numeral cannot ride along inside the same question,
+    #     and two unrelated publishers cannot jointly pay for one question.
     #   * _open() still applies: a KNOWN-OPEN hit is never removed by it.
     #
     # CONTROLS. R5-QUESTION fires 3x on fixtures/R5j_interrogative_anchor.html
-    # BEFORE and AFTER this filter -- one question with no anchor at all, one
-    # whose only companion is uncited, plus that companion. That is the
-    # blindfold proof. fixtures/repaired/R5j_interrogative_anchor.html fired
-    # 2x before this filter existed (measured 2026-09-19: "*** FIRES ON
-    # REPAIRED *** 2 hit(s)") and is clean after. That is the fix proof.
+    # BEFORE and AFTER -- one question with no anchor at all, one whose only
+    # companion is uncited, plus that companion. R5-QLAUNDER, R5-QTAG and
+    # R5-QSURFACE are the three A1 controls: each fixture measured 0 hits
+    # before this rewrite and fires after, and each has a repaired counterpart
+    # that must be clean, so none of the three can be satisfied by simply
+    # switching the filter off.
     _ANCHORS = {}
 
-    def _anchored(rel):
-        got = _ANCHORS.get(rel)
+    def _anchor_sents(rel, skey):
+        """Attributed, non-interrogative anchors on ONE file AND ONE surface,
+        as (figures, sentence) pairs -- the sentence is kept because the bare
+        figure set is exactly what A1 proved insufficient."""
+        key = (rel, skey)
+        got = _ANCHORS.get(key)
         if got is None:
-            got = set()
+            got = []
             for h2 in raw:
-                if str(h2.rel) != rel:
+                if str(h2.rel) != rel or str(h2.surface) != skey:
                     continue
                 if (h2.sentence or "").strip().endswith("?"):
                     continue
                 if not (f_inblock(h2) or f_instat(h2) or f_pub(h2)):
                     continue
-                for n in (h2.text.split(" | ")[0] or "").split(","):
-                    n = n.strip()
-                    if n:
-                        got.add(n)
-            _ANCHORS[rel] = got
+                ns = set(n.strip() for n in
+                         (h2.text.split(" | ")[0] or "").split(",")
+                         if n.strip())
+                if ns:
+                    got.append((ns, h2.sentence or ""))
+            _ANCHORS[key] = got
         return got
 
     def f_question(h):
-        if not (h.sentence or "").strip().endswith("?"):
+        if not _r5_is_interrogative(h.sentence):
             return False
         nums = [x.strip() for x in
                 (h.text.split(" | ")[0] or "").split(",") if x.strip()]
         if not nums:
             return False
-        anchors = _anchored(str(h.rel))
-        return all(n in anchors for n in nums)
+        anchors = _anchor_sents(str(h.rel), str(h.surface))
+        if not anchors:
+            return False
+        for n in nums:
+            if not any(n in ns
+                       and _r5_local_overlap(h.sentence, sent, n)
+                       >= _R5_INSTAT_MIN
+                       for ns, sent in anchors):
+                return False
+        return True
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
@@ -5408,6 +5600,27 @@ R5_DERIV_CONTROL_OVERLAY = _deep_merge(R5_CONTROL_OVERLAY, {"R5": {
                            "P/P0 = (1 - 2.25577e-5*h)^5.25588; at h = 1609.3 m "
                            "this gives 0.8234, i.e. 17.7% lower than sea "
                            "level."}]}})
+# R5's f_struct -- the "allowed structure percentage / tier threshold IN a
+# threshold context" filter -- HAD NO CONTROL AT ALL, because R5_CONTROL_OVERLAY
+# empties both lists it reads on every R5 control. That is the right default (a
+# control must prove the RULE, not today's config) but it left the filter with
+# no positive control on any property, which is the condition spec 5 exists to
+# forbid. It matters more now: the 2026-09-20 rewrite of f_question stops
+# rescuing DCI's `20% CFM 50` blower-door row, and this filter -- the one the
+# spec ALREADY names for that threshold -- is what closes it instead.
+#
+# Both lists are pinned SYNTHETICALLY, the same way the derivable-constants
+# overlay is pinned. `threshold_context_markers` is pinned too, and must be: it
+# is inherited from common.json on DCI and LGM but OVERRIDDEN on GCI with a much
+# broader list that includes the bare word "reduction", so without pinning, the
+# fixture's "20% reduction in winter heating costs" would clear on GCI and the
+# control would MISS on exactly one property.
+R5_THRESH_CONTROL_OVERLAY = _deep_merge(R5_CONTROL_OVERLAY, {"R3": {
+    "allowed_thresholds": ["20%", "20 percent"],
+    "threshold_context_markers": [
+        "tier", "threshold", "measured reduction", "of project cost",
+        "qualifying minimum", "CFM", "capped at", "up to 100%",
+        "structure of the rebate"]}})
 R6_CONTROL_OVERLAY = {"R6": {"label_chains": [{
     "id": "control-rvalue-tier",
     "printed_var": "pctShort",
@@ -5720,7 +5933,70 @@ RULES = [
                            _f("R5j_interrogative_anchor.html"),
                            R5_CONTROL_OVERLAY, sub="mag",
                            repaired=_f("repaired",
-                                       "R5j_interrogative_anchor.html"))]),
+                                       "R5j_interrogative_anchor.html")),
+                   # ---------------------------------------------------------
+                   # THE THREE A1 CONTROLS, 2026-09-20. Each fixture measured
+                   # ZERO adjudicated hits against claim_gate.py at bfbad20 on
+                   # all three property configs -- that is the hole, measured
+                   # rather than asserted -- and each fires after the rewrite.
+                   # Each has a repaired counterpart that must be CLEAN, so the
+                   # trio cannot be satisfied by weakening or deleting
+                   # f_question: doing that reddens the repaired half.
+                   #
+                   # R5-QLAUNDER. Seven attributed statistics, seven uncited
+                   # questions, each question sharing ONLY A NUMERAL with the
+                   # statistic that licensed it. The last pair is RULES_SPEC's
+                   # own named adversary -- "Did you know homes lose 40% of
+                   # their heat through the attic?" beside an unrelated
+                   # attributed ENERGY STAR 40% -- which the spec says must
+                   # keep firing and which did not. The repaired page keeps the
+                   # same seven questions and gives each an ATTRIBUTED PROSE
+                   # anchor stating the claim the question asks about. The
+                   # anchors are deliberately NOT cited-stat blocks: a
+                   # cited-stat would set r5_instat and let f_instat clear the
+                   # question, and then this control would stop testing
+                   # f_question. Measured: all seven repaired clears are
+                   # credited to the f_question row.
+                   Control("R5-QLAUNDER", "R5",
+                           _f("R5k_question_numeral_laundering.html"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired",
+                                       "R5k_question_numeral_laundering.html")),
+                   # R5-QTAG. A tag question is a flat assertion plus one
+                   # character, and the old filter tested endswith("?").
+                   # The repaired page attributes the same three sentences --
+                   # including one that KEEPS its tag -- which is the proof
+                   # that the class is not banned, only the unattributed
+                   # assertion is.
+                   Control("R5-QTAG", "R5", _f("R5l_tag_question.html"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired", "R5l_tag_question.html")),
+                   # R5-QSURFACE. Both directions of the cross-surface hole: a
+                   # <meta name="description"> anchoring a claim made in
+                   # VISIBLE PROSE, and visible prose anchoring a question
+                   # buried in JSON-LD FAQ markup. The repaired page moves each
+                   # anchor onto the question's OWN surface and nothing else.
+                   Control("R5-QSURFACE", "R5",
+                           _f("R5m_cross_surface_anchor.html"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired",
+                                       "R5m_cross_surface_anchor.html")),
+                   # R5-THRESHOLD. f_struct had NO control on any property.
+                   # The fixture carries 20%/20 percent as ORDINARY MARKETING
+                   # CLAIMS with no threshold context, and MUST fire even with
+                   # the threshold list pinned -- that is what stops the entry
+                   # being an allowlist for a number. The repaired page is the
+                   # qualifying-threshold statement and the blower-door
+                   # interrogative that asks about it, neither attributed to
+                   # anybody, and MUST clear on the threshold context alone.
+                   # That repaired half is the A1-KEEP proof: the row f_question
+                   # used to rescue is now closed by the instrument RULES_SPEC
+                   # already declares for it.
+                   Control("R5-THRESHOLD", "R5",
+                           _f("R5n_threshold_exclusion.html"),
+                           R5_THRESH_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired",
+                                       "R5n_threshold_exclusion.html"))]),
 
     Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
          "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",
@@ -5826,8 +6102,16 @@ RULES = [
     Rule("R11", "ATTRIBUTION DEBT", "CLAIM TEST",
          "VIS LD LOWVIS META OG TW LLMS",
          "TXT, plus block-boundary resolution on RAW",
+         # The print code that used to be named here, 25-12-215, was RETRACTED
+         # on 2026-09-20: 32 code-bearing first-party probes across every
+         # directory Xcel serves this sheet from returned 404, against six live
+         # 200 controls in the same directories, and the Wayback index of
+         # xcelenergy.com holds zero URLs containing it. See
+         # config/common.json R7.current_replacements_note. The blind spot is
+         # unchanged; only the document it named is gone.
          "it reports and never blocks; it cannot tell whether a claim is true "
-         "(all five tracked DCI terms are accurate to 25-12-215) nor whether "
+         "(all five tracked DCI terms are accurate to the current Xcel CO "
+         "residential rebate summary) nor whether "
          "attribution is OWED, which is a Director judgement.",
          rule_R11, blocking=False,
          controls=[Control("R11", "R11", _f("R11_attribution_debt.html"),

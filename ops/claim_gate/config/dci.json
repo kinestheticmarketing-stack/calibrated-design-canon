@@ -248,7 +248,12 @@
       "50% of project cost",
       "capped at 100% of project cost",
       "30% of project cost"
-    ]
+    ],
+    "allowed_thresholds": [
+      "20%",
+      "20 percent"
+    ],
+    "allowed_thresholds_reason": "The Xcel air sealing qualifying threshold a homeowner is MEASURED AGAINST by a before-and-after blower door test, not an amount anyone is paid. Ruling 3, and RULES_SPEC's R5 exclusion list already names it verbatim: 'R-values, IECC targets, ENERGY STAR recommendations, structure percentages, and the 20% CFM 50 threshold - same exclusion set as R3, same classifier.' GCI has carried the identical pair since its config was written; DCI's list was EMPTY, so the declared exclusion silently did not exist here, which lanes.md recorded as an open finding on 2026-09-19 and which f_question was made to paper over instead. NOT a figure allowlist: R5's f_struct also requires a threshold_context_marker in the same sentence (DCI inherits common.json's list, which is 'tier', 'threshold', 'measured reduction', 'of project cost', 'qualifying minimum', 'CFM', 'capped at', 'up to 100%', 'structure of the rebate'), so an ordinary marketing 20% still fires. Control R5-THRESHOLD proves both halves on every run. MEASURED on DCI 2026-09-20: on the live corpus (RAW 622) it removes exactly 6 rows, all on insulation-blower-door-test.html; across the 12 historical DCI replay trees it removes 981 rows which resolve to 19 DISTINCT sentences, every one of them the same claim - the rebate requires a before-and-after blower door test documenting a >=20% CFM 50 reduction - repeated across ~70 pages and several surfaces. ZERO rows newly fire and the git-replay defect score is unmoved at 20 CAUGHT / 3 PARTIAL / 2 MISSED. BLIND SPOT, STATED: has_any is a SUBSTRING test, so '20%' also matches inside '10-20%'. Measured: DCI's 14 distinct 'cellulose settles 10-20%' sentences still FIRE, because they carry no threshold_context_marker - the context requirement, not the figure, is what is doing the work. A sentence combining a 10-20% range WITH a threshold marker would clear, and that is the hole to watch. GCI's entry has carried the same characteristic since it was written."
   },
   "R4": {
     "programs": [

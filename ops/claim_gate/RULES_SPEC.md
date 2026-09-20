@@ -1498,20 +1498,56 @@ coincidence, not an instrument. The count is not the defect. The defect is that
 a short interrogative has eight content words in total and cannot earn four of
 anything, however completely it restates the sentence that sources it.
 
+**⚠ RETRACTION, 2026-09-20 — THE PARAGRAPH THAT STOOD HERE DESCRIBED A FILTER
+THE CODE DID NOT IMPLEMENT.** It said *"The question is then judged through the
+sentence that actually makes the claim"*. **It was not.** As shipped in
+`bfbad20`, `_anchored()` collected the **bare numeral tokens** of every cleared
+non-interrogative in the same FILE and `f_question` cleared a question when
+`all(n in anchors)`. **No content relation between the question and its anchor
+was required at all** — the same rule's `f_instat` demanded four shared content
+words in a window around the figure; `f_question` demanded **zero**. A spec that
+overstates a rule is itself a defect, and this one hid a live laundering route
+for a day. What follows describes the code as it stands after the 2026-09-20
+rewrite, and the retracted claim is kept above rather than deleted.
+
 **THIS IS NOT "SKIP QUESTIONS", AND THE DIFFERENCE IS THE WHOLE FILTER.** A
 question can smuggle a claim — *"Did you know homes lose 40% of their heat
 through the attic?"* is an assertion wearing a question mark. The filter
-therefore requires a **non-interrogative anchor on the same page**: another
-sentence carrying the same figure that **already cleared R5 through an
-attribution filter** — `f_inblock` (it *is* a cited-stat), `f_instat` (the
-page's cited-stat attributes that figure) or `f_pub` (it names the publisher
-that made the claim). The question is then judged through the sentence that
-actually makes the claim, and that sentence has already had to answer for it.
+therefore requires an anchor meeting **four** conditions, all of them:
+
+1. **Non-interrogative.** A sentence ending in `?` never anchors anything.
+2. **Same FILE and same SURFACE.** `_anchored()` filtered on the file only, so a
+   `<meta name="description">`, a JSON-LD string leaf or an inline `<script>`
+   template literal could anchor a claim made in visible prose, and visible
+   prose could anchor a claim buried in JSON-LD FAQ markup. The `src_code` /
+   `src_dup` exclusion covers **generator SRC surfaces** only and never closed
+   this.
+3. **Already cleared R5 through an attribution filter** — `f_inblock` (it *is* a
+   cited-stat), `f_instat` (the page's cited-stat attributes that figure) or
+   `f_pub` (it names the publisher that made the claim).
+4. **The same claim, not the same numeral.** The local window overlap between
+   the question and the anchor, taken around that figure by the *same*
+   `_r5_local_overlap` helper `f_instat` uses, must reach `_R5_INSTAT_MIN`. One
+   mechanism, two callers: there is no second, weaker same-claim test any more.
+
+And the **question itself** must be interrogative in **form**, not merely in
+punctuation. *"Attic insulation cuts your heating bill by 20%, right?"* is a
+flat assertion plus one character and the old `endswith("?")` test pardoned it.
+`_r5_is_interrogative` requires the sentence to open with a wh-word or an
+inverted auxiliary and to carry no trailing comma-tag. **That enumeration is a
+NECESSARY condition, never a sufficient one, which is the whole difference from
+the guard removed on 2026-09-19**: an omission here means a genuine question is
+judged as an assertion and **fires**, so the list fails *shut*. Presupposition
+(*"Why settle for less when our crews measure a 36% reduction…?"*) is closed by
+condition 4, not by the opener list.
 
 What it cannot hide, structurally rather than by assertion:
 
-- No same-page sentence carries the figure → no anchor → **the question fires.**
-  The 40% example above fires.
+- No same-**surface** sentence carries the figure → no anchor → **the question
+  fires.**
+- A same-surface sentence carries the figure, is attributed, but makes a
+  **different claim** → local overlap below the threshold → **the question
+  fires.** This is the A1 hole and it is the common case.
 - A companion carries the figure but is **itself uncited** → it is not in the
   cleared set, so it anchors nothing, **and R5 fires on it.** The figure is
   caught either way; it is merely caught at the sentence that asserts it.
@@ -1522,28 +1558,88 @@ What it cannot hide, structurally rather than by assertion:
   **that** sentence and does not transfer. Only the three filters that assert an
   attribution EXISTS may anchor.
 - An interrogative can never anchor anything, including another interrogative,
-  so two questions cannot clear each other.
-- **Every** figure in the hit must be anchored, so a second, unsourced numeral
-  cannot ride along inside the same question.
+  so two questions cannot clear each other. A **tag** question is treated as an
+  assertion when deciding whether it FIRES and is still refused as an anchor —
+  deliberately asymmetric, and asymmetric in the only safe direction.
+- **Every** figure in the hit must be anchored **by a same-claim anchor**, so a
+  second, unsourced numeral cannot ride along inside the same question, and two
+  unrelated publishers cannot jointly pay for one question.
 - `_open()` still applies: a `KNOWN-OPEN` hit is never removed by it.
 
-**CONTROL — `R5-QUESTION`, both directions.**
-`fixtures/R5j_interrogative_anchor.html` fires **3×** before and after the
-filter: question one carries `20%` and the page holds no other `20%` at all, so
-there is no anchor; question two carries `35%` and the page's only other `35%`
-sentence is **uncited**, which is exactly the laundering route a blanket
-interrogative skip would have opened — an unattributed companion anchors
-nothing and fires on its own account. That is the blindfold proof.
-`fixtures/repaired/R5j_interrogative_anchor.html` carries the same two
-questions with a `cited-stat` for each figure; measured 2026-09-19 it read
-`*** FIRES ON REPAIRED *** 2 hit(s)` **before** the filter existed and is clean
-**after**. That is the fix proof. Neither question clears through `f_instat` or
-`f_pub`; if a future edit makes either clear that way the control stops testing
-`f_question` and must be rewritten rather than retired.
+**THE `20% CFM 50` ROW IS NOT CLOSED HERE, AND A QUESTION/ANCHOR OVERLAP RULE
+CANNOT CLOSE IT.** Measured 2026-09-20 with `_r5_local_overlap`, window 110:
 
-Measured effect on the live corpus, 2026-09-19: DCI R5 `ADJ 6 → 3`, filter row
-`4 (removed 3)`; LGM `ADJ 0 → 0`, GCI `ADJ 0 → 0`, both still exit 0; controls
-44 positive DETECTED / 0 MISSED · 17 negative clean / 0 FALSE ALARM.
+| pair | overlap |
+|---|---|
+| DCI's CFM50 question vs the cited-stat that sources it | 3 |
+| the documented false-clear pair (`15%` save vs `15%` reduction) | 3 |
+| the seventh read's 42% counterexample | 3 |
+| the eighth read's 42% **interrogative** counterexample | 3 |
+
+At a threshold of 4 the blower-door row fires; at 3 the 42% interrogative
+evasion clears. There is no value that separates them, and lowering
+`_R5_INSTAT_MIN` to rescue the row would reopen the pair the threshold exists to
+keep shut. **The row is therefore closed by the instrument this document
+already declares for it** — `R3.allowed_thresholds`, per-property and
+figure-scoped, requiring a `threshold_context_marker` in the same sentence
+(`f_struct`). See the exclusion list below: *"R-values, IECC targets, ENERGY
+STAR recommendations, structure percentages, and the `20% CFM 50` threshold —
+same exclusion set as R3, same classifier."* DCI's `allowed_thresholds` was
+**empty**, so that declared exclusion silently did not exist there — recorded as
+an open finding in `docs/lanes.md` on 2026-09-19 and papered over with
+`f_question` instead. It now carries `["20%", "20 percent"]`, the same pair GCI
+has always carried, with its justification in `config/dci.json`.
+
+**CONTROLS — five, both directions each.**
+
+| control | fixture | before 2026-09-20 | after |
+|---|---|---|---|
+| `R5-QUESTION` | `R5j_interrogative_anchor.html` | 3 hits | 3 hits |
+| `R5-QLAUNDER` | `R5k_question_numeral_laundering.html` | **0 hits** | **7 hits** |
+| `R5-QTAG` | `R5l_tag_question.html` | **0 hits** | **3 hits** |
+| `R5-QSURFACE` | `R5m_cross_surface_anchor.html` | **0 hits** | **2 hits** |
+| `R5-THRESHOLD` | `R5n_threshold_exclusion.html` | 2 hits | 2 hits |
+
+Every `0 hits` above was **measured against `claim_gate.py` at `bfbad20` on all
+three property configs** before the code was touched, not asserted. `R5k` holds
+seven attributed statistics beside seven uncited questions sharing **only a
+numeral** — including this document's own named adversary, *"Did you know homes
+lose 40% of their heat through the attic?"* beside an unrelated attributed
+ENERGY STAR 40%, which this section says *"must keep firing"* and which did
+**not**. Each fixture has a repaired counterpart that must be clean, so none of
+the five can be satisfied by weakening or deleting `f_question`: doing that
+reddens the repaired half.
+
+`R5j`'s repaired half was **itself part of the defect** and is rewritten. It
+paired an ENERGY STAR statistic about *annual space-conditioning energy use*
+with a question about *winter heating costs* — different claims — and
+`bfbad20`'s own commit message recorded that pair's local overlap as **0**. The
+pass measured the hole and filed it as proof the control exercised the filter.
+Its anchors now state the claim their questions ask about, and are attributed
+**prose** rather than `cited-stat` blocks on purpose: a `cited-stat` would set
+`r5_instat` and let `f_instat` clear the question, and the control would stop
+testing `f_question`. Measured: every repaired clear in `R5j`, `R5k`, `R5l` and
+`R5m` is credited to the `f_question` filter row.
+
+`R5-THRESHOLD` is new for a second reason: **`f_struct` had no control on any
+property**, because `R5_CONTROL_OVERLAY` empties both lists it reads on every R5
+control. Its fixture carries `20%` / `20 percent` as ordinary marketing claims
+with no threshold context and MUST fire even with the list pinned — that is what
+stops the entry becoming an allowlist for a number — and its repaired half is
+the unattributed qualifying-threshold statement plus the blower-door
+interrogative, which MUST clear on the threshold context alone.
+
+Measured effect on the live corpus, 2026-09-20, DCI `public/` md5-attested
+identical across both runs: DCI R5 `RAW 622 ADJ 3 → RAW 622 ADJ 0` (`f_question`
+row `4 (removed 3)` → `4 (removed 0)`; `f_struct` row `0 (removed 0)` →
+`222 (removed 6)`, all six on `insulation-blower-door-test.html`); LGM
+`RAW 228 ADJ 0`, GCI `RAW 204 ADJ 0`, both unchanged and both exit 0; controls
+**48 positive DETECTED / 0 MISSED · 17 negative clean / 0 FALSE ALARM** and
+48 repaired-clean on all three properties. On the earlier snapshot of the same
+day one DCI sentence carrying `20%` but **no** threshold-context marker —
+*"…a minimum 20% reduction in air leakage must be achieved"* — **still fired**,
+which is the in-corpus proof that the config entry is context-scoped rather than
+a figure allowlist.
 
 **WHAT IT DELIBERATELY DOES NOT CATCH.**
 - **Whether the citation supports the figure.** DCI's live audit found **15 of 18
@@ -1812,24 +1908,60 @@ proposition in prose."*
   string literals. This is the half that catches a retired rule stated in the
   site's own words.
 
+**RETRACTION, 2026-09-20 (row A4) — what "the current CO sheet †" means below.**
+Every "`25-12-215`" that used to appear in this section has been replaced by
+**the current CO sheet †**. The document number `25-12-215` is **withdrawn**:
+it could not be retrieved from **any** first-party Xcel source. The retrieval,
+2026-09-20, all with a browser User-Agent and the load-bearing probes repeated
+with a Googlebot User-Agent: **32** direct URL probes under
+`www.xcelenergy.com/staticfiles/` across the six directories Xcel actually uses
+for this sheet (`Marketing/`, `Programs and Rebates/Residential/`,
+`Energy Solutions/Residential Solutions/`, `Working With Us/`,
+`Working With Us/Trade Partners/`, and the `xe-responsive` root). **Every probe
+carrying `25-12-215` or `25-10-417` returned HTTP 404**, against live HTTP 200
+controls **in the same directories** for `24-02-205`, `23-11-205`, `19-06-612`
+and `21-12-204` — so the 404s are **absence, not a block**. The Wayback CDX
+index of `www.xcelenergy.com` holds **zero** captured URLs containing either
+code (RAW **0** of **3,523** unique `staticfiles` URLs captured since
+2025-01-01; RAW **0** of the **18** URLs matching `.*[Rr]ebate.*[Ss]ummary.*`
+across all time).
+
+    VERIFY (both lines, same host, same User-Agent, one returns 404 and one 200):
+    curl -sSI -A 'Mozilla/5.0' 'https://www.xcelenergy.com/staticfiles/xe-responsive/Marketing/Residential-Insulation-Air-Sealing-Rebate-25-12-215.pdf' | head -1
+    curl -sSI -A 'Mozilla/5.0' 'https://www.xcelenergy.com/staticfiles/xe-responsive/Programs%20and%20Rebates/Residential/24-02-205%20CO%20Res%20Rebate%20Summary%20Information%20Sheet.pdf' | head -1
+
+**No substitute print code is asserted, because none could be confirmed
+first-party either.** The only retrievable copy of the edition titled
+*"COLORADO 2025-2026 REBATE SUMMARY / COLORADO RESIDENTIAL ENERGY EFFICIENCY
+PROGRAMS / EFFECTIVE NOV. 16, 2025"* is a **contractor-hosted mirror**
+(`royalcomforths.com`, HTTP 200) whose own PDF metadata shows it was
+re-processed through **GPL Ghostscript 10.06.0 on 2026-04-14** — a derivative,
+not an Xcel-served byte stream. Its footer reads
+*"xcelenergy.com | © 2025 Xcel Energy Inc. | … | 25-10-417"* and the string
+`25-12-215` appears in it **zero** times. That is a **pointer**, never an
+authority. **The edition itself is not in doubt and no proposition below
+changes**; only the label by which this document names it does. `25-10-417`
+stays in `superseded_identifiers` — removing it is the one change that would
+blind a blocking rule — and its `current_replacements` entry has been dropped.
+
 **The proposition inventory, retrieved, with its evidence.** Every one of these
 is a real superseded claim that shipped:
 
 | Claim | Superseded because | Where it shipped | Fixed in |
 |---|---|---|---|
-| *"the newest rebate schedule that could be retrieved is effective January 1, 2024, so the current-year wording could not be confirmed"* | `January 1, 2024` **is** the superseded `24-02-205` sheet; `25-12-215` was retrieved and hash-verified the same pass | GCI `insulation-rebate-hub.html`, live HTTP 200, in the sitemap; identical proposition **twice** on `insulation-rebate-eligibility-checker.html` (prose + inline JS) | GCI `44d638c` |
-| The WHE audit entry path — *"begin with a blower door audit, infrared audit, or a **Home Energy Squad Plus** visit to be eligible"* | verbatim from the superseded 2024 sheet; `25-12-215` drops it entirely. Tested individually against the current sheet: `Home Energy Squad` **0**, `begin with` **0**, `Whole Home Efficiency contractor` **0**, `rebate application` **0** | DCI **35 pages**; LGM `insulation-lafayette.html` in **prose AND JSON-LD**, citing *"Xcel's own rebate summary"* — **a retired rule wearing a live citation** | DCI `b47a3c2`; LGM `72e18ac` |
-| *"air sealing is a **prerequisite** for Xcel's Whole Home Efficiency bonus"* | `25-12-215` sets no such condition; air sealing is one measure that can count toward three | LGM `air-sealing-longmont.html` (`_service_pages.py:335`) — **matched none of the eight swept strings**; DCI 11 instances on 3 pages incl. `<title>`+`og:title`+`twitter:title` as one string | LGM `72e18ac`; DCI `eb5c939` |
+| *"the newest rebate schedule that could be retrieved is effective January 1, 2024, so the current-year wording could not be confirmed"* | `January 1, 2024` **is** the superseded `24-02-205` sheet; the current CO sheet † was retrieved and hash-verified the same pass | GCI `insulation-rebate-hub.html`, live HTTP 200, in the sitemap; identical proposition **twice** on `insulation-rebate-eligibility-checker.html` (prose + inline JS) | GCI `44d638c` |
+| The WHE audit entry path — *"begin with a blower door audit, infrared audit, or a **Home Energy Squad Plus** visit to be eligible"* | verbatim from the superseded 2024 sheet; the current CO sheet † drops it entirely. Tested individually against the current sheet: `Home Energy Squad` **0**, `begin with` **0**, `Whole Home Efficiency contractor` **0**, `rebate application` **0** | DCI **35 pages**; LGM `insulation-lafayette.html` in **prose AND JSON-LD**, citing *"Xcel's own rebate summary"* — **a retired rule wearing a live citation** | DCI `b47a3c2`; LGM `72e18ac` |
+| *"air sealing is a **prerequisite** for Xcel's Whole Home Efficiency bonus"* | the current CO sheet † sets no such condition; air sealing is one measure that can count toward three | LGM `air-sealing-longmont.html` (`_service_pages.py:335`) — **matched none of the eight swept strings**; DCI 11 instances on 3 pages incl. `<title>`+`og:title`+`twitter:title` as one string | LGM `72e18ac`; DCI `eb5c939` |
 | *"installed and invoiced by **December 31, 2026**"* | in **no** Xcel artifact retrieved; `COPY_VOICE.md:197` recorded the date citing no document | DCI **38 pages**; survived four further rounds at `_generate_calculator_pages.py:344` as **`Dec. 31, 2026`** because every sweep searched the long form | DCI `b47a3c2`, then `f83d421` |
-| *"paid out as soon as the third qualifying upgrade is completed"* / *"pays out when the third qualifying measure completes"* | `25-12-215` publishes **no payout schedule at all** | DCI, removed in prose then **alive in a FAQ and its JSON-LD `acceptedAnswer`**, attributed to *"Xcel's page"* | DCI `b47a3c2`, then `f83d421` |
+| *"paid out as soon as the third qualifying upgrade is completed"* / *"pays out when the third qualifying measure completes"* | the current CO sheet † publishes **no payout schedule at all** | DCI, removed in prose then **alive in a FAQ and its JSON-LD `acceptedAnswer`**, attributed to *"Xcel's page"* | DCI `b47a3c2`, then `f83d421` |
 | *"25% of the rebate already paid"* | current sheet says *"a 25% bonus on all standard rebates"* | DCI **41 pages** | DCI `b47a3c2` |
 | *"three or more measures are bundled"* | drops the source's binding clock, *"within two years of enrolling"* | DCI | DCI `b47a3c2` |
-| *"the multiplier is expired"* (the 1.5× gas-heat bonus) | **reinstated** by `25-12-215`, footnote verbatim: *"Invoice must be dated in 2025 or 2026 to receive the bonus"* — the earlier supersession note missed it because it *"enumerated only TWO customer groups"* and the sheet has **three** | LGM `_shared_components.py:314` + 4 doc sites | LGM `a2ba5a6` |
-| *"neither Xcel nor Efficiency Works publishes a dollar figure for the audit"* | refuted by `25-12-215`'s own `HOME ENERGY AUDIT` / `REBATE AMOUNT` table | LGM energy-audit page, **8 places** | LGM `58646f0` |
+| *"the multiplier is expired"* (the 1.5× gas-heat bonus) | **reinstated** by the current CO sheet †, footnote verbatim: *"Invoice must be dated in 2025 or 2026 to receive the bonus"* — the earlier supersession note missed it because it *"enumerated only TWO customer groups"* and the sheet has **three** | LGM `_shared_components.py:314` + 4 doc sites | LGM `a2ba5a6` |
+| *"neither Xcel nor Efficiency Works publishes a dollar figure for the audit"* | refuted by the current CO sheet †'s own `HOME ENERGY AUDIT` / `REBATE AMOUNT` table | LGM energy-audit page, **8 places** | LGM `58646f0` |
 | `Advice Letter No. 544` cited as current Atmos territory authority | governs the **superseded** Second Revised Sheets; current is **No. 647** | GCI docs | GCI `5f9698b` |
 | The 2019 Xcel sheet, print code `19-06-612` | a **search-ranking trap**; *"must never be cited"* | none live | recorded as do-not-cite |
 | `nrel.gov` | whole zone returns **authoritative NXDOMAIN** from the `.gov` registry's own nameserver; also renamed to `nlr.gov` | DCI 2 pages + 6 instances incl. dead-code mirrors | DCI `147185c`, `8841f09` |
-| `R-value of less than 15` / `R-49 or greater` | `25-12-215` says pre-job **less than 24**, post-job **60 or greater**, corroborated by print code `17-9230 (01-25)` — and **Xcel's own live HTML page still shows the OLD 15/49 values; the print-coded dated PDF wins, do not "fix" that backwards** | LGM: **0 instances, a NULL RESULT** (`58646f0` verified `0` across body, `<head>`, meta, `og:`, `twitter:` and JSON-LD). DCI: **331 `R-15`/`R-49` occurrences across 70 files, all 331 IECC or ENERGY STAR, zero Xcel** | no copy change needed on either |
+| `R-value of less than 15` / `R-49 or greater` | the current CO sheet † says pre-job **less than 24**, post-job **60 or greater**, corroborated by print code `17-9230 (01-25)` — and **Xcel's own live HTML page still shows the OLD 15/49 values; the print-coded dated PDF wins, do not "fix" that backwards** | LGM: **0 instances, a NULL RESULT** (`58646f0` verified `0` across body, `<head>`, meta, `og:`, `twitter:` and JSON-LD). DCI: **331 `R-15`/`R-49` occurrences across 70 files, all 331 IECC or ENERGY STAR, zero Xcel** | no copy change needed on either |
 | Longmont's adopted energy code = **2021 IECC** | superseded by the 2024 International Codes + Metro Cohort Model Code + Colorado Wildfire Resiliency Code, **effective 2026-07-01** | *"Every LGM page citing the 2021 IECC had been wrong for roughly eight weeks."* The 2024 Metro Cohort text is behind a JS/CloudFront wall — **no R-value number was invented** | open, disclosed |
 
 **SURFACES.** `VIS` `TITLE` `META` `OG` `TW` `LD` `JS` `LOWVIS` `ATTR`(`href`)
@@ -1923,9 +2055,13 @@ unchanged (it reads `registry.get("sources", [])` and never iterates
   "superseded_urls": ["Residential-Insulation-Air-Sealing-Rebate-24-02-205.pdf",
                       "CO-Residential-Rebate-Summary-Sheet.pdf",
                       "nrel.gov/gis/solar.html"],
-  "current_replacements": { "24-02-205": "25-12-215",
+  "current_replacements": { "24-02-205": "the current Xcel CO residential rebate summary at co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing (print code NOT first-party verified; 25-12-215 retracted 2026-09-20, see current_replacements_note)",
                             "No. 544": "No. 647",
                             "nrel.gov": "nlr.gov" },
+  /* `25-10-417` is DELIBERATELY ABSENT from current_replacements as of
+     2026-09-20: no successor is known and its own superseded status is in
+     doubt. It STAYS in superseded_identifiers -- see
+     R7.superseded_identifiers_25_10_417_note in config/common.json. */
   "superseded_propositions": [ /* the 14-row table above, as predicates */ ],
   "correction_markers": ["SUPERSEDED","SUPERSESSION","CORRECTED","RETIRED",
                          "[CORRECTED","do NOT act on","retired figure","~~"],
@@ -2278,7 +2414,7 @@ one file across `VIS` and `LOWVIS` — N2 fires twice. Expected:
       "authoritative_value": "airsealing_only",
       "authority": "DCI docs/board/ground-truth.md:148-152; LGM 183378f first-party read of the DSM product write-up" },
     { "id": "whe_audit_precondition", "authoritative_value": "not_required",
-      "authority": "25-12-215 lines 123-130: one condition, three measures within two years of enrolling" },
+      "authority": "the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] lines 123-130: one condition, three measures within two years of enrolling" },
     { "id": "whe_measure_count", "authoritative_value": "three" },
     { "id": "vermiculite_test_trigger" },
     { "id": "audit_price_range" },
@@ -2530,7 +2666,7 @@ the first row and **fails the control**. Expected:
 ```
 
 **WHAT IT DELIBERATELY DOES NOT CATCH.** Whether the claim is true (all five
-tracked DCI terms are accurate to `25-12-215`); whether attribution is *owed*
+tracked DCI terms are accurate to the current CO sheet †); whether attribution is *owed*
 (a Director/coordinator judgement); anything at all on LGM and GCI until their
 `tracked_terms` are populated — **currently empty, and the gate prints
 `R11: 0 tracked terms configured for <property>` rather than `PASS`.**
@@ -2695,7 +2831,10 @@ assumed, in the lane rows cited in §11.
   },
 
   "R3": { "allowed_figures": [],
-          "note": "MEASURED 2026-09-17: /usr/bin/grep -rhoE '\\$[0-9][0-9,.]*' over public/ returns ZERO occurrences. DCI is the only property with no surviving dollar figure of any kind. Was 198 before 5703f8c ($600 x173, $0 x12, $2,000 x6, $1,000 x6, $1,500 x1)." },
+          "note": "MEASURED 2026-09-17: /usr/bin/grep -rhoE '\\$[0-9][0-9,.]*' over public/ returns ZERO occurrences. DCI is the only property with no surviving dollar figure of any kind. Was 198 before 5703f8c ($600 x173, $0 x12, $2,000 x6, $1,000 x6, $1,500 x1).",
+          "allowed_structure_percentages": ["75%", "50% of project cost", "capped at 100% of project cost", "30% of project cost"],
+          "allowed_thresholds": ["20%", "20 percent"],
+          "allowed_thresholds_reason": "ADDED 2026-09-20. The Xcel air sealing qualifying threshold a homeowner is MEASURED AGAINST by a before-and-after blower door test, not an amount anyone is paid. Ruling 3, and the R5 exclusion list above already named it verbatim. GCI has carried the identical pair since its config was written; DCI's list was EMPTY, so the declared exclusion silently did not exist here — docs/lanes.md recorded that as an open finding on 2026-09-19 and f_question was made to paper over it. NOT a figure allowlist: f_struct also requires a threshold_context_marker in the same sentence. Control R5-THRESHOLD proves both halves every run." },
 
   "R4": { "programs": ["Xcel Whole Home Efficiency Bonus", "Whole Home Efficiency Bonus",
                        "Combo Bonus", "Xcel's income-qualified programs",
@@ -2998,7 +3137,7 @@ catch it; `—` means no rule here catches it and the reason is in that rule's
 |---|---|---|---|---|
 | 1 | R1 | LGM | `CITED_SOURCES['XCEL_BLOWER_DOOR']` attributed a 20% CFM50 requirement to Xcel's **insulation** rebates **inside quotation marks** on **11 pages**; the cited 2024 sheet scopes it to air sealing alone and never uses "blower door" against those standards | `186d311` (claim `8b0f1a9`, release `d64c8a1`), lane `lgm-rebate-defect-repair-r5b` |
 | 2 | R2 | GCI | **Johnstown, Milliken and Severance credited to Atmos for two years.** They are Xcel gas. Premise formed once at genesis from a source naming three towns, generalised to nine, never tested against the utility's own tariff | `e6cb44e` (release `a51046e`), lane `gci-xcel-gas-towns-correct`; canon `f1c4008` |
-| 3 | R7 | DCI | The retired WHE audit entry path — "Home Energy Squad Plus visit" — published as current on **35 pages**, sourced to the superseded 2024 sheet, which `25-12-215` drops entirely | `b47a3c2`, lane `xcel-25-12-215-figures-dci` |
+| 3 | R7 | DCI | The retired WHE audit entry path — "Home Energy Squad Plus visit" — published as current on **35 pages**, sourced to the superseded 2024 sheet, which the current CO sheet † drops entirely | `b47a3c2`, lane `xcel-25-12-215-figures-dci` |
 | 4 | R5+R7 | DCI | A **fifth Xcel program with four invented eligibility pathways on 72-73 pages**: "LEAP, SNAP, or TANF participation… or living in a disproportionately impacted community — that last pathway is geographic, with no income paperwork." 0 cited-stats, 0 outbound links, 0 registry entries in any repo | `3da02df`, lane `xcel-25-12-215-figures-dci` |
 | 5 | R3 | all three | **537 rebate dollar figures the Director ruled off** (canon's addendum states 545; the 8-figure difference is unresolved and recorded as such): DCI **198**, GCI **206**, LGM **133 removed / 8 kept** | DCI `5703f8c`; GCI `2cecf33`; LGM `d6e8dab` |
 | 6 | R6 | DCI | The r-value calculator **printed two different severity words beside the same percentage** — 2 ambiguous percentages (37% and 100%), **15 of 140** combinations reading "Moderately under code — 100% short of target", 351 ordinal inversions, 43 label-vs-figure mismatches | `37c7b29` (release `f9e7551`), lane `dci-d3-tier-label-fix` |
@@ -3078,15 +3217,15 @@ catch it; `—` means no rule here catches it and the reason is in that rule's
 
 | Rule | Repo | Defect | Found in |
 |---|---|---|---|
-| R7 | LGM | **A SUPERSEDED RULE WEARING A LIVE CITATION.** `insulation-lafayette.html` told a homeowner, in prose AND in JSON-LD, that "**Xcel's own rebate summary** sets three conditions" — all three verbatim from the superseded 2024 sheet, none in `25-12-215`. "Worse than an unsourced claim — a retired rule citing the current document as its authority, telling a Lafayette homeowner to buy an audit no longer required" | `72e18ac` |
+| R7 | LGM | **A SUPERSEDED RULE WEARING A LIVE CITATION.** `insulation-lafayette.html` told a homeowner, in prose AND in JSON-LD, that "**Xcel's own rebate summary** sets three conditions" — all three verbatim from the superseded 2024 sheet, none in the current CO sheet †. "Worse than an unsourced claim — a retired rule citing the current document as its authority, telling a Lafayette homeowner to buy an audit no longer required" | `72e18ac` |
 | R7 | LGM | Same class, second instance, **found by reading for the proposition rather than the string**: `air-sealing-longmont.html` called air sealing "a **prerequisite** for Xcel's Whole Home Efficiency bonus". **It matched none of the eight swept strings** | `72e18ac` |
 | R7 | DCI | **`prerequisite` is the exact word removed from LGM in round 3 and it was never swept on DCI.** 11 live instances of the retired rule on 3 pages, incl. `<title>`+`og:title`+`twitter:title` as one string, a FAQ in both prose and JSON-LD `acceptedAnswer`, "the **Xcel-approved** audit" (a category the sheet does not define), and a **wrong clock** — "within two years of **the audit**" on a page stating "of enrolling" correctly twice elsewhere | `eb5c939` |
 | R7 | DCI | "installed and invoiced by **December 31, 2026**" on **38 pages**, in no Xcel artifact retrieved. Then `Dec. 31, 2026` at `_generate_calculator_pages.py:344` **read clean for four rounds because every sweep searched the long form** | `b47a3c2`, then `f83d421` |
-| R7 | DCI | The payout-timing claim, removed in prose, **alive in a FAQ and its JSON-LD `acceptedAnswer`, attributed to "Xcel's page", which does not say it.** `25-12-215` publishes no payout schedule at all | `b47a3c2`, then `f83d421` |
+| R7 | DCI | The payout-timing claim, removed in prose, **alive in a FAQ and its JSON-LD `acceptedAnswer`, attributed to "Xcel's page", which does not say it.** The current CO sheet † publishes no payout schedule at all | `b47a3c2`, then `f83d421` |
 | R7 | DCI | "25% of the rebate already paid" on **41 pages** (current sheet: "a 25% bonus on all standard rebates"); "three or more measures are bundled" dropping the binding clock | `b47a3c2` |
 | R7 | DCI | "completed **in one project**", narrower than the source and materially misleading — it tells a homeowner spreading three measures over eighteen months they do not qualify, when the sheet says they do | `eb5c939` |
-| R7 | LGM | **"the multiplier is expired"** — `25-12-215` **reinstates** the 1.5× gas-heat bonus through 2026 ("Invoice must be dated in 2025 or 2026"). The earlier supersession note missed it because it enumerated only **two** customer groups and the sheet has **three**. 4 live instances | `a2ba5a6` |
-| R7 | LGM | An **unrestricted universal negative in 8 places** — "neither Xcel nor Efficiency Works publishes a dollar figure for the audit" — refuted by `25-12-215`'s own `HOME ENERGY AUDIT` / `REBATE AMOUNT` table | `58646f0` |
+| R7 | LGM | **"the multiplier is expired"** — the current CO sheet † **reinstates** the 1.5× gas-heat bonus through 2026 ("Invoice must be dated in 2025 or 2026"). The earlier supersession note missed it because it enumerated only **two** customer groups and the sheet has **three**. 4 live instances | `a2ba5a6` |
+| R7 | LGM | An **unrestricted universal negative in 8 places** — "neither Xcel nor Efficiency Works publishes a dollar figure for the audit" — refuted by the current CO sheet †'s own `HOME ENERGY AUDIT` / `REBATE AMOUNT` table | `58646f0` |
 | R7 | LGM | Seven stale `24-02-205` claims across `_generate_area_pages.py`, an open Director card, `STATE_OF_PROJECT.md` ×2, `WEBSITE_ARCHITECTURE.md`, and a done card whose polarity was inverted | `858bb26` |
 | R7 | LGM | `llms.txt`'s tile description **asserted the conflation and denied it in the same sentence** — and it was a half-fix of the same lane's own commit `58646f0` | `e329db7` |
 | R7 | all four | `24-02-205`/`24_02_205`/`23-11-205` census: canon 3 hits, **DCI 62**, **LGM 64**, GCI 3 — 9 live defects | canon `087a3be`, lane `xcel-25-12-215-registry-canon` |
