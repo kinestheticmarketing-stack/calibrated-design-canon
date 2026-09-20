@@ -275,7 +275,69 @@ Those are historical-record surfaces and need their own supersession
 pass; they are not corrected here.
 
 **SUPERSESSION — 2026-09-07 — the Xcel document cited above is no longer
-current. Cite `25-12-215`, never `24-02-205`.**
+current.** ~~Cite `25-12-215`, never `24-02-205`.~~
+
+> **THE INSTRUCTION STRUCK ABOVE WAS ITSELF A DEFECT, AND IT IS WITHDRAWN —
+> 2026-09-20 (row C).** It ordered every new property to cite a print code
+> that **cannot be retrieved from any first-party Xcel source**, so it
+> manufactured an unverifiable citation at each genesis. Do not restore it,
+> and do not "repair" it by substituting the other code in circulation —
+> `25-10-417` is not confirmable first-party either, and swapping one
+> unverified number for another is the same defect wearing a different digit.
+>
+> **THE STANDING RULE THAT REPLACES IT — CITE WHAT CAN BE RE-VERIFIED:**
+>
+> > **Identify a source by the attributes a later reader can check against
+> > the publisher: TITLE, EFFECTIVE DATE, PUBLISHER, and the publisher's own
+> > stable landing page. A print code, document number, filename or internal
+> > revision id may be RECORDED as provenance only after you have read it off
+> > a byte stream the publisher itself served, and it may never be the thing
+> > the citation rests on. A mirror, a contractor site, DSIRE or any other
+> > aggregator is a POINTER worth following and is NEVER the authority: if
+> > the only copy you can reach is a re-hosted one, you have not verified the
+> > identifier, you have verified that somebody else published a number.**
+>
+> A print code is exactly the kind of attribute that looks authoritative and
+> is unfalsifiable at the desk: it is short, it is unique-looking, it appears
+> in a footer, and nothing about quoting it tells you whether the quoter ever
+> held the document. Title and effective date are printed on the cover, are
+> reproduced by the publisher's own live pages, and go stale loudly.
+>
+> **THE EVIDENCE, so this is a record and not an assertion.** Three
+> independent rows now agree. Row A4 ran 32 direct probes under
+> `www.xcelenergy.com/staticfiles/` across the six directories Xcel uses for
+> this sheet; every probe carrying `25-12-215` or `25-10-417` returned
+> **HTTP 404**, against live **HTTP 200** controls for `24-02-205`,
+> `23-11-205`, `19-06-612` and `21-12-204` **in the same directories**, so
+> the 404s are absence and not a block. The Wayback CDX index of
+> `www.xcelenergy.com` holds **zero** captured URLs containing either code.
+> Row C re-ran the load-bearing probes independently on **2026-09-20** with a
+> browser User-Agent and got the same result:
+>
+> ```
+> HTTP 404  .../xe-responsive/Marketing/Residential-Insulation-Air-Sealing-Rebate-25-12-215.pdf
+> HTTP 404  .../xe-responsive/Marketing/Residential-Insulation-Air-Sealing-Rebate-25-10-417.pdf
+> HTTP 404  .../xe-responsive/Programs%20and%20Rebates/Residential/25-12-215%20CO%20Res%20Rebate%20Summary%20Information%20Sheet.pdf
+> HTTP 404  .../xe-responsive/Programs%20and%20Rebates/Residential/25-10-417%20CO%20Res%20Rebate%20Summary%20Information%20Sheet.pdf
+> HTTP 200  .../xe-responsive/Programs%20and%20Rebates/Residential/24-02-205%20CO%20Res%20Rebate%20Summary%20Information%20Sheet.pdf   (3,089,201 bytes)
+> HTTP 200  .../xe-responsive/Working%20With%20Us/CO-Residential-Rebate-Summary-Sheet.pdf                                            (1,049,343 bytes)
+> ```
+>
+> Row C also retrieved Xcel's four live first-party Colorado residential
+> pages on 2026-09-20 with a Googlebot User-Agent, all HTTP 200
+> (`home-rebates/insulation-air-sealing`,
+> `home-services/whole-home-efficiency`, `home-services/home-energy-audit`,
+> `home-services/home-energy-squad`). **Neither code occurs on any of them —
+> `25-12-215` 0, `25-10-417` 0, `24-02-205` 0, `23-11-205` 0 on all four.**
+> The only document anyone has reached bearing the 2025–2026 title and the
+> Nov. 16, 2025 effective date is a **contractor-hosted mirror** whose own
+> PDF metadata shows it was re-rendered through GPL Ghostscript; its footer
+> reads `25-10-417`. **That is a pointer and it is not admissible as the
+> authority** — which is the rule above, applied to itself.
+>
+> **BOTH IDENTIFIERS ARE CONTESTED AND NEITHER IS ASSERTED HERE.** Do not
+> record either as verified in a registry, a generator comment, or page copy
+> until one of them has been read off an `xcelenergy.com`-served byte stream.
 
 The 2026-08-24 correction block above is left standing verbatim as the
 record of what was verified on that date — it truthfully reports a live
@@ -283,13 +345,24 @@ record of what was verified on that date — it truthfully reports a live
 retrieval. Read the *document identity* in it as superseded by this note.
 The block's methodological ruling is unaffected and, in fact, reinforced.
 
-- **The governing document is now:** Xcel Energy's Colorado residential
-  rebate summary, **print code `25-12-215`**, title "2025–2026 REBATE
-  SUMMARY / COLORADO RESIDENTIAL ENERGY EFFICIENCY PROGRAMS", **"EFFECTIVE
-  NOV. 16, 2025"**. (The year separator is a U+2013 EN DASH.) SHA-256
-  `524f2e8dc57eb2c192e90fd5bbfe331f805863f72186c9850bced342f2c65c0c`,
-  710,578 bytes. Corroborated by a second Xcel document, the 2025
-  Insulation Rebate Application, print code `17-9230 (01-25)`.
+- **The governing document is now,** cited the only way it can currently be
+  verified — **by title, effective date and publisher:** Xcel Energy's
+  Colorado residential rebate summary, title "2025–2026 REBATE SUMMARY /
+  COLORADO RESIDENTIAL ENERGY EFFICIENCY PROGRAMS", **"EFFECTIVE NOV. 16,
+  2025"**. (The year separator is a U+2013 EN DASH.) **Cite it that way.**
+  The edition itself is not in doubt; only the label by which this document
+  used to name it was, and that label is withdrawn — see the withdrawal
+  above. Corroborated by a second Xcel document, the 2025 Insulation Rebate
+  Application, print code `17-9230 (01-25)`, which carries its own separate
+  verification debt under the same rule.
+  - **PROVENANCE, RECORDED AND CONTESTED, NOT ASSERTED:** an earlier pass
+    recorded SHA-256
+    `524f2e8dc57eb2c192e90fd5bbfe331f805863f72186c9850bced342f2c65c0c`,
+    710,578 bytes, for a copy of this edition. That measurement is left
+    standing because deleting a dated measurement falsifies a record — but
+    **the retrieval it came from has not been shown to be first-party**, and
+    no page, registry or generator may cite this document by a print code on
+    the strength of it. It is a hash awaiting a source, not a source.
 - **What it supersedes:** the sheet named above, **filename**
   `24-02-205 CO Res Rebate Summary Information Sheet.pdf`, whose
   **internal print code is `23-11-205`**, effective January 1, 2024.
@@ -300,10 +373,11 @@ The block's methodological ruling is unaffected and, in fact, reinforced.
   parameters that rot. The citable URL is Xcel's own stable program page:
   `https://co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing`.
   Recording a renditionDownload URL guarantees a dead citation.
-- **The qualifying standards, verbatim from `25-12-215`:** air sealing
-  `20% reduction in CFM 50`; wall `Pre-job empty wall cavity, with a
-  post-job R-value of 13 or greater`; attic `Pre-job R-value of less than
-  24, with a post-job R-value of 60 or greater`.
+- **The qualifying standards, verbatim from the 2025–2026 sheet named
+  above** (cited by title and effective date, never by print code — see the
+  withdrawal): air sealing `20% reduction in CFM 50`; wall `Pre-job empty
+  wall cavity, with a post-job R-value of 13 or greater`; attic `Pre-job
+  R-value of less than 24, with a post-job R-value of 60 or greater`.
 - **Therefore the attic thresholds quoted in the block above — "less than
   15 / 49 or greater" — are STALE.** They are **24 / 60** now. Xcel's own
   live HTML page still shows the old 15/49 pair; Xcel half-updated its own
@@ -313,6 +387,21 @@ The block's methodological ruling is unaffected and, in fact, reinforced.
 - **Do NOT cite the 2019 edition**, print code `19-06-612`, still live at
   `xcelenergy.com/staticfiles/xe-responsive/Working%20With%20Us/CO-Residential-Rebate-Summary-Sheet.pdf`.
   It ranks in search and is a trap.
+  - **AND THIS IS WHAT A VERIFIED PRINT CODE LOOKS LIKE — the contrast that
+    makes the rule above concrete.** Row C fetched that URL on 2026-09-20
+    with a browser User-Agent: **HTTP 200, 1,049,343 bytes**, and the code
+    is read off Xcel's own byte stream, footer verbatim
+    *"xcelenergy.com | © 2019 Xcel Energy Inc. … | 19-06-612"* — `19-06-612`
+    occurs once in the document and `25-12-215` / `25-10-417` occur zero
+    times. The same fetch verifies `23-11-205` the same way: the PDF served
+    at the `24-02-205` filename (**HTTP 200, 3,089,201 bytes**) is headed
+    *"2024 REBATE SUMMARY COLORADO"* and footed
+    *"xcelenergy.com | © 2023 Xcel Energy Inc. … | 23-11-205"*, which is why
+    this document can say flatly that `24-02-205` is a filename and
+    `23-11-205` is the print code. **`19-06-612` and `23-11-205` are citable
+    as provenance because somebody read them off a first-party byte stream.
+    `25-12-215` and `25-10-417` are not, because nobody has.** The test is
+    the retrieval, never the plausibility of the number.
 - **What this proves about the rule, again:** the 2026-08-24 block
   concluded by saying "a worked example is a claim and needs a citation
   like any other claim. Cite the document, quote the string, and date the
@@ -503,11 +592,26 @@ Colorado territory. That letter is from 2018 and governs the **superseded**
 Second Revised Sheets; the current filing is **No. 647**. Atmos's Colorado
 territory did not change between the two — the *fact* was stable and the
 *citation* rotted underneath it. This is a distinct staleness class from the
-one recorded above for Xcel's `25-12-215` supersession, where the document
-revision genuinely changed a threshold. Both are real and they need different
-handling: **re-verify the citation on its own schedule even when you have no
-reason to think the fact moved, and never let "the fact is still true" stand
-in for "the citation is still current."** Cite No. 647 or cite nothing.
+one recorded above for the Xcel 2025–2026 rebate-summary supersession, where
+the document revision genuinely changed a threshold. Both are real and they
+need different handling: **re-verify the citation on its own schedule even
+when you have no reason to think the fact moved, and never let "the fact is
+still true" stand in for "the citation is still current."** Cite No. 647 or
+cite nothing.
+
+> **UPDATED 2026-09-20 (row C).** This paragraph used to appeal to "Xcel's
+> `25-12-215` supersession" as a settled precedent. That identifier is
+> **withdrawn** — see the withdrawal earlier in this phase — so the appeal
+> now names the supersession by the edition it concerns rather than by a
+> code nobody can retrieve. **The supersession itself is unaffected: the
+> 2025–2026 edition exists, its threshold change is real, and only the label
+> was bad.** And there is a third staleness class visible in the pair, which
+> is the one this row was cleaning up: not a stale fact, not a stale
+> citation, but **a stale IDENTIFIER — a citation that was never anchored to
+> a retrieval in the first place, and so had nothing to go stale from.**
+> `Advice Letter No. 647` and `19-06-612` are anchored; a print code read off
+> a re-hosted mirror is not. Anchor the identifier at the moment you record
+> it, or record the title and the date instead.
 
 **WHAT THIS DOES NOT CHANGE.** Nothing above weakens item 1, item 2 or item 3
 of this phase. The anti-porting rule (item 1) is still correct; it is simply
