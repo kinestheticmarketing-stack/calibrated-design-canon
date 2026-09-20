@@ -138,22 +138,47 @@ check clean afterwards — DCI 11 sources, LGM 13 sources, exit 0 each.
 > portfolio has ever confirmed. **The entry is now
 > `XCEL_CO_RESIDENTIAL_REBATE_SUMMARY_2025_2026`**, which names the document by
 > title, effective date and publisher — three attributes that are verifiable —
-> and by no print code at all. Measured 2026-09-20 across all three property
-> registries: `XCEL_CO_REBATE_SUMMARY_25_12_215` occurs **0** times;
+> and by no print code at all.
+>
+> **Measured 2026-09-20 across all three property registries, raw count and
+> filter both, because the raw count alone is misleading here.** Raw
+> `/usr/bin/grep -c 'XCEL_CO_REBATE_SUMMARY_25_12_215'` gives **DCI 0, LGM 0,
+> GCI 3** — and *none* of GCI's three is a live key. All three sit inside
+> `identifier_status` **prose that quotes the old id in order to retire it**
+> (*"the old value, `XCEL_CO_REBATE_SUMMARY_25_12_215`, resolved to nothing
+> here either"*), which is the same convention this canon uses for every
+> retracted string. **As a KEY the old id occurs 0 times in all three: 0
+> entry `id` fields and 0 `superseded_by.id` fields.** A bare `grep -c` on this
+> file is an occurrence count, not a key count, and would report the rename
+> incomplete when it is complete.
+>
 > `XCEL_CO_RESIDENTIAL_REBATE_SUMMARY_2025_2026` is present in DCI (11 sources
-> / 6 `unwatchable_sources`) and LGM (13 / 5). **GCI (16 / 5) does not carry it
-> at all**, and that is a *recorded* gap, not an oversight: GCI's Xcel
+> / 6 `unwatchable_sources`) and LGM (13 / 5). **GCI (16 / 5) has no entry with
+> that id**, and that is a *recorded* gap, not an oversight: GCI's Xcel
 > tombstones name it in `superseded_by.id` while no such entry exists in that
 > file. That dangling reference predates the rename — the old value resolved to
 > nothing on GCI either — and GCI `1bc625c` left it deliberately rather than
 > invent a current-source entry on a property whose pages assert nothing about
 > that source.
 >
-> **Verify:**
+> **Verify (keys, not occurrences):**
 > ```bash
 > for r in denvercoloradoinsulation.com longmontcoloradoinsulation.com greeleycoloradoinsulation.com; do
->   /usr/bin/grep -c 'XCEL_CO_REBATE_SUMMARY_25_12_215' ~/code/$r/docs/citation-registry.json
-> done   # 0, 0, 0
+>   python3 - ~/code/$r/docs/citation-registry.json <<'PY'
+> import json,sys
+> d=json.load(open(sys.argv[1]))
+> e=[x for b in ('sources','unwatchable_sources') for x in (d.get(b) or [])]
+> old='XCEL_CO_REBATE_SUMMARY_25_12_215'; new='XCEL_CO_RESIDENTIAL_REBATE_SUMMARY_2025_2026'
+> print('entries=%d  old-as-id=%d  old-as-superseded_by=%d  new-as-id=%d' % (
+>     len(e),
+>     sum(x.get('id')==old for x in e),
+>     sum((x.get('superseded_by') or {}).get('id')==old for x in e),
+>     sum(x.get('id')==new for x in e)))
+> PY
+> done
+> # DCI entries=17 old-as-id=0 old-as-superseded_by=0 new-as-id=1
+> # LGM entries=18 old-as-id=0 old-as-superseded_by=0 new-as-id=1
+> # GCI entries=21 old-as-id=0 old-as-superseded_by=0 new-as-id=0   <- the recorded gap
 > ```
 Operational detail and the full failure-mode record are in this repo's
 [`TOOLING_RUNBOOK.md`](../TOOLING_RUNBOOK.md), section "The citation
