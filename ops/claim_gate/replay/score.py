@@ -343,10 +343,58 @@ def _pages2540(s):
                                             for p in pages))))
 
 
+# ROW 5c CORRECTED 2026-09-20 (row D): "CAUGHT" -> "PARTIAL". THIS IS A
+# RETRACTED BASELINE BEING BROUGHT INTO LINE, NOT A SCORE BEING TUNED, AND THE
+# DISTINCTION IS THE WHOLE POINT -- editing a scoring baseline is the change
+# most easily mistaken for tuning, so the justification is quoted in full
+# rather than summarised. Canon 96d8f8d, subject "Commit the replay harness,
+# and retract this pass's phantom regression: 21 was the inflated score, not
+# 20", body:
+#
+#     canon eafada2   exit 1   R3 RAW 769  ADJ 92
+#     canon 9dc1277   exit 1   R3 RAW 769  ADJ 91
+#     canon c327bab   exit 1   R3 RAW 769  ADJ 91
+#
+#                      adjudicated only        adjudicated + filter-removed
+#       eafada2        7 figures / 16 files    9 figures / 25 files
+#       9dc1277        7 figures / 16 files    9 figures / 25 files
+#       c327bab        7 figures / 16 files    9 figures / 25 files
+#
+#     GATE_CLOSE's "9 of 9 across 24 of 24" counted ADJUDICATED PLUS
+#     FILTER-REMOVED; this document counted ADJUDICATED. [...]
+#     So 21 was the INFLATED score and 20 is the correct one.
+#
+# ...and its STILL OPEN list names the row by number: "R3's
+# cost_context_markers over-removal (rows 5b and 5c)". 5b already stood at
+# PARTIAL here; 5c did not, and it is the only row whose verdict can account
+# for the 21-vs-20 gap.
+#
+# IT COVERS 5c SPECIFICALLY, on three independent matches, not by inference:
+#   * row 5c IS "206 rebate dollar figures GCI R3" at gci 236c464, which is
+#     the tree that commit measured;
+#   * `_figs_files` returns "7 distinct $ figures across 16 distinct files" on
+#     that tree -- byte-for-byte the commit's ADJUDICATED-ONLY column;
+#   * the lambda's CAUGHT threshold is `figs >= 9 and files >= 24`, which is
+#     the commit's ADJUDICATED-PLUS-FILTER-REMOVED column. The PRIOR entry was
+#     recorded from the inflated count while the lambda measures the
+#     adjudicated one, so the two disagreed by construction and every run since
+#     96d8f8d has printed "<<< CHANGED" against a baseline canon had already
+#     withdrawn.
+#
+# NOT CHANGED, deliberately: no scoring lambda, and no other PRIOR entry.
+# `_figs_files`'s 9/24 threshold is itself the adjudicated-plus-filter-removed
+# pair and is arguably the deeper defect -- a row cannot be CAUGHT when its
+# adjudicated evidence is compared against a threshold drawn from a larger
+# set -- but moving a threshold IS tuning, so it is reported and left. The two
+# figures adjudication drops are $70,000 and $99,920, the WAP income-
+# eligibility limits, which are not rebate payouts.
+#
+# AFTER THIS CORRECTION: PRIOR reads 20 CAUGHT / 3 PARTIAL / 2 MISSED and the
+# run reads 20 CAUGHT / 3 PARTIAL / 2 MISSED, with zero rows flagged CHANGED.
 PRIOR = {
     "1": "CAUGHT", "2a": "CAUGHT", "2b": "MISSED", "3a": "CAUGHT",
     "3b": "CAUGHT", "4a": "CAUGHT", "4b": "CAUGHT", "4c": "CAUGHT",
-    "5a": "CAUGHT", "5b": "PARTIAL", "5c": "CAUGHT", "5d": "CAUGHT",
+    "5a": "CAUGHT", "5b": "PARTIAL", "5c": "PARTIAL", "5d": "CAUGHT",
     "6": "CAUGHT", "7a": "CAUGHT", "7b": "CAUGHT", "7c": "CAUGHT",
     "7d": "CAUGHT", "7e": "CAUGHT", "7f": "CAUGHT", "8": "PARTIAL",
     "9a": "CAUGHT", "9b": "CAUGHT", "10": "MISSED", "11": "CAUGHT",
