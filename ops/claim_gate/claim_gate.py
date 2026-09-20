@@ -1047,7 +1047,8 @@ class Ctx(object):
         self._pool = {}
         self._levels_cache = {}
         self.src_artifacts = []
-        self.src_code_surfaces = []   # (rel, locator, chars) excluded by pool()
+        self.src_code_surfaces = []   # (rel, locator, chars) code runs in pool
+        self.src_code_locators = set()
         self._rendered = None
         self.peer_ctx = None
 
@@ -1195,31 +1196,63 @@ class Ctx(object):
         for s in self.surfaces(art, POOL_KEYS):
             if s.key in (S.S_JS, S.S_CSS) and s.locator.endswith("body"):
                 continue
-            # THE SAME POLICY, ON THE SRC SURFACE. The line above says a
-            # <script> or <style> BODY is not a proposition surface on a
-            # rendered page -- only the string LITERALS inside it are. The SRC
-            # surface had no such rule, so a generator's stylesheet and its
-            # script bundles arrived as ordinary prose and every proposition
-            # rule read their numerals and their DEVELOPER COMMENTS as claims.
-            # Measured, on the same bytes:
+            # THE SAME POLICY, ON THE SRC SURFACE -- BUT NEVER AS A DELETION.
+            #
+            # The line above says a <script> or <style> BODY is not a
+            # proposition surface on a rendered page; only the string LITERALS
+            # inside it are. The SRC surface had no such rule, so a generator's
+            # stylesheet and its script bundles arrived as ordinary prose and
+            # every proposition rule read their numerals and their DEVELOPER
+            # COMMENTS as claims. Measured, on the same bytes:
             #   public/insulation-rebate-eligibility-checker.html  R2 clean
             #   src:_generate_calculator_pages.py                  R2 FAIL
             # on one JS comment recording a wrong-utility bug FIXED on
-            # 2026-09-08 -- the repair note read as the defect. The rendered
-            # copy is judged and the pre-render copy is not double-judged
-            # through a surface the rendered one does not have.
-            # NOT A BLINDFOLD: the string literals inside those bundles ship
-            # into public/ and are read there as S_JS surfaces. Measured across
-            # all three properties, this removes 31/16/21 RAW candidates for R2,
-            # 7/3/3 for R4, 5/2/4 for R5 and 3/0/0 for R3, and changes exactly
-            # ONE adjudicated finding anywhere: the GCI R2 comment above.
+            # 2026-09-08 -- the repair note read as the defect.
+            #
+            # A PREVIOUS REVISION OF THIS BLOCK DROPPED THE SURFACE HERE WITH A
+            # BARE `continue`, AND THAT WAS A REGRESSION IN A BLOCKING RULE.
+            # The seventh adversarial read proved it: R2 (wrong utility), R4
+            # (stacking) and R7 (superseded source) all read SRC, and a claim
+            # written into a generator string that also contained a stylesheet
+            # went from RAW 1 / ADJ 1 / exit 1 to RAW 0 / ADJ 0 / exit 0 with no
+            # finding raised and no filter row to read. 189,985 characters left
+            # the pool across three live properties as an unattributed byte
+            # tally naming no rule and no hit. A removal nobody can attribute is
+            # indistinguishable from a rule going blind.
+            #
+            # SO THE SURFACE IS KEPT AND THE POOL DOES TWO THINGS INSTEAD:
+            #   1. it still emits the code run's own sentences, so every rule
+            #      RAISES the hit and then removes it through a NAMED, COUNTED,
+            #      ENUMERATED filter of its own (see `f_srccode` in each rule);
+            #   2. it ADDITIONALLY emits the QUOTED STRING LITERALS inside the
+            #      run, under a distinct `#strN` locator, because that is
+            #      exactly what the rendered page reads out of the same bytes.
+            #      A wrong-utility claim assigned to `el.innerHTML` inside a
+            #      script bundle is a claim, and it is now judged as one.
             if art.kind == "src" and _src_is_code(s.text):
+                self.src_code_locators.add(s.locator)
                 self.src_code_surfaces.append((art.rel, s.locator, len(s.text)))
+                for sent in (S.sentences(s.text) or [s.text]):
+                    out.append((s.key, s.locator, sent))
+                for i, lit in enumerate(_src_code_literals(s.text)):
+                    loc = "%s#str%d" % (s.locator, i)
+                    for sent in (S.sentences(lit) or [lit]):
+                        out.append((s.key, loc, sent))
                 continue
             for sent in (S.sentences(s.text) or [s.text]):
                 out.append((s.key, s.locator, sent))
         self._pool[art.rel] = out
         return out
+
+    def src_code_hit(self, hit):
+        """True when a hit was raised against a generator string run that is a
+        stylesheet or a script BODY rather than prose.
+
+        EXACT locator match on purpose: the string literals lifted out of that
+        same run carry a `#strN` suffix and are NOT excluded, so the claim
+        inside a bundle survives while the bundle's syntax and its developer
+        comments do not."""
+        return str(getattr(hit, "locator", "")) in self.src_code_locators
 
     def script_spans(self, art, level=S.NORM_RAW):
         """Document-level spans of <script>, <style> and CSS `content:` string
@@ -2402,6 +2435,9 @@ def rule_R2(ctx, res):
         return has_any(h.sentence, c.get("non_territorial_programs", []) or [],
                        word=False) and h.sub in ("a",)
 
+    def f_srccode(h):
+        return ctx.src_code_hit(h)
+
     def f_srcdup(h):
         return ctx.src_dup(h)
 
@@ -2441,6 +2477,9 @@ def rule_R2(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("the generator SRC surface is a STYLESHEET or a SCRIPT BODY, not "
+             "prose -- its quoted string LITERALS are judged separately "
+             "under a #strN locator", f_srccode),
         Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
         Filt("split disclosure -- two or more utilities AND two or more towns "
              "in one sentence, where nearest-binding is decided by word order "
@@ -2650,6 +2689,9 @@ def rule_R3(ctx, res):
                            "%s | %s" % (",".join(rw), sent),
                            note="rank-claim", sentence=sent))
 
+    def f_srccode(h):
+        return ctx.src_code_hit(h)
+
     def f_srcdup(h):
         return ctx.src_dup(h)
 
@@ -2751,6 +2793,9 @@ def rule_R3(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("the generator SRC surface is a STYLESHEET or a SCRIPT BODY, not "
+             "prose -- its quoted string LITERALS are judged separately "
+             "under a #strN locator", f_srccode),
         Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
         Filt("allowed_figures (per-property Director ruling)", f_allowed),
         Filt("structural non-money numeral (URL/attribute, XML or SVG "
@@ -2978,6 +3023,9 @@ def rule_R4(ctx, res):
                               src_sent),
                            note=cls, sentence=src_sent))
 
+    def f_srccode(h):
+        return ctx.src_code_hit(h)
+
     def f_srcdup(h):
         return ctx.src_dup(h)
 
@@ -3007,6 +3055,9 @@ def rule_R4(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("the generator SRC surface is a STYLESHEET or a SCRIPT BODY, not "
+             "prose -- its quoted string LITERALS are judged separately "
+             "under a #strN locator", f_srccode),
         Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
         Filt("legitimate_uses (stack effect, plumbing stack, can lights)", f_legit),
         Filt("NEUTRAL -- fewer than two distinct programs, or no predicate",
@@ -3193,6 +3244,29 @@ def _src_is_code(t):
         return False
     return (len(_SRC_CSS_DECL.findall(t)) >= 5
             or len(_SRC_JS_MARK.findall(t)) >= 3)
+
+
+# Quoted string literals inside a code run. This is the claim-bearing half of a
+# script bundle and it is NOT excluded: `el.innerHTML = 'Atmos Energy is the
+# natural gas utility for Denver homes'` is a wrong-utility claim wherever it is
+# written, and the rendered page reads exactly this set out of the same bytes
+# (surfaces.Artifact.js_strings). A DEVELOPER COMMENT is not in this set, which
+# is the whole distinction: `// Atmos does not serve three of the nine towns`
+# is a note about the code, and the rendered page does not read it either.
+_SRC_STRLIT = re.compile(
+    r"'((?:\\.|[^'\\])*)'"
+    r'|"((?:\\.|[^"\\])*)"'
+    r"|`((?:\\.|[^`\\])*)`", re.DOTALL)
+_SRC_LIT_MIN = 12
+
+
+def _src_code_literals(t):
+    out = []
+    for m in _SRC_STRLIT.finditer(t or ""):
+        v = (m.group(1) or m.group(2) or m.group(3) or "").strip()
+        if len(v) >= _SRC_LIT_MIN and re.search(r"[A-Za-z]{3,}", v):
+            out.append(S.collapse(v))
+    return out
 
 
 def _is_plain_question(sent):
@@ -3389,6 +3463,9 @@ def rule_R5(ctx, res):
             h.r5_stats = [x["txt"] for x in art.cited_stats
                           if any(n in x["txt"] for n in nums)]
             raw.append(h)
+
+    def f_srccode(h):
+        return ctx.src_code_hit(h)
 
     def f_srcdup(h):
         return ctx.src_dup(h)
@@ -3601,6 +3678,9 @@ def rule_R5(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("the generator SRC surface is a STYLESHEET or a SCRIPT BODY, not "
+             "prose -- its quoted string LITERALS are judged separately "
+             "under a #strN locator", _open(f_srccode)),
         Filt("generator SRC restatement of prose that already renders in "
              "public/ (counted once, against the rendered artifact)",
              _open(f_srcdup)),
@@ -4141,6 +4221,9 @@ def rule_R7(ctx, res):
                                "%s | %s" % (pr.get("claim_id", "?"), sent),
                                note=pr.get("claim_id", "?"), sentence=sent))
 
+    def f_srccode(h):
+        return ctx.src_code_hit(h)
+
     def f_srcdup(h):
         return ctx.src_dup(h)
 
@@ -4153,6 +4236,9 @@ def rule_R7(ctx, res):
 
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
+        Filt("the generator SRC surface is a STYLESHEET or a SCRIPT BODY, not "
+             "prose -- its quoted string LITERALS are judged separately "
+             "under a #strN locator", f_srccode),
         Filt("generator SRC restatement of prose that already renders in public/ (counted once, against the rendered artifact)", f_srcdup),
         Filt("correction marker in scope (quoted in order to retire it)", f_corr),
         Filt("never_retire_on_403 source named (403 is bot-blocking)", f_never403),
@@ -5051,6 +5137,15 @@ R9_N3B_CONTROL_OVERLAY = {"R9": {"tools": [{
     "visible": "#calcOutput",
     "hidden": ["lf-calc-inputs", "lf-calc-output"],
     "hidden_mirrors_visible": ["lf-calc-output"]}]}}
+R7_PROP_CONTROL_OVERLAY = {"R7": {"superseded_propositions": [{
+    "claim_id": "control_newest_schedule_is_jan_2024",
+    "all_of": ["effective January 1, 2024"],
+    "any_of": ["newest rebate schedule"],
+    "why": "SYNTHETIC control entry. Pinned here for the same reason the "
+           "registry control pins a synthetic registry: the control must "
+           "prove the RULE reads a claim inside a script bundle's string "
+           "literal, not that today's property config happens to carry a "
+           "proposition that matches the fixture."}]}}
 R5_CONTROL_OVERLAY = {"R3": {"allowed_thresholds": [],
                              "allowed_structure_percentages": []}}
 # A SYNTHETIC derivable-constants entry, pinned the way every other control
@@ -5168,6 +5263,19 @@ RULES = [
              # clean -- before ctx.pool() learned that a script bundle is not
              # a proposition surface, the repair note itself fired there and
              # took GCI's whole gate red.
+             # THE SRC CODE/PROSE SPLIT AS A **NAMED** REMOVAL, and the
+             # blindfold proof for it. The module holds a stylesheet AND a
+             # script bundle. The stylesheet must be REMOVED THROUGH THE
+             # NAMED FILTER, never deleted from the pool; the claim assigned
+             # to el.innerHTML inside the bundle MUST still fire, because the
+             # rendered page reads exactly that literal out of the same bytes.
+             # Commit 1c7b354 moved the split into ctx.pool() as a bare
+             # `continue` and this fixture went RAW 1 ADJ 1 -> RAW 0 ADJ 0 on
+             # R2 (wrong utility) with no finding raised and no filter row to read.
+             Control("R2f", "R2", _f("R2f_src_bundle_literal.py"),
+                     R2_CONTROL_OVERLAY, sub="a",
+                     repaired=_f("repaired",
+                                 "R2f_src_bundle_literal.py")),
              Control("R2e", "R2", _f("R2e_src_js_comment.py"),
                      R2_CONTROL_OVERLAY, sub="a",
                      repaired=_f("repaired", "R2e_src_js_comment.py"))]),
@@ -5229,7 +5337,20 @@ RULES = [
              Control("R4g", "R4", _f("R4g_one_program_attributed.html"),
                      R4_ATTRIBUTED_CONTROL_OVERLAY, sub="ASSERTS-1P",
                      repaired=_f("repaired",
-                                 "R4g_one_program_attributed.html"))]),
+                                 "R4g_one_program_attributed.html")),
+             # THE SRC CODE/PROSE SPLIT AS A **NAMED** REMOVAL, and the
+             # blindfold proof for it. The module holds a stylesheet AND a
+             # script bundle. The stylesheet must be REMOVED THROUGH THE NAMED
+             # FILTER, never deleted from the pool; the claim assigned to
+             # el.innerHTML inside the bundle MUST still fire, because the
+             # rendered page reads exactly that literal out of the same bytes.
+             # Commit 1c7b354 moved the split into ctx.pool() as a bare
+             # `continue` and this fixture went RAW 1 ADJ 1 -> RAW 0 ADJ 0 on
+             # R4 (stacking) with no finding raised and no filter row to read.
+             Control("R4h", "R4", _f("R4h_src_bundle_literal.py"),
+                     R4_LITERAL_CONTROL_OVERLAY, sub="ASSERTS",
+                     repaired=_f("repaired",
+                                 "R4h_src_bundle_literal.py"))]),
 
     Rule("R5", "UNCITED STATISTIC", "CLAIM TEST",
          "VIS TITLE META OG TW LD JS LOWVIS LLMS EMBED SVGTEXT",
@@ -5321,6 +5442,15 @@ RULES = [
                    # the repair cannot have turned src_dup off. NEG15 remains
                    # the other half -- correct copy with markup and an em dash
                    # inside the first 48 characters, which must stay clean.
+                   # Same split, same blindfold proof, on R5. This one
+                   # also missed at 889e172, where the split was an
+                   # R5-ONLY filter keyed to the whole run: the literal
+                   # went down with the bundle.
+                   Control("R5-SRCLITERAL", "R5",
+                           _f("R5i_src_bundle_literal.py"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired",
+                                       "R5i_src_bundle_literal.py")),
                    Control("R5-SRCPREFIX", "R5", _f("R5h_src_prefix"),
                            R5_CONTROL_OVERLAY, sub="mag",
                            repaired=_f("repaired", "R5h_src_prefix"))]),
@@ -5354,6 +5484,19 @@ RULES = [
          controls=[
              Control("R7-A", "R7", _f("R7_superseded_source.html"), sub="A", repaired=_f("repaired", "R7_superseded_source.html")),
              Control("R7-B", "R7", _f("R7_superseded_source.html"), sub="B", repaired=_f("repaired", "R7_superseded_source.html")),
+             # THE SRC CODE/PROSE SPLIT AS A **NAMED** REMOVAL, and the
+             # blindfold proof for it. The module holds a stylesheet AND a
+             # script bundle. The stylesheet must be REMOVED THROUGH THE NAMED
+             # FILTER, never deleted from the pool; the claim assigned to
+             # el.innerHTML inside the bundle MUST still fire, because the
+             # rendered page reads exactly that literal out of the same bytes.
+             # Commit 1c7b354 moved the split into ctx.pool() as a bare
+             # `continue` and this fixture went RAW 1 ADJ 1 -> RAW 0 ADJ 0 on
+             # R7 (superseded source) with no finding raised and no filter row to read.
+             Control("R7c", "R7", _f("R7c_src_bundle_literal.py"),
+                     R7_PROP_CONTROL_OVERLAY, sub="B",
+                     repaired=_f("repaired",
+                                 "R7c_src_bundle_literal.py")),
              Control("R7-REG", "R7", _f("R7_registry_supersession.html"),
                      overlay=R7_REGISTRY_CONTROL_OVERLAY, sub="A-reg",
                      repaired=_f("repaired",
@@ -6134,25 +6277,30 @@ def _main(args, out, t0):
         % (len(gen.modules),
            sum(len(a.surfaces) for a in ctx.src_artifacts),
            ", ".join(sr) if sr else "NO RULE -- SRC is computed and unused"))
-    # STATED, NEVER SILENT. ctx.pool() drops generator string runs that are a
-    # stylesheet or a script bundle, for the same reason it drops a <script>
-    # BODY on a rendered page: it is not a proposition surface. A drop nobody
-    # can count is indistinguishable from a rule going blind, so it is counted
-    # and its surfaces are named here.
+    # STATED, NEVER SILENT, AND NEVER A DELETION. These runs STAY in the
+    # proposition pool; each rule raises its hits against them and then removes
+    # them through its own named, counted, enumerated filter, so a reader can
+    # see WHICH RULE dropped WHAT. The quoted string literals inside each run
+    # are judged separately under a #strN locator and are NOT excluded.
     for a in ctx.src_artifacts:
         ctx.pool(a)
     if ctx.src_code_surfaces:
         tot = sum(n for _, _, n in ctx.src_code_surfaces)
-        out("SRC CODE SURFACES EXCLUDED FROM THE PROPOSITION POOL: %d run(s), "
-            "%d chars -- a stylesheet or a script bundle is not prose, and the "
-            "string LITERALS inside it are read on the rendered page instead. "
-            "%s" % (len(ctx.src_code_surfaces), tot,
-                    ", ".join("%s(%d)" % (loc, n) for _, loc, n
-                              in sorted(ctx.src_code_surfaces))))
+        lits = sum(len(_src_code_literals(
+            next(x.text for x in ctx.by_rel[rel].surfaces
+                 if x.locator == loc)))
+            for rel, loc, _ in ctx.src_code_surfaces)
+        out("SRC CODE SURFACES (stylesheet or script BODY): %d run(s), %d "
+            "chars, %d quoted string literal(s) lifted out of them and judged "
+            "separately. The runs are NOT dropped from the pool -- each rule "
+            "raises and then removes them through its own named filter. %s"
+            % (len(ctx.src_code_surfaces), tot, lits,
+               ", ".join("%s(%d)" % (loc, n) for _, loc, n
+                         in sorted(ctx.src_code_surfaces))))
     else:
-        out("SRC CODE SURFACES EXCLUDED FROM THE PROPOSITION POOL: 0 -- NULL "
-            "RESULT, no generator string run on this property is a stylesheet "
-            "or a script bundle")
+        out("SRC CODE SURFACES (stylesheet or script BODY): 0 -- NULL RESULT, "
+            "no generator string run on this property is a stylesheet or a "
+            "script body")
     out("KNOWN HOLES, stated up front (spec 7): og-image RASTERS are not read "
         "(%s); no PDF text extraction; no JS execution outside opt-in R6b; no "
         "outbound request, so a live/repo divergence is invisible here; "
