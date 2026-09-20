@@ -587,6 +587,20 @@
       "Xcel’s"
     ],
     "publisher_short_forms_note": "POSSESSIVE short forms of names already in recognised_publishers, read ONLY by the publisher-as-subject predicate (_pub_subject) and NEVER by the proximity path. public/llms.txt writes 'the before-and-after 20% CFM50 reduction Xcel's air sealing rebate requires' and the word-bounded matcher cannot see 'Xcel Energy' in it. The bare token 'Xcel' is deliberately NOT here and must never be added to recognised_publishers: on this portfolio Xcel is the PAYER on almost every page, and naming it in the proximity path is precisely the false clear the attribution-verb requirement was added to close. The possessive form is required because it makes the publisher the OWNER of the noun phrase that then carries the verb.",
+    "publisher_artifact_nouns": [
+      "guidance", "guide", "guidebook", "report", "reports", "summary",
+      "sheet", "factsheet", "fact sheet", "page", "pages", "site", "website",
+      "data", "dataset", "database", "study", "studies", "analysis",
+      "methodology", "method", "standard", "standards", "code", "codes",
+      "rule", "rules", "terms", "program", "programs", "programme",
+      "rebate", "rebates", "schedule", "schedules", "documentation",
+      "estimate", "estimates", "estimator", "calculator", "table", "tables",
+      "survey", "index", "registry", "bulletin", "advisory", "handbook",
+      "manual", "specification", "specifications", "guidelines", "guideline",
+      "research", "findings", "publication", "publications", "records",
+      "documents", "material", "materials", "literature", "notes", "note"
+    ],
+    "publisher_artifact_nouns_note": "The HEAD NOUN a possessive publisher may own before its verb, in the publisher-as-subject predicate. It used to be four words of anything, and the seventh adversarial read showed those four words become the real subject: 'ENERGY STAR's CRITICS say our 43% savings number is invented' and 'ENERGY STAR's LAWYERS say our 58% savings claim is actionable' both satisfied publisher-as-subject. Critics and lawyers are not the publisher. This list is the kinds of thing an organisation ISSUES and can therefore be quoted from, so an attribution has to point at a document rather than at somebody standing near one. A vocabulary, not a rule, which is why it is config.",
     "subject_attribution_verbs": [
       "estimates",
       "estimate",

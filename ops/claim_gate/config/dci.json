@@ -306,7 +306,13 @@
           "lower at Denver elevation than at sea level"
         ],
         "derivation_note": "ICAO standard atmosphere, P/P0 = (1 - 2.25577e-5*h)^5.25588. At h = 1,609.3 m (Denver, 5,280 ft) this gives 0.8234, i.e. 17.7% lower than sea level; the pages round it to \"roughly 17%\". Computed 2026-09-18, re-derived and wired into the engine 2026-09-19. THIS IS A PHYSICAL CONSTANT, NOT A STATISTIC: there is no publisher to cite any more than there is for water's boiling point at altitude, so R5's demand for an attribution cannot be satisfied and should not be made. The five rows are public/r-value-altitude-denver.html VIS x3 and LOWVIS x2. The second subject phrase exists because one LOWVIS segmentation variant reads only \"roughly 17% lower at Denver elevation than at sea level.\" -- the subject is in the preceding block and the sentence splitter does not carry it across.",
-        "history_note": "This key was DECLARED in claim_gate.py's SENTENCE_SCOPED_KEYS and read by NO code path until 2026-09-19. A session wrote an entry here on 2026-09-18, saw no corresponding FILTER line appear in the R5 output, checked, and correctly removed it rather than ship dead config, leaving a prose note in its place. The engine half now exists (rule_R5.f_deriv) and the note it left has been replaced by this working entry."
+        "history_note": "This key was DECLARED in claim_gate.py's SENTENCE_SCOPED_KEYS and read by NO code path until 2026-09-19. A session wrote an entry here on 2026-09-18, saw no corresponding FILTER line appear in the R5 output, checked, and correctly removed it rather than ship dead config, leaving a prose note in its place. The engine half now exists (rule_R5.f_deriv) and the note it left has been replaced by this working entry.",
+        "pages": [
+          "public/r-value-altitude-denver.html",
+          "_educational_pages.py",
+          "src:_educational_pages.py"
+        ],
+        "pages_note": "The artifacts this entry governs, and it is IGNORED without them. The first wiring had no page field at all, so one entry pardoned a 17% anywhere on the property -- the seventh adversarial read cleared canon's own control fixture by prepending six words to it. The generator module is listed because the same sentence exists in its pre-render form on the SRC surface."
       }
     ]
   },
