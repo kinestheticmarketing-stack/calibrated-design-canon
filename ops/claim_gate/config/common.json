@@ -704,13 +704,6 @@
         "why": "January 1, 2024 IS the superseded 24-02-205 sheet; the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] was retrieved and hash-verified the same pass. GCI 44d638c, live HTTP 200."
       },
       {
-        "claim_id": "whe_audit_entry_path_hes_plus",
-        "any_of": [
-          "Home Energy Squad"
-        ],
-        "why": "Verbatim from the superseded 2024 sheet; the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] drops it entirely. Home Energy Squad returns 0 in the current sheet. DCI b47a3c2, 35 pages."
-      },
-      {
         "claim_id": "whe_audit_entry_path_begin_with",
         "all_of": [
           "begin with"
@@ -720,7 +713,13 @@
           "infrared audit",
           "audit to be eligible"
         ],
-        "why": "The retired entry path stated as a condition. LGM 72e18ac -- a retired rule wearing a live citation."
+        "tested_against": [
+          "co.my.xcelenergy.com/s/residential/home-services/whole-home-efficiency -- Googlebot UA, HTTP 200, 2026-09-20, 'begin with' 0",
+          "co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing -- Googlebot UA, HTTP 200, 2026-09-20, 'begin with' 0",
+          "co.my.xcelenergy.com/s/residential/home-services/home-energy-audit -- Googlebot UA, HTTP 200, 2026-09-20, 'begin with' 0",
+          "co.my.xcelenergy.com/s/residential/home-services/home-energy-squad -- Googlebot UA, HTTP 200, 2026-09-20, 'begin with' 0"
+        ],
+        "why": "REPREMISED 2026-09-20 (row C). This entry is a COPY FINGERPRINT, not a proposition test, and its old why -- 'The retired entry path stated as a condition' -- was WRONG and is withdrawn. The entry path is NOT retired: Xcel's own current Whole Home Efficiency page states it as a live eligibility condition, verbatim, 'To be eligible for the program, you'll need to schedule a Home Energy Squad Plus visit, or find a qualified, participating contractor to complete a Blower Door or Infrared Home Energy Audit.' What this entry still catches, correctly, is the SUPERSEDED SHEET'S OWN WORDING being reproduced: the 2024 sheet's line reads 'Begin with a blower door audit, infrared audit, or a Home Energy Squad Plus visit to be eligible to participate', and the construction 'begin with ...' is measured at ONE occurrence in that sheet and ZERO across the four current first-party Xcel surfaces listed in tested_against. Reproducing a superseded edition's sentence is citing a superseded source even when the proposition inside it survives -- which is LGM 72e18ac, a retired sheet's wording wearing a live citation. NOT NARROWED: the match set is unchanged from what shipped, because narrowing it on the strength of a corrected why would be blinding a blocking rule under cover of a documentation fix. Positive control fixtures/R7d_superseded_entry_path.html, repaired twin fixtures/repaired/R7d_superseded_entry_path.html."
       },
       {
         "claim_id": "air_sealing_is_a_prerequisite",
@@ -824,6 +823,21 @@
         "why": "the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] says pre-job less than 24 and post-job 60 or greater, corroborated by print code 17-9230 (01-25). Xcel's own live HTML still shows the old 15/49 values; the print-coded dated PDF wins -- do not fix that backwards. LGM: 0 instances, a NULL RESULT."
       }
     ],
+    "retired_propositions_note": "A RETIREMENT IS A RECORD, NOT A DELETION. An entry removed from superseded_propositions is moved HERE, with the measurement that refuted it, and the gate PRINTS every row of this list on every run under R7. That is the difference between retiring a rule and quietly dropping one: a deleted entry leaves no trace in the output and the next reader cannot tell a rule that was never written from a rule that was taken out. Read by rule_R7; each row is reported and none is enforced.",
+    "retired_propositions": [
+      {
+        "claim_id": "whe_audit_entry_path_hes_plus",
+        "retired_on": "2026-09-20",
+        "was_any_of": [
+          "Home Energy Squad"
+        ],
+        "was_why": "Verbatim from the superseded 2024 sheet; the current CO rebate summary [code retracted 2026-09-20] drops it entirely. Home Energy Squad returns 0 in the current sheet. DCI b47a3c2, 35 pages.",
+        "retired_because": "THE PREMISE IS REFUTED BY THE PUBLISHER'S OWN LIVE PAGE. The entry treated the string 'Home Energy Squad' as evidence that a page was citing a superseded source, on the premise that the phrase survived only in the 2024 sheet. Retrieved 2026-09-20: Xcel's CURRENT Whole Home Efficiency page carries it 4 times and Xcel's CURRENT Home Energy Squad page carries it 15 times, against ONE occurrence in the superseded sheet -- so the phrase is overwhelmingly a CURRENT-source phrase and carries no supersession signal at all. The proposition behind it is current too: that page states the audit entry path as a LIVE eligibility condition, verbatim, 'To be eligible for the program, you'll need to schedule a Home Energy Squad Plus visit, or find a qualified, participating contractor to complete a Blower Door or Infrared Home Energy Audit.' HOW THE DEFECT WAS MADE, which is the part worth keeping: the original evidence line tested the phrase against the current rebate summary SHEET ONLY, got 0, and read that single absence as absence from the publisher. Absence from one document of a publisher's is not supersession. That inference is what retired_propositions and superseded_propositions[*].tested_against now exist to stop.",
+        "what_it_cost": "107 adjudicated R7 findings on DCI at 31c98be -- every one of them TRUE copy correctly attributed to Xcel's own live Whole Home Efficiency page, across 45 files, and the sole reason DCI's wired build was red. RAW was 119; the difference is the 12 generator-SRC restatements the src_dup filter already removed.",
+        "detection_not_lost": "NOTHING THIS ENTRY UNIQUELY CAUGHT IS NOW UNCAUGHT, and this is control-tested rather than asserted. The defect it was built for (DCI b47a3c2, LGM 72e18ac) was a compound claim ATTRIBUTED BY URL to the superseded 24-02-205 sheet. Half A still catches that attribution by identifier and by superseded_urls -- control R7-A. The superseded sheet's own entry-path SENTENCE is still caught by whe_audit_entry_path_begin_with -- control R7d, fixtures/R7d_superseded_entry_path.html, whose repaired twin carries Xcel's current wording and must stay clean. The false positive is held closed by fixtures/negative/NEG18.html, which FALSE-ALARMED before this retirement and is clean after it.",
+        "reopen_if": "One first-party Xcel retrieval shows 'Home Energy Squad' has been withdrawn from co.my.xcelenergy.com. Re-measure both the Whole Home Efficiency page and the Home Energy Squad page with a Googlebot User-Agent before reopening -- a plain fetch and a browser User-Agent BOTH return a JS shell with zero occurrences on that Salesforce SPA, so a naive re-measurement would 'confirm' the withdrawn premise. Measured 2026-09-20: plain curl 102,323 bytes / 0 occurrences, browser UA 380,616 bytes / 0 occurrences, Googlebot UA 581,231 bytes / 4 occurrences, all HTTP 200 on the same URL."
+      }
+    ],
     "correction_markers": [
       "SUPERSEDED",
       "SUPERSESSION",
@@ -855,7 +869,8 @@
     ]
   },
   "R8": {
-    "today": "2026-09-17",
+    "today": "auto",
+    "today_note": "THE AS-OF IS NO LONGER A HAND-MAINTAINED LITERAL, 2026-09-20 (row C). This was \"2026-09-17\" and claim_gate.py carried the same string as a hardcoded fallback in two places. It aged silently: nothing failed on it on 2026-09-19, and on 2026-09-20 it produced 246 phantom R8 findings on DCI (RAW 247 / ADJUDICATED 246 / FAIL; re-measured read-only with --today 2026-09-20 the true figure is RAW 1 / ADJUDICATED 0 / PASS). dci.json's own today_note had recorded the identical recurrence TWICE and prescribed bumping it by hand -- which is a rule that needs a human to stay true, and is the defect, not the fix. \"auto\" resolves to the system date at run time via resolve_asof(). WHY THIS IS NOT A LOOSENING: R8 part (b), \"this published date is in the FUTURE\", is the ONLY consumer of the as-of in any rule -- parts (a) and (d) compare against git, part (c) compares surfaces against each other. Part (b) is a strict `>`, so an as-of that moves FORWARD can only ever REMOVE hits, and every hit it removes is by construction a date that is not in the future. An invented future date is caught at every as-of; fixtures/R8c_future_review_date.html pins 2027-01-01 for exactly that reason. WHERE DETERMINISM STILL LIVES: replay/replay.sh pins its own as-of per row (--today, the fixing commit's date) and never reads this value, and the control phase pins NEG_ASOF regardless of config -- both are untouched. A literal ISO date is still legal here and is what --today writes; it is simply no longer SILENT, because any as-of behind the system clock now prints the AS-OF IS STALE banner in the header and in R8's own notes.",
     "reviewed_iso_constant": "REVIEWED_ISO",
     "static_page_constant": "STATIC_PAGE_REVIEWED_ISO",
     "footer_marker": "Last reviewed:",

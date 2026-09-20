@@ -353,6 +353,104 @@ class Corpus(object):
 
 _DOC_PREFIXES = ("_", "note", "reason", "basis", "source", "why")
 
+# ---------------------------------------------------------------------------
+# The gate's AS-OF (spec 8 R8). ONE resolver, used everywhere `today` is read.
+# ---------------------------------------------------------------------------
+# R8.today USED TO BE A HAND-MAINTAINED ISO LITERAL in four config files plus
+# this module's own hardcoded fallback, and it aged silently. Nothing failed on
+# it on 2026-09-19; on 2026-09-20 it produced 246 phantom findings on DCI --
+# R8 RAW 247 / ADJ 246 / FAIL, re-measured read-only at the true date as RAW 1
+# / ADJ 0 / PASS. dci.json's own today_note had already recorded the same
+# recurrence twice ("this field goes stale every time a pass changes copy on a
+# later calendar day") and prescribed bumping it by hand, which is a rule that
+# needs a human to stay true.
+#
+# `today` has EXACTLY ONE consumer among the rules: R8 part (b), `v > today`,
+# "is this published date in the FUTURE". The correct referent for "future" is
+# NOW. A pin of yesterday makes part (b) ask a different and wrong question and
+# turns every truthful date written today into a finding. So the default is now
+# the wall clock, spelled "auto", and a fixed date is what you write when you
+# MEAN a fixed date.
+#
+# THIS IS NOT A LOOSENING, and the direction of the effect is the proof:
+# because part (b) is a strict `>`, moving the as-of FORWARD can only ever
+# REMOVE hits, and every hit it removes is by construction a date that is not
+# in the future. A genuinely invented future date stays caught forever --
+# fixtures/R8c_future_review_date.html pins 2027-01-01 for exactly that reason.
+# No other R8 part reads `today` at all: (a) and (d) compare against git, (c)
+# compares surfaces against each other. So a wall-clock as-of cannot redden a
+# green tree as the calendar rolls.
+#
+# DETERMINISM IS PRESERVED WHERE IT IS LOAD-BEARING. The replay harness pins
+# its own as-of per row (`--today "$today"`, the fixing commit's date, in
+# replay/replay.sh) and never reads this default; the control phase pins
+# NEG_ASOF regardless of config. Both are unaffected by this change. What is
+# no longer deterministic is an ordinary interactive run across midnight, and
+# that is the right trade: the header has always stamped the as-of into the
+# output, and a byte-identical report bought by asking the wrong question is
+# not reproducibility, it is a preserved error.
+ASOF_AUTO = "auto"
+
+
+def resolve_asof(value):
+    """Resolve an R8 as-of to an ISO date. Idempotent.
+
+    `auto`, None or empty -> today's date from the system clock.
+    An ISO date -> itself.
+    Anything else -> ConfigError. It must NEVER fall through: R8 compares
+    dates as STRINGS, and "2026-09-20" > "auto" is False, so an unresolved
+    sentinel reaching part (b) would silently disable the future-date test
+    instead of failing -- the same class of silent blinding this resolver
+    exists to end.
+    """
+    import datetime as _dt
+    if value is None or (isinstance(value, str) and not value.strip()):
+        value = ASOF_AUTO
+    if not isinstance(value, str):
+        raise ConfigError("R8.today must be a string, got %r" % (value,))
+    v = value.strip()
+    if v.lower() == ASOF_AUTO:
+        return _dt.date.today().isoformat()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
+        raise ConfigError(
+            "R8.today %r is neither %r nor an ISO date (YYYY-MM-DD). R8 "
+            "compares dates as STRINGS, so an unparseable value would "
+            "silently disable the future-date test instead of failing."
+            % (v, ASOF_AUTO))
+    try:
+        _dt.date(*[int(x) for x in v.split("-")])
+    except ValueError as exc:
+        raise ConfigError("R8.today %r is not a real calendar date (%s)"
+                          % (v, exc))
+    return v
+
+
+def asof_staleness(resolved, source):
+    """One line if the effective as-of is BEHIND the system clock, else "".
+
+    A pin stays legal -- the replay harness needs it and a forensic re-run
+    wants it -- but it may never be SILENT again. 246 findings on 2026-09-20
+    were the gate mis-dating itself and nothing in its output said so.
+    """
+    import datetime as _dt
+    wall = _dt.date.today().isoformat()
+    if resolved >= wall:
+        return ""
+    try:
+        drift = (_dt.date(*[int(x) for x in wall.split("-")])
+                 - _dt.date(*[int(x) for x in resolved.split("-")])).days
+    except ValueError:
+        drift = -1
+    return ("AS-OF IS STALE: this run is dated %s (%s) but the system clock "
+            "reads %s -- %d day(s) behind. R8 part (b) fails any published "
+            "date LATER than the as-of, so every page carrying a truthful "
+            "date from the last %d day(s) will be reported as publishing a "
+            "FUTURE date, and a genuinely invented future date becomes "
+            "indistinguishable from a correct one. A pin is legitimate -- "
+            "replay/replay.sh pins one per row on purpose -- but it is never "
+            "silent. Set R8.today to %r, or pass --today %s."
+            % (resolved, source, wall, drift, drift, ASOF_AUTO, wall))
+
 
 # Config keys whose VALUES are compared against ONE SENTENCE from ctx.pool().
 # Derived by reading every `for skey, loc, sent in ctx.pool(art)` loop in this
@@ -496,7 +594,8 @@ def unread_config_keys(cfg):
             "boundary_inclusivity", "targets", "r6b_inputs", "expected",
             "measured_at", "own_effective_date_values",
             "known_holds", "label_chains", "claim_subjects",
-            "superseded_propositions", "tracked_terms", "anomalies",
+            "superseded_propositions", "retired_propositions",
+            "tracked_terms", "anomalies",
             "deliberate_divergence", "deliberate_edition_divergence",
             "tools", "draft_gate", "known_uncited", "hedge_pairs",
             "documentation_only_keys")
@@ -1041,7 +1140,10 @@ class Ctx(object):
         self.gitfacts = GitFacts()
         self.claim_extra = {}
         self.corpus = None
-        self.today = cfg.get("R8", {}).get("today", "2026-09-17")
+        # Resolved, never a raw literal: see resolve_asof(). A hardcoded
+        # "2026-09-17" used to live here as the fallback, which is the same
+        # silently-ageing defect the config carried.
+        self.today = resolve_asof(cfg.get("R8", {}).get("today"))
         self._script_spans = {}
         self._svg_text = {}
         self._pool = {}
@@ -4715,6 +4817,53 @@ def rule_R7(ctx, res):
                      % (len([h for h in res.adjudicated if h.sub == "A"]),
                         len([h for h in res.adjudicated if h.sub == "A-reg"]),
                         len([h for h in res.adjudicated if h.sub == "B"])))
+
+    # ---- what this rule is NOT testing, and why (spec 8 R7) ---------------
+    # A PROPOSITION THAT WAS TAKEN OUT MUST STAY VISIBLE. `whe_audit_entry_
+    # path_hes_plus` bound supersession to a phrase the publisher still uses,
+    # and on 2026-09-20 that produced 107 adjudicated findings on DCI, all of
+    # them true copy. Deleting the entry would have fixed the count and left
+    # no evidence in any gate output that a blocking rule had lost a member.
+    # Every retirement is therefore PRINTED, every run, forever.
+    retired = c.get("retired_propositions", []) or []
+    res.notes.append(
+        "RETIRED PROPOSITIONS: %d claim_id(s) were removed from the enforced "
+        "set and are recorded, not deleted -- each is printed below every run "
+        "so a rule that lost a member can never look like a rule that never "
+        "had one. A retirement NEVER narrows half A." % len(retired))
+    for r in retired:
+        res.notes.append(
+            "  RETIRED %s on %s: %s"
+            % (r.get("claim_id", "?"), r.get("retired_on", "<no date>"),
+               r.get("retired_because", "<NO REASON RECORDED -- a retirement "
+                                        "without a reason is a deletion>")))
+        if r.get("detection_not_lost"):
+            res.notes.append("    detection not lost: %s"
+                             % r["detection_not_lost"])
+        if r.get("reopen_if"):
+            res.notes.append("    reopen if: %s" % r["reopen_if"])
+
+    # ---- the CAUSE of the hes_plus defect, wired as a standing report -----
+    # The refuted entry was justified by testing its phrase against ONE
+    # current Xcel document, finding zero, and reading that single absence as
+    # absence from the publisher. Every proposition that asserts "the current
+    # source dropped this" is making the same shape of claim, so every one of
+    # them owes the SET of current first-party surfaces the absence was
+    # measured against. Report-only and never blocking: this is an evidence
+    # audit of the config, not a finding about the property.
+    untested = [p.get("claim_id", "?") for p in props
+                if not (p.get("tested_against") or [])]
+    res.notes.append(
+        "SUPERSESSION EVIDENCE OWED: %d of %d enforced proposition(s) carry "
+        "no `tested_against` -- the list of CURRENT first-party surfaces the "
+        "absence was measured against, each with its User-Agent, HTTP status "
+        "and retrieval date. Absence from ONE of a publisher's documents is "
+        "not supersession: that exact inference is what retired "
+        "whe_audit_entry_path_hes_plus on 2026-09-20, after it billed 107 "
+        "true sentences on DCI as superseded-source claims. REPORT-ONLY, "
+        "never blocking.%s"
+        % (len(untested), len(props),
+           ("  OWED: " + ", ".join(untested)) if untested else ""))
     return "superseded identifiers and propositions found", \
            "live claims sourced to a superseded document"
 
@@ -4745,7 +4894,11 @@ def _days_between(a, b):
 
 def rule_R8(ctx, res):
     c = ctx.r("R8")
-    today = c.get("today", ctx.today)
+    # Resolved DEFENSIVELY even though main() has already normalised the
+    # config. Part (b) is a STRING comparison and "2026-09-20" > "auto" is
+    # False, so a sentinel arriving here through an overlay that main() never
+    # saw would not fail -- it would quietly switch the future-date test off.
+    today = resolve_asof(c.get("today", ctx.today))
     exempt = set(c.get("exempt_pages", []) or [])
     own = set(c.get("own_effective_date_pages", []) or [])
     pinned = c.get("pinned_pages", {}) or {}
@@ -4753,6 +4906,23 @@ def rule_R8(ctx, res):
     pub_grace = int(c.get("published_before_git_grace_days", 7))
     hold_note = holds[0].get("report_as") if holds else ""
 
+    # THE AS-OF, STATED ON THE RULE IT GOVERNS. Part (b) is the only place in
+    # R8 -- or anywhere in this gate -- that reads it, and on 2026-09-20 a
+    # pinned yesterday turned 246 truthful dates into "future" findings with
+    # nothing in the output naming the cause. Both branches print.
+    _stale = asof_staleness(today, "the as-of in force for this run")
+    if _stale:
+        res.notes.append("AS-OF: %s" % _stale)
+    else:
+        res.notes.append(
+            "AS-OF %s, and it is NOT behind the system clock. Part (b) -- "
+            "'this published date is in the future' -- is the ONLY reader of "
+            "the as-of in this rule or any other; parts (a) and (d) compare "
+            "against git and part (c) compares surfaces against each other. "
+            "Because part (b) is a strict `>`, an as-of that moves FORWARD "
+            "can only ever remove hits, and every hit it removes is a date "
+            "that is not in the future. An invented future date is caught at "
+            "any as-of." % today)
     res.notes.append(
         "ld:datePublished IS CHECKED for impossibility (after today, and "
         "preceding the artifact's first appearance in git by more than %d "
@@ -6043,7 +6213,25 @@ RULES = [
              Control("R7-REG", "R7", _f("R7_registry_supersession.html"),
                      overlay=R7_REGISTRY_CONTROL_OVERLAY, sub="A-reg",
                      repaired=_f("repaired",
-                                 "R7_registry_supersession.html"))]),
+                                 "R7_registry_supersession.html")),
+             # THE BLINDFOLD PROOF FOR THE 2026-09-20 RETIREMENT of claim_id
+             # whe_audit_entry_path_hes_plus. That entry bound supersession to
+             # the bare string "Home Energy Squad", on the premise that the
+             # phrase lived only in the superseded 2024 sheet. The premise is
+             # REFUTED: measured 2026-09-20, the phrase occurs 4 times on
+             # Xcel's OWN CURRENT Whole Home Efficiency page and 15 times on
+             # its Home Energy Squad page (both HTTP 200, Googlebot UA), and
+             # ONCE in the superseded sheet. Retiring it closed 107 findings
+             # on DCI that were all TRUE, first-party-sourced copy.
+             # This control is the other half of that change: R7 half B must
+             # STILL fire on the superseded sheet's OWN entry-path wording,
+             # which it does through whe_audit_entry_path_begin_with. The
+             # fixture carries no synthetic overlay ON PURPOSE -- what it
+             # proves is that the SHIPPING config still has teeth here.
+             Control("R7d", "R7", _f("R7d_superseded_entry_path.html"),
+                     sub="B",
+                     repaired=_f("repaired",
+                                 "R7d_superseded_entry_path.html"))]),
 
     Rule("R8", "STALE REVIEW DATE", "CLAIM TEST",
          "VIS ATTR LD SITEMAP META OG TW EMBED (+ git log as a non-artifact "
@@ -6144,7 +6332,7 @@ def validate_registry():
 # Controls (spec 5). Run BEFORE any rule, against fixture files only.
 # ---------------------------------------------------------------------------
 
-NEGATIVES = ["NEG%02d" % i for i in range(1, 18)]
+NEGATIVES = ["NEG%02d" % i for i in range(1, 19)]
 # The reference date the negative fixtures were written against. Fixed on
 # purpose: see the neg_overlay comment in run_controls().
 NEG_ASOF = "2026-09-17"
@@ -6668,14 +6856,35 @@ def _main(args, out, t0):
             _finish(out, args, 2, t0)
             return 2
         cfg.setdefault("R8", {})["today"] = args.today.strip()
+        asof_source = "--today"
+    else:
+        raw_asof = cfg.get("R8", {}).get("today")
+        asof_source = ("config R8.today = %r" % raw_asof) if raw_asof \
+            else "no R8.today configured"
+    # RESOLVE ONCE, HERE, so every downstream reader -- Ctx, rule_R8, every
+    # control overlay built off this cfg -- sees an ISO date and never a
+    # sentinel. CONFIG ERROR, not a fallback: a bad as-of must stop the gate,
+    # because the failure mode of tolerating one is a silently disabled
+    # future-date test.
+    try:
+        cfg.setdefault("R8", {})["today"] = resolve_asof(
+            cfg.get("R8", {}).get("today"))
+    except ConfigError as exc:
+        out("CONFIG ERROR: %s" % exc)
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
 
     gen = S.read_generators(repo, GEN_MODULES)
     registry = read_citation_registry(repo)
 
     head = (git(repo, "rev-parse", "--short", "HEAD") or "unknown").strip()
-    asof = cfg.get("R8", {}).get("today", "2026-09-17")
-    out("CLAIM GATE — %s — %s — HEAD %s — as-of %s"
-        % (cfg["key"], repo, head, asof))
+    asof = cfg["R8"]["today"]
+    out("CLAIM GATE — %s — %s — HEAD %s — as-of %s (%s)"
+        % (cfg["key"], repo, head, asof, asof_source))
+    stale = asof_staleness(asof, asof_source)
+    if stale:
+        out("  *** %s" % stale)
 
     try:
         corpus = enumerate_corpus(repo, cfg)
