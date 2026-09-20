@@ -589,7 +589,10 @@ Stated as holes, in the gate's own startup output, not discovered later.
 6. **`pages` in the citation registry is unreliable and must not be used to
    scope anything.** Measured: of 40 registry entries across the three
    properties, **36 have `pages: []`**. The four populated ones are DCI
-   `XCEL_CO_REBATE_SUMMARY_25_12_215` (33), LGM same (9), LGM
+   `XCEL_CO_REBATE_SUMMARY_25_12_215` (33) — **renamed 2026-09-20 to
+   `XCEL_CO_RESIDENTIAL_REBATE_SUMMARY_2025_2026`; the old id embedded a
+   withdrawn print code and is now absent from all three registries** —
+   LGM same (9), LGM
    `NEC_394_12_KT_INSULATION` (1) and `IRC_P2603_5_FREEZE_PROTECTION` (1), and
    GCI `NEC_394_12_KT_INSULATION` (1). DCI's own row records the field was
    *"47 by aspiration, now 33, measured."* The gate derives page sets by reading
@@ -768,7 +771,9 @@ see it**. The fixture proves both halves fire. Expected control output:
 `"provenance": {"retrieved": "YYYY-MM-DD", "artifact": "<sha256 or URL>",
 "extraction": "pdftotext -layout|curl|…", "verbatim_line": "<line ref>"}`.
 Precedent exists and is already in use: DCI and LGM's
-`XCEL_CO_REBATE_SUMMARY_25_12_215` registry entries carry SHA-256, byte count,
+`XCEL_CO_RESIDENTIAL_REBATE_SUMMARY_2025_2026` registry entries (**renamed
+2026-09-20 from `XCEL_CO_REBATE_SUMMARY_25_12_215`, whose id embedded a
+withdrawn print code**) carry SHA-256, byte count,
 extraction chain and line references in `notes` as free prose. This makes that
 record structured. Until it lands, the gate prints
 `R1 DEGRADED: provenance block not yet in the schema; asserting quote field only`.
@@ -2194,6 +2199,70 @@ across all time).
     VERIFY (both lines, same host, same User-Agent, one returns 404 and one 200):
     curl -sSI -A 'Mozilla/5.0' 'https://www.xcelenergy.com/staticfiles/xe-responsive/Marketing/Residential-Insulation-Air-Sealing-Rebate-25-12-215.pdf' | head -1
     curl -sSI -A 'Mozilla/5.0' 'https://www.xcelenergy.com/staticfiles/xe-responsive/Programs%20and%20Rebates/Residential/24-02-205%20CO%20Res%20Rebate%20Summary%20Information%20Sheet.pdf' | head -1
+
+> **CONTESTED AND NOW SETTLED, 2026-09-20 (row I). THE `24-02-205` CONTROL IS
+> LIVE, AND THE ROW THAT COULD NOT REPRODUCE IT WAS FETCHING A DIFFERENT URL.**
+>
+> A later row of the same day reported, of the 200-line above, that *"that URL
+> 404s under all three User-Agents"* — and recorded, in GCI commit `1bc625c`,
+> *"the `XCEL_CO_REBATE_SUMMARY_24_02_205` tombstone's url, marked retrieved
+> 2026-09-18, returns HTTP 404 (360 bytes) to this row under all three
+> User-Agents with redirects followed."* Both statements went into the record
+> and they cannot both be about the same resource. **They are not.** Row I
+> retrieved both, 2026-09-20, ten samples over six minutes plus an independent
+> four-sample re-run:
+>
+> | URL | plain | Chrome UA | Googlebot UA |
+> |---|---|---|---|
+> | `…/Programs%20and%20Rebates/Residential/24-02-205%20CO%20Res%20Rebate%20Summary%20Information%20Sheet.pdf` | **200**, 3,089,201 B, `application/pdf` | **200**, 3,089,201 B, `application/pdf` | **200**, 3,089,201 B, `application/pdf` |
+> | `…/Marketing/Residential-Insulation-Air-Sealing-Rebate-24-02-205.pdf` | **404**, 360 B, `text/html` | **404**, 360 B, `text/html` | **404**, 360 B, `text/html` |
+>
+> Zero redirects on every fetch; `num_redirects=0`. The 200 body is a genuine
+> PDF (`%PDF-1.4` header, `%%EOF` trailer, `file` → *PDF document, version 1.4*,
+> byte-identical MD5 `fb8fb31c46cd73d9616e78627672a9eb` across all three
+> User-Agents), **not** an HTML shell. The 404 body is **exactly 360 bytes**,
+> which is the figure the later row recorded — **so neither row mis-measured;
+> the two rows fetched two different files that both carry the string
+> `24-02-205` in their path.** The later row was probing the *tombstone's* `url`
+> field; this section's control is the *Programs and Rebates* sheet. **The
+> control above stands, the 404s it anchors remain absence rather than bad
+> path, and the unretrievability conclusion for `25-12-215` and `25-10-417` is
+> unchanged.** Row I re-probed both codes itself — 30 URLs across six
+> `staticfiles` directories and three filename spellings — and got `404 381 B
+> text/html` on every one, origin-level (`IBM_HTTP_Server at
+> www.xcelenergy.com Port 443`).
+>
+> **AND THE `24-02-205` LABEL IS A FILENAME, NOT THAT DOCUMENT'S PRINT CODE.**
+> `pdftotext -layout` over the live 3,089,201-byte file yields exactly one
+> print-code-shaped string, on its own footer:
+> *"xcelenergy.com | © 2023 Xcel Energy Inc. | Xcel Energy is a registered
+> trademark of Xcel Energy Inc. | 23-11-205"* — and `24-02-205` appears in its
+> text **zero** times. So the live `24-02-205` control and the live
+> `23-11-205` control are **two copies of one document** (2,810,118 B under
+> `Energy Solutions/Residential Solutions/`, different MD5, textually
+> near-identical), and **any row keying on filename print codes is measuring a
+> different thing than any row keying on footer print codes.** That is the
+> mechanical origin of this contradiction and of others like it. `19-06-612`
+> was verified the same way and independently: *"Xcel Energy is a registered
+> trademark of Xcel Energy Inc. | 19-06-612"*, off
+> `…/Working%20With%20Us/CO-Residential-Rebate-Summary-Sheet.pdf`, 200,
+> 1,049,343 B.
+>
+> **METHOD WARNING for whoever re-scores this.** `www.xcelenergy.com` sits
+> behind a WAF that answers some rejected requests with **HTTP 200** and an
+> HTML body (*"Request Rejected … Your support ID is …"*, 246 B,
+> `text/html; charset=utf-8`). **A bare `200` is not proof of liveness on this
+> host**; content-type and body must be checked. Conversely a
+> correctly-shaped but non-existent filename returns a true `404`, so the WAF
+> did not mask the negative results either.
+>
+> **Standing gap, stated rather than closed:** the most recent CO residential
+> rebate summary Xcel itself serves anywhere on that host is the **2024**
+> edition (footer `23-11-205`). No 2025 or 2025–2026 edition is served
+> first-party at any path tried. The `programs_and_rebates` landing page 302s
+> to a Salesforce SPA at `my.xcelenergy.com/s/residential` containing **zero**
+> `staticfiles` PDF hrefs (measured: `grep -oiE 'href="[^"]*staticfiles[^"]*\.pdf"'`
+> over 380,616 bytes → no matches).
 
 **No substitute print code is asserted, because none could be confirmed
 first-party either.** The only retrievable copy of the edition titled

@@ -128,6 +128,33 @@ In use as of 2026-09-07: `XCEL_CO_REBATE_SUMMARY_25_12_215` in both
 `denvercoloradoinsulation.com/docs/citation-registry.json` and
 `longmontcoloradoinsulation.com/docs/citation-registry.json`. Both registries
 check clean afterwards — DCI 11 sources, LGM 13 sources, exit 0 each.
+
+> **RENAMED 2026-09-20 — `XCEL_CO_REBATE_SUMMARY_25_12_215` NO LONGER EXISTS IN
+> ANY REGISTRY.** The sentence above is left as the dated 2026-09-07 record it
+> is, but do not follow that id: it embedded the print code `25-12-215`, which
+> could not be retrieved from any first-party Xcel source and is **withdrawn**,
+> and the id fed that code into the claim gate's `R7.current_replacements` via
+> `repl_cfg.setdefault`, so the gate printed a print code nobody in this
+> portfolio has ever confirmed. **The entry is now
+> `XCEL_CO_RESIDENTIAL_REBATE_SUMMARY_2025_2026`**, which names the document by
+> title, effective date and publisher — three attributes that are verifiable —
+> and by no print code at all. Measured 2026-09-20 across all three property
+> registries: `XCEL_CO_REBATE_SUMMARY_25_12_215` occurs **0** times;
+> `XCEL_CO_RESIDENTIAL_REBATE_SUMMARY_2025_2026` is present in DCI (11 sources
+> / 6 `unwatchable_sources`) and LGM (13 / 5). **GCI (16 / 5) does not carry it
+> at all**, and that is a *recorded* gap, not an oversight: GCI's Xcel
+> tombstones name it in `superseded_by.id` while no such entry exists in that
+> file. That dangling reference predates the rename — the old value resolved to
+> nothing on GCI either — and GCI `1bc625c` left it deliberately rather than
+> invent a current-source entry on a property whose pages assert nothing about
+> that source.
+>
+> **Verify:**
+> ```bash
+> for r in denvercoloradoinsulation.com longmontcoloradoinsulation.com greeleycoloradoinsulation.com; do
+>   /usr/bin/grep -c 'XCEL_CO_REBATE_SUMMARY_25_12_215' ~/code/$r/docs/citation-registry.json
+> done   # 0, 0, 0
+> ```
 Operational detail and the full failure-mode record are in this repo's
 [`TOOLING_RUNBOOK.md`](../TOOLING_RUNBOOK.md), section "The citation
 staleness watcher".

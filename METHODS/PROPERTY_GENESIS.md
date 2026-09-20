@@ -323,6 +323,47 @@ current.** ~~Cite `25-12-215`, never `24-02-205`.~~
 > HTTP 200  .../xe-responsive/Working%20With%20Us/CO-Residential-Rebate-Summary-Sheet.pdf                                            (1,049,343 bytes)
 > ```
 >
+> **CONTESTED AND NOW SETTLED, 2026-09-20 (row I).** A later row of the same
+> day could not reproduce the `24-02-205` 200 above and reported that *"that
+> URL 404s under all three User-Agents"*; GCI commit `1bc625c` records it as
+> *"the `XCEL_CO_REBATE_SUMMARY_24_02_205` tombstone's url, marked retrieved
+> 2026-09-18, returns HTTP 404 (360 bytes) to this row under all three
+> User-Agents with redirects followed."* **Neither row mis-measured. They
+> fetched two different files whose paths both contain `24-02-205`**, and row I
+> retrieved both, same minute, same three User-Agents, zero redirects:
+>
+> ```
+> HTTP 200  .../xe-responsive/Programs%20and%20Rebates/Residential/24-02-205%20CO%20Res%20Rebate%20Summary%20Information%20Sheet.pdf  (3,089,201 bytes, application/pdf)
+> HTTP 404  .../xe-responsive/Marketing/Residential-Insulation-Air-Sealing-Rebate-24-02-205.pdf                                        (360 bytes, text/html)
+> ```
+>
+> 360 bytes is exactly the figure the later row recorded. **The control above
+> stands** — re-verified ten times over six minutes, plus an independent
+> four-sample re-run, always `200 / 3,089,201 / application/pdf`, body a real
+> PDF (`%PDF-1.4` … `%%EOF`, identical MD5 under all three User-Agents) rather
+> than an HTML shell — **so the 404s it anchors are absence and not bad path,
+> and the unretrievability conclusion for `25-12-215` and `25-10-417` is
+> unchanged.** Row I re-probed both codes independently: 30 URLs, six
+> `staticfiles` directories, three filename spellings, `404 381 bytes
+> text/html` on every one, origin-level from `IBM_HTTP_Server`.
+>
+> **New, and it is the general lesson: `24-02-205` is a FILENAME, not that
+> document's print code.** `pdftotext -layout` over the live 3,089,201-byte
+> file yields one print-code-shaped string, off its own footer —
+> *"xcelenergy.com | © 2023 Xcel Energy Inc. | … | 23-11-205"* — and
+> `24-02-205` occurs in its text **zero** times. The `24-02-205` and
+> `23-11-205` "controls" are therefore **two copies of one document**, and a
+> row keying on filename codes is measuring something different from a row
+> keying on footer codes. Verified the same way: `19-06-612`, off
+> `…/Working%20With%20Us/CO-Residential-Rebate-Summary-Sheet.pdf` (200,
+> 1,049,343 bytes), footer *"…registered trademark of Xcel Energy Inc. |
+> 19-06-612"*.
+>
+> **Method warning.** `www.xcelenergy.com` answers some rejected requests with
+> **HTTP 200** and an HTML *"Request Rejected"* body (246 bytes,
+> `text/html; charset=utf-8`). A bare `200` is not proof of liveness on this
+> host; check content-type and body.
+>
 > Row C also retrieved Xcel's four live first-party Colorado residential
 > pages on 2026-09-20 with a Googlebot User-Agent, all HTTP 200
 > (`home-rebates/insulation-air-sealing`,

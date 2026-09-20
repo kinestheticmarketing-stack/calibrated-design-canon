@@ -448,6 +448,16 @@ Verified after adoption: the watcher runs clean on all 11 DCI sources
 after the orphaned PDF entry `XCEL_CO_INSULATION_REBATE_24_02_205` was
 deleted and replaced with a `25-12-215` entry in `unwatchable_sources`).
 
+> **RENAMED 2026-09-20.** That replacement entry was
+> `XCEL_CO_REBATE_SUMMARY_25_12_215`; it is now
+> `XCEL_CO_RESIDENTIAL_REBATE_SUMMARY_2025_2026` in DCI's and LGM's registries
+> and the old id is absent from all three. The print code `25-12-215` is
+> **withdrawn** — it could not be retrieved from any first-party Xcel source —
+> and an id that embeds a print code fed that code into the claim gate's
+> `R7.current_replacements` through `repl_cfg.setdefault`, so the gate asserted
+> an identifier nobody had confirmed. **Do not name a registry entry after a
+> print code.** Name it after title, effective date and publisher.
+
 ```bash
 # proves both registries check clean, exit 0
 python3 scripts/staleness_watcher.py check \
