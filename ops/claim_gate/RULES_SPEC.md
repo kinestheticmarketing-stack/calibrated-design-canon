@@ -68,13 +68,16 @@ calibrated-design-canon/
     fixtures/R5_uncited_statistic.html
     fixtures/R6_label_figure_contradiction.js
     fixtures/R7_superseded_source.html
+    fixtures/R7d_superseded_entry_path.html
     fixtures/R8a_stale_review_date.html   + R8a.gitfacts.json
     fixtures/R8b_review_precedes_creation.html + R8b.gitfacts.json
     fixtures/R8c_future_review_date.html
     fixtures/R9_cross_surface_contradiction/   (llms.txt, air-sealing.html)
     fixtures/R10_dangling_promise/             (3 html)
     fixtures/R11_attribution_debt.html
-    fixtures/negative/NEG01..NEG14.html
+    fixtures/negative/NEG01..NEG18   (NEG15, NEG16 and NEG17 are
+                                      DIRECTORIES; NEG11 carries
+                                      NEG11.gitfacts.json)
 <property-repo>/
   ops/claim_gate.sh            <- thin wrapper, R2/R4's rows own these
 ```
@@ -1950,7 +1953,7 @@ is a real superseded claim that shipped:
 | Claim | Superseded because | Where it shipped | Fixed in |
 |---|---|---|---|
 | *"the newest rebate schedule that could be retrieved is effective January 1, 2024, so the current-year wording could not be confirmed"* | `January 1, 2024` **is** the superseded `24-02-205` sheet; the current CO sheet † was retrieved and hash-verified the same pass | GCI `insulation-rebate-hub.html`, live HTTP 200, in the sitemap; identical proposition **twice** on `insulation-rebate-eligibility-checker.html` (prose + inline JS) | GCI `44d638c` |
-| The WHE audit entry path — *"begin with a blower door audit, infrared audit, or a **Home Energy Squad Plus** visit to be eligible"* | verbatim from the superseded 2024 sheet; the current CO sheet † drops it entirely. Tested individually against the current sheet: `Home Energy Squad` **0**, `begin with` **0**, `Whole Home Efficiency contractor` **0**, `rebate application` **0** | DCI **35 pages**; LGM `insulation-lafayette.html` in **prose AND JSON-LD**, citing *"Xcel's own rebate summary"* — **a retired rule wearing a live citation** | DCI `b47a3c2`; LGM `72e18ac` |
+| The WHE audit entry path — *"**begin with** a blower door audit, infrared audit, or a Home Energy Squad Plus visit to be eligible"* | the superseded sheet's **own sentence**, reproduced. Enforced by `whe_audit_entry_path_begin_with` only; the `Home Energy Squad` half was **RETIRED 2026-09-20** — see *"A RETIRED PROPOSITION"* below | DCI **35 pages**; LGM `insulation-lafayette.html` in **prose AND JSON-LD**, citing *"Xcel's own rebate summary"* — **a retired sheet's wording wearing a live citation** | DCI `b47a3c2`; LGM `72e18ac` |
 | *"air sealing is a **prerequisite** for Xcel's Whole Home Efficiency bonus"* | the current CO sheet † sets no such condition; air sealing is one measure that can count toward three | LGM `air-sealing-longmont.html` (`_service_pages.py:335`) — **matched none of the eight swept strings**; DCI 11 instances on 3 pages incl. `<title>`+`og:title`+`twitter:title` as one string | LGM `72e18ac`; DCI `eb5c939` |
 | *"installed and invoiced by **December 31, 2026**"* | in **no** Xcel artifact retrieved; `COPY_VOICE.md:197` recorded the date citing no document | DCI **38 pages**; survived four further rounds at `_generate_calculator_pages.py:344` as **`Dec. 31, 2026`** because every sweep searched the long form | DCI `b47a3c2`, then `f83d421` |
 | *"paid out as soon as the third qualifying upgrade is completed"* / *"pays out when the third qualifying measure completes"* | the current CO sheet † publishes **no payout schedule at all** | DCI, removed in prose then **alive in a FAQ and its JSON-LD `acceptedAnswer`**, attributed to *"Xcel's page"* | DCI `b47a3c2`, then `f83d421` |
@@ -1973,6 +1976,75 @@ fix was a repoint, not a copy edit.
 propositions; `SRC` for the generator half. `TXT` is not optional: GCI's
 `No. 647` wraps a line break in all three state documents and the full-phrase
 grep *"returns a false `0` on two of them."*
+
+**A RETIRED PROPOSITION, AND THE FALSE INFERENCE THAT MADE IT — 2026-09-20
+(row C).** `whe_audit_entry_path_hes_plus` bound supersession to the bare
+string `Home Energy Squad`, on the premise recorded in the row above it:
+*"Tested individually against the current sheet: `Home Energy Squad` 0."*
+**The premise is refuted by the publisher's own live pages.**
+
+| surface, retrieved 2026-09-20 | UA | HTTP | `Home Energy Squad` | `begin with` |
+|---|---|---|---|---|
+| `co.my.xcelenergy.com/s/residential/home-services/whole-home-efficiency` | Googlebot | 200 | **4** | 0 |
+| `co.my.xcelenergy.com/s/residential/home-services/home-energy-squad` | Googlebot | 200 | **15** | 0 |
+| `co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing` | Googlebot | 200 | 0 | 0 |
+| `co.my.xcelenergy.com/s/residential/home-services/home-energy-audit` | Googlebot | 200 | 0 | 0 |
+| the **superseded** `24-02-205` sheet (print code `23-11-205`) | browser | 200 | **1** | **1** |
+
+The phrase is Xcel's **current** name for a **current** program — 19 live
+occurrences against 1 superseded — so it carries no supersession signal at
+all, and `begin with` is the half that discriminates. The proposition is
+current too; the live page states the entry path as a **live** eligibility
+condition, verbatim: *"To be eligible for the program, you'll need to schedule
+a Home Energy Squad Plus visit, or find a qualified, participating contractor
+to complete a Blower Door or Infrared Home Energy Audit."*
+
+**THE PAGE IS A SALESFORCE SPA AND A NAIVE FETCH "CONFIRMS" THE WRONG ANSWER.**
+Same URL, same day: plain `curl` → **102,323 bytes, 0 occurrences**; browser
+User-Agent → **380,616 bytes, 0 occurrences**; Googlebot User-Agent →
+**581,231 bytes, 4 occurrences**. All three HTTP 200. **An empty shell is not
+an absence.**
+
+**WHAT IT COST.** DCI at `31c98be`: R7 **RAW 119 → ADJUDICATED 107**, across
+**45 files**, every one of them true copy correctly attributed to that live
+page — and the sole reason DCI's wired build was red. The 12-hit gap is the
+generator-SRC restatements `src_dup` already removed.
+
+**THE CAUSE, WHICH IS NOT THIS ONE STRING.** Absence from **one** of a
+publisher's documents was read as absence from the publisher. Two config
+mechanisms now exist against that:
+
+- **`R7.retired_propositions`** — a retirement is a **record, not a
+  deletion**. The entry keeps its old `any_of` and `why`, plus
+  `retired_because`, `what_it_cost`, `detection_not_lost` and `reopen_if`,
+  and **`rule_R7` prints every row of it on every run**. A blocking rule that
+  loses a member can never again look like one that never had it.
+- **`R7.superseded_propositions[*].tested_against`** — the list of CURRENT
+  first-party surfaces the absence was measured against, each with its
+  User-Agent, HTTP status and retrieval date. R7 reports every enforced
+  proposition lacking it as **`SUPERSESSION EVIDENCE OWED`**, **report-only,
+  never blocking**. At the time of writing that is **12 of 13**.
+
+**NOTHING IT UNIQUELY CAUGHT IS NOW UNCAUGHT, and this is control-tested, not
+asserted.** The defect it was built for was a compound claim **attributed by
+URL to the `24-02-205` sheet** — half A still catches that (control `R7-A`).
+The superseded sheet's own entry-path sentence is still caught by
+`whe_audit_entry_path_begin_with` (control `R7d`, and independently by replay
+row **3a**, which scores *"2 `whe_audit_entry_path_begin_with` rows"* and is
+**CAUGHT**).
+
+**CONTROLS REGISTERED BEFORE THE CHANGE, with their before/after states:**
+
+| control | before | after |
+|---|---|---|
+| `fixtures/negative/NEG18.html` — DCI's true, live-sourced copy | `*** FALSE ALARM *** R7 B whe_audit_entry_path_hes_plus` | **clean** |
+| `fixtures/repaired/R7d_superseded_entry_path.html` — Xcel's current wording | `*** FIRES ON REPAIRED *** 2 hit(s) on sub B` | **repaired-clean** |
+| `fixtures/R7d_superseded_entry_path.html` — the 2024 sheet's own sentence | DETECTED (2 B) | **DETECTED (1 B)** |
+| `R7-A` / `R7-B` / `R7c` / `R7-REG` | DETECTED | **DETECTED** (R7-B 5 B → 4 B) |
+
+`R7d` carries **no synthetic overlay**, deliberately and against the idiom of
+every other R7 control: what it must prove is that the **shipping** config
+still has teeth here, and an overlay would prove nothing about that.
 
 **POSITIVE-CONTROL FIXTURE — `fixtures/R7_superseded_source.html`. Both halves
 in one file, from GCI `44d638c` (the live false claim) and LGM `72e18ac` (the
@@ -2090,9 +2162,53 @@ word-boundary matching.
 ### R8 — STALE REVIEW DATE
 
 **WHAT IT ASSERTS.** No artifact claims a review or modification date that
-(a) precedes the artifact's own first appearance in git, (b) follows **today,
-2026-09-17**, (c) disagrees with another date surface on the same page, or
+(a) precedes the artifact's own first appearance in git, (b) follows **the
+as-of**, (c) disagrees with another date surface on the same page, or
 (d) precedes the most recent commit that changed that artifact's visible text.
+
+**THE AS-OF IS NO LONGER A HAND-MAINTAINED LITERAL — 2026-09-20 (row C).**
+This line used to read *"follows today, 2026-09-17"*, and that date was
+written out in four config files plus two hardcoded fallbacks in
+`claim_gate.py`. **It aged silently.** Nothing failed on it on 2026-09-19; on
+2026-09-20 it produced **246 phantom findings on DCI — R8 RAW 247 /
+ADJUDICATED 246 / FAIL**, where the true figure re-measured read-only at the
+real date is **RAW 1 / ADJUDICATED 0 / PASS**. `dci.json`'s own `today_note`
+had already recorded the identical recurrence **twice** and prescribed
+*bumping it by hand*, which is a rule that needs a human to stay true.
+
+`R8.today` is now **`"auto"`**, resolved from the system clock by
+`resolve_asof()`, and the per-property pins are gone. Precedence:
+`--today` > `R8.today` > `"auto"`.
+
+**WHY THIS IS NOT A LOOSENING, and the direction of the effect is the proof.**
+Part (b) is the **only** consumer of the as-of in this rule or any other —
+(a) and (d) compare against `git`, (c) compares surfaces against each other —
+and it is a strict `>`. So an as-of that moves **forward** can only ever
+**remove** hits, and every hit it removes is by construction a date that is
+not in the future. **An invented future date is caught at every as-of**;
+`fixtures/R8c_future_review_date.html` pins `2027-01-01` for exactly that
+reason. A wall-clock as-of therefore cannot redden a green tree as the
+calendar rolls, either.
+
+**DETERMINISM IS KEPT WHERE IT IS LOAD-BEARING.** `replay/replay.sh` pins its
+own as-of per row (`--today "$today"`, the fixing commit's date) and never
+reads this value; the control phase pins `NEG_ASOF` regardless of config.
+Both are untouched. What is no longer byte-identical is an ordinary
+interactive run across midnight — the right trade, because the header has
+always stamped the as-of into the output, and a reproducible report bought by
+asking the wrong question is a preserved error, not reproducibility.
+
+**A PIN IS STILL LEGAL AND IS NEVER SILENT AGAIN.** Any effective as-of
+behind the system clock prints `AS-OF IS STALE` twice — in the header and in
+R8's own notes — naming the drift in days and how to clear it. When it is not
+behind, R8 says so explicitly rather than saying nothing.
+
+**AND A SENTINEL MAY NEVER REACH PART (b).** R8 compares dates as **strings**,
+and `"2026-09-20" > "auto"` is `False` — an unresolved sentinel would not
+fail, it would **silently switch the future-date test off**. `resolve_asof()`
+therefore raises `ConfigError` rather than falling through, `_main` resolves
+once before any rule runs, and `rule_R8` re-resolves defensively in case an
+overlay introduced a value `_main` never saw.
 
 **CLAIM TEST. All four parts are claim tests against measurable facts, and part
 (d) is the one that matters.** Parts (a)-(c) are arithmetic. Part (d) compares a
@@ -2724,8 +2840,15 @@ a hit is `*** FALSE ALARM ***` and exits 2.
 | NEG12 | `<p>The 2021 IECC Table R402.1.3 ceiling minimum for Climate Zone 5 is R-60; ENERGY STAR recommends R-49 to R-60 for retrofits, which is a recommendation and not a code requirement.</p>` | R3/R5/R7 firing on IECC/ENERGY STAR figures — DCI measured **331 such occurrences across 70 files, all 331 legitimate** |
 | NEG13 | `<p>Radon mitigation is a common entry path for soil gas, and the crawl space hatch is the literal front door for removal work.</p>` | R7 firing on `entry path` (radon, ×2) and `front door` (×3 literal) — both verified-and-left on DCI |
 | NEG14 | `<p>Windsor sits in Weld County, and part of Erie does too, which is why the county line matters for permits.</p>` | R2 hard-failing on `Weld County`, which is an `INFO`/`REVIEW` classification on LGM, not a FAIL |
+| NEG18 | `<p>An audit is how you enter Xcel's Whole Home Efficiency program - its own program page requires a Home Energy Squad Plus visit or a Blower Door or Infrared Home Energy Audit by a qualified participating contractor.</p>` (real, DCI) | R7 firing on **true copy sourced to Xcel's own live page** — it FALSE-ALARMED on `whe_audit_entry_path_hes_plus` until that claim_id was retired on 2026-09-20. If it ever false-alarms again, a supersession marker has been bound to a string the publisher still uses |
 
-Three of these fourteen — NEG03, NEG12, NEG13 — exist because a real sweep in
+**The table above covers NEG01–NEG14 and NEG18. `NEGATIVES` in the
+implementation is `NEG01..NEG18`, and NEG15, NEG16 and NEG17 are fixture
+DIRECTORIES** (a correct-copy vector can need a generator and the page it
+renders into, which one `.html` cannot express) **and are not yet tabulated
+here.** Stated as a gap rather than left as an implied-complete list.
+
+Three of the first fourteen — NEG03, NEG12, NEG13 — exist because a real sweep in
 this portfolio fired on exactly that copy and a human had to adjudicate it back.
 NEG05 and NEG10 exist because the same sentence must be seen as compliant by two
 different rules for two different reasons, and a rule that gets it right for the
