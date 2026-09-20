@@ -28,13 +28,33 @@ gone — that tree now exits 1.
 ### **20 CAUGHT · 3 PARTIAL · 2 MISSED — and the same 20 / 3 / 2 at canon `9dc1277`.**
 
 ```
-$ diff <(python3 score_base.py) <(python3 score.py)
+$ cd ops/claim_gate/replay
+$ ./prepare.sh              # scratch canon from the working tree
+$ ./replay.sh               # 20 pre-fix trees
+$ python3 score.py | tail -3
+SCORE: 20 CAUGHT / 3 PARTIAL / 2 MISSED   (of 25)
+```
+
+Run again with `./prepare.sh 9dc1277` for the before side and diffed:
+
+```
+$ diff <(python3 score.py)   # after
+        <(python3 score.py)  # before, with REPLAY_OUT pointing at the base run
 IDENTICAL: every one of the 25 rows scores the same before and after this pass
 ```
 
-**Not one of the 25 rows changed verdict, changed its evidence line, or changed
-a single count between canon `9dc1277` and this pass's head.** The six repairs
-in this pass removed no detection anywhere in the replay.
+**CORRECTED 2026-09-19 (seventh adversarial read, k1).** The first revision of
+this document cited `score_base.py` and `score.py` as its verification command
+and **neither existed in any commit** — the board's Project Rule requires a
+command a reader can run, and that one could not be run by anyone including its
+author. The harness is now committed at `ops/claim_gate/replay/` and the
+command above is the real one.
+
+**Not one of the 25 rows changed VERDICT or evidence line between canon
+`9dc1277` and this pass's head.** RAW counts did move and the first revision's
+"changed a single count" was overstated; the correct statement is that no
+ADJUDICATED verdict changed. The repairs in this pass removed no detection
+anywhere in the replay.
 
 Row-by-row, at this pass's head (identical at `9dc1277`):
 
@@ -68,78 +88,104 @@ Row-by-row, at this pass's head (identical at `9dc1277`):
 
 ---
 
-## THE ONE ROW THAT DIFFERS FROM 21/25, AND WHY IT IS NOT THIS PASS
+## THE ONE ROW THAT DIFFERS FROM 21/25 — AND `21` WAS THE INFLATED NUMBER
 
 `GATE_CLOSE_2026-09-18.md` scored **21 CAUGHT / 2 PARTIAL / 2 MISSED** at canon
 `eafada2`. This re-score reads **20 / 3 / 2**. The single difference is row
 **5c**, GCI's 206 rebate dollar figures, which that pass scored CAUGHT on
-"9 of 9 distinct figures across 24 of 24 files" and which now measures:
+"9 of 9 distinct figures across 24 of 24 files" and which this document first
+scored PARTIAL and then **wrongly attributed to a regression between `eafada2`
+and `9dc1277`.**
+
+**THAT REGRESSION DOES NOT EXIST. RETRACTED.** The first revision never ran the
+replay at `eafada2` — it inferred the drop from the other document's prose. The
+seventh adversarial read caught that, and running it settles it:
 
 ```
-canon 9dc1277 (BEFORE)   distinct $ figures 7 ['$1,075', '$1,150', '$1,325',
-                                               '$1,550', '$125', '$575', '$663']
-                         distinct files 16
-canon HEAD    (AFTER)    distinct $ figures 7 ['$1,075', '$1,150', '$1,325',
-                                               '$1,550', '$125', '$575', '$663']
-                         distinct files 16
+canon eafada2   exit 1   R3 RAW 769  ADJ 92
+canon 9dc1277   exit 1   R3 RAW 769  ADJ 91
+canon c327bab   exit 1   R3 RAW 769  ADJ 91
+
+                 adjudicated only          adjudicated + filter-removed
+  eafada2        7 figures / 16 files      9 figures / 25 files
+  9dc1277        7 figures / 16 files      9 figures / 25 files
+  c327bab        7 figures / 16 files      9 figures / 25 files
 ```
 
-**Identical before and after this pass, so this pass did not cause it.** The
-regression sits somewhere between canon `eafada2` (2026-09-18) and canon
-`9dc1277` (this lane's base) and is recorded here rather than fixed, because
-this row's scope is R5 and the SRC surface.
+**Detection is identical at every SHA. The two documents counted different
+things on the same output.** `GATE_CLOSE`'s "9 of 9 across 24 of 24" is the
+ADJUDICATED PLUS FILTER-REMOVED set; this document's 7 across 16 is the
+ADJUDICATED set. The two figures adjudication drops are `$70,000` and `$99,920`
+— the WAP income-eligibility limits, which are not rebate payouts.
 
-The cause is visible in the report and is a known class: on that tree R3's
-`cost_context_markers` filter removes **119** `$`-bearing rows — the same
-over-removal already documented for row 5b, where "per square foot" in
-`cost_context_markers` pardons a payout schedule that is *denominated* per
-square foot. Full removal tally for `$`-bearing R3 rows on `gci-236c464`:
+So **`21` was the inflated score and `20` is the correct one**, and the honest
+statement of the gate's recall on this row is: it DETECTS all nine figures and
+ADJUDICATES seven, with two removed by the income-eligibility filter.
 
-```
-R3 ADJ: 91
-  removed 119  by  cost_context_markers (Ruling 2 -- costs, not payouts)
-  removed 87   by  code_context_markers (IECC / ENERGY STAR / R-value)
-  removed 56   by  structural non-money numeral (URL/attribute, XML or SVG
-                   coordinate, telephone, postal code, statute or print code)
-  removed 31   by  allowed_structure_percentages (Ruling 2, none added)
-  removed 14   by  allowed_figures (per-property Director ruling)
-  removed 3    by  generator SRC restatement of prose that already renders
-  removed 2    by  four-digit 1900-2099 cleared as a YEAR
-```
+This is this repo's own already-named **raw-vs-adjudicated** defect class
+(commit `b152b08`) recurring inside the gate's own scorekeeping, and it cost a
+false regression claim in the first revision of this file. A score row must say
+which set it counted.
 
-**OPEN, MEASURED, NOT CLOSED HERE.** Narrowing `cost_context_markers` so that a
-payout *denominated* in a rate is not mistaken for an installed cost closes 5b
-and 5c together.
+The remaining shortfall against "24 of 24 files" is unchanged in cause and
+still open: on that tree R3's `cost_context_markers` filter removes **119**
+`$`-bearing rows, the same over-removal that makes row 5b PARTIAL, where "per
+square foot" pardons a payout schedule that is *denominated* per square foot.
+Narrowing that one filter closes 5b and 5c together. Out of this row's scope.
 
 ---
 
 ## WHAT THIS PASS CHANGED, FOR THE NEXT SESSION
 
-1. **`ctx.pool()` now refuses a generator string run that is a stylesheet or a
-   script bundle**, exactly as it already refused a `<script>` / `<style>` BODY
-   on a rendered artifact. Every proposition rule is affected. The gate prints
-   `SRC CODE SURFACES EXCLUDED FROM THE PROPOSITION POOL` with the run count,
-   the character count and every locator, so the exclusion is never silent.
-   Detector: brace density >= 0.40 corroborated by five CSS declarations or
-   three JavaScript markers. Measured separation over all 6,203 generator
-   string runs of 40+ characters on the three properties: 6,166 at 0.00, one at
-   0.074, **nothing between 0.08 and 0.67**, 36 at 0.67-1.00.
-2. **`ctx.src_dup()` no longer slices to 48 characters.** The silent miss it
-   carried is closed and control `R5-SRCPREFIX` holds it.
-3. **`R5.derivable_constants` is wired** (`rule_R5.f_deriv`) and DCI's config
-   carries the atmospheric-pressure entry with its ICAO derivation.
-4. **`R5.publisher_short_forms` and `R5.subject_attribution_verbs` are new**
-   config keys, read only by `_pub_subject`. `"estimates"` is deliberately NOT
-   in `R1.attribution_verbs` and must not be added: that list feeds a proximity
-   test that cannot tell which noun the verb belongs to.
-5. **`f_instat`'s threshold is 4**, re-derived from a measured near-miss sweep,
-   and its tokenizer folds morphology and letter/digit boundaries
-   (`_r5_words`). The sweep is recorded in full in the comment above `f_instat`.
-6. **R5 gained an interrogative guard.** A question asserts no proposition;
-   factive frames ("did you know ...") are excluded from the guard.
+1. **The SRC code/prose split is a NAMED, COUNTED, PER-RULE FILTER on R2, R3,
+   R4, R5 and R7 — never a deletion.** A revision of this pass moved it into
+   `ctx.pool()` as a bare `continue` and that BLINDED THREE BLOCKING RULES; the
+   seventh adversarial read measured a wrong-utility claim going RAW 1 / ADJ 1 /
+   exit 1 to RAW 0 / ADJ 0 / exit 0. The run now stays in the pool, each rule
+   raises and then removes it under its own filter row, and the run's QUOTED
+   STRING LITERALS are judged separately under a `#strN` locator because that is
+   what the rendered page reads out of the same bytes. Controls R2f, R4h, R7c
+   and R5-SRCLITERAL hold it, one per affected rule.
+2. **`ctx.src_dup()` no longer slices to 48 characters.** Control R5-SRCPREFIX.
+3. **`R5.derivable_constants` is wired** and bound four ways: the entry must
+   name the PAGES it governs, a subject phrase must sit within 60 characters of
+   that occurrence of the figure, EVERY numeral in the hit must be covered, and
+   `derivation_note` must carry digits and an arithmetic operator. That last
+   check is STRUCTURAL, not semantic: it cannot tell a right formula from a
+   wrong one and does not claim to.
+4. **`R5.publisher_short_forms`, `R5.subject_attribution_verbs` and
+   `R5.publisher_artifact_nouns`** are config keys read only by `_pub_subject`.
+   `"estimates"` is deliberately NOT in `R1.attribution_verbs` and must not be
+   added: that list feeds a proximity test that cannot tell which noun owns the
+   verb. A short form is matched ONLY in possessive form — an optional
+   possessive group once made the bare token `Xcel` a publisher.
+5. **`f_instat` takes its overlap over the WINDOW AROUND THE NUMERAL**, not over
+   the whole sentence. The threshold is 4 and the window is 110 characters.
+   Whole-sentence overlap counted words earned in a different clause and produced
+   a measured silent miss.
+6. **The interrogative guard was REMOVED.** It cleared 11 of 13 test
+   interrogatives and 10 of those assert their figure. Do not reintroduce a
+   list of idioms against a grammatical class.
+7. **The replay harness is committed** at `ops/claim_gate/replay/`
+   (`prepare.sh`, `replay.sh`, `score.py`), because a verification command that
+   exists in no commit is not a verification command.
+8. **Percent-sign confusables fold** (U+FF05, U+FE6A, U+066A), as do non-ASCII
+   decimal digits and a combining mark on an ASCII base. U+2030 PER MILLE is
+   deliberately not folded — different quantity, not a different spelling.
 
-Control count went 32 -> 40 positive controls, each with a repair counterpart
-(`CONTROLS: 40 positive DETECTED, 0 MISSED · 17 negative clean, 0 FALSE ALARM`,
-`REPAIR TESTS: 40 repaired-clean, 0 FIRE ON REPAIRED, 0 NOT TESTED`). The seven
-added are R5-INSTAT, R5-QUESTION, R5-SUBJECT, R5-SHORTFORM, R5-DERIVABLE,
-R5-SRCCODE, R5-SRCPREFIX, plus R2e for the SRC code/prose split on R2.
+Control count went 32 -> 43 positive controls, each with a repair counterpart
+(`CONTROLS: 43 positive DETECTED, 0 MISSED · 17 negative clean, 0 FALSE ALARM`,
+`REPAIR TESTS: 43 repaired-clean, 0 FIRE ON REPAIRED, 0 NOT TESTED`).
+
+## STILL OPEN, MEASURED, NOT CLOSED HERE
+
+- **R3 `cost_context_markers` over-removal** — rows 5b and 5c. One filter.
+- **`U-R2-combining`** (`Atmós Energy`, o + U+0301). The other seven Unicode
+  misses the read listed are closed. This one needs the fold to run on the NFD
+  form BEFORE NFC composes the mark away, which changes `dec()` for every
+  accented ASCII base on every surface. The blast radius could not be measured
+  inside this pass, so it is recorded rather than guessed at.
+- **`U-R2-smallcaps`** (`AᴛMOS`, U+1D1B). Latin small-capital letters are not in
+  `_FOLD` and NFKC does not map them.
+- **DCI R5 stands at 6**, re-measured after the tightening. The pass does not
+  claim zero.
