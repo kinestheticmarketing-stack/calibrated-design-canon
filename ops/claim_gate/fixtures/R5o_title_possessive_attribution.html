@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- NEGATIVE CONTROL for f_title_np (control id R5-TITLENP).
+     Seven laundering routes that a title-scoped clearance must NOT open.
+     EVERY row on this page must FIRE, before the filter and after it.
+     NOTE: no figure appears in any comment on this fixture. R5 reads the
+     COMMENT surface, so a worked example written in a comment would become a
+     hit of its own and the control's expected count would drift. -->
+
+<!-- 1. TITLE surface, but the figure sits OUTSIDE the possessed noun phrase:
+        the publisher's artifact is named, and a first-party performance claim
+        stands next to it carrying the figure. -->
+<title>Xcel's Rebate Rule - Our Crews Deliver 20% CFM 50 Reduction</title>
+
+<!-- 2. META description. Same possessive noun phrase, wrong surface: a
+        description is prose and can carry a predicate, so it is held to one. -->
+<meta name="description" content="Xcel's 20% Rebate Rule explains the reduction your Denver home needs.">
+
+<!-- 3. og:title with NO possessive. The bare token "Xcel" is the PAYER on
+        almost every page in this portfolio and must never read as a
+        publisher; the seventh adversarial read established that. -->
+<meta property="og:title" content="Denver Blower Door Test - Xcel 20% Rebate Rule Reduction">
+
+<!-- 4. og:DESCRIPTION, not og:title. Proves the bind is to the page-title
+        locator, not to the OG surface as a whole. -->
+<meta property="og:description" content="Xcel's 20% Rebate Rule explains the leakage reduction your Denver home needs.">
+
+<!-- 5. twitter:title with a possessive publisher but a head noun that is NOT
+        a publisher_artifact_noun. "Promise" is not something an organisation
+        issues and can therefore be quoted from. -->
+<meta name="twitter:title" content="Denver Air Sealing - Xcel's 20% Reduction Promise">
+
+<!-- 6. twitter:DESCRIPTION, not twitter:title. Same proof as 4, other card. -->
+<meta name="twitter:description" content="Xcel's 20% Rebate Rule explains the reduction your Denver home needs.">
+</head>
+<body>
+<h1>Air sealing in Denver</h1>
+
+<!-- 7. VISIBLE PROSE carrying the identical possessive noun phrase. Prose can
+        carry an attribution verb, so it is held to one; this sentence has
+        none and must fire. -->
+<p>Xcel's 20% Rebate Rule is the reduction our crews beat on every job.</p>
+
+</body></html>
