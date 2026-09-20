@@ -18,6 +18,36 @@ WT=$S/wt
 OUT=$S/replay
 mkdir -p "$WT" "$OUT"
 
+# Worktrees THIS run added, as "repo|path". The trees live in the scratch dir
+# but the REGISTRATION lives in the real property repo, and `git status
+# --porcelain` never shows it -- so a run that did not clean up left the repo
+# reading 0 dirty while carrying dozens of stale entries. Cleanup is on the
+# exit path (EXIT INT TERM), so it also runs on failure and on interrupt.
+#
+# Only trees added here are removed. A tree that already existed belongs to
+# whoever created it, and a blanket `git worktree prune` could race another
+# session's freshly-created lane worktree -- so prune is a fallback, reached
+# only when the targeted `worktree remove` on OUR OWN path fails.
+declare -a ADDED=()
+_replay_cleanup() {
+  status=$?
+  trap - EXIT INT TERM
+  set +e  # a cleanup failure must never mask the real exit code
+  for entry in ${ADDED+"${ADDED[@]}"}; do
+    esrc="${entry%%|*}"
+    ewt="${entry#*|}"
+    if git -C "$esrc" worktree remove --force "$ewt" >/dev/null 2>&1; then
+      continue
+    fi
+    if [ -e "$ewt" ]; then
+      rm -rf "$ewt"
+    fi
+    git -C "$esrc" worktree prune >/dev/null 2>&1
+  done
+  exit "$status"
+}
+trap _replay_cleanup EXIT INT TERM
+
 declare -a ROWS=(
   "dci|130921c|2026-09-07"
   "dci|f08bb9f|2026-09-07"
@@ -54,6 +84,9 @@ for row in "${ROWS[@]}"; do
   src="$(repo_path "$key")"
   wt="$WT/$key-$sha"
   if [ ! -d "$wt" ]; then
+    # Record before the add, not after: an interrupt between `add` and the
+    # next line would otherwise leave an untracked registration behind.
+    ADDED+=("$src|$wt")
     git -C "$src" worktree add --detach "$wt" "$sha" >/dev/null 2>&1 \
       || { echo "$key-$sha WORKTREE FAILED"; continue; }
   fi

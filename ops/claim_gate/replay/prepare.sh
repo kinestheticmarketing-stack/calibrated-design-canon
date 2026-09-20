@@ -14,12 +14,40 @@ SHA="${1:-}"
 S="${REPLAY_SCRATCH:-/tmp/claim-gate-replay}"
 CANON="${REPLAY_CANON:-$S/canon}"
 SRC="$(cd "$(dirname "$0")/../../.." && pwd)"
+
+# $SRC is the REAL canon repo. The happy path below already removes the
+# scratch worktree, but `set -e` means any failure between `worktree add` and
+# that removal -- a failed `cp -R`, a Ctrl-C -- left the registration behind
+# in canon, invisible to `git status --porcelain`. The trap closes that
+# window. Only the path this run added is touched; canon's lane worktrees
+# under ~/code/canon-wt/ are never candidates.
+PREPARE_WT=""
+_prepare_cleanup() {
+  status=$?
+  trap - EXIT INT TERM
+  set +e  # a cleanup failure must never mask the real exit code
+  if [ -n "$PREPARE_WT" ]; then
+    if ! git -C "$SRC" worktree remove --force "$PREPARE_WT" >/dev/null 2>&1; then
+      if [ -e "$PREPARE_WT" ]; then
+        rm -rf "$PREPARE_WT"
+      fi
+      git -C "$SRC" worktree prune >/dev/null 2>&1
+    fi
+    PREPARE_WT=""
+  fi
+  exit "$status"
+}
+trap _prepare_cleanup EXIT INT TERM
+
 rm -rf "$CANON"; mkdir -p "$CANON/ops"
 if [ -n "$SHA" ]; then
   WT="$S/_canon_wt_$SHA"
+  # Record before the add so an interrupt mid-add is still cleaned up.
+  PREPARE_WT="$WT"
   git -C "$SRC" worktree add --detach "$WT" "$SHA" >/dev/null 2>&1 || true
   cp -R "$WT/ops/claim_gate" "$CANON/ops/claim_gate"
   git -C "$SRC" worktree remove --force "$WT" >/dev/null 2>&1 || true
+  PREPARE_WT=""
 else
   cp -R "$SRC/ops/claim_gate" "$CANON/ops/claim_gate"
 fi
