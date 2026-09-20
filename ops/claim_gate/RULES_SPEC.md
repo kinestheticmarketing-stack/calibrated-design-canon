@@ -1616,10 +1616,125 @@ keep shut.
 > all CLEARED; with it empty all ten FIRE. An eleventh, *"a 10-20% CFM 50
 > reduction"*, cleared through the substring hole the entry's own note
 > predicted. **DCI's `R3.allowed_thresholds` is now `[]` and must stay `[]`.**
-> The same hole is still OPEN on LGM and GCI — same probe, GCI clears **14 of
-> 16**, LGM clears **12 of 16** at its own 25% tier figure — and is recorded
+> The same hole was still OPEN on LGM and GCI — same probe, GCI clears **14 of
+> 16**, LGM clears **12 of 16** at its own 25% tier figure.
+
+> **CLOSED 2026-09-20, later the same day, on LGM and GCI, by a veto rather
+> than by the DCI-shaped fix.** The sentence that stood here — *"and is recorded
 > rather than closed, because closing it means adjudicating live findings on two
-> properties another row is editing.
+> properties another row is editing"* — is superseded and is replaced in place
+> rather than deleted. See § *`f_struct` — the first-party veto*, below, for the
+> measurement, including why emptying the figure lists (the DCI shape) does
+> **not** transfer to these two properties.
+
+---
+
+#### `f_struct` — a threshold context is necessary and is **not** sufficient
+
+**FILTER.** *"allowed structure percentage / tier threshold IN a threshold
+context."* As shipped it cleared a quantified claim on two tests, both
+**substring**, both **sentence-scoped**, both **unbound to the figure's
+position** — and, the defect, both unbound to the figure's **subject**:
+
+1. the sentence contains some entry of `R3.allowed_structure_percentages` +
+   `R3.allowed_thresholds`, and
+2. the sentence contains some entry of `R3.threshold_context_markers`.
+
+**Nothing in it ever asked whose figure it is.** So it reasoned: the sentence is
+about a leakage-reduction threshold, therefore the number is a threshold,
+therefore no publisher is owed — *even when the number is the contractor's own
+promised result*. It licensed uncited **first-party performance claims**, which
+is precisely the class these properties are most likely to get wrong.
+
+**MEASURED 2026-09-20**, one uncited first-party performance claim per
+`threshold_context_marker`, run through the gate's own `_control_ctx` with
+`ctx.repo = CONTROL_NO_REPO` so no property tree is reachable:
+
+| property | probes cleared | at figure | carried by |
+|---|---|---|---|
+| DCI | 0 of 16 | `20%` | list already `[]` (`a5baa0f`) |
+| LGM | **12 of 16** | `25%` | `tier` / `of project cost` / `capped at` |
+| GCI | **14 of 16** | `20%` | the bare words **`reduction`** and **`leakage`** |
+
+GCI's row is the sharpest evidence in this section: its
+`threshold_context_markers` include the bare words `reduction` and `leakage` —
+that property's own subject matter, not threshold vocabulary — so **the gate's
+own control sentence `R5n`, *"Our crews deliver a 20% reduction in winter
+heating costs"*, cleared on live GCI.** A control the gate ships to prove it can
+see a defect did not fire on one of the properties it guards. See the correction
+to `R5_THRESH_CONTROL_OVERLAY` below.
+
+**THE FIX IS A VETO: `R3.first_party_subject_markers`.** `f_struct` is a
+*clearing* filter, so a test added to it can only **add** hits, never remove
+them. An over-broad veto reddens a page and gets adjudicated; an over-narrow one
+leaves the hole open — so erring broad is the fail-safe error, and the veto is
+deliberately **sentence-scoped, with no proximity window and no verb
+requirement**. A sentence that says *we* or *our* anywhere while asserting a
+magnitude is a sentence R5 makes prove its attribution. Matching is
+**word-bounded and must stay so**: as substrings `us` matches *because*, `our`
+matches *your* / *hour* / *favour*, and `we` matches *power*, which would turn
+the narrowing into a blanket kill of `f_struct`.
+
+**It is not an allowlist in a narrower costume.** An allowlist adds clearances;
+this subtracts them. It cannot hide a hit and cannot be satisfied by naming
+anything. It has **no per-property entries**: the key lives in `common.json`
+**only**, so all three properties are judged by the identical list — deliberate,
+because `_deep_merge` *replaces* lists rather than unioning them, so a
+per-property override would read as additive and be silently subtractive.
+
+**THREE NARROWINGS MEASURED AND REJECTED**, against all **76** live rows
+`f_struct` currently clears (LGM 29, GCI 47) — so this is the cut the corpus
+supports, not the cut that was convenient:
+
+| candidate | LGM live rows reddened | GCI live rows reddened |
+|---|---|---|
+| empty both figure lists (**the DCI-shaped fix**) | 29 | 47 |
+| a marker within 60 chars of **every** numeral | 21 | 2 |
+| every numeral **inside** an allowed-entry span (the `f_title_np` shape) | 8 | 0 |
+| **this veto** — `we` `our` `us` `ours` `we're` `we've` | **0** | **0** |
+| the same veto plus `you` / `your` / `you're` | 2 | — |
+
+**The DCI shape does not transfer.** On DCI the figure list was load-bearing for
+**three** rows (one page title on three surfaces, now closed by `f_title_np`).
+On LGM and GCI it is load-bearing for **76** rows of *third-party program-rule*
+copy — Atmos Energy's and Efficiency Works' own payout structures and qualifying
+conditions, e.g. *"Efficiency Works pays a tiered flat incentive for air sealing
+based on measured reduction of air loss from a blower door test, with four tiers
+set at more than 15%, more than 25%, more than 33%, and more than 50%"* and
+*"Air sealing is a separate measure and requires a blower door test showing at
+least a 20% reduction in leakage."* Emptying the lists would redden both
+properties with copy that is correct. **Not one** of those 76 rows contains a
+first-party subject marker; **all** of the 26 live evasions do.
+
+**EFFECT.** LGM probes `4 → 14` of 16 adjudicated; GCI `2 → 14`. The two that
+still clear on each are the genuine third-party threshold statement *"The
+qualifying minimum standard for the air sealing rebate is a 20% reduction in CFM
+50"* and the interrogative that asks about it — `f_struct` doing its job. Live
+R5 is unchanged at `ADJUDICATED 0` on all three (DCI `RAW 622`, LGM `RAW 228`,
+GCI `RAW 204`), and the `f_struct` filter row still reads `removed 29` on LGM
+and `removed 47` on GCI.
+
+**WHAT IT CANNOT DO — stated, not asserted away.** It reads a **pronoun**, not a
+subject: a first-party claim that avoids *we* and *our* entirely — *"a typical
+job here produces a 20% cut in heating costs"* — still clears. It carries no
+brand names, so a property naming **itself** in the third person is not vetoed.
+And both original tests remain sentence-scoped substring tests; the two
+proximity-bound alternatives that would close that are recorded above as
+rejected **by measurement**, so a later row need not re-derive them.
+
+**CONTROL — `R5-STRUCT-FP`**, `R5p_struct_first_party.html` /
+`repaired/R5p_struct_first_party.html`, `expect=11`. Non-repaired: eleven
+uncited first-party performance claims, one per marker family, each carrying a
+configured figure and a marker. Measured at `3ccf154`, before the veto: **`RAW
+11 ADJUDICATED 0`** — the hole. **`RAW 11 ADJUDICATED 11`** after. Repaired: five
+third-party program-structure and qualifying-condition statements carrying the
+**same** figures and the **same** markers — `RAW 5 ADJUDICATED 0` before *and*
+after, and **not vacuously clean**, because `reduction` and `leakage` are both
+R5 `magnitude_words`, so all five are genuine RAW hits and the clearance is
+credited to `f_struct` rather than to the absence of a hit. The pair cannot be
+satisfied by switching `f_struct` off (the repaired half reddens), nor by
+leaving the veto out (the other half reddens), nor by making the veto a
+substring match (`us` in *because* reddens the repaired half too).
 
 **CONTROLS — six, both directions each.**
 
@@ -1632,6 +1747,8 @@ keep shut.
 | `R5-THRESHOLD` | `R5n_threshold_exclusion.html` | 2 hits | 2 hits |
 | `R5-TITLENP` | `R5o_title_possessive_attribution.html` | 7 hits | 7 hits |
 | `R5-TITLENP` *(repaired half)* | `repaired/R5o_title_possessive_attribution.html` | **3 hits — FIRES ON REPAIRED** | **0 hits** |
+| `R5-STRUCT-FP` | `R5p_struct_first_party.html` | **0 hits — the `f_struct` first-party hole** | **11 hits** |
+| `R5-STRUCT-FP` *(repaired half)* | `repaired/R5p_struct_first_party.html` | 0 hits | 0 hits |
 
 Every `0 hits` above was **measured against `claim_gate.py` at `bfbad20` on all
 three property configs** before the code was touched, not asserted. `R5k` holds
@@ -1681,6 +1798,19 @@ day one DCI sentence carrying `20%` but **no** threshold-context marker —
 > **reduction** on every air sealing job"* — an uncited first-party performance
 > claim — cleared. Ten such probes cleared. The DCI entry is now `[]` and this
 > paragraph's `f_struct` row for DCI reads `0 (removed 0)` again.
+
+> **AND THE CONTROL OVERLAY WAS PINNED TO HIDE THAT, 2026-09-20.**
+> `R5_THRESH_CONTROL_OVERLAY` pinned `threshold_context_markers` to
+> `common.json`'s **narrower nine**, on the stated ground that GCI's list
+> *"includes the bare word `reduction`, so without pinning, the fixture's `20%
+> reduction in winter heating costs` would clear on GCI and the control would
+> MISS on exactly one property."* **That reasoning had the polarity backwards.**
+> It made the control pass by measuring a marker list **no property runs**, and
+> so hid a real live miss behind a green control. A control must be at least as
+> hard as the hardest config it guards, so the overlay now pins the portfolio's
+> **worst case** — GCI's live sixteen markers, bare `reduction` and `leakage`
+> included. `R5n` fires under that list, and it fires because of the
+> first-party veto rather than because the marker list was chosen to let it.
 
 ---
 
