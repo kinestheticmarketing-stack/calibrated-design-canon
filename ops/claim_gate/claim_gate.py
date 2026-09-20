@@ -3825,6 +3825,102 @@ def rule_R5(ctx, res):
     def f_corr(h):
         return has_any(h.sentence, marks, word=False)
 
+    # AN INTERROGATIVE ASSERTS NOTHING -- BUT ONLY WHERE THE PAGE ASSERTS IT
+    # SOMEWHERE ELSE, ATTRIBUTED.
+    #
+    # R5 asserts over figures "presented as a finding about the world". A
+    # question presents no finding; it asks about one. DCI's FAQ heading
+    #   "What happens if the after test does not reach a 20% CFM50 reduction?"
+    # was adjudicated uncited on THREE surfaces (LD, LOWVIS, VIS) on a page
+    # that carries, inside a cited-stat, "the qualifying minimum standard for
+    # the air sealing rebate is a 20% reduction in CFM 50", attributed to Xcel
+    # Energy's residential rebate summary -- the same figure, the same claim,
+    # the same publisher, on the same page.
+    #
+    # WHY f_instat CANNOT REACH IT, AND WHY NEITHER OBVIOUS LOOSENING IS
+    # AVAILABLE. Measured 2026-09-19 with the gate's own _r5_words/win/occ:
+    #
+    #   pair                                     overlap  |window|  coverage
+    #   the CFM50 question vs its cited-stat        3         8       0.375
+    #   the documented false-clear pair             3        13       0.308
+    #   the seventh read's 42% counterexample       3         9       0.333
+    #
+    # Dropping _R5_INSTAT_MIN from 4 to 3 reopens both rows that must stay
+    # shut -- the exact widening this rule was rebuilt to stop. A COVERAGE
+    # test is no way out either: 0.375 against 0.333 is one point of
+    # separation, which is a coincidence, not an instrument. The count is not
+    # the defect here. The defect is that a short interrogative has eight
+    # content words in total and cannot earn four of anything, however
+    # completely it restates the sentence that sources it.
+    #
+    # THIS IS NOT "SKIP QUESTIONS", AND THE DIFFERENCE IS THE WHOLE FILTER.
+    # A question can smuggle a claim -- "Did you know homes lose 40% of their
+    # heat through the attic?" is an assertion wearing a question mark -- so a
+    # blanket interrogative skip is precisely the blindfold that must not be
+    # built. This filter requires a NON-INTERROGATIVE ANCHOR on the same page:
+    # another sentence carrying the same figure that ALREADY CLEARED R5
+    # THROUGH AN ATTRIBUTION FILTER -- f_inblock (it IS a cited-stat),
+    # f_instat (the page's cited-stat attributes that figure) or f_pub (it
+    # names the publisher that made the claim). The question is judged through
+    # the sentence that actually makes the claim, and that sentence has
+    # already had to answer for it.
+    #
+    # WHAT IT CANNOT HIDE -- STRUCTURALLY, NOT BY ASSERTION:
+    #   * No same-page sentence carries the figure -> no anchor -> the
+    #     question fires. The 40% example above fires.
+    #   * A companion sentence carries the figure but is ITSELF uncited -> it
+    #     is not in the cleared set, so it anchors nothing, AND R5 fires on
+    #     it. The figure is caught either way; it is merely caught at the
+    #     sentence that asserts it.
+    #   * The other filters are deliberately NOT anchors. src_code and
+    #     src_dup mean "judged elsewhere", not "attributed";
+    #     computed_output_markers means "the visitor's own arithmetic", which
+    #     sources nothing; deriv/code/struct/corr say the figure is not a
+    #     finding, which is a statement about THAT sentence and does not
+    #     transfer. Only the three filters that assert an attribution EXISTS
+    #     may anchor.
+    #   * An interrogative can never anchor anything, including another
+    #     interrogative, so two questions cannot clear each other.
+    #   * EVERY figure in the hit must be anchored, so a second, unsourced
+    #     numeral cannot ride along inside the same question.
+    #   * _open() still applies: a KNOWN-OPEN hit is never removed by it.
+    #
+    # CONTROLS. R5-QUESTION fires 3x on fixtures/R5j_interrogative_anchor.html
+    # BEFORE and AFTER this filter -- one question with no anchor at all, one
+    # whose only companion is uncited, plus that companion. That is the
+    # blindfold proof. fixtures/repaired/R5j_interrogative_anchor.html fired
+    # 2x before this filter existed (measured 2026-09-19: "*** FIRES ON
+    # REPAIRED *** 2 hit(s)") and is clean after. That is the fix proof.
+    _ANCHORS = {}
+
+    def _anchored(rel):
+        got = _ANCHORS.get(rel)
+        if got is None:
+            got = set()
+            for h2 in raw:
+                if str(h2.rel) != rel:
+                    continue
+                if (h2.sentence or "").strip().endswith("?"):
+                    continue
+                if not (f_inblock(h2) or f_instat(h2) or f_pub(h2)):
+                    continue
+                for n in (h2.text.split(" | ")[0] or "").split(","):
+                    n = n.strip()
+                    if n:
+                        got.add(n)
+            _ANCHORS[rel] = got
+        return got
+
+    def f_question(h):
+        if not (h.sentence or "").strip().endswith("?"):
+            return False
+        nums = [x.strip() for x in
+                (h.text.split(" | ")[0] or "").split(",") if x.strip()]
+        if not nums:
+            return False
+        anchors = _anchored(str(h.rel))
+        return all(n in anchors for n in nums)
+
     res.raw = raw
     res.adjudicated, res.rows = adjudicate(raw, [
         Filt("the generator SRC surface is a STYLESHEET or a SCRIPT BODY, not "
@@ -3849,6 +3945,11 @@ def rule_R5(ctx, res):
         Filt("allowed structure percentage / tier threshold IN a threshold "
              "context", _open(f_struct)),
         Filt("correction marker in scope", _open(f_corr)),
+        Filt("the sentence is a QUESTION and the same figure is asserted, "
+             "attributed, in a non-question sentence on the same page "
+             "(a question presents no finding -- the assertion is judged, "
+             "and an UNATTRIBUTED companion anchors nothing)",
+             _open(f_question)),
     ])
     res.levels, res.level_detail = level_counts(
         ctx, ["% reduction", "15% reduction", "20-40%"], ci=False, word=False)
@@ -5591,7 +5692,35 @@ RULES = [
                                        "R5i_src_bundle_literal.py")),
                    Control("R5-SRCPREFIX", "R5", _f("R5h_src_prefix"),
                            R5_CONTROL_OVERLAY, sub="mag",
-                           repaired=_f("repaired", "R5h_src_prefix"))]),
+                           repaired=_f("repaired", "R5h_src_prefix")),
+                   # f_question, both directions, and the fixture half is the
+                   # BLINDFOLD PROOF rather than the defect.
+                   #
+                   # THE FIXTURE MUST FIRE THREE TIMES AND MUST GO ON FIRING
+                   # AFTER THE FILTER EXISTS. Question one carries 20% and the
+                   # page holds no other 20% at all, so there is no anchor and
+                   # the question is judged on its own. Question two carries
+                   # 35% and the page DOES hold another 35% sentence -- an
+                   # uncited one -- which is exactly the laundering route a
+                   # blanket "skip interrogatives" would have opened: an
+                   # unattributed companion is not in the cleared set, so it
+                   # cannot anchor anything, and it fires on its own account.
+                   # Three hits before the change, three after.
+                   #
+                   # THE REPAIRED HALF IS THE FIX PROOF. Same two questions,
+                   # each now with a cited-stat on the page carrying its
+                   # figure. It FIRED BEFORE f_question existed -- measured:
+                   # local overlap 3 for the CFM50 pair ({cfm, reduc, test})
+                   # and 0 for the ENERGY STAR pair, both under f_instat's
+                   # threshold of 4 -- and is clean after. Neither question
+                   # clears through f_instat or f_pub; if a future edit makes
+                   # either of them clear that way, this control stops testing
+                   # f_question and must be rewritten rather than retired.
+                   Control("R5-QUESTION", "R5",
+                           _f("R5j_interrogative_anchor.html"),
+                           R5_CONTROL_OVERLAY, sub="mag",
+                           repaired=_f("repaired",
+                                       "R5j_interrogative_anchor.html"))]),
 
     Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
          "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",

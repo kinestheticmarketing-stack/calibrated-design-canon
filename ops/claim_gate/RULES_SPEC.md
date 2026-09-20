@@ -1471,6 +1471,80 @@ R5 must stay clean. Expected control output:
   canary- NEG05     fixtures/negative/NEG05.html             clean
 ```
 
+**AN INTERROGATIVE IS NOT A CLAIM — BUT ONLY WHERE THE PAGE MAKES THE CLAIM
+SOMEWHERE ELSE, ATTRIBUTED.** Added 2026-09-19 (`f_question`). R5 asserts over
+figures *presented as a finding about the world*. A question presents no
+finding; it asks about one. DCI's FAQ heading
+
+> What happens if the after test does not reach a 20% CFM50 reduction?
+
+was adjudicated uncited on **three surfaces** (`LD`, `LOWVIS`, `VIS`) on a page
+that carries, inside a `cited-stat`, *"the qualifying minimum standard for the
+air sealing rebate is a 20% reduction in CFM 50"*, attributed to Xcel Energy's
+residential rebate summary — same figure, same claim, same publisher, same
+page. `f_instat` could not reach it, and **neither obvious loosening was
+available.** Measured 2026-09-19 with the gate's own `_r5_words`/`win`/`occ`:
+
+| pair | overlap | window | coverage |
+|---|---|---|---|
+| the CFM50 question vs its cited-stat | 3 | 8 | 0.375 |
+| the documented false-clear pair | 3 | 13 | 0.308 |
+| the seventh read's 42% counterexample | 3 | 9 | 0.333 |
+
+Dropping `_R5_INSTAT_MIN` from 4 to 3 reopens both rows that must stay shut —
+the exact widening the rule was rebuilt to stop. A **coverage** test is no way
+out either: 0.375 against 0.333 is one point of separation, which is a
+coincidence, not an instrument. The count is not the defect. The defect is that
+a short interrogative has eight content words in total and cannot earn four of
+anything, however completely it restates the sentence that sources it.
+
+**THIS IS NOT "SKIP QUESTIONS", AND THE DIFFERENCE IS THE WHOLE FILTER.** A
+question can smuggle a claim — *"Did you know homes lose 40% of their heat
+through the attic?"* is an assertion wearing a question mark. The filter
+therefore requires a **non-interrogative anchor on the same page**: another
+sentence carrying the same figure that **already cleared R5 through an
+attribution filter** — `f_inblock` (it *is* a cited-stat), `f_instat` (the
+page's cited-stat attributes that figure) or `f_pub` (it names the publisher
+that made the claim). The question is then judged through the sentence that
+actually makes the claim, and that sentence has already had to answer for it.
+
+What it cannot hide, structurally rather than by assertion:
+
+- No same-page sentence carries the figure → no anchor → **the question fires.**
+  The 40% example above fires.
+- A companion carries the figure but is **itself uncited** → it is not in the
+  cleared set, so it anchors nothing, **and R5 fires on it.** The figure is
+  caught either way; it is merely caught at the sentence that asserts it.
+- The other filters are deliberately **not** anchors. `src_code` and `src_dup`
+  mean *judged elsewhere*, not *attributed*; `computed_output_markers` means
+  *the visitor's own arithmetic*, which sources nothing; `deriv`/`code`/
+  `struct`/`corr` say the figure is not a finding, which is a statement about
+  **that** sentence and does not transfer. Only the three filters that assert an
+  attribution EXISTS may anchor.
+- An interrogative can never anchor anything, including another interrogative,
+  so two questions cannot clear each other.
+- **Every** figure in the hit must be anchored, so a second, unsourced numeral
+  cannot ride along inside the same question.
+- `_open()` still applies: a `KNOWN-OPEN` hit is never removed by it.
+
+**CONTROL — `R5-QUESTION`, both directions.**
+`fixtures/R5j_interrogative_anchor.html` fires **3×** before and after the
+filter: question one carries `20%` and the page holds no other `20%` at all, so
+there is no anchor; question two carries `35%` and the page's only other `35%`
+sentence is **uncited**, which is exactly the laundering route a blanket
+interrogative skip would have opened — an unattributed companion anchors
+nothing and fires on its own account. That is the blindfold proof.
+`fixtures/repaired/R5j_interrogative_anchor.html` carries the same two
+questions with a `cited-stat` for each figure; measured 2026-09-19 it read
+`*** FIRES ON REPAIRED *** 2 hit(s)` **before** the filter existed and is clean
+**after**. That is the fix proof. Neither question clears through `f_instat` or
+`f_pub`; if a future edit makes either clear that way the control stops testing
+`f_question` and must be rewritten rather than retired.
+
+Measured effect on the live corpus, 2026-09-19: DCI R5 `ADJ 6 → 3`, filter row
+`4 (removed 3)`; LGM `ADJ 0 → 0`, GCI `ADJ 0 → 0`, both still exit 0; controls
+44 positive DETECTED / 0 MISSED · 17 negative clean / 0 FALSE ALARM.
+
 **WHAT IT DELIBERATELY DOES NOT CATCH.**
 - **Whether the citation supports the figure.** DCI's live audit found **15 of 18
   entries deviated, all 15 in the site's favour** — an attributed figure can be
