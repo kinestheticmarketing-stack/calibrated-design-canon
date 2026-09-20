@@ -3642,6 +3642,99 @@ def _r5_relative_pat(name, verbs, nouns):
 
 _R5_SUBJ_CACHE = {}
 
+# ---------------------------------------------------------------------------
+# S3 -- THE FIGURE INSIDE THE PUBLISHER'S OWN NAMED ARTIFACT, WITH NO VERB.
+#
+# S1 and S2 above both end in an ATTRIBUTION VERB. That requirement is right
+# and stays: it is what stops "ENERGY STAR's CRITICS say our 43% savings number
+# is invented" reading as an ENERGY STAR attribution. But it makes R5 unable to
+# read an attribution that has no predicate AT ALL, and a page title is exactly
+# that -- a NAME, not a sentence. DCI's
+#
+#     Denver Blower Door Test - CFM50, Xcel's 20% Rebate Rule
+#                                      ^^^^^^^ possessive short form
+#                                              ^^^ the figure
+#                                                  ^^^^^^^^^^^ artifact noun
+#
+# is built entirely out of vocabulary R5 ALREADY recognises: "Xcel's" is a
+# registered `publisher_short_forms` entry and "rule" is a registered
+# `publisher_artifact_nouns` entry. The only thing missing is a verb, and a
+# title has nowhere to put one. Three rows -- TITLE, og:title, twitter:title --
+# were adjudicated uncited for want of a word the surface cannot carry.
+#
+# S3 is therefore the TIGHTEST of the three routes, not the loosest: S1 and S2
+# let the figure sit in a complement reached ACROSS a verb, up to
+# _R5_SUBJ_REACH characters away. S3 requires the figure to sit INSIDE the
+# possessed noun phrase, between the possessive marker and the head noun,
+# distance zero. `_R5_NP` cannot express that, because its token class cannot
+# cross a `%`; `_R5_NP_FIG` can, and it is a SEPARATE constant precisely so
+# that adding S3 cannot loosen S1 or S2 by a single character.
+#
+# WHERE IT APPLIES, AND WHY THAT IS NOT ARBITRARY. Only on the page-title
+# locators -- `(title)`, `(og:title)`, `(twitter:title)`. Prose CAN carry the
+# predicate, so prose is still held to one; a title cannot, so it is not. The
+# cost is stated rather than hidden: the same noun phrase in a <p>, in a meta
+# description or in an og:description still FIRES, and fixture
+# R5o_title_possessive_attribution.html holds all four of those rows open.
+# ---------------------------------------------------------------------------
+# `_R5_NP` deliberately excluded `%`; S3 needs the figure to BE one of the
+# intervening tokens, so this class admits the characters a figure is made of.
+_R5_NP_FIG = r"(?:[A-Za-z0-9][\w.%-]*\s+){0,3}"
+_R5_TITLE_LOCATORS = ("(title)", "(og:title)", "(twitter:title)")
+_R5_TITLE_NP_CACHE = {}
+
+
+def _r5_is_page_title(h):
+    """The page's TITLE STRING, on any of the three surfaces that carry it.
+
+    Bound to the LOCATOR, not to the surface. Surface OG covers og:title AND
+    og:description; surface TW covers twitter:title AND twitter:description.
+    Binding to the surface would hand the same clearance to two prose
+    descriptions per page, which is four extra rows of blast radius for
+    nothing. `surfaces.py` already records the exact meta property in the
+    locator -- `OG#15(og:title)` -- so use it.
+    """
+    if h.surface not in (S.S_TITLE, S.S_OG, S.S_TW):
+        return False
+    return str(h.locator or "").endswith(_R5_TITLE_LOCATORS)
+
+
+def _r5_poss_artifact_spans(sentence, pubs, shorts, nouns):
+    """Spans of `<publisher>'s <=3 tokens> <artifact noun>`.
+
+    The possessive is MANDATORY for publishers and short forms alike. For
+    short forms that is the seventh adversarial read's ruling -- the bare token
+    "Xcel" is the PAYER on almost every page in this portfolio and must never
+    read as a publisher. For full publishers it is required here too, because
+    S3 has no verb to bound it: without the possessive, "ENERGY STAR" anywhere
+    to the left of an artifact noun would swallow the figure between them.
+    """
+    if not nouns:
+        return []
+    spans = []
+    for name in list(pubs) + list(shorts):
+        if not name:
+            continue
+        base = re.sub(r"(?:'s|’s)$", "", name)
+        key = ("S3", base, tuple(nouns))
+        p = _R5_TITLE_NP_CACHE.get(key)
+        if p is None:
+            p = re.compile(r"%s%s\s+%s(?:%s)\b"
+                           % (re.escape(base), _R5_POSS, _R5_NP_FIG,
+                              _r5_alt(nouns)), re.IGNORECASE)
+            _R5_TITLE_NP_CACHE[key] = p
+        for m in p.finditer(sentence):
+            # An attribution does not survive its own denial, and it does not
+            # reach across a clause boundary. Both guards are the ones S1/S2
+            # already apply through `_reaches`; S3 has no verb to anchor a
+            # span to, so it applies them to the noun phrase itself.
+            if _R5_DENIAL.search(m.group(0)):
+                continue
+            if _R5_CLAUSE_BREAK.search(m.group(0)):
+                continue
+            spans.append((m.start(), m.end()))
+    return spans
+
 
 def _pub_subject(sentence, nums, pubs, shorts, verbs, nouns):
     """True when a recognised publisher is the SUBJECT that attributes one of
@@ -4023,6 +4116,63 @@ def rule_R5(ctx, res):
             return False
         return has_any(h.sentence, tctx, word=False)
 
+    def f_title_np(h):
+        """S3: on a PAGE TITLE, every figure sits inside the publisher's own
+        named artifact.
+
+        See `_r5_poss_artifact_spans` for the construction and for why this is
+        the tightest of R5's three attribution routes rather than the loosest.
+
+        WHAT IT CANNOT HIDE -- STRUCTURALLY:
+          * EVERY occurrence of EVERY figure in the hit must be inside a
+            possessed-artifact span. One free occurrence anywhere else in the
+            title and the row fires. That is strictly stronger than f_pub,
+            which clears a numeral once ANY of its occurrences is attributed,
+            and it is what stops "Xcel's 20% Rebate Rule - We Cut 20% Off Your
+            Bill" from riding in on its own first clause.
+          * The figure must be BETWEEN the possessive marker and the head
+            noun. "Xcel's Rebate Rule - Our Crews Deliver 20%" fires.
+          * The possessive is mandatory. "Xcel 20% Rebate Rule" fires: the bare
+            token is the payer, not a publisher.
+          * The head noun must be a `publisher_artifact_nouns` entry -- a thing
+            an organisation issues and can be quoted from. "Xcel's 20%
+            Reduction Promise" fires.
+          * Locator-bound to the page title. The same noun phrase in visible
+            prose, in a meta description, in an og:description or in a
+            twitter:description fires.
+          * `_open()` still applies: a KNOWN-OPEN hit is never removed.
+          * It is NOT an anchor for f_question. `_anchor_sents` admits only
+            f_inblock, f_instat and f_pub, deliberately unchanged: a title is
+            not a place from which a question elsewhere on the page may draw
+            its attribution, and widening f_question is the one thing this
+            filter must not do by a side door.
+
+        WHAT IT CANNOT DO AT ALL -- R5's standing blind spot, restated because
+        this route inherits it: it asserts an attribution EXISTS and never
+        reads the source. "ENERGY STAR's 40% Attic Loss Data" in a title clears
+        here whether or not ENERGY STAR ever published such a figure -- exactly
+        as "ENERGY STAR's attic guidance states 40%" already clears through
+        f_pub. R7 and R11, not R5, are where a wrong figure is caught.
+        """
+        if not _r5_is_page_title(h):
+            return False
+        sent = h.sentence or ""
+        nums = [x.strip() for x in
+                (h.text.split(" | ")[0] or "").split(",") if x.strip()]
+        if not nums:
+            return False
+        spans = _r5_poss_artifact_spans(sent, pubs, shorts, artifact_nouns)
+        if not spans:
+            return False
+        for n in nums:
+            ps = occ(sent, n, ci=True, word=False)
+            if not ps:
+                return False
+            for p in ps:
+                if not any(a <= p and p + len(n) <= b for a, b in spans):
+                    return False
+        return True
+
     def f_corr(h):
         return has_any(h.sentence, marks, word=False)
 
@@ -4126,13 +4276,43 @@ def rule_R5(ctx, res):
     # row fires, at 3 the 42% interrogative evasion clears. That is a measured
     # conclusion, not a preference, and lowering _R5_INSTAT_MIN to rescue the
     # blower-door row would reopen the pair the threshold exists to keep shut.
-    # The blower-door row is therefore closed by the instrument the spec
-    # ALREADY declares for it -- R3.allowed_thresholds, per-property and
-    # figure-scoped, requiring a threshold_context_marker in the same sentence
-    # (f_struct above). See RULES_SPEC 10.2 and the R5 exclusion list, which
-    # names "the 20% CFM 50 threshold -- same exclusion set as R3, same
-    # classifier". DCI's entry was empty, which lanes.md recorded as an open
-    # finding on 2026-09-19; it is filled in here.
+    # ------------------------------------------------------------------
+    # RETRACTED 2026-09-20, THE SAME DAY IT WAS WRITTEN. What stood here was:
+    # "The blower-door row is therefore closed by the instrument the spec
+    # ALREADY declares for it -- R3.allowed_thresholds ... DCI's entry was
+    # empty ... it is filled in here." THE SECOND HALF OF THAT SENTENCE WAS
+    # FALSE, and it is retracted in place rather than deleted so it cannot
+    # survive as a true-looking statement.
+    #
+    # The table above is RIGHT: a question/anchor OVERLAP rule cannot separate
+    # those four pairs, and _R5_INSTAT_MIN still must not move. What was wrong
+    # was the conclusion drawn from it -- that the blower-door FAQ row
+    # therefore needed R3.allowed_thresholds. MEASURED 2026-09-20 on DCI at
+    # 31c98be, live corpus, RAW 622 both ways:
+    #
+    #   R3.allowed_thresholds        f_struct        f_question      R5 ADJ
+    #   ["20%", "20 percent"]        matched 222     matched 4       0
+    #                                removed 6       removed 0
+    #   []                           matched 0       matched 4       3
+    #                                removed 0       removed 3
+    #
+    # f_question removes all three blower-door FAQ rows (LD, LOWVIS, VIS) BY
+    # ITSELF. It matched them in the populated state too; it removed nothing
+    # only because f_struct sits earlier in this list. The exclusion was never
+    # load-bearing for the case it was justified by.
+    #
+    # What it WAS load-bearing for is three rows -- one string, one page, three
+    # surfaces: the page TITLE "Denver Blower Door Test - CFM50, Xcel's 20%
+    # Rebate Rule" on (title), (og:title) and (twitter:title). Those are now
+    # closed by f_title_np above, which is bound to the possessive
+    # construction and the title locator rather than to a figure.
+    #
+    # And it opened TEN evasions, measured with one uncited first-party
+    # performance claim per threshold_context_marker -- "Our crews deliver a
+    # 20% CFM 50 reduction on every air sealing job" and nine siblings, all of
+    # which cleared with the list populated and all of which fire with it
+    # empty. DCI's R3.allowed_thresholds is now EMPTY and must stay empty; the
+    # reason string in config/dci.json carries the full correction.
     # ========================================================================
     #
     # WHAT IT CANNOT HIDE -- STRUCTURALLY, NOT BY ASSERTION:
@@ -4232,6 +4412,11 @@ def rule_R5(ctx, res):
              "(attribution is PAGE-scoped here, not sentence-scoped)",
              _open(f_instat)),
         Filt("recognised_publishers named in the same sentence", _open(f_pub)),
+        Filt("the PAGE TITLE names the publisher's own artifact and EVERY "
+             "figure in it sits INSIDE that possessed noun phrase -- "
+             "\"Xcel's 20% Rebate Rule\" (title/og:title/twitter:title only; "
+             "prose is still held to an attribution verb)",
+             _open(f_title_np)),
         Filt("computed_output_markers (Ruling 4 -- visitor arithmetic)",
              _open(f_comp)),
         Filt("code_context_markers (IECC / ENERGY STAR / R-value)",
@@ -5775,9 +5960,28 @@ R5_DERIV_CONTROL_OVERLAY = _deep_merge(R5_CONTROL_OVERLAY, {"R5": {
 # empties both lists it reads on every R5 control. That is the right default (a
 # control must prove the RULE, not today's config) but it left the filter with
 # no positive control on any property, which is the condition spec 5 exists to
-# forbid. It matters more now: the 2026-09-20 rewrite of f_question stops
-# rescuing DCI's `20% CFM 50` blower-door row, and this filter -- the one the
-# spec ALREADY names for that threshold -- is what closes it instead.
+# forbid. The control stands and is still needed: LGM and GCI both carry a
+# populated `R3.allowed_thresholds`, so the filter is live on two of three
+# properties.
+#
+# CORRECTED 2026-09-20: the rest of this paragraph used to read "this filter --
+# the one the spec ALREADY names for that threshold -- is what closes [DCI's
+# blower-door row] instead." That was false and is retracted here. DCI's
+# `R3.allowed_thresholds` is EMPTY; f_question closes the three FAQ rows on its
+# own and f_title_np closes the three page-title rows. See the retraction block
+# in rule_R5 for the measurement.
+#
+# WHAT THIS CONTROL DOES NOT PROVE, STATED: it proves f_struct requires a
+# threshold_context_marker, not that requiring one is sufficient. It is not.
+# MEASURED 2026-09-20 with a synthetic fixture carrying one uncited first-party
+# performance claim per marker -- "Our crews deliver a 20% CFM 50 reduction on
+# every air sealing job" and nine siblings: with `allowed_thresholds`
+# populated, GCI clears 14 of 16 such probes and LGM clears 12 of 16 at its own
+# 25% tier figure. The nine markers are those sites' own subject matter, so the
+# exclusion licenses exactly the first-party claims they are most likely to get
+# wrong. That hole is OPEN on LGM and GCI and is recorded here rather than
+# closed, because closing it means adjudicating live findings on two properties
+# another row is editing.
 #
 # Both lists are pinned SYNTHETICALLY, the same way the derivable-constants
 # overlay is pinned. `threshold_context_markers` is pinned too, and must be: it
@@ -6159,14 +6363,51 @@ RULES = [
                    # qualifying-threshold statement and the blower-door
                    # interrogative that asks about it, neither attributed to
                    # anybody, and MUST clear on the threshold context alone.
-                   # That repaired half is the A1-KEEP proof: the row f_question
-                   # used to rescue is now closed by the instrument RULES_SPEC
-                   # already declares for it.
+                   # CORRECTED 2026-09-20: the repaired half used to be
+                   # described as "the A1-KEEP proof: the row f_question used
+                   # to rescue is now closed by the instrument RULES_SPEC
+                   # already declares for it." It is not, and never was. The
+                   # overlay PINS `allowed_thresholds` synthetically, so this
+                   # pair proves the FILTER on every property; it says nothing
+                   # about DCI, whose list is empty. On DCI that row is closed
+                   # by f_question.
                    Control("R5-THRESHOLD", "R5",
                            _f("R5n_threshold_exclusion.html"),
                            R5_THRESH_CONTROL_OVERLAY, sub="mag",
                            repaired=_f("repaired",
-                                       "R5n_threshold_exclusion.html"))]),
+                                       "R5n_threshold_exclusion.html")),
+                   # R5-TITLENP, 2026-09-20. The control for f_title_np, and
+                   # the replacement for DCI's R3.allowed_thresholds entry.
+                   #
+                   # The NON-REPAIRED half is the blindfold test: SEVEN
+                   # laundering routes a title-scoped clearance must not open
+                   # -- the figure outside the possessed noun phrase, a bare
+                   # non-possessive publisher, a head noun that is not an
+                   # artifact noun, og:DESCRIPTION and twitter:DESCRIPTION
+                   # rather than the titles, a meta description, and visible
+                   # prose. Measured at d064ccf, BEFORE the filter: RAW 7,
+                   # ADJUDICATED 7. It must still read 7 after, and it does.
+                   #
+                   # The REPAIRED half is the false-positive repair: the page
+                   # title on its three surfaces. Measured at d064ccf, BEFORE
+                   # the filter: RAW 3, *** FIRES ON REPAIRED *** 3. That was
+                   # the hole. Its three rows are genuine RAW hits -- "lower"
+                   # is a magnitude_word and has_any is a substring test, so
+                   # "Blower" satisfies the magnitude-word requirement -- so
+                   # the repaired half is not vacuously clean and the
+                   # clearance is credited to f_title_np alone: the fixture
+                   # carries no cited-stat, no attribution verb, and the
+                   # overlay empties both R3 figure lists.
+                   #
+                   # The pair cannot be satisfied by switching f_title_np off
+                   # (the repaired half reddens) nor by widening it into a
+                   # blanket title skip (the other half reddens).
+                   Control("R5-TITLENP", "R5",
+                           _f("R5o_title_possessive_attribution.html"),
+                           R5_CONTROL_OVERLAY, sub="mag", expect=7,
+                           repaired=_f("repaired",
+                                       "R5o_title_possessive_attribution."
+                                       "html"))]),
 
     Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
          "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",

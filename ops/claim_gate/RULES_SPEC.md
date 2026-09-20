@@ -1582,18 +1582,46 @@ CANNOT CLOSE IT.** Measured 2026-09-20 with `_r5_local_overlap`, window 110:
 At a threshold of 4 the blower-door row fires; at 3 the 42% interrogative
 evasion clears. There is no value that separates them, and lowering
 `_R5_INSTAT_MIN` to rescue the row would reopen the pair the threshold exists to
-keep shut. **The row is therefore closed by the instrument this document
-already declares for it** — `R3.allowed_thresholds`, per-property and
-figure-scoped, requiring a `threshold_context_marker` in the same sentence
-(`f_struct`). See the exclusion list below: *"R-values, IECC targets, ENERGY
-STAR recommendations, structure percentages, and the `20% CFM 50` threshold —
-same exclusion set as R3, same classifier."* DCI's `allowed_thresholds` was
-**empty**, so that declared exclusion silently did not exist there — recorded as
-an open finding in `docs/lanes.md` on 2026-09-19 and papered over with
-`f_question` instead. It now carries `["20%", "20 percent"]`, the same pair GCI
-has always carried, with its justification in `config/dci.json`.
+keep shut.
 
-**CONTROLS — five, both directions each.**
+> **RETRACTION, 2026-09-20 — the paragraph that stood here was FALSE, and is
+> retracted in place rather than deleted so it cannot survive as a true-looking
+> statement.** It read: *"The row is therefore closed by the instrument this
+> document already declares for it — `R3.allowed_thresholds` … DCI's
+> `allowed_thresholds` was empty, so that declared exclusion silently did not
+> exist there … It now carries `["20%", "20 percent"]`."*
+>
+> The table above is right; **the conclusion drawn from it was not.** Measured
+> on DCI at `31c98be`, live corpus, R5 RAW **622** in both states:
+>
+> | `R3.allowed_thresholds` | `f_struct` | `f_question` | R5 ADJUDICATED |
+> |---|---|---|---|
+> | `["20%","20 percent"]` | matched 222, removed **6** | matched 4, removed **0** | 0 |
+> | `[]` | matched 0, removed 0 | matched 4, removed **3** | 3 |
+>
+> **`f_question` removes all three blower-door FAQ rows by itself.** It matched
+> them in the populated state too and removed nothing only because `f_struct`
+> sits earlier in the filter chain. The exclusion was never load-bearing for the
+> case it was justified by.
+>
+> What it *was* load-bearing for is three rows — one string, one page, three
+> surfaces: the page title `Denver Blower Door Test - CFM50, Xcel's 20% Rebate
+> Rule` on locators `(title)`, `(og:title)` and `(twitter:title)`. Those are now
+> closed by **`f_title_np`** (§ *The page title names the publisher's own
+> artifact*, below).
+>
+> And it opened **ten** evasions: with the list populated, one uncited
+> first-party performance claim per `threshold_context_marker` — *"Our crews
+> deliver a 20% CFM 50 reduction on every air sealing job"* and nine siblings —
+> all CLEARED; with it empty all ten FIRE. An eleventh, *"a 10-20% CFM 50
+> reduction"*, cleared through the substring hole the entry's own note
+> predicted. **DCI's `R3.allowed_thresholds` is now `[]` and must stay `[]`.**
+> The same hole is still OPEN on LGM and GCI — same probe, GCI clears **14 of
+> 16**, LGM clears **12 of 16** at its own 25% tier figure — and is recorded
+> rather than closed, because closing it means adjudicating live findings on two
+> properties another row is editing.
+
+**CONTROLS — six, both directions each.**
 
 | control | fixture | before 2026-09-20 | after |
 |---|---|---|---|
@@ -1602,6 +1630,8 @@ has always carried, with its justification in `config/dci.json`.
 | `R5-QTAG` | `R5l_tag_question.html` | **0 hits** | **3 hits** |
 | `R5-QSURFACE` | `R5m_cross_surface_anchor.html` | **0 hits** | **2 hits** |
 | `R5-THRESHOLD` | `R5n_threshold_exclusion.html` | 2 hits | 2 hits |
+| `R5-TITLENP` | `R5o_title_possessive_attribution.html` | 7 hits | 7 hits |
+| `R5-TITLENP` *(repaired half)* | `repaired/R5o_title_possessive_attribution.html` | **3 hits — FIRES ON REPAIRED** | **0 hits** |
 
 Every `0 hits` above was **measured against `claim_gate.py` at `bfbad20` on all
 three property configs** before the code was touched, not asserted. `R5k` holds
@@ -1640,9 +1670,111 @@ row `4 (removed 3)` → `4 (removed 0)`; `f_struct` row `0 (removed 0)` →
 **48 positive DETECTED / 0 MISSED · 17 negative clean / 0 FALSE ALARM** and
 48 repaired-clean on all three properties. On the earlier snapshot of the same
 day one DCI sentence carrying `20%` but **no** threshold-context marker —
-*"…a minimum 20% reduction in air leakage must be achieved"* — **still fired**,
-which is the in-corpus proof that the config entry is context-scoped rather than
-a figure allowlist.
+*"…a minimum 20% reduction in air leakage must be achieved"* — **still fired**.
+
+> **CORRECTED 2026-09-20, later the same day.** That last sentence was offered
+> as *"the in-corpus proof that the config entry is context-scoped rather than a
+> figure allowlist."* It proves the weaker thing only: that the entry requires a
+> context marker. It does **not** prove the marker requirement is sufficient,
+> and it is not. Nine markers are in the list and every one of them is the
+> property's own subject matter, so *"Our crews deliver a 20% **CFM** 50
+> **reduction** on every air sealing job"* — an uncited first-party performance
+> claim — cleared. Ten such probes cleared. The DCI entry is now `[]` and this
+> paragraph's `f_struct` row for DCI reads `0 (removed 0)` again.
+
+---
+
+#### `f_title_np` — the page title names the publisher's own artifact
+
+**FILTER.** *"the PAGE TITLE names the publisher's own artifact and EVERY figure
+in it sits INSIDE that possessed noun phrase."* Added 2026-09-20 as the
+cause-level replacement for DCI's `R3.allowed_thresholds` entry. **No
+per-property configuration; it adds no config key at all.** It reads only
+vocabularies R5 already had: `recognised_publishers`, `publisher_short_forms`,
+`publisher_artifact_nouns`.
+
+**THE DEFECT IT FIXES.** `_pub_subject`'s two attribution routes, S1 and S2,
+both end in an **attribution verb**. That requirement is right and stays — it is
+what stops *"ENERGY STAR's **critics** say our 43% savings number is invented"*
+reading as an ENERGY STAR attribution. But it left R5 unable to read an
+attribution that has **no predicate at all**, and a page title is exactly that:
+a name, not a sentence. DCI's
+
+```
+Denver Blower Door Test - CFM50, Xcel's 20% Rebate Rule
+                                 ^^^^^^^ registered publisher_short_forms entry
+                                         ^^^ the figure
+                                             ^^^^^^^^^^^ registered
+                                                         publisher_artifact_noun
+```
+
+is built **entirely** out of vocabulary the gate already recognises. Only the
+verb was missing, and a title has nowhere to put one. Three rows were
+adjudicated uncited for want of a word the surface cannot carry.
+
+**WHY IT IS THE TIGHTEST OF THE THREE ROUTES, NOT THE LOOSEST.** S1 and S2 let
+the figure sit in a complement reached *across* a verb, up to `_R5_SUBJ_REACH`
+= 120 characters away. S3 requires the figure to sit **inside** the possessed
+noun phrase, between the possessive marker and the head noun — distance zero.
+`_R5_NP`'s token class cannot cross a `%`; `_R5_NP_FIG` is a **separate**
+constant so that adding S3 cannot loosen S1 or S2 by one character.
+
+**WHAT IT CANNOT HIDE — structurally, not by assertion.**
+- **Every occurrence of every figure** in the hit must be inside a
+  possessed-artifact span. One free occurrence anywhere else in the title and
+  the row fires. That is strictly stronger than `f_pub`, which clears a numeral
+  once *any* of its occurrences is attributed, and it is what stops
+  *"Xcel's 20% Rebate Rule - We Cut 20% Off Your Bill"*.
+- The figure must lie **between** the possessive and the head noun.
+  *"Xcel's Rebate Rule - Our Crews Deliver 20% CFM 50 Reduction"* fires.
+- **The possessive is mandatory**, for full publishers as well as short forms.
+  *"Xcel 20% Rebate Rule Reduction"* fires: the bare token is the **payer**, not
+  a publisher — the seventh adversarial read's ruling, honoured here.
+- The head noun must be a `publisher_artifact_nouns` entry — something an
+  organisation issues and can be quoted from. *"Xcel's 20% Reduction Promise"*
+  fires.
+- **Locator-bound, not surface-bound.** Only `(title)`, `(og:title)`,
+  `(twitter:title)`. Surface `OG` also carries `og:description` and surface `TW`
+  also carries `twitter:description`; binding to the surface would hand the same
+  clearance to two prose descriptions per page for nothing. The same noun phrase
+  in visible prose, in a `meta[description]`, in an `og:description` or in a
+  `twitter:description` **fires** — prose can carry the predicate, so prose is
+  held to one. That cost is stated, not hidden.
+- A denial inside the noun phrase voids it (`_R5_DENIAL`).
+- `_open()` still applies: a `KNOWN-OPEN` hit is never removed.
+- **It is not an anchor for `f_question`.** `_anchor_sents` still admits only
+  `f_inblock`, `f_instat` and `f_pub`. A title is not a place from which a
+  question elsewhere on the page may draw its attribution, and widening
+  `f_question` by a side door is the one thing this filter must not do.
+
+**WHAT IT CANNOT DO AT ALL.** It inherits R5's standing blind spot: it asserts
+an attribution EXISTS and never reads the source. *"ENERGY STAR's 40% Attic Loss
+Data"* in a title clears whether or not ENERGY STAR published such a figure —
+exactly as *"ENERGY STAR's attic guidance states 40%"* already clears through
+`f_pub`. R7 and R11, not R5, are where a wrong figure is caught.
+
+**CONTROL `R5-TITLENP`**, `R5o_title_possessive_attribution.html`, overlay
+`R5_CONTROL_OVERLAY` (both R3 figure lists emptied, so nothing clears through
+`f_struct`), `expect=7`. The non-repaired half holds **seven** laundering routes
+a title-scoped clearance must not open — figure outside the noun phrase, bare
+non-possessive publisher, non-artifact head noun, `og:description`,
+`twitter:description`, `meta[description]`, visible prose. Measured at `d064ccf`
+**before** the filter: `RAW 7 / ADJUDICATED 7`; after: `RAW 7 / ADJUDICATED 7`.
+The repaired half is the page title on its three surfaces: measured at `d064ccf`
+**`RAW 3 / *** FIRES ON REPAIRED *** 3`** — that was the hole — and
+`RAW 3 / ADJUDICATED 0` after, all three removals credited to the `f_title_np`
+row. The repaired half is **not vacuously clean**: its rows are genuine RAW hits
+(`20%` plus the magnitude word `lower`, matched as a substring inside `Blower`).
+The pair cannot be satisfied by switching the filter off — the repaired half
+reddens — nor by widening it into a blanket title skip — the other half reddens.
+
+**RECORDED, NOT FIXED: an R5 RAW-stage substring characteristic.** Those three
+title rows are raw hits only because `has_any(sentence, magnitude_words,
+word=False)` is a substring test and `"lower"` ⊂ `"Blower"`. Same class:
+`"lose"` ⊂ `"closely"`, `"lower"` ⊂ `"follower"`. Switching to `word=True` is a
+RAW-stage narrowing across all three properties that would silence real
+inflections; it is a blindfold risk needing its own measured pass, and it was
+**not** taken here.
 
 **WHAT IT DELIBERATELY DOES NOT CATCH.**
 - **Whether the citation supports the figure.** DCI's live audit found **15 of 18
@@ -2956,8 +3088,8 @@ assumed, in the lane rows cited in §11.
   "R3": { "allowed_figures": [],
           "note": "MEASURED 2026-09-17: /usr/bin/grep -rhoE '\\$[0-9][0-9,.]*' over public/ returns ZERO occurrences. DCI is the only property with no surviving dollar figure of any kind. Was 198 before 5703f8c ($600 x173, $0 x12, $2,000 x6, $1,000 x6, $1,500 x1).",
           "allowed_structure_percentages": ["75%", "50% of project cost", "capped at 100% of project cost", "30% of project cost"],
-          "allowed_thresholds": ["20%", "20 percent"],
-          "allowed_thresholds_reason": "ADDED 2026-09-20. The Xcel air sealing qualifying threshold a homeowner is MEASURED AGAINST by a before-and-after blower door test, not an amount anyone is paid. Ruling 3, and the R5 exclusion list above already named it verbatim. GCI has carried the identical pair since its config was written; DCI's list was EMPTY, so the declared exclusion silently did not exist here — docs/lanes.md recorded that as an open finding on 2026-09-19 and f_question was made to paper over it. NOT a figure allowlist: f_struct also requires a threshold_context_marker in the same sentence. Control R5-THRESHOLD proves both halves every run." },
+          "allowed_thresholds": [],
+          "allowed_thresholds_reason": "REMOVED 2026-09-20, THE SAME DAY IT WAS ADDED, BY MEASUREMENT. It was added as [\"20%\", \"20 percent\"] on the ground that an overlap rule could not separate the legitimate blower-door FAQ row from the evasions. MEASURED FALSE: with this list empty, f_question goes from 'matched 4, removed 0' to 'matched 4, removed 3' and removes all three FAQ rows by itself. What the entry was actually load-bearing for was THREE PAGE-TITLE ROWS, now closed by f_title_np. It opened TEN evasions of the form 'Our crews deliver a 20% CFM 50 reduction on every air sealing job'. EMPTY, AND MUST STAY EMPTY ON THIS PROPERTY. Full correction in config/dci.json and in the retraction block above." },
 
   "R4": { "programs": ["Xcel Whole Home Efficiency Bonus", "Whole Home Efficiency Bonus",
                        "Combo Bonus", "Xcel's income-qualified programs",
