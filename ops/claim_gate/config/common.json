@@ -402,7 +402,9 @@
     ],
     "allowed_structure_percentages": [],
     "allowed_thresholds": [],
-    "threshold_context_markers": [
+    "first_party_subject_markers": ["we", "our", "us", "ours", "we're", "we've"],
+  "first_party_subject_markers_reason": "R5's f_struct cleared a quantified claim on TWO sentence-scoped substring tests -- a configured figure, and any threshold_context_marker -- neither of which ever asked WHOSE figure it is. It therefore licensed uncited FIRST-PARTY PERFORMANCE claims about the site's own work. MEASURED 2026-09-20 with one such claim per marker, through the gate's own _control_ctx: GCI cleared 14 of 16 and LGM 12 of 16, and GCI cleared the gate's OWN control sentence R5n, 'Our crews deliver a 20% reduction in winter heating costs'. This list is the VETO that closes it. It lives in common.json ONLY and must stay here: _deep_merge REPLACES lists rather than unioning them, so a per-property override would read as additive and be silently subtractive. It vetoes 0 of the 76 live rows f_struct clears across LGM and GCI and 13 of the 16 probe rows; adding 'you'/'your' was measured and REJECTED because it reddens 2 live GCI rows. Word-bounded matching is mandatory -- as substrings 'us' matches 'because' and 'our' matches 'your'.",
+  "threshold_context_markers": [
       "tier",
       "threshold",
       "measured reduction",
