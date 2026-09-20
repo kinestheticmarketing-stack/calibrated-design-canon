@@ -677,12 +677,13 @@
       "CO-Residential-Rebate-Summary-Sheet.pdf",
       "nrel.gov/gis/solar.html"
     ],
+    "current_replacements_note": "RETRACTION, 2026-09-20 (row A4). The four Xcel print codes below USED TO map to the document number `25-12-215`. That number is withdrawn: it could not be retrieved from ANY first-party Xcel source. Attempts on 2026-09-20, all with a browser User-Agent and the load-bearing ones repeated with a Googlebot User-Agent: 32 direct URL probes under www.xcelenergy.com/staticfiles/ across the six directories Xcel actually uses for this sheet (Marketing/, Programs and Rebates/Residential/, Energy Solutions/Residential Solutions/, Working With Us/, Working With Us/Trade Partners/, and the xe-responsive root) -- every probe carrying either `25-12-215` or `25-10-417` returned HTTP 404, against live HTTP 200 controls in the SAME directories for `24-02-205`, `23-11-205`, `19-06-612` and `21-12-204`, so the 404s are absence and not a block. The Wayback CDX index of www.xcelenergy.com returns ZERO captured URLs containing either code (RAW 0 of 3,523 unique staticfiles URLs captured since 2025-01-01, and RAW 0 of the 18 URLs matching `.*[Rr]ebate.*[Ss]ummary.*` across all time). VERIFY: curl -sSI -A 'Mozilla/5.0' 'https://www.xcelenergy.com/staticfiles/xe-responsive/Marketing/Residential-Insulation-Air-Sealing-Rebate-25-12-215.pdf' -> 404, against 'https://www.xcelenergy.com/staticfiles/xe-responsive/Programs%20and%20Rebates/Residential/24-02-205%20CO%20Res%20Rebate%20Summary%20Information%20Sheet.pdf' -> 200. NO SUBSTITUTE PRINT CODE IS ASSERTED HERE, because none could be confirmed first-party either: the only retrievable copy of the edition titled 'COLORADO 2025-2026 REBATE SUMMARY / EFFECTIVE NOV. 16, 2025' is a contractor-hosted mirror (royalcomforths.com, HTTP 200) whose own PDF metadata shows it was re-processed through GPL Ghostscript 10.06.0 on 2026-04-14, i.e. a derivative and not an Xcel-served byte stream. Its footer reads '...(c) 2025 Xcel Energy Inc. ... | 25-10-417' and contains `25-12-215` ZERO times -- a POINTER worth following, never an authority. The values below therefore name the current source by its live first-party landing page and make no print-code claim. THIS DOES NOT WEAKEN THE RULE: `current_replacements` has exactly ONE consumer in claim_gate.py (the Hit message at the `repl = repl_cfg.get(term)` / '-> SUPERSEDED BY %s' lines inside rule_R7); detection is driven by `superseded_identifiers` + the registry, so a missing or changed value alters advisory text only and cannot suppress a hit.",
+    "superseded_identifiers_25_10_417_note": "UNRESOLVED, 2026-09-20 (row A4), DELIBERATELY NOT ACTED ON. `25-10-417` is listed above as SUPERSEDED, and the only evidence retrievable on 2026-09-20 points the other way: the sole document bearing that code is titled 'COLORADO 2025-2026 REBATE SUMMARY ... EFFECTIVE NOV. 16, 2025', i.e. the CURRENT edition, not a retired one. That evidence is third-party-hosted and therefore not sufficient to act on. It is left in `superseded_identifiers` because removing it is the one change here that WOULD blind a blocking rule -- `ids` feeds `id_rx`, so a deleted literal simply stops being matched. Its entry in `current_replacements` has been dropped (no successor is known, and its supersession is itself in doubt), so a hit now reports '25-10-417 -> no replacement recorded in config.current_replacements', which is exactly true. MINIMAL FOLLOW-UP, once ONE first-party Xcel retrieval of the 2025-2026 sheet succeeds: if its footer is `25-10-417`, delete that literal from `superseded_identifiers` in the same pass that repoints the properties' copy to it -- doing either half alone reddens R7.",
     "current_replacements": {
-      "24-02-205": "25-12-215",
-      "24_02_205": "25-12-215",
-      "23-11-205": "25-12-215",
-      "19-06-612": "25-12-215",
-      "25-10-417": "25-12-215",
+      "24-02-205": "the current Xcel CO residential rebate summary at co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing (print code NOT first-party verified; 25-12-215 retracted 2026-09-20, see current_replacements_note)",
+      "24_02_205": "the current Xcel CO residential rebate summary at co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing (print code NOT first-party verified; 25-12-215 retracted 2026-09-20, see current_replacements_note)",
+      "23-11-205": "the current Xcel CO residential rebate summary at co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing (print code NOT first-party verified; 25-12-215 retracted 2026-09-20, see current_replacements_note)",
+      "19-06-612": "the current Xcel CO residential rebate summary at co.my.xcelenergy.com/s/residential/home-rebates/insulation-air-sealing (print code NOT first-party verified; 25-12-215 retracted 2026-09-20, see current_replacements_note)",
       "Advice Letter No. 544": "Advice Letter No. 647",
       "No. 544": "No. 647",
       "nrel.gov": "nlr.gov",
@@ -700,14 +701,14 @@
           "could not be retrieved",
           "could not be confirmed"
         ],
-        "why": "January 1, 2024 IS the superseded 24-02-205 sheet; 25-12-215 was retrieved and hash-verified the same pass. GCI 44d638c, live HTTP 200."
+        "why": "January 1, 2024 IS the superseded 24-02-205 sheet; the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] was retrieved and hash-verified the same pass. GCI 44d638c, live HTTP 200."
       },
       {
         "claim_id": "whe_audit_entry_path_hes_plus",
         "any_of": [
           "Home Energy Squad"
         ],
-        "why": "Verbatim from the superseded 2024 sheet; 25-12-215 drops it entirely. Home Energy Squad returns 0 in the current sheet. DCI b47a3c2, 35 pages."
+        "why": "Verbatim from the superseded 2024 sheet; the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] drops it entirely. Home Energy Squad returns 0 in the current sheet. DCI b47a3c2, 35 pages."
       },
       {
         "claim_id": "whe_audit_entry_path_begin_with",
@@ -731,7 +732,7 @@
           "WHE Bonus",
           "the WHE"
         ],
-        "why": "25-12-215 sets no such condition; air sealing is one measure that can count toward three. LGM 72e18ac; DCI eb5c939, 11 instances on 3 pages including title+og:title+twitter:title as one string.",
+        "why": "the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] sets no such condition; air sealing is one measure that can count toward three. LGM 72e18ac; DCI eb5c939, 11 instances on 3 pages including title+og:title+twitter:title as one string.",
         "any_of_anchoring_note": "The bare token 'WHE' was replaced by 'WHE Bonus' and 'the WHE' on 2026-09-18. Matching here is case-insensitive SUBSTRING, so bare 'WHE' matched inside ordinary English: whether, where, when, and the town name Wheat Ridge. Measured on DCI public/vermiculite-removal-cost-denver.html, which contains the word 'prerequisite' (about ASBESTOS TESTING, not air sealing) and 24 case-insensitive 'whe' substrings, none of them the WHE Bonus: /usr/bin/grep -oiI 'whe' <file> | wc -l -> 24, while /usr/bin/grep -oiI 'WHE Bonus' <file> | wc -l -> 0. The all_of half is what kept this from firing constantly, which is luck, not design: any page saying 'prerequisite' and 'whether' satisfied both halves. This is a MEASUREMENT defect, not a claim exception -- the anchored forms still match every real use of the abbreviation on all three properties, because the site never writes 'WHE' alone."
       },
       {
@@ -751,7 +752,7 @@
           "when the third qualifying measure completes",
           "paid out as soon as the third"
         ],
-        "why": "25-12-215 publishes NO payout schedule at all. DCI b47a3c2 then f83d421 -- removed in prose, alive in a FAQ and its JSON-LD acceptedAnswer."
+        "why": "the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] publishes NO payout schedule at all. DCI b47a3c2 then f83d421 -- removed in prose, alive in a FAQ and its JSON-LD acceptedAnswer."
       },
       {
         "claim_id": "25pct_of_rebate_already_paid",
@@ -782,14 +783,14 @@
           "multiplier has expired",
           "multiplier is no longer"
         ],
-        "why": "25-12-215 REINSTATES the 1.5x gas-heat bonus: 'Invoice must be dated in 2025 or 2026 to receive the bonus'. LGM a2ba5a6, 4 live instances."
+        "why": "the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] REINSTATES the 1.5x gas-heat bonus: 'Invoice must be dated in 2025 or 2026 to receive the bonus'. LGM a2ba5a6, 4 live instances."
       },
       {
         "claim_id": "no_audit_dollar_figure_published",
         "any_of": [
           "neither Xcel nor Efficiency Works publishes a dollar figure"
         ],
-        "why": "An unrestricted universal negative, refuted by 25-12-215's own HOME ENERGY AUDIT / REBATE AMOUNT table. LGM 58646f0, 8 places."
+        "why": "An unrestricted universal negative, refuted by the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note]'s own HOME ENERGY AUDIT / REBATE AMOUNT table. LGM 58646f0, 8 places."
       },
       {
         "claim_id": "xcel_approved_audit",
@@ -820,7 +821,7 @@
         "any_of": [
           "R-value of less than 15"
         ],
-        "why": "25-12-215 says pre-job less than 24 and post-job 60 or greater, corroborated by print code 17-9230 (01-25). Xcel's own live HTML still shows the old 15/49 values; the print-coded dated PDF wins -- do not fix that backwards. LGM: 0 instances, a NULL RESULT."
+        "why": "the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] says pre-job less than 24 and post-job 60 or greater, corroborated by print code 17-9230 (01-25). Xcel's own live HTML still shows the old 15/49 values; the print-coded dated PDF wins -- do not fix that backwards. LGM: 0 instances, a NULL RESULT."
       }
     ],
     "correction_markers": [
@@ -921,7 +922,7 @@
           ]
         },
         "authoritative_value": "not_required",
-        "authority": "25-12-215 lines 123-130: one condition, three measures within two years of enrolling"
+        "authority": "the current CO rebate summary [code retracted 2026-09-20, see R7.current_replacements_note] lines 123-130: one condition, three measures within two years of enrolling"
       },
       {
         "id": "whe_measure_count",
