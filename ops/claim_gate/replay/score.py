@@ -49,13 +49,48 @@ def adj_count(sec, rid):
     return 0
 
 
+# The gate prints a literal `  (none)` INSIDE the enumeration when a rule has
+# no adjudicated hits, so the raw `adj` list is one element long for an EMPTY
+# rule and `hits()` was truthy on nothing at all. No row misscored on it today,
+# because every row counts needles rather than testing the list -- but a future
+# row written `"CAUGHT" if hits(s, rid)` would have scored CAUGHT on a rule that
+# found nothing, which is the exact shape of the row-12 defect. Dropped here
+# rather than left for that row to be written.
+_PLACEHOLDER = frozenset(("(none)",))
+# `  <rel>:<surface>  <sub>  <text>` -- the locator is everything before the
+# first double space. Needed because a hit's TEXT can contain a filename that
+# the hit is not ON: `llms.txt` appears inside llms.txt's own rendered lines,
+# and an R4 row quoting a URL is not a finding on that URL.
+LOC_RE = re.compile(r"^\s{2}(\S+?):(\S+?)\s\s")
+
+
 def hits(sec, rid):
-    return [l for l in sec.get(rid, {}).get("adj", []) if l.strip()]
+    return [l for l in sec.get(rid, {}).get("adj", [])
+            if l.strip() and l.strip() not in _PLACEHOLDER]
+
+
+def locator(line):
+    m = LOC_RE.match(line)
+    return m.group(1) if m else ""
 
 
 def n(sec, rid, *needles):
     return len([l for l in hits(sec, rid)
                 if all(x in l for x in needles)])
+
+
+def n_loc(sec, rid, *needles):
+    """Like n(), but the needles must be in the hit's LOCATOR."""
+    return len([l for l in hits(sec, rid)
+                if all(x in locator(l) for x in needles)])
+
+
+def on_artifact(sec, needle):
+    """Adjudicated rows, ACROSS EVERY RULE, whose locator names `needle`."""
+    out = []
+    for rid in sec:
+        out += [l for l in hits(sec, rid) if needle in locator(l)]
+    return out
 
 
 ROWS = []
@@ -114,7 +149,8 @@ row("4c", "The invented fifth Xcel program DCI R2 sub p", "dci", "f08bb9f",
 row("5a", "198 rebate dollar figures DCI R3", "dci", "169bb3c",
     lambda t, s: ("CAUGHT" if _t1(s) >= 198 else
                   "PARTIAL" if _t1(s) else "MISSED",
-                  "T1 $-anchored %d" % _t1(s)))
+                  "T1 adjudicated %d (was scored off the RAW pre-filter note "
+                  "until 2026-09-20)" % _t1(s)))
 row("5b", "133 rebate dollar figures LGM R3", "lgm", "604d052",
     lambda t, s: (_p116(s), "$1.16 adjudicated %d, $0.77 adjudicated %d, "
                             "R3 ADJ %d"
@@ -177,35 +213,111 @@ row("11", "Dangling promise 'The Atmos figures quoted elsewhere' GCI R10",
                   % (n(s, "R10", "insulation-johnstown.html"),
                      adj_count(s, "R10"))))
 row("12", "Embed frame / llms.txt corpus hole DCI", "dci", "539670e",
-    lambda t, s: ("CAUGHT" if ("r-value-needed-calculator-embed.html" in t
-                               and "embed frame:" in t) else "MISSED",
-                  "embed frame line present: %s; embed artifact in read set: %s"
-                  % ("embed frame:" in t,
-                     "r-value-needed-calculator-embed.html" in t)))
+    lambda t, s: _corpus_hole(s))
+
+
+def _corpus_hole(s):
+    """ROW 12, REWRITTEN 2026-09-20. WHAT IT USED TO BE AND WHY THAT WAS NOT A
+    TEST.
+
+    It was the ONLY row of the 25 whose lambda read `t`, the entire gate
+    output, instead of the adjudicated enumeration:
+
+        "CAUGHT" if ("r-value-needed-calculator-embed.html" in t
+                     and "embed frame:" in t) else "MISSED"
+
+    `embed frame:` occurs EXACTLY ONCE per file -- at line 12, in the
+    corpus-inventory preamble, BEFORE any rule section -- and that single
+    134-character line satisfies BOTH needles at once:
+
+        embed frame: public/r-value-needed-calculator-embed.html,
+        public/r-value-needed-calculator-embed-code.html  |  IN THE READ SET:
+        2 of 2
+
+    The gate prints that line UNCONDITIONALLY on every tree, including
+    `embed frame: NULL RESULT - GCI has no embed frame.` on GCI. So the row
+    returned CAUGHT against any DCI tree, including one with the defect fully
+    fixed, and carried NO DETECTION INFORMATION. Measured 2026-09-20: the old
+    lambda returns CAUGHT on all 12 DCI replay trees without exception.
+
+    WHAT REPLACES IT IS THE ROW'S OWN DOCUMENTED EVIDENCE, NOT A NEW
+    DEFINITION. GATE_SCORE_2026-09-17.md's row 12 cites three things, and two
+    of the three are ADJUDICATED FINDINGS ON THE HIDDEN ARTIFACTS:
+    `public/r-value-needed-calculator-embed.html:JS mag 15% | ...15% reduction
+    in heating and cooling costs...` and `R4 x2 on the frame`. The defect this
+    row scores is a CORPUS HOLE -- two artifacts a sitemap-enumerated sweep
+    could not see -- so the gate has caught it exactly when it PRODUCES
+    FINDINGS ON THOSE ARTIFACTS, across any rule. The locator is matched, never
+    the hit text: `llms.txt` appears inside llms.txt's own rendered lines and
+    an R4 row quoting a URL is not a finding on that URL.
+
+    Both halves are required because the row names both halves. One half alone
+    is PARTIAL, not CAUGHT.
+    """
+    emb = on_artifact(s, "r-value-needed-calculator-embed")
+    llm = on_artifact(s, "llms.txt")
+    got = bool(emb) + bool(llm)
+    return (("CAUGHT" if got == 2 else "PARTIAL" if got == 1 else "MISSED"),
+            "%d adjudicated rows on the embed frame (%s); %d on llms.txt (%s)"
+            % (len(emb), ",".join(sorted(set(
+                   r for r in _rules_of(s, emb)))) or "-",
+               len(llm), ",".join(sorted(set(
+                   r for r in _rules_of(s, llm)))) or "-"))
+
+
+def _rules_of(s, lines):
+    want = set(lines)
+    return [rid for rid in s for l in hits(s, rid) if l in want]
 
 
 def _figs_files(s):
-    import re as _re
+    # A FIGURE GLUED TO ITS PUNCTUATION IS THE SAME FIGURE. `\$[0-9][0-9,.]*`
+    # is greedy over `,` and `.`, so `$1,075`, `$1,075,` and `$1,075.` counted
+    # as THREE distinct figures. Measured on gci-236c464 2026-09-20: 17
+    # "distinct" figures, 7 after the trailing separators are stripped
+    # ($1,075 $1,150 $1,325 $1,550 $125 $575 $663). The inflation ran in the
+    # GENEROUS direction -- toward CAUGHT -- which is the direction a defect
+    # score must never drift.
     figs, files = set(), set()
     for ln in hits(s, "R3"):
-        m = _re.match(r"\s*(\S+?):", ln)
-        for f in _re.findall(r"\$[0-9][0-9,.]*", ln):
-            figs.add(f)
-            if m:
-                files.add(m.group(1))
+        loc = locator(ln)
+        for f in re.findall(r"\$[0-9][0-9,.]*", ln):
+            f = f.rstrip(",.")
+            if len(f) > 1:
+                figs.add(f)
+                if loc:
+                    files.add(loc)
     v = "CAUGHT" if (len(figs) >= 9 and len(files) >= 24) else (
         "PARTIAL" if figs else "MISSED")
-    return (v, "%d distinct $ figures across %d distinct files (T1 $-anchored "
-               "%d); figures: %s"
+    return (v, "%d distinct $ figures across %d distinct files (T1 "
+               "adjudicated %d); figures: %s"
             % (len(figs), len(files), _t1(s), ", ".join(sorted(figs))))
 
 
+# `  <rel>:<surface>  T1  ...` -- the ADJUDICATED T1 rows.
+_T1_ROW = re.compile(r"^\s{2}\S+?:\S+?\s\sT1\s\s")
+
+
 def _t1(s):
-    for ln in s.get("R3", {}).get("all", []):
-        m = re.search(r"T1 \$-anchored (\d+)", ln)
-        if m:
-            return int(m.group(1))
-    return 0
+    """ADJUDICATED T1 count.
+
+    IT USED TO READ A RAW PRE-FILTER COUNT out of a rule header note:
+
+        note: T1 $-anchored 179  .  T2 bare numeral in a money window 545  .
+              T3 rank/magnitude/superlative 45
+
+    PROOF THAT NOTE IS RAW, measured 2026-09-20 on gci-236c464: 179 + 545 + 45
+    = 769, which is exactly the rule's printed `RAW ... found 769`, while the
+    rule's whole ADJUDICATED total is 91. The old `_t1` therefore returned 179
+    -- a number larger than the entire adjudicated population it was being
+    compared against. Same proof on dci-169bb3c: 222 + 1040 + 61 = 1323 = RAW.
+
+    True adjudicated T1: 220 on dci-169bb3c, 53 on gci-236c464. Row 5a's
+    threshold is 198, so its verdict SURVIVES the correction on dci-169bb3c
+    (220 >= 198) -- but it was surviving on the wrong instrument, and the
+    instrument is what a defect score is.
+    """
+    return len([l for l in hits(s, "R3") if _T1_ROW.match(l)])
 
 
 def _p116(s):
@@ -260,7 +372,16 @@ for num, label, key, sha, fn in ROWS:
 print()
 print("SCORE: %d CAUGHT / %d PARTIAL / %d MISSED   (of %d)"
       % (tal["CAUGHT"], tal["PARTIAL"], tal["MISSED"], len(ROWS)))
-print("PRIOR: 21 CAUGHT / 2 PARTIAL / 2 MISSED   (of 25)")
+# DERIVED FROM THE `PRIOR` DICT, NOT A LITERAL KEPT IN SYNC BY HAND. The banner
+# read "21 CAUGHT / 2 PARTIAL / 2 MISSED" as a hardcoded string, so an edit to
+# one PRIOR entry could silently disagree with the banner printed beside it --
+# in a file whose whole purpose is that a score not be asserted.
+_pt = {}
+for _v in PRIOR.values():
+    _pt[_v] = _pt.get(_v, 0) + 1
+print("PRIOR: %d CAUGHT / %d PARTIAL / %d MISSED   (of %d)"
+      % (_pt.get("CAUGHT", 0), _pt.get("PARTIAL", 0), _pt.get("MISSED", 0),
+         len(PRIOR)))
 if changed:
     print("\nROWS THAT CHANGED VERDICT:")
     for c in changed:
