@@ -121,10 +121,23 @@ _FOLD.update({
 # family is now re-tested together, not the one case.
 _DASHES = dict.fromkeys(
     [0x2010, 0x2011, 0x2012, 0x2013, 0x2014, 0x2015, 0x2212], "-")
+# PERCENT SIGNS FOLD UNCONDITIONALLY, for the same reason dashes do.
+#
+# The gate folded fullwidth DIGITS (via NFKC inside _fold_token) but never the
+# fullwidth PERCENT SIGN, because _TOKEN matches word characters only and a
+# percent sign is punctuation -- it never reached the folder at all. The
+# seventh adversarial read measured the consequence: `３５%` is caught, `35％`
+# is not, and `３５％` is not. U+FF05, U+FE6A and U+066A were three unguarded
+# doors into every percentage rule in the gate.
+# U+2030 PER MILLE and U+2031 PER TEN THOUSAND are deliberately ABSENT: they
+# are different quantities, not different spellings of the same one.
+_PERCENTS = dict.fromkeys([0xFF05, 0xFE6A, 0x066A], "%")
 _FORMAT = dict(_ZAP)
 _FORMAT.update(_SPLIT_ZW)
 _FORMAT.update(_DASHES)
+_FORMAT.update(_PERCENTS)
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
+_ASCII_COMBINING = re.compile(r"(?<=[\x20-\x7E])[\u0300-\u036F]+")
 
 
 def _fold_token(tok):
@@ -143,6 +156,27 @@ def _fold_token(tok):
     n = unicodedata.normalize("NFKC", tok)
     if n != tok and n.isascii():
         tok = n
+    # C. COMBINING MARKS, stripped when what is left is ASCII. `Atmós Energy`
+    #    (o + U+0301 COMBINING ACUTE) and `35́%` both defeated the gate
+    #    outright -- the one confusable family that reaches across R2 and R5.
+    #    NFD then drop category Mn, and keep the result only if it is ASCII, so
+    #    genuine accented non-Latin text is never mangled.
+    if any(unicodedata.combining(ch) for ch in tok):
+        stripped = "".join(ch for ch in unicodedata.normalize("NFD", tok)
+                           if not unicodedata.combining(ch))
+        if stripped.isascii() and stripped:
+            tok = stripped
+    # D. NON-ASCII DECIMAL DIGITS -> ASCII. NFKC does not map Devanagari
+    #    ३५ to 35, so `३५%` walked past every magnitude
+    #    pattern. Only characters whose Unicode DECIMAL value is defined are
+    #    folded, and only in a token that is entirely digits, so no word is
+    #    touched.
+    if tok and not tok.isascii() and all(
+            unicodedata.category(ch) == "Nd" for ch in tok):
+        try:
+            tok = "".join(str(unicodedata.decimal(ch)) for ch in tok)
+        except (TypeError, ValueError):
+            pass
     if any("a" <= ch.lower() <= "z" for ch in tok) and \
             any(ord(ch) in _FOLD for ch in tok):
         tok = tok.translate(_FOLD)
@@ -160,6 +194,14 @@ def dec(s):
     here while rendering identically to a human and to a crawler.
     """
     t = unicodedata.normalize("NFC", html.unescape(s)).translate(_FORMAT)
+    # A COMBINING MARK THAT LANDS ON AN ASCII CHARACTER IS A DISGUISE, NOT A
+    # LANGUAGE. `Atmós Energy` (o + U+0301) and `35́%` both defeated the gate
+    # outright -- the one confusable family that reaches across R2 and R5 --
+    # and _fold_token could never see them, because _TOKEN splits at the mark
+    # and the mark itself is not a word character. Stripped here instead, and
+    # ONLY when the character it modifies is ASCII, so genuine Greek, Cyrillic,
+    # Hebrew or Vietnamese text keeps its marks.
+    t = _ASCII_COMBINING.sub("", t)
     if t.isascii():
         return t
     return _TOKEN.sub(lambda m: _fold_token(m.group(0)), t)

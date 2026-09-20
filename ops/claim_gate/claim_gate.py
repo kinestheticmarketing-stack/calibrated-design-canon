@@ -373,7 +373,7 @@ SENTENCE_SCOPED_KEYS = {
            "programs", "program_aliases", "legitimate_uses"),
     "R5": ("magnitude_words", "recognised_publishers", "attribution_verbs",
            "derivable_constants", "publisher_short_forms",
-           "subject_attribution_verbs"),
+           "subject_attribution_verbs", "publisher_artifact_nouns"),
     "R7": ("superseded_propositions", "superseded_identifiers",
            "correction_markers", "never_retire_on_403"),
     "R8": ("footer_marker",),
@@ -3112,23 +3112,58 @@ _R5_STOP = frozenset((
     "at", "from", "your", "you", "we", "our", "can", "will", "not", "but",
     "than", "then", "so", "if", "most", "more", "up"))
 
-# Suffixes folded so that a restatement is not penalised for English
-# morphology. Longest first, and only when at least four characters survive,
-# so `less` does not fold to `le` and `costs` does fold to `cost`.
-_R5_SUFFIX = ("ements", "ement", "ings", "ing", "ies", "ied", "ers", "er",
-              "ed", "es", "ly", "s")
+# INFLECTIONAL suffixes only. `-er` / `-ers` USED TO BE HERE AND WAS WRONG:
+# it is DERIVATIONAL, so it folded `heater`->`heat`, `corner`->`corn` and
+# `batter`->`batt`, and it made a base form fold harder than its own inflection
+# (`better`->`bett` while `bettered`->`better`). The seventh adversarial read
+# produced a live silent miss out of exactly that collision -- "a 42% reduction
+# in attic HEATER runtime loss" scoring against a citation about HEAT. Removed.
+_R5_SUFFIX = ("ings", "ing", "ies", "ied", "ed", "es", "s")
+# The other half of the same defect: the fold UNDER-collapsed the words R5
+# actually keys on. `lose` / `loss` / `lost` are three of R5's own
+# magnitude_words and produced three different stems; `reduce` and `reduction`
+# produced two. Suffix stripping cannot reach those, so they are declared.
+# Small, closed, and confined to the vocabulary this rule is built on.
+_R5_LEMMA = {
+    "lose": "loss", "loses": "loss", "losing": "loss", "lost": "loss",
+    "loss": "loss", "losses": "loss",
+    "reduce": "reduc", "reduces": "reduc", "reduced": "reduc",
+    "reducing": "reduc", "reduction": "reduc", "reductions": "reduc",
+    "save": "save", "saves": "save", "saved": "save", "saving": "save",
+    "savings": "save",
+    "settle": "settl", "settles": "settl", "settled": "settl",
+    "settling": "settl", "settlement": "settl", "settlements": "settl",
+    "seal": "seal", "seals": "seal", "sealed": "seal", "sealing": "seal",
+    "insulate": "insul", "insulates": "insul", "insulated": "insul",
+    "insulating": "insul", "insulation": "insul",
+    "cut": "cut", "cuts": "cut", "cutting": "cut",
+    "increase": "increas", "increases": "increas", "increased": "increas",
+    "increasing": "increas",
+    "improve": "improv", "improves": "improv", "improved": "improv",
+    "improving": "improv", "improvement": "improv",
+    "improvements": "improv",
+}
 _R5_ALNUM = re.compile(r"(?<=[a-z])(?=[0-9])")
 # Named, not inlined, so the before/after of any future re-derivation can be
 # run without editing the predicate. See f_instat for the measured sweep.
 _R5_INSTAT_MIN = 4
+# Characters either side of the numeral that count toward the overlap. Wide
+# enough to hold a clause, narrow enough that a second clause cannot pay for
+# the first. Named so a future re-derivation can sweep it without editing the
+# predicate.
+_R5_INSTAT_WIN = 110
+# How near the figure a derivable constant's subject phrase must sit. A
+# sentence is not an allowlist key; the phrase has to govern THAT number.
+_R5_DERIV_WIN = 60
 
 
 def _r5_fold(w):
+    if w in _R5_LEMMA:
+        return _R5_LEMMA[w]
     for suf in _R5_SUFFIX:
         if w.endswith(suf) and len(w) - len(suf) >= 4:
             return w[:-len(suf)]
     if w.endswith("e") and len(w) >= 5:
-        # settle -> settl, so settle/settles/settled/settling all agree
         return w[:-1]
     return w
 
@@ -3154,23 +3189,6 @@ def _r5_words(s):
         if len(w) >= 3 and w not in _R5_STOP:
             out.add(_r5_fold(w))
     return out
-
-
-# An interrogative OPENER. A sentence that ends in `?` and starts with one of
-# these is asking, not telling.
-_R5_QOPEN = re.compile(
-    r"^\W*(?:what|why|how|when|where|who|whom|whose|which|"
-    r"do|does|did|is|are|was|were|can|could|will|would|should|shall|"
-    r"may|might|must|has|have|had|am)\b", re.IGNORECASE)
-# FACTIVE AND RHETORICAL FRAMES PRESUPPOSE THEIR COMPLEMENT. "Did you know X?"
-# commits the page to X exactly as "X" does, so these are NOT cleared. The list
-# is the guard's own blind-spot statement: a rhetorical question built on a
-# frame not named here reads as a plain question and is cleared.
-_R5_QFACTIVE = (
-    "did you know", "do you know", "didn't you know", "did you realize",
-    "did you realise", "do you realize", "do you realise",
-    "ever wonder", "guess what", "isn't it true", "is it any wonder",
-    "would you believe", "can you believe", "how is it that")
 
 
 # ---------------------------------------------------------------------------
@@ -3269,19 +3287,19 @@ def _src_code_literals(t):
     return out
 
 
-def _is_plain_question(sent):
-    t = (sent or "").strip()
-    if not t.endswith("?"):
-        return False
-    if not _R5_QOPEN.match(t):
-        return False
-    low = t.lower()
-    for frame in _R5_QFACTIVE:
-        if frame in low:
-            return False
-    return True
-
-
+# THE INTERROGATIVE GUARD WAS REMOVED ON 2026-09-19 AND MUST NOT COME BACK IN
+# THAT SHAPE. It cleared any sentence ending `?` that opened with one of 24
+# interrogatives and carried none of 13 hardcoded factive frames. The seventh
+# adversarial read measured it: 11 of 13 test interrogatives cleared and TEN OF
+# THOSE ELEVEN ASSERT THEIR FIGURE --
+#   "Why settle for less when our crews measure a 36% reduction in heating
+#    costs?"          and          "How our crews cut heating costs by 39%?"
+# `Why does X?` and `How does X?` PRESUPPOSE X, and that is this portfolio's own
+# heading idiom. The guard shipped a list of 13 IDIOMS against a grammatical
+# CLASS, and presupposition is not enumerable that way. It bought three DCI rows
+# that f_instat clears on its own merits and cost eight proven evasions, so it
+# is a net loss and it is gone (Rule 2: no dead anything, and no guard that
+# costs more than it buys).
 # ---------------------------------------------------------------------------
 # R5: THE PUBLISHER AS THE FIGURE'S SUBJECT, NOT AS ITS NEIGHBOUR.
 #
@@ -3325,44 +3343,98 @@ def _is_plain_question(sent):
 # not) hold both directions.
 # ---------------------------------------------------------------------------
 
+# WHERE AN ATTRIBUTION STOPS.
+#
+# The first version required a COMMA before a coordinator, and the seventh
+# adversarial read defeated it by deleting one character:
+#   "ENERGY STAR estimates vary, but our crews measure a 35% ..."  FIRES
+#   "ENERGY STAR estimates vary and our crews measure a 36% ..."   CLEARED
+# Making bare "and" a boundary is not the answer either -- "a 15% heating and
+# cooling cost reduction" would break the attribution it is part of. What
+# actually ends an attribution is a NEW SUBJECT taking over, so the coordinator
+# is a boundary when a subject pronoun or a first-person possessive follows it,
+# with or without the comma.
+#
+# A RELATIVE PRONOUN IS ALSO A BOUNDARY. That closes the payer-laundering
+# sentence the read built:
+#   "Xcel's air sealing rebate requires work THAT cut our customers' bills 38%"
+# where the figure belongs to the relative clause, not to what Xcel requires.
+_R5_NEWSUBJ = (r"(?:our|we|us|my|i|their|they|his|her|its|it|you|your|he|she|"
+               r"this|these|those)")
 _R5_CLAUSE_BREAK = re.compile(
     r"[;:]"
     r"|\s[-‐-―]+\s"
     r"|,\s*(?:but|and|yet|so|while|whereas|though|although|however|"
     r"nevertheless|still|then|or)\b"
-    r"|\s(?:but|however|whereas|although|though|nevertheless)\s",
+    r"|\s(?:but|however|whereas|although|though|nevertheless)\s"
+    r"|[,\s]\s*(?:but|and|yet|so|or|while|whereas)\s+" + _R5_NEWSUBJ + r"\b"
+    r"|\s(?:that|which|who|whom|whose|where|when)\s",
     re.IGNORECASE)
-# A possessive tail: "'s <up to four words>" -- "ENERGY STAR's duct sealing
-# guidance says", "Xcel's air sealing rebate requires".
+
+# AN ATTRIBUTION THAT DENIES ITSELF IS NOT AN ATTRIBUTION. The read produced
+#   "ENERGY STAR reports no such 44% reduction in heating costs anywhere."
+#   "ENERGY STAR's website says nothing about our 42% reduction ..."
+# and both were read as carrying the attribution they explicitly refuse.
+_R5_DENIAL = re.compile(
+    r"\b(?:no\s+such|nothing\s+about|never|no\s+longer|not\s+|n't\b|"
+    r"denies|denied|disputes|disputed|refutes|contradicts|declines\s+to|"
+    r"says\s+nothing|makes\s+no|offers\s+no|publishes\s+no|has\s+no|"
+    r"without\s+any|neither|nor\b|unsupported|unsourced)", re.IGNORECASE)
+
+# HOW FAR AN ATTRIBUTION REACHES. The read measured the shipped predicate at
+# UNBOUNDED: a single 376-character run with no internal punctuation cleared.
+# An attribution is a clause, not a paragraph.
+_R5_SUBJ_REACH = 120
+# A possessive tail: "'s <document noun phrase>" -- "ENERGY STAR's duct
+# sealing guidance says", "Xcel's air sealing rebate requires".
 _R5_POSS = r"(?:'s|’s|&rsquo;s|&#8217;s)"
 _R5_ADV = r"(?:also\s+|further\s+|now\s+|currently\s+|separately\s+)?"
-_R5_NP = r"(?:[A-Za-z0-9][\w.-]*\s+){0,4}"
+# THE NOUN PHRASE MUST END IN SOMETHING THAT CAN PUBLISH. It used to be four
+# words of anything, and those four words became the real subject:
+#   "ENERGY STAR's CRITICS say our 43% savings number is invented."
+#   "ENERGY STAR's LAWYERS say our 58% savings claim is actionable."
+# Critics and lawyers are not the publisher. The head noun is now required to
+# be a document, a publication or a programme -- the kinds of thing an
+# organisation issues and can therefore be quoted from. Config-driven
+# (R5.publisher_artifact_nouns) because it is a vocabulary, not a rule.
+_R5_NP = r"(?:[A-Za-z0-9][\w.-]*\s+){0,3}"
 
 
-def _r5_subject_pat(name, verbs):
-    key = ("S1", name, tuple(verbs))
+def _r5_alt(words):
+    return "|".join(re.escape(v) for v in sorted(words, key=len, reverse=True))
+
+
+def _r5_poss_np(nouns):
+    """`'s <=3 words> <artifact noun>` -- the publisher's own document."""
+    return r"%s\s+%s(?:%s)\b\s+" % (_R5_POSS, _R5_NP, _r5_alt(nouns))
+
+
+def _r5_subject_pat(name, verbs, nouns, require_poss):
+    key = ("S1", name, tuple(verbs), tuple(nouns), require_poss)
     p = _R5_SUBJ_CACHE.get(key)
     if p is None:
-        p = re.compile(
-            r"%s\b\s*(?:%s\s+%s)?%s(%s)\b"
-            % (re.escape(name), _R5_POSS, _R5_NP, _R5_ADV,
-               "|".join(re.escape(v) for v in sorted(verbs, key=len,
-                                                     reverse=True))),
-            re.IGNORECASE)
+        # A SHORT FORM IS ONLY EVER POSSESSIVE. `_pub_subject` strips the
+        # possessive off "Xcel's" so this pattern can attach its own, and while
+        # the possessive group was OPTIONAL that made the BARE TOKEN `Xcel` a
+        # publisher -- flatly contradicting the config note shipped beside it
+        # ("the bare token 'Xcel' ... must never be added"), and reopening
+        # payer laundering. For a short form the possessive is now mandatory.
+        poss = _r5_poss_np(nouns)
+        head = (r"%s\b\s*%s" % (re.escape(name), poss) if require_poss
+                else r"%s\b\s*(?:%s)?" % (re.escape(name), poss))
+        p = re.compile(r"%s%s(%s)\b" % (head, _R5_ADV, _r5_alt(verbs)),
+                       re.IGNORECASE)
         _R5_SUBJ_CACHE[key] = p
     return p
 
 
-def _r5_relative_pat(name, verbs):
-    key = ("S2", name, tuple(verbs))
+def _r5_relative_pat(name, verbs, nouns):
+    key = ("S2", name, tuple(verbs), tuple(nouns))
     p = _R5_SUBJ_CACHE.get(key)
     if p is None:
-        p = re.compile(
-            r"%s\s*%s\s+%s(%s)\b"
-            % (re.escape(name), _R5_POSS, _R5_NP,
-               "|".join(re.escape(v) for v in sorted(verbs, key=len,
-                                                     reverse=True))),
-            re.IGNORECASE)
+        p = re.compile(r"%s\s*%s(%s)\b"
+                       % (re.escape(name), _r5_poss_np(nouns),
+                          _r5_alt(verbs)), re.IGNORECASE)
         _R5_SUBJ_CACHE[key] = p
     return p
 
@@ -3370,15 +3442,17 @@ def _r5_relative_pat(name, verbs):
 _R5_SUBJ_CACHE = {}
 
 
-def _pub_subject(sentence, nums, pubs, shorts, verbs):
+def _pub_subject(sentence, nums, pubs, shorts, verbs, nouns):
     """True when a recognised publisher is the SUBJECT that attributes one of
-    `nums`, by S1 or S2 above. `shorts` are possessive short forms
-    (config R5.publisher_short_forms) and are usable ONLY here -- they are
-    deliberately NOT added to recognised_publishers, because "Xcel" alone is
-    the PAYER on almost every page in this portfolio and widening the
-    proximity path with it would re-open the false clear the verb requirement
-    was added to close."""
-    if not verbs:
+    `nums`, by S1 or S2 above.
+
+    `shorts` are POSSESSIVE short forms (config R5.publisher_short_forms) and
+    are usable ONLY here, ONLY in possessive form. "Xcel" alone is the PAYER on
+    almost every page in this portfolio; the seventh adversarial read proved
+    that an optional possessive group made the bare token a publisher and
+    reopened payer laundering, so `require_poss` is set for every short form.
+    """
+    if not verbs or not nouns:
         return False
     positions = []
     for n in nums:
@@ -3389,29 +3463,40 @@ def _pub_subject(sentence, nums, pubs, shorts, verbs):
     if not positions:
         return False
 
+    def _reaches(a, b):
+        """An attribution reaches across one clause, not one paragraph, and it
+        does not survive its own denial."""
+        span = sentence[a:b]
+        if len(span) > _R5_SUBJ_REACH:
+            return False
+        if _R5_CLAUSE_BREAK.search(span):
+            return False
+        return not _R5_DENIAL.search(span)
+
     # S1 -- publisher as the subject of the verb, figure in its complement.
-    for name in list(pubs) + list(shorts):
+    for name, poss_only in ([(x, False) for x in pubs]
+                            + [(x, True) for x in shorts]):
         if not name:
             continue
-        # a short form is written possessively; strip the possessive so the
-        # S1 pattern can attach its own.
-        base = re.sub(r"(?:'s|’s)$", "", name)
-        for m in _r5_subject_pat(base, verbs).finditer(sentence):
+        base = re.sub(r"(?:'s|\u2019s)$", "", name)
+        for m in _r5_subject_pat(base, verbs, nouns, poss_only).finditer(
+                sentence):
             v = m.end()
+            # The DENIAL test also looks at the verb itself: "reports no such"
+            # is one phrase and the negation follows the verb.
             for p in positions:
-                if p > v and not _R5_CLAUSE_BREAK.search(sentence[v:p]):
+                if p > v and _reaches(v, p):
                     return True
 
     # S2 -- the figure, then the possessive publisher that requires it.
     for name in list(pubs) + list(shorts):
         if not name:
             continue
-        base = re.sub(r"(?:'s|’s)$", "", name)
-        for m in _r5_relative_pat(base, verbs).finditer(sentence):
-            s = m.start()
+        base = re.sub(r"(?:'s|\u2019s)$", "", name)
+        for m in _r5_relative_pat(base, verbs, nouns).finditer(sentence):
+            st = m.start()
             for p in positions:
-                if 0 < s - p <= 80 and \
-                        not _R5_CLAUSE_BREAK.search(sentence[p:s]):
+                if 0 < st - p <= 80 and _reaches(p, st):
                     return True
     return False
 
@@ -3423,6 +3508,7 @@ def rule_R5(ctx, res):
     pubs = c.get("recognised_publishers", []) or []
     shorts = c.get("publisher_short_forms", []) or []
     subj_verbs = c.get("subject_attribution_verbs", []) or []
+    artifact_nouns = c.get("publisher_artifact_nouns", []) or []
     attrib_verbs = ctx.r("R1").get("attribution_verbs", []) or []
     computed = c.get("computed_output_markers", []) or []
     derivs = c.get("derivable_constants", []) or []
@@ -3525,33 +3611,55 @@ def rule_R5(ctx, res):
         # English morphology rather than for saying something else. Folding
         # both (see _r5_words) moves DCI's uncleared count at threshold 4 from
         # 7 to 3 and does not move the false-clear pair off 3.
+        # THE COUNT ALONE WAS THE REAL DEFECT, NOT ITS VALUE.
+        # An overlap taken over two WHOLE SENTENCES counts words that have
+        # nothing to do with the number. The seventh adversarial read built the
+        # counterexample and it is a true silent miss at any threshold this
+        # instrument can justify:
+        #
+        #   stat : "According to the EPA, 42% of homes built before 1980 have
+        #           attic bypasses that turn winter heat into pure loss,
+        #           something EPA field crews still find on most inspections."
+        #   site : "Our crews measured a 42% reduction in attic heat loss
+        #           after air sealing."
+        #
+        # The EPA's 42% is about housing-stock age; the site's 42% is about
+        # heat-loss reduction. Different claims, same numeral, no attribution.
+        # Whole-sentence overlap is {attic, crews, heat, loss} = 4 and it
+        # CLEARED. My original sweep could not see this: it measured only
+        # FALSE POSITIVES -- hits left standing -- so it could structurally
+        # only ever argue for loosening. That criticism is correct.
+        #
+        # THE FIX IS TO BIND THE SHARED VOCABULARY TO THE FIGURE. The overlap
+        # is now taken over the WINDOW AROUND THE NUMERAL in each text, not
+        # over the whole sentence, so words earned in a different clause do not
+        # pay for this one. On the pair above the local overlap is {attic} = 1
+        # and it FIRES. On the restatement it is meant to clear --
+        # "Loose-fill cellulose settles 10 to 20 percent" against
+        # "loose-fill cellulose will settle from 10 to 20 percent over time" --
+        # the local overlap is {loose, fill, cellulose, settl, percent} = 5 and
+        # it clears. On the documented false-clear pair it is 3 and stays shut.
         if not getattr(h, "r5_instat", False):
             return False
-        sw = _r5_words(h.sentence)
+        nums = [x.strip() for x in
+                (h.text.split(" | ")[0] or "").split(",") if x.strip()]
         for st in getattr(h, "r5_stats", []) or []:
-            if len(sw & _r5_words(st)) >= _R5_INSTAT_MIN:
-                return True
+            for n in nums:
+                for sp in occ(h.sentence, n, ci=True, word=False):
+                    sw = _r5_words(win(h.sentence, sp, _R5_INSTAT_WIN))
+                    if not sw:
+                        continue
+                    for tp in occ(st, n, ci=True, word=False):
+                        tw = _r5_words(win(st, tp, _R5_INSTAT_WIN))
+                        if len(sw & tw) >= _R5_INSTAT_MIN:
+                            return True
         return False
-
-    def f_question(h):
-        # A QUESTION ASSERTS NO PROPOSITION, SO IT CANNOT BE AN UNCITED ONE.
-        # Three DCI rows were the FAQ heading "What happens if the after test
-        # does not reach a 20% CFM50 reduction?" -- R5 read the numeral and
-        # condemned the page for not sourcing a claim the page never made.
-        # NARROW BY CONSTRUCTION, because a question CAN smuggle an assertion:
-        # "Did you know insulation cuts bills 35%?" presupposes what it
-        # pretends to ask. The guard therefore requires a real interrogative
-        # opener AND refuses the factive frames that presuppose their
-        # complement. It is a blindfold in exactly one direction, and
-        # control R5-Q-FACTIVE is what proves that direction stays open.
-        return _is_plain_question(h.sentence)
 
     def f_deriv(h):
         # R5.derivable_constants WAS DECLARED IN THE KEY LIST AND READ BY NO
         # CODE PATH. A previous session wrote an entry for the atmospheric
         # pressure figure, watched no FILTER line appear, and removed it rather
-        # than ship dead config -- correctly, and the gap stayed open. This is
-        # the code path.
+        # than ship dead config -- correctly, and the gap stayed open.
         #
         # A PHYSICAL CONSTANT IS NOT A STATISTIC. R5 asks for an attribution
         # because a percentage presented as a finding about the world has a
@@ -3559,33 +3667,74 @@ def rule_R5(ctx, res):
         # is roughly 17% lower than sea level" has no publisher any more than
         # water's boiling point at altitude does: it follows from the ICAO
         # standard atmosphere, P/P0 = (1 - 2.25577e-5*h)^5.25588, which at
-        # h = 1,609.3 m gives 0.8234 -- 17.7% lower.
+        # h = 1,609.3 m gives 0.8234 -- 17.66% lower.
         #
-        # NARROW BY CONSTRUCTION, three ways, because this is the filter shape
-        # most likely to become an allowlist:
-        #   * the entry must name the FIGURE, and the hit's numerals must
-        #     include it, so the entry cannot pardon a different number;
-        #   * the entry must name a SUBJECT PHRASE present in the sentence, so
-        #     it cannot pardon a different claim that happens to carry 17%;
-        #   * the entry must carry a DERIVATION. An entry with no derivation is
-        #     an assertion that something is derivable, which is the thing being
-        #     claimed, so it is ignored and reported rather than honoured.
+        # THE FIRST WIRING OF THIS WAS AN ALLOWLIST AND THE SEVENTH ADVERSARIAL
+        # READ WAS RIGHT TO SAY SO. It ran an unanchored, page-global substring
+        # test, so prepending six words to canon's OWN control fixture cleared
+        # the sentence the control asserts must fire:
+        #   "Atmospheric pressure has nothing to do with it: Denver homes we
+        #    treat show a 17% lower heating bill in the first winter"
+        # a non-derivable 42% rode along inside the same hit, and
+        # `derivation_note` was checked for non-emptiness so that the literal
+        # text "Because I said so" suppressed a fabricated 63%.
+        #
+        # FOUR BINDINGS NOW, EACH CLOSING ONE OF THOSE:
+        #   1. PAGES. The entry names the artifacts it governs and is ignored
+        #      without them, so it cannot be property-global.
+        #   2. PROXIMITY. A subject phrase must sit within
+        #      `_R5_DERIV_WIN` characters of THAT occurrence of the figure, so
+        #      naming the subject somewhere else in the sentence buys nothing.
+        #   3. EVERY NUMERAL. Every figure in the hit must be covered by some
+        #      entry, so a non-derivable number cannot ride along with one.
+        #   4. A DERIVATION THAT IS A DERIVATION. `derivation_note` must carry
+        #      digits AND an arithmetic operator. That is a STRUCTURAL test,
+        #      not a semantic one -- it cannot tell a right formula from a
+        #      wrong one, and it is not claimed to. It does stop a sentence of
+        #      prose from standing in for one.
         nums = [x.strip() for x in
                 (h.text.split(" | ")[0] or "").split(",") if x.strip()]
+        if not nums:
+            return False
+        rel = str(h.rel)
+        base = rel.rsplit("/", 1)[-1]
+        covered = set()
         for d in derivs:
             if not isinstance(d, dict):
                 continue
             fig = (d.get("figure") or "").strip()
             phrases = [p for p in (d.get("subject_phrases") or []) if p]
-            if not fig or not phrases:
+            pages = [p for p in (d.get("pages") or []) if p]
+            note = (d.get("derivation_note") or "").strip()
+            if not fig or not phrases or not pages:
                 continue
-            if not (d.get("derivation_note") or "").strip():
+            if not (re.search(r"[0-9]", note)
+                    and re.search(r"[=^*/\u00d7\u00f7]", note)):
+                continue
+            if not any(rel == p or base == p or rel.endswith("/" + p)
+                       or base == p.rsplit("/", 1)[-1] for p in pages):
                 continue
             if fig not in nums:
                 continue
-            if has_any(h.sentence, phrases, ci=True, word=False):
-                return True
-        return False
+            # DISTANCE BETWEEN THE TWO OCCURRENCES, not a substring window: a
+            # phrase that straddles a window edge is still the subject of the
+            # number, and a phrase 77 characters away introducing a DIFFERENT
+            # claim is not. 60 is the measured separation between DCI's three
+            # real forms (gaps 4, 10 and 34) and the read's nearest
+            # falsification (gap 66).
+            done = False
+            for pos in occ(h.sentence, fig, ci=True, word=False):
+                for ph in phrases:
+                    for pp in occ(h.sentence, ph, ci=True, word=False):
+                        if abs(pp - pos) <= _R5_DERIV_WIN:
+                            covered.add(fig)
+                            done = True
+                            break
+                    if done:
+                        break
+                if done:
+                    break
+        return bool(covered) and all(n in covered for n in nums)
 
     # A PARENTHETICAL CITATION IS AN ATTRIBUTION AND HAS NO VERB.
     # f_pub below requires an attribution VERB, which is right for prose
@@ -3624,7 +3773,7 @@ def rule_R5(ctx, res):
         # figure -- not merely an organisation's name somewhere in the clause.
         if _pub_subject(h.sentence,
                         (h.text.split(" | ")[0] or "").split(","),
-                        pubs, shorts, subj_verbs):
+                        pubs, shorts, subj_verbs, artifact_nouns):
             return True
         if not has_any(h.sentence, pubs, ci=True):
             return False
@@ -3686,9 +3835,6 @@ def rule_R5(ctx, res):
              _open(f_srcdup)),
         Filt("the sentence IS a cited-stat block (attributed by construction)",
              _open(f_inblock)),
-        Filt("the sentence is a QUESTION (a question asserts no proposition; "
-             "factive frames such as \"did you know\" are excluded)",
-             _open(f_question)),
         Filt("R5.derivable_constants -- a physical constant with a recorded "
              "derivation, not a finding with a publisher",
              _open(f_deriv)),
@@ -5156,6 +5302,7 @@ R5_DERIV_CONTROL_OVERLAY = _deep_merge(R5_CONTROL_OVERLAY, {"R5": {
     "derivable_constants": [{
         "figure": "17%",
         "subject_phrases": ["Atmospheric pressure"],
+        "pages": ["R5f_derivable_constant.html"],
         "derivation_note": "CONTROL FIXTURE ENTRY. ICAO standard atmosphere, "
                            "P/P0 = (1 - 2.25577e-5*h)^5.25588; at h = 1609.3 m "
                            "this gives 0.8234, i.e. 17.7% lower than sea "
@@ -5378,15 +5525,6 @@ RULES = [
                            R5_CONTROL_OVERLAY, sub="mag",
                            repaired=_f("repaired",
                                        "R5b_restated_quotation.html")),
-                   # The interrogative guard, both directions. "Did you know
-                   # ...20%...?" is factive -- it presupposes the figure, so
-                   # the guard must NOT clear it and the fixture must fire.
-                   # "What happens if ...20%...?" asserts nothing and the
-                   # repaired page must be clean.
-                   Control("R5-QUESTION", "R5", _f("R5c_factive_question.html"),
-                           R5_CONTROL_OVERLAY, sub="mag",
-                           repaired=_f("repaired",
-                                       "R5c_factive_question.html")),
                    # The publisher-as-subject predicate, both directions.
                    # The fixture is the probe that refused "estimates" as a
                    # plain attribution verb: the publisher sits 47 characters
