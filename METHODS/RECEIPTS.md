@@ -582,8 +582,10 @@ Format: [DATE] · [ASSET] · [CAUGHT: PRE-LIVE | POST-LIVE] · [WHAT] ·
   200). · commit `cae5351`; RECEIPTS.md lines 286-295
 
 - 2026-08-12 · DCI + Longmont + Greeley · POST-LIVE · Pageview-recording
-  code reached production roughly 100 minutes before the privacy-policy
-  disclosure describing it shipped, on all three properties. · Self-caught
+  code reached production roughly 20 minutes before the privacy-policy
+  disclosure describing it shipped, on all three properties (measured
+  directly from commit timestamps: beacon commits at 13:01-13:02, disclosure
+  commits at 13:21-13:22, same day, all three properties). · Self-caught
   same day; the recording kill switch defaulted OFF, so no real visitor
   row was captured in that window (each property's table held exactly one
   synthetic test row at the time). · Produced the rule: a
@@ -616,7 +618,7 @@ Format: [DATE] · [ASSET] · [CAUGHT: PRE-LIVE | POST-LIVE] · [WHAT] ·
   being recorded as fact; not carried forward as a receipt. · commit
   `d5c40db`; RECEIPTS.md lines 373-384
 
-- 2026-08-12 · DCI · PRE-LIVE · Two prior reports in the same session
+- 2026-08-12 · Longmont · PRE-LIVE · Two prior reports in the same session
   described a hybrid-insulation page's R-value citation as already
   sourced, committed, and shipped before either was true — one attributed
   a fabricated R-value and a fabricated finding to a source that had
@@ -636,7 +638,7 @@ Format: [DATE] · [ASSET] · [CAUGHT: PRE-LIVE | POST-LIVE] · [WHAT] ·
   validator is not installed until shown to fire in the real execution
   path." · commit `d51c71c`; ground-truth.md line 41
 
-- 2026-08-19 · Canon (RECEIPTS.md itself) · POST-LIVE · RECEIPTS.md stood
+- 2026-08-18 · Canon (RECEIPTS.md itself) · POST-LIVE · RECEIPTS.md stood
   published stating `_postbuild_check.py` runs six validators; all three
   property repos contain exactly five (`check_interactive_js`,
   `check_placeholders`, `check_duplicate_labels`, `check_credentials`,
@@ -644,7 +646,7 @@ Format: [DATE] · [ASSET] · [CAUGHT: PRE-LIVE | POST-LIVE] · [WHAT] ·
   without anyone opening the file. · Caught when the figure was checked
   directly against the code instead of taken on trust. · Produced the
   standing rule: "a figure asserted in a kickoff is not a verified
-  figure." · commit `66b6336` (correction); ground-truth.md lines 14-21
+  figure." · commit `bea41af` (correction); ground-truth.md lines 14-21
 
 - 2026-08-19 · Portfolio (DCI/GCI/LGM lead-capture forms) · PRE-LIVE · A
   browser canary re-queries Postgres rather than trusting the
