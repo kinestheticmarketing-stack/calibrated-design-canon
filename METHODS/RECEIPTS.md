@@ -517,6 +517,247 @@ METHODOLOGY — The Calibrated Stack (meta-receipt)
   AI: built a repeatable governance system for it and sells it. · Gumroad
 
 ═══════════════════════════════════════════════════════════════
+VERIFICATION RECEIPTS — defects our checks caught, and missed
+═══════════════════════════════════════════════════════════════
+
+What this records: every false claim, fabricated figure, or silent
+failure the Calibrated Stack's own instruments caught — and every one
+they missed until later. Our numbers only. No comparative claims about
+anyone else's process belong in this section.
+
+Why the misses stay in: a verification record that only lists catches
+is a marketing claim. The POST-LIVE rows are what make the PRE-LIVE
+rows believable, and each one produced a method rule in canon.
+
+Format: [DATE] · [ASSET] · [CAUGHT: PRE-LIVE | POST-LIVE] · [WHAT] ·
+[HOW CAUGHT] · [RULE IT PRODUCED, if any] · [SOURCE]
+
+- 2026-07-12 · Porter · PRE-LIVE · A demonstration test captured an
+  alert-email body verbatim for a worst-case error and found request-derived
+  PII (a fake phone number) leaking into it, uncaught by prior review. No
+  email send in this wave was ever unmocked. · Caught by a purpose-built
+  PII-capture test. · Produced the Director's SCRUB ruling: alert emails
+  now carry only fixed structured fields (exception_type, route, method,
+  tenant_id, occurrence_count, first_seen, last_seen, distinct-error
+  count) — no message text or traceback, ever. · commits `d156bfb`
+  (test), `def5825` (fix)
+
+- 2026-07-12 · Porter · PRE-LIVE · A malformed `?limit=abc` query param on
+  `/internal/errors` returned 422 before the auth check ran (typed-param
+  validation runs before route body/auth in the framework), revealing the
+  endpoint's existence and undermining its intended 404-invisible-auth
+  design. · Caught by a pre-push audit probe ("Auditor Flag 1"). ·
+  Produced: limit/fingerprint parameters made untyped so auth always runs
+  first, plus a permanent regression test covering all four probed
+  malformed-param cases. · commit `1eae0a9`
+
+- 2026-07-13 · Porter · POST-LIVE · A bot hit `/openapi.json` in
+  production and crashed schema generation; root cause was 28 routes
+  across 12 files registered with `response_class=None`. A working schema
+  would have published the full route map, including `/internal/errors`
+  and its auth header name, negating the prior 404-invisibility fix. ·
+  First production catch by the MT.1 error catcher, which recorded the
+  crash. · Produced: `openapi_url`/`docs_url`/`redoc_url` disabled
+  permanently; the 28 occurrences documented as a required prerequisite
+  before docs can ever be re-enabled. · commit `fabeb1c`; DECISIONS.md
+  lines 58-66
+
+- 2026-07-13 · Porter · POST-LIVE · Three real, unmocked email sends
+  occurred across the MT.1 arc (exact: two in MT.1, one in MT.1.3's
+  diagnostic) because a live Resend key in dev turned every forgotten
+  mock into a real send. · Not caught by an automated gate — noticed on
+  review, after the fact. · Produced the `PORTER_SEND_EMAILS` kill switch
+  (true only in production; suppressed sends log loudly) and closed one
+  bypass where the password-reset flow called the Resend client directly
+  instead of through the gated helper. · DECISIONS.md lines 68-74;
+  commit `b06ae13`
+
+- 2026-08-11 · GCI · PRE-LIVE · A receipt claimed "first-ever IndexNow
+  submission for this property," citing a commit that never mentions
+  IndexNow; Greeley's STATE_OF_PROJECT.md recorded the mechanism as "not
+  yet deployed or submitted" the whole time. The false claim was doc-only
+  and was never repeated as an external submission. · Caught on review
+  before being repeated further; retracted in place (struck through, not
+  deleted) and replaced with the real first submission (5 URLs, HTTP
+  200). · commit `cae5351`; RECEIPTS.md lines 286-295
+
+- 2026-08-12 · DCI + Longmont + Greeley · POST-LIVE · Pageview-recording
+  code reached production roughly 100 minutes before the privacy-policy
+  disclosure describing it shipped, on all three properties. · Self-caught
+  same day; the recording kill switch defaulted OFF, so no real visitor
+  row was captured in that window (each property's table held exactly one
+  synthetic test row at the time). · Produced the rule: a
+  disclosure-bearing policy change ships before, or with, the behavior it
+  discloses, never after. · commits `36db29f`+`4830e0c`+`de1e444` (LGM),
+  `82471b5`+`b78ae27`+`e2f7fa6` (DCI), `e221bea`+`77ab453`+`3655e4b`
+  (GCI); RECEIPTS.md lines 420-435
+
+- 2026-08-12 · Longmont · PRE-LIVE · `_generate_sitemap.py` hardcoded a
+  sitemap entry for `insulation-rebate-hub.html`, a page that was never
+  built — a live 404. · Caught by the property's own IndexNow
+  verification step, which halted rather than submitted. No IndexNow
+  submission was made. · Sitemap corrected to 45 URLs, all resolving. ·
+  commits `e62a1ec`, `0ab8ae2`; RECEIPTS.md lines 396-408
+
+- 2026-08-12 · Longmont · PRE-LIVE · A later commit message on the same
+  fix claimed the dead URL "was submitted to Google and Bing before
+  discovery" — the repo's own record contradicts this; the halt commit
+  states plainly "No IndexNow submission was made." · The claim was
+  checked against the repo's own history and refused; it was never
+  carried forward as a receipt. · commits `e62a1ec`, `0ab8ae2`;
+  RECEIPTS.md lines 400-406
+
+- 2026-08-12 · Canon (internal report) · PRE-LIVE · A prior report
+  characterized an audit as "Zarr surfaced 19 findings the other three
+  corpora did not" — no such count appears in any of the four audit
+  documents. The audit's actual table: 1 APPLIED-TRACKED, 14
+  APPLIED-UNTRACKED, 14 NOT-APPLIED, 3 NOT-APPLICABLE, 18 BLOCKED BY BUILD
+  ORDER, of 50. · Caught on review against the source documents before
+  being recorded as fact; not carried forward as a receipt. · commit
+  `d5c40db`; RECEIPTS.md lines 373-384
+
+- 2026-08-12 · DCI · PRE-LIVE · Two prior reports in the same session
+  described a hybrid-insulation page's R-value citation as already
+  sourced, committed, and shipped before either was true — one attributed
+  a fabricated R-value and a fabricated finding to a source that had
+  never actually been checked. · Caught by independently re-verifying the
+  commit and its cited source against the live repo and a fetched primary
+  source before logging anything as fact. · commits `1b98143d`,
+  `f6892f43`; RECEIPTS.md lines 437-459
+
+- 2026-08-17 · Greeley · POST-LIVE · Three calculators shipped live with
+  no JavaScript at all, while regen exit code, two-run determinism, and
+  MD5 manifest all stayed green — none of those checks verified that the
+  artifact functioned, only that it was written. · Caught by a dedicated
+  audit pass, the same pass that also found a credential validator whose
+  canary never fired (an exempted match broke out of both loops) and a
+  citation-label guard, canary-proven in a prior wave, dead behind a
+  premature return the canary never exercised. · Produced Pattern 14: "a
+  validator is not installed until shown to fire in the real execution
+  path." · commit `d51c71c`; ground-truth.md line 41
+
+- 2026-08-19 · Canon (RECEIPTS.md itself) · POST-LIVE · RECEIPTS.md stood
+  published stating `_postbuild_check.py` runs six validators; all three
+  property repos contain exactly five (`check_interactive_js`,
+  `check_placeholders`, `check_duplicate_labels`, `check_credentials`,
+  `check_jsonld`). The figure came from a kickoff and was transcribed
+  without anyone opening the file. · Caught when the figure was checked
+  directly against the code instead of taken on trust. · Produced the
+  standing rule: "a figure asserted in a kickoff is not a verified
+  figure." · commit `66b6336` (correction); ground-truth.md lines 14-21
+
+- 2026-08-19 · Portfolio (DCI/GCI/LGM lead-capture forms) · PRE-LIVE · A
+  browser canary re-queries Postgres rather than trusting the
+  thank-you-page state, because three backend branches were shown able to
+  silently discard a lead while still answering success. · Proven via
+  three deliberate breakages in testing (not a live incident) — the DOM
+  showed success and the canary refused to pass in all three; first clean
+  run green on all three properties (DCI ids 22/23, GCI 16/17, LGM 9/10,
+  including the first time Longmont's form was shown to work end to end).
+  · commit `66b6336`
+
+- 2026-08-20 · Greeley + DCI · POST-LIVE · A citation-scoring instrument
+  issued verdicts (LLS-13, LLS-41, LLS-90, part of LLS-86) on surfaces it
+  had never actually examined. One of its false-clean verdicts let a dead
+  external citation (nrel.gov, DNS-dead) stay live on 2 DCI pages after
+  the instrument reported it already gone. · Caught by an adjudication
+  pass that re-checked the instrument's own coverage. Verdicts were
+  retracted, not downgraded: "a verdict from a blind instrument is not a
+  weaker verdict, it is not a verdict." · commit `53ec527`
+
+- 2026-08-21 · DCI + Longmont · POST-LIVE · A needle-scoped removal check
+  (`grep` for the exact phrase `$400 for air sealing`) reported the false
+  figure gone while the same figure survived live in different phrasing
+  on `xcel-insulation-rebate-guide-denver.html` — live through every
+  prior gate, surviving six Auditor gates before catch. A related $500
+  figure was live in production on LGM (quick-facts and calculator
+  output) until this pass. · Caught by deriving the check from the target
+  concept instead of reusing the edit's own matcher. · Produced the rule:
+  a verification instrument must be constructed independently of the edit
+  instrument. · docs/board/done/xcel-cap-figures-all-unsourced.md,
+  docs/board/done/removed-cap-reasoning-passages.md; PROPERTY_GENESIS.md
+
+- 2026-08-23 · Longmont · POST-LIVE · The Xcel/Longmont Power stacking
+  rule was misrecorded as an outright "never stack" prohibition,
+  producing false denial language on live pages — exactly 100 affirmative
+  stacking-denial instances (92 occurrences across 46 pages in
+  `_shared_components.py` alone, plus more in `_area_pages.py` and
+  `_service_pages.py`). · Caught on audit and corrected to the rule's
+  actual evidentiary form. · Produced the corrected stacking rule now
+  recorded in ground-truth.md. · commits `c795a35` (removal), `98142bd`
+  (rule correction); docs/board/LLS_WAVE1_LGM.md lines 84, 90, 386
+
+- 2026-08-25 · Greeley · POST-LIVE · `cite_inline()` wrapped every
+  `quote=True`-flagged citation entry in verbatim quotation marks
+  regardless of whether the entry actually quoted text. Comparing 6 ICC
+  code sources against a sibling property's verified entries found 12 of
+  21 deviating, 5 outright fabricated (words not in the source at all):
+  `ENERGYSTAR_AIR_SEALING_15PCT` (7 pages), `GREELEY_DESIGN_CRITERIA` (7
+  pages), `BSC_ATTIC_VENTILATION`, `BSC_AIR_LEAKAGE_MOISTURE` (3 pages),
+  `ACCA_MANUAL_J` (2 pages). · Caught by a citation audit that fetched
+  the actual sources live and compared them word for word. · commit
+  `c0d7d27`
+
+- 2026-08-25 · DCI · POST-LIVE · A fabricated ENERGY STAR quotation was
+  live on `attic-ventilation-vs-air-sealing-denver.html`, four deviations
+  from the actual source, all favoring the site's thesis. · Caught by the
+  same live source-fetch audit pattern used on Greeley the same day. ·
+  commit `4c782b2`
+
+- 2026-08-25 · DCI · POST-LIVE · `normfind.py`'s body-text scan is
+  structurally unable to reach `<head>`: a word-boundary defect
+  ("capssealing") was live in `meta[name=description]`,
+  `og:description`, `twitter:description`, and JSON-LD
+  `Article.description` on `xcel-insulation-rebate-guide-denver.html` —
+  the actual SERP snippet and link-preview text. · Caught by a reader
+  grepping the raw file directly, not by the scanner; a whole-corpus
+  sweep then confirmed the rest clean. · Recorded as a standing method
+  limit. · commit `4c782b2`; ops/claim_gate/RULES_SPEC.md line 3934
+
+- 2026-08-25 · DCI · POST-LIVE · Three additional unsourced or
+  overclaiming safety statements were live in the same sweep: an
+  unsourced knob-and-tube alternative product claim, an unsourced
+  "neither material increases fire risk" claim, and a vermiculite
+  affirmative-denial overclaim. · Caught by the same citation audit as
+  the fabricated ENERGY STAR quote above. · commit `4c782b2`
+
+- 2026-08-27 · Greeley · PRE-LIVE · A second read-agent pass re-fetched
+  sources instead of trusting the first citation audit's own summary, and
+  found 4 errors in that audit — including one that would have deleted a
+  true citation and one that undercounted render-sites through a
+  55-character-prefix bug (making "renders on 0 pages" a floor, not a
+  count). · Caught before either error shipped; revised the deviation
+  count from 12/21 to 14/21. · commit `fe795cc`
+
+- 2026-08-27 · Greeley · POST-LIVE · The fix for the fabricated-quotation
+  defect above (`quote=False`) was dead data: `cite_inline()` never read
+  the flag, so the "corrected" IRC text still rendered wrapped in
+  quotation marks the ICC never wrote — longer than the fabrication it
+  replaced. Both regen gates exited 0 on it throughout. · Caught by a
+  follow-up read after the fix had already shipped and gated green. ·
+  Produced the direct fix: `cite_inline()` now branches on the flag. ·
+  commit `9cccf4c`
+
+- 2026-08-27 · Greeley · POST-LIVE · The corrective fix above was itself
+  incomplete: adding `quote=False` without removing the false attribution
+  converted a fabricated quotation into a fabricated assertion still
+  carried on the City's authority. The same pass also caught a hardcoded
+  town name in JSON-LD `areaServed` on 8 area pages, and an
+  asbestos-trigger-year miscue (pre-1940 stated vs. EPA's actual pre-1990
+  window). · Caught on the same follow-up read as the row above. ·
+  commit `b11f681`
+
+- 2026-09-19 · DCI · POST-LIVE · A calculator's JavaScript shipped with
+  Python comment syntax, live and non-functional from 2026-09-18 to
+  2026-09-19. Every wired check stayed green over it — `regen_all.sh`
+  doesn't invoke `functional_proof.sh`, and the claim gate has no
+  JS-parse rule. · Caught by `ops/functional_proof.sh` check [3/7],
+  confirmed via live `curl`. Swept portfolio-wide: 1 of 75 pages
+  affected. · commit `78f5a92`
+
+SUMMARY: 24 rows · 9 PRE-LIVE · 15 POST-LIVE · computed 2026-09-21
+
+═══════════════════════════════════════════════════════════════
 PROJECTIONS (not receipts — targets awaiting real numbers)
 ═══════════════════════════════════════════════════════════════
 
