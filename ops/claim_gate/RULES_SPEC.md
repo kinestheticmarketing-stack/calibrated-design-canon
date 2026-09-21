@@ -1711,6 +1711,44 @@ least a 20% reduction in leakage."* Emptying the lists would redden both
 properties with copy that is correct. **Not one** of those 76 rows contains a
 first-party subject marker; **all** of the 26 live evasions do.
 
+> **RE-MEASURED 2026-09-20 BY ROW K, POST-VETO, AND THE FIGURES HOLD.** The
+> `29 / 47` row above was taken before the veto landed, so it was treated as
+> possibly stale and was re-run rather than inherited. It is not stale. LGM at
+> `ce51cfa` and GCI at `1bc625c`, live corpora, R5 `RAW 228` / `RAW 204`
+> unchanged in every state:
+>
+> | state | LGM `f_struct` | LGM R5 ADJ | GCI `f_struct` | GCI R5 ADJ |
+> |---|---|---|---|---|
+> | as shipped | matched 47, removed **29** | **0** (exit 0) | matched 119, removed **47** | **0** (exit 0) |
+> | only `allowed_thresholds` emptied | matched 13, removed 8 | **21** (exit 1) | matched 34, removed 20 | **27** (exit 1) |
+> | **both** figure lists emptied (the DCI shape) | matched 0, removed 0 | **29** (exit 1) | matched 0, removed 0 | **47** (exit 1) |
+>
+> The veto changes none of these counts, because it vetoes none of the 76 rows
+> — which is the measurement the veto was chosen on, now confirmed against the
+> live corpora rather than against probes.
+>
+> **Splitting the 76 by which list carries it** is new, and it is what the
+> retract-or-keep question actually turns on. `allowed_thresholds` alone carries
+> **21** on LGM and **27** on GCI; `allowed_structure_percentages` carries the
+> remaining 8 and 20. And the 21 are not 21 independent claims: they are **one
+> string family on 21 locators across 18 pages**, the
+> `EFFICIENCY_WORKS_AIR_SEALING` cited-stat block at
+> `_shared_components.py:2245`, which ships its own `source=` (Efficiency Works,
+> a Platte River Power Authority program) and its own first-party `url=`
+> (`efficiencyworks.org`'s incentive PDF). R5 adjudicates the cited-stat block
+> *itself* as an uncited magnitude claim. GCI's 27 are the Atmos Energy CFM(50)
+> and CFM(25) blower-door qualifying conditions across 9 artifacts.
+>
+> **So both entries are retained, and retained by measurement rather than by
+> inconvenience.** The DCI entry was retracted because it was load-bearing for
+> three page-title rows that a mechanism with no per-property configuration
+> could close. Nothing of that shape is available here: what these two carry is
+> correct, first-party-sourced, third-party program copy, and no narrower
+> predicate was invented to protect it — inventing one would be the widened
+> filter this spec forbids.
+
+
+
 **EFFECT.** LGM probes `4 → 14` of 16 adjudicated; GCI `2 → 14`. The two that
 still clear on each are the genuine third-party threshold statement *"The
 qualifying minimum standard for the air sealing rebate is a 20% reduction in CFM
