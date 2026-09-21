@@ -93,6 +93,45 @@ def on_artifact(sec, needle):
     return out
 
 
+# `  <rel>:<surface>  <sub>  <needle> | ...window...  [<needle>]` -- the figure
+# a finding is ON is the TRAILING bracket, never the text window. This is the
+# LOC_RE problem one column over: a hit's TEXT is not what the hit is on. The
+# window is ~200 characters of surrounding prose, so a sentence that names two
+# rates in one breath ("Efficiency Works pays $1.16 per square foot... $0.77")
+# puts BOTH figures in BOTH rows, and the four air-sealing tiers share a single
+# sentence, so every one of the 33 tier rows contains all four of
+# $310/$460/$620/$770. Counting `"$X" in line` therefore counts neighbours.
+_ON_RE = re.compile(r"\[([^\[\]]*)\]\s*$")
+
+
+def _fig_key(tok):
+    """`$620,` `620` `$620.` -> `620`. The gate brackets the needle exactly as
+    it matched it, punctuation included; `_figs_files` records the same trap."""
+    return tok.strip().lstrip("$").rstrip(",.")
+
+
+def on_figure(line):
+    """The figure a finding is ON, or "" for a line with no trailing bracket."""
+    m = _ON_RE.search(line)
+    return _fig_key(m.group(1)) if m else ""
+
+
+def n_on(sec, rid, *figs):
+    """Adjudicated hits whose FINDING IS one of `figs`, not merely near one."""
+    want = {_fig_key(f) for f in figs}
+    return len([l for l in hits(sec, rid) if on_figure(l) in want])
+
+
+def n_on_removed(sec, rid, *figs):
+    """Same, over the FILTER-REMOVED list. Used as the positive control for an
+    absence: a zero in the adjudicated column means something only once the
+    same needle has been shown to fire on the same file."""
+    want = {_fig_key(f) for f in figs}
+    return len([l for l in sec.get(rid, {}).get("removed", [])
+                if l.strip() and l.strip() not in _PLACEHOLDER
+                and on_figure(l) in want])
+
+
 ROWS = []
 
 
@@ -152,10 +191,7 @@ row("5a", "198 rebate dollar figures DCI R3", "dci", "169bb3c",
                   "T1 adjudicated %d (was scored off the RAW pre-filter note "
                   "until 2026-09-20)" % _t1(s)))
 row("5b", "133 rebate dollar figures LGM R3", "lgm", "604d052",
-    lambda t, s: (_p116(s), "$1.16 adjudicated %d, $0.77 adjudicated %d, "
-                            "R3 ADJ %d"
-                  % (n(s, "R3", "$1.16"), n(s, "R3", "$0.77"),
-                     adj_count(s, "R3"))))
+    lambda t, s: _p116(s))
 row("5c", "206 rebate dollar figures GCI R3", "gci", "236c464",
     lambda t, s: _figs_files(s))
 row("5d", "Bare-digit cap 1550/0.75 in a JS comment GCI R3 T2", "gci",
@@ -320,13 +356,87 @@ def _t1(s):
     return len([l for l in hits(s, "R3") if _T1_ROW.match(l)])
 
 
+# Row 5b's THREE documented figure families. Not a new definition: this is
+# GATE_SCORE_2026-09-17.md section 4.2's own decomposition of the 133, and it
+# decomposes exactly -- 65 + 38 + 28 + 2 = 133.
+_EW_SQFT = ("$1.16", "$0.77")                 # Efficiency Works per-sq-ft payout
+_EW_TIERS = ("$310", "$460", "$620", "$770")  # air-sealing leakage tiers
+_BOCO_CAP = ("$2,000",)                       # Boulder County EnergySmart cap
+
+
 def _p116(s):
-    a = n(s, "R3", "$1.16")
-    b = n(s, "R3", "$0.77")
-    tot = a + b
-    if tot >= 94:
-        return "PARTIAL"
-    return "PARTIAL" if tot else "MISSED"
+    """ROW 5b, REWRITTEN 2026-09-20. WHAT IT USED TO BE AND WHY IT WAS NOT A
+    TEST.
+
+        def _p116(s):
+            a = n(s, "R3", "$1.16")
+            b = n(s, "R3", "$0.77")
+            tot = a + b
+            if tot >= 94:
+                return "PARTIAL"
+            return "PARTIAL" if tot else "MISSED"
+
+    BOTH non-zero branches returned PARTIAL, so the `>= 94` threshold selected
+    between PARTIAL and PARTIAL and CAUGHT was unreachable dead code: the row
+    could not return a verdict it names, on any evidence whatsoever. Same class
+    as the row-12 tautology repaired earlier today, pointing the other way --
+    row 12 could only ever say CAUGHT, row 5b could never say it.
+
+    THE SECOND DEFECT IS THE INSTRUMENT, AND IT IS THE ONE THAT MATTERS. `94`
+    was not arbitrary. GATE_CLOSE_2026-09-18.md records the row as "18 -> 109
+    of 133" on the strength of "`$1.16` 0 -> 63 adjudicated rows, `$0.77`
+    0 -> 31", and 63 + 31 = 94. So the THRESHOLD was transcribed from a count
+    of findings ON those figures while the FUNCTION measured `"$1.16" in line`
+    -- every adjudicated row whose ~200-character text window merely mentions
+    the figure. Measured on lgm-604d052 2026-09-20:
+
+        window substring   $1.16 75   $0.77 43   sum 118
+        finding ON it      $1.16 63   $0.77 31   sum  94   <- GATE_CLOSE, exactly
+
+    The two rates share one sentence, so each appears in the other's rows. The
+    inflation therefore ran toward CAUGHT -- the direction `_figs_files` and
+    `_t1` both record a defect score must never drift -- and it was 25% wide.
+
+    WHAT REPLACES IT IS THE ROW'S OWN DOCUMENTED POPULATION, NOT A NEW
+    DEFINITION. Row 5b is "133 rebate dollar figures LGM R3", and section 4.2
+    splits the 133 into three families and nothing else: `$1.16` x65 + `$0.77`
+    x38 (the Efficiency Works per-square-foot payout schedule, which
+    `cost_context_markers` pardoned entirely at the 2026-09-17 score), the
+    `$310/$460/$620/$770` air-sealing leakage tiers x28, and `$2,000` x2 (the
+    Boulder County EnergySmart income-qualified cap). The gate has CAUGHT this
+    defect when it adjudicates ALL THREE families and PARTIAL when it reaches
+    some -- the shape `_corpus_hole` already uses: the row names three things,
+    so one or two of them is PARTIAL, not CAUGHT. No threshold is tuned here;
+    the only numbers are family presence.
+
+    MEASURED 2026-09-20 on lgm-604d052: schedule 94, tiers 33, cap 0. Those sum
+    to 127, which is R3's ENTIRE adjudicated population on that tree, so no
+    fourth family is being overlooked by the three-family frame. Two families
+    of three: PARTIAL, which is what every document says this row is.
+
+    THE CAP'S ZERO IS A REAL ABSENCE, NOT A BLIND INSTRUMENT. The same needle
+    finds exactly 2 findings on `$2,000` in R3's FILTER-REMOVED list -- matching
+    section 4.2's "`$2,000` x2" -- each printing its own reason inline. CAUGHT
+    is therefore genuinely reachable, and reaching it is a named repair rather
+    than a threshold move. One discrepancy recorded rather than smoothed:
+    section 4.2 attributes that removal to the income-eligibility filter, but at
+    this canon the reason printed on both rows is `[cost_context_markers
+    (Ruling 2 -- costs, not payouts)]`; the income-eligibility filter takes the
+    `100` AMI numerals in the same window. The verdict is PARTIAL either way,
+    but the cause named in canon is one filter out of date.
+    """
+    sched = n_on(s, "R3", *_EW_SQFT)
+    tiers = n_on(s, "R3", *_EW_TIERS)
+    cap = n_on(s, "R3", *_BOCO_CAP)
+    fams = bool(sched) + bool(tiers) + bool(cap)
+    return (("CAUGHT" if fams == 3 else "PARTIAL" if fams else "MISSED"),
+            "%d of 3 documented families -- per-sq-ft schedule %d of 103 "
+            "($1.16 %d, $0.77 %d), air-sealing tiers %d, EnergySmart cap %d "
+            "of 2 (%d of 2 sit in the filter-removed list, so the needle is "
+            "live); R3 ADJ %d"
+            % (fams, sched, n_on(s, "R3", "$1.16"), n_on(s, "R3", "$0.77"),
+               tiers, cap, n_on_removed(s, "R3", *_BOCO_CAP),
+               adj_count(s, "R3")))
 
 
 def _pages2540(s):
@@ -391,6 +501,83 @@ def _pages2540(s):
 #
 # AFTER THIS CORRECTION: PRIOR reads 20 CAUGHT / 3 PARTIAL / 2 MISSED and the
 # run reads 20 CAUGHT / 3 PARTIAL / 2 MISSED, with zero rows flagged CHANGED.
+#
+# =====================================================================
+# STANDING FRAGILITY NOTE -- 20 CAUGHT IS NOT A COMFORTABLE MARGIN.
+# MEASURED 2026-09-20, NOT INHERITED: the claim reached this file as a
+# remark in an adversarial read and appears in NO committed document
+# (`grep -rn -iE 'four of the (twenty|20)|single hit|rests? on (a|one)
+# single' ops/claim_gate/ docs/` -> no match, against a control needle
+# from the same corpus that does match), so it was re-derived here.
+#
+# INSTRUMENT: score.py's own hits() / locator(), each row evaluated with
+# ITS OWN CAUGHT predicate against ITS OWN tree in $REPLAY_OUT.
+# DENOMINATOR for every count below is that rule's ADJUDICATED
+# enumeration on that tree -- the `--- N hits, enumerated ---` block --
+# never RAW, never the filter-removed list. FILTER APPLIED: hits() drops
+# blank lines and the literal `(none)` placeholder; nothing else is
+# removed. On the 18 single-predicate CAUGHT rows that filter removed 0
+# lines (every row's raw `adj` length equals its filtered length).
+#
+# DO NOT "FIX" ANY OF THIS BY MOVING A THRESHOLD. The point is that the
+# next session knows what 20 is standing on.
+#
+# (A) FOUR of the 20 CAUGHT rows flip verdict if ONE adjudicated hit
+#     disappears:
+#
+#     row 1   lgm 8b0f1a9  R1   n('XCEL_BLOWER_DOOR') = 11, over 11
+#             distinct files. CAUGHT requires >= 11. ELEVEN OF ELEVEN,
+#             ZERO MARGIN -- 10 -> PARTIAL. The only CAUGHT row sitting
+#             exactly on its threshold.
+#     row 4b  dci 2a59a97  R7   'Dec. 31' rows = 1. R7 ADJ is 4 and the
+#             row's other leg n(R7,'src:') is 0, so the entire verdict is
+#             one VIS hit on public/xcel-rebate-eligibility-checker.html.
+#             0 -> MISSED.
+#     row 7f  dci d1b6078  R4   n('llms.txt') = 1. R4 ADJ 34; one
+#             LLMS-surface ASSERTS row on public/llms.txt. 0 -> MISSED.
+#     row 9b  gci 12dfcbf  R8   n('contact.html','surfaces-disagree') = 1.
+#             R8 ADJ 27; one VIS row on public/contact.html.
+#             0 -> MISSED.
+#
+# (B) TEN of the 20 CAUGHT rows rest on a SINGLE ARTIFACT -- every
+#     backing hit shares one locator. Hit count then distinct files:
+#
+#       2a  gci e912eee  R2   26 hits / 1  public/insulation-severance.html
+#       3a  lgm a2ba5a6  R7    2 hits / 1  public/insulation-lafayette.html
+#       3b  dci 130921c  R7    7 hits / 1  public/insulation-energy-audit.html
+#       4b  dci 2a59a97  R7    1 hit  / 1  public/xcel-rebate-eligibility-checker.html
+#       5d  gci e994484  R3    2 hits / 1  public/insulation-cost-calculator-greeley.html
+#       7d  gci e994484  R4    5 hits / 1  public/insulation-rebate-hub.html
+#       7e  lgm 2563a56  R4    2 hits / 1  public/knob-and-tube-insulation-longmont.html
+#       7f  dci d1b6078  R4    1 hit  / 1  public/llms.txt
+#       9b  gci 12dfcbf  R8    1 hit  / 1  public/contact.html
+#       11  gci e994484  R10   2 hits / 1  public/insulation-johnstown.html
+#
+#     READ THE 2s AS 1s. In 3a, 7e and 11 the two hits are the LD and VIS
+#     surfaces of the SAME page -- one claim rendered twice, so deleting
+#     the page or dropping its JSON-LD takes both at once. In 5d both hits
+#     come from ONE JS comment (`// CAP/RATE (1550 / 0.75)`), counted twice
+#     because it carries two numerals. These are not independent
+#     detections.
+#
+#     For contrast, the rows with real breadth: 7a 444 hits / 72 files,
+#     4c 227 / 74, 5a 220 / 73, 4a 104 / 38, 7c 73 / 29, 7b 53 / 25,
+#     9a 16 / 10, 6 15 / 3, 1 11 / 11.
+#
+# (C) ON THE OTHER SIDE OF THE LINE: row 8 (dci 4cf7a52) is ONE PAGE from
+#     flipping PARTIAL -> CAUGHT -- `25-40%` adjudicated on 15 distinct
+#     pages against a threshold of >= 16. The single miss is
+#     air-sealing.html, and per GATE_CLOSE_2026-09-18.md it never enters
+#     R5 RAW at all because its verbs ("covers", "drops") are not in
+#     `magnitude_words`. The 16th page is not one filter away; it is a
+#     rule-coverage hole, and a rebate-share claim phrased that way is
+#     invisible to R5 everywhere, not just here.
+#
+# NOT VERIFIED HERE: whether any of these single hits is itself
+# anachronism-dependent -- GATE_CLOSE_2026-09-18.md flags 4b, 4c, 7e and
+# 7f on that ground separately. This note counts evidence, not whether the
+# evidence was foreseeable.
+# =====================================================================
 PRIOR = {
     "1": "CAUGHT", "2a": "CAUGHT", "2b": "MISSED", "3a": "CAUGHT",
     "3b": "CAUGHT", "4a": "CAUGHT", "4b": "CAUGHT", "4c": "CAUGHT",
