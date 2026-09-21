@@ -68,7 +68,7 @@ state to judge". A `REPORT` finding (R11) never changes the exit code.
 |---|---|
 | `--canary` | run **only** the control phase and exit with its result. Independently checkable by hand or in CI. The zero-artifact trap runs **before** this returns, so a green canary is not available on a gutted corpus. |
 | `--brief` | suppress the per-hit and per-removed-item enumerations. Prints `ENUMERATION SUPPRESSED BY --brief` in their place, so a brief run can never be mistaken for a full one. |
-| `--opt-in=R6b` | request the browser cross-product rule. It is **UNAVAILABLE** — it needs a Chrome binary this gate cannot assume — so the gate discloses that and **runs the other ten blocking rules normally**. It does not abort. |
+| `--opt-in=R6b` | request the browser cross-product rule. **It is UNIMPLEMENTED.** This row used to say *"UNAVAILABLE — it needs a Chrome binary this gate cannot assume"*; corrected 2026-09-21, both halves of that were false (Chrome **is** installed here, and the gate has no browser driver, no R6b rule function and no R6b control — see RULES_SPEC.md §6). The flag **discloses** the missing rendered cross-product; it does not run one. The other ten blocking rules run normally and the gate does not abort. |
 | `--peer <repo>` | supply a second property for R9's cross-property half. The path is validated (no `public/` → exit 2), the peer corpus is enumerated, parsed and indexed with the same predicates, and subject value sets are compared across the two properties, skipping `deliberate_divergence`. The summary discloses the outcome **either way** — `R9 CROSS-PROPERTY HALF SKIPPED: no --peer given` or `R9 CROSS-PROPERTY HALF RAN against <path>`. Passing the flag can never make the gate stop saying whether the half ran. |
 | `--report <path>` | also write the output to a file. The only path the gate writes. |
 | `--today YYYY-MM-DD` | override the as-of date (default: the config's `R8.today`). Validated: a non-ISO or impossible calendar date exits 2, because R8 compares dates as strings and an unparseable value would silently disable the future-date test. Control fixtures are pinned to their own reference date, so `--today` cannot turn a fixture's own date into a false alarm. |
@@ -112,10 +112,10 @@ embed frame: …
 ━━━ SUMMARY ━━━
   R1  FABRICATED QUOTATION   RAW N   ADJ N   FAIL
   …
-  OPT-IN NOT RUN: R6b (browser cross-product). Run with --opt-in=R6b.
+  OPT-IN NOT RUN: R6b (browser cross-product, UNIMPLEMENTED). `--opt-in=R6b` DISCLOSES this gap; it does not close it, because no R6b implementation exists in this gate (measured 2026-09-21).
   blocking failures: N (…)
   report-only findings: N (…)
-  opt-in rules not run: N
+  opt-in rules not run: 1 (R6b -- not requested; also NOT IMPLEMENTED)
 CLAIM GATE: PASS | FAIL
 ```
 
@@ -187,7 +187,9 @@ controls**. Both are right about different things, and I cannot edit
   sub-tests and R10's three files are one directory driving two, which pushes
   the control count *down*; and R1, R7, R8c and R10 each gained a second
   control when every control was bound to a single sub-test, which pushes it
-  *up*. R6b is requested-and-unavailable and is **not** counted as a control.
+  *up*. R6b is **unimplemented** and is **not** counted as a control. (This
+  line used to say "requested-and-unavailable"; corrected 2026-09-21 — the rule
+  does not exist, so there is nothing for a control to test.)
 - **24 repair tests**, one per control, under `fixtures/repaired/`.
 - **14 negative controls** agrees exactly: 14 `NEG*.html` documents plus one
   `NEG11.gitfacts.json` sidecar = 15 files.
@@ -336,17 +338,34 @@ provenance block; 64 False). It used to default to True through
 quotation marks as the named source's own words because nobody had said
 otherwise.
 
-R6's **R6b** (the browser cross-product) is opt-in and is never silently
-dropped. When not requested the summary prints
-`OPT-IN NOT RUN: R6b (browser cross-product). Run with --opt-in=R6b.`
-When you pass `--opt-in=R6b` the gate prints
-`canary= R6b-G3 ... UNAVAILABLE: requires a Chrome binary this gate cannot
-assume (spec 6, 7.3). No browser, no outbound request. Disclosed, not run, not
-counted as a control.` and **runs the other ten blocking rules normally**. It
-does not abort and it is not a control failure. Disclosure is what §6 requires;
-aborting all eleven rules converted a documented flag into a permanent red and
-denied the operator the ten rules that do work. The gate makes no outbound
-request and executes no page JavaScript.
+R6's **R6b** (the browser cross-product) is opt-in, is never silently dropped —
+and **is not implemented**.
+
+**CORRECTED 2026-09-21.** This paragraph used to say that on `--opt-in=R6b` the
+gate prints *"`canary= R6b-G3 ... UNAVAILABLE: requires a Chrome binary this
+gate cannot assume (spec 6, 7.3). No browser, no outbound request. Disclosed,
+not run, not counted as a control.`"* **That told the operator their machine was
+the problem, and it was false twice over.** Measured 2026-09-21 against
+`claim_gate.py` at `20b9455` (7737 lines): `grep -nE
+'playwright|puppeteer|selenium|webdriver|--headless|CDP|devtools'` returns **0**
+— a tested zero, since adding `|opt_in` to the same alternation returns hits in
+the same run — and `grep -in 'chrome\|chromium'` returns **exactly 2**, both
+inside the gate's own message strings. There is no R6b rule function, no G3
+driver and no `Control("R6b-G3", …)`. Meanwhile **Chrome 153.0.8010.50 IS
+installed on this machine**. R6b was never a rule that could not run; it was a
+rule that was never written.
+
+When not requested the summary now prints
+`OPT-IN NOT RUN: R6b (browser cross-product, UNIMPLEMENTED). --opt-in=R6b
+DISCLOSES this gap; it does not close it …`. When you pass `--opt-in=R6b` the
+gate prints a `canary= R6b-G3 … NOT IMPLEMENTED …` line and
+`OPT-IN REQUESTED BUT NOT IMPLEMENTED`, and **runs the other ten blocking rules
+normally**. It does not abort and it is not a control failure — that part of
+Ruling A stands: disclosure is what §6 requires, and aborting all eleven rules
+converted a documented flag into a permanent red and denied the operator the ten
+rules that do work. **R6b remains unimplemented; nothing here was made to pass
+and nothing was deleted to hide the gap.** The gate makes no outbound request
+and executes **no** page JavaScript at all.
 
 R6 also prints a real **DENOMINATOR** every run — chains examined, JS texts
 read, conditions located, label assignments found, branches bound to a

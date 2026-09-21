@@ -88,7 +88,8 @@ calibrated-design-canon/
 `package.json`** and no build step (project `CLAUDE.md`). Introducing a
 dependency would add a per-property install to a gate whose whole value is that
 it runs every pass. `html.parser`, `html.unescape`, `json`, `re`, `tokenize`,
-`ast`, `pathlib`, `urllib.parse` cover every rule except the opt-in R6b.
+`ast`, `pathlib`, `urllib.parse` cover every rule the gate actually implements.
+(The one rule they would not cover, opt-in R6b, is **unimplemented** — §6.)
 
 **The wrapper.** `ops/claim_gate.sh` in each property repo is the ONLY
 property-side file, and it does exactly this:
@@ -448,10 +449,10 @@ Rules for this block, all mandatory:
   R2  WRONG-UTILITY CLAIM            RAW 212   ADJ 0     PASS
   ...
   R11 ATTRIBUTION DEBT               RAW 232   ADJ 232   REPORT (non-blocking)
-  OPT-IN NOT RUN: R6b (browser cross-product). Run with --opt-in=R6b.
+  OPT-IN NOT RUN: R6b (browser cross-product, UNIMPLEMENTED). `--opt-in=R6b` DISCLOSES this gap; it does not close it, because no R6b implementation exists in this gate (measured 2026-09-21).
   blocking failures: 3 (R1, R5, R8)
   report-only findings: 1 (R11)
-  opt-in rules not run: 1 (R6b)
+  opt-in rules not run: 1 (R6b -- not requested; also NOT IMPLEMENTED)
 CLAIM GATE: FAIL
 ```
 
@@ -502,8 +503,10 @@ Mechanics, following `_postbuild_check.py`'s `run_canary()` line format exactly:
 - `--canary` runs only the control phase and exits with its result, so the
   controls are independently checkable in CI or by hand — the same affordance
   all three `_postbuild_check.py` copies already offer.
-- **Controls are not optional and have no flag to skip them.** `--opt-in=R6b`
-  adds R6b's controls; nothing removes any.
+- **Controls are not optional and have no flag to skip them.** Nothing removes
+  any. This line used to add *"`--opt-in=R6b` adds R6b's controls"*; **corrected
+  2026-09-21 — R6b has no controls, because R6b has no implementation** (§6).
+  `--opt-in=R6b` adds one disclosure line to the control phase and nothing else.
 - **A rule with no positive-control fixture cannot be registered.** The loader
   refuses it and exits 2. This is the structural version of the same lesson.
 
@@ -519,24 +522,93 @@ extraction is one pass of `html.parser` plus `json.loads` per LD block. R1, R2,
 R3, R4, R5, R7, R8, R9, R10 and R11 are all linear in that and belong in every
 pass.
 
-**R6b — the browser cross-product — is OPT-IN, and it is the only one.** Named,
-not silently dropped. R6a (the static form) is blocking and runs every pass.
+### R6b IS UNIMPLEMENTED — CORRECTION OF 2026-09-21
 
-R6b's cost is measured, not estimated. DCI's `dci-d3-tier-label-fix` row drove
-**140 input combinations on BOTH surfaces** through *"real headless Chrome
-148.0.7778.97 over raw CDP"*, three times (pre-change tree, staging, live), to
-establish 4,465 ordinal pairs and a 45/54/31/10 histogram. It requires a Chrome
-binary this gate cannot assume — DCI's `chrome-path-unlabeled-alert-tradeoff.md`
-and `chrome-path-ruling-dci` lane exist precisely because the Chrome path is not
-portable here, and `ops/browser_canary.js` *"cannot run from this checkout
-(`require.resolve` MODULE_NOT_FOUND for `puppeteer-core`; no `node_modules/`,
-they live on the VPS)."*
+**R6b does not exist in `claim_gate.py`. It is not a rule that cannot run; it is
+a rule that was never written.** This section previously described it as a real
+opt-in rule blocked by a missing Chrome binary. That was false in both halves,
+and the false version is quoted and refuted below rather than deleted.
 
-So: `--opt-in=R6b`. When not run, the summary prints
-`OPT-IN NOT RUN: R6b (browser cross-product). Run with --opt-in=R6b.` — an
-explicit line, never an omission. R6a's own output carries
-`blind spot: R6a reads the branch quantity statically and cannot enumerate the
-rendered cross-product; R6b does that and is opt-in.`
+**WHAT THIS SECTION USED TO SAY**, verbatim, through commit `20b9455`:
+
+> **R6b — the browser cross-product — is OPT-IN, and it is the only one.** Named,
+> not silently dropped. R6a (the static form) is blocking and runs every pass.
+>
+> R6b's cost is measured, not estimated. DCI's `dci-d3-tier-label-fix` row drove
+> **140 input combinations on BOTH surfaces** through *"real headless Chrome
+> 148.0.7778.97 over raw CDP"*, three times (pre-change tree, staging, live), to
+> establish 4,465 ordinal pairs and a 45/54/31/10 histogram. It requires a Chrome
+> binary this gate cannot assume — DCI's `chrome-path-unlabeled-alert-tradeoff.md`
+> and `chrome-path-ruling-dci` lane exist precisely because the Chrome path is not
+> portable here, and `ops/browser_canary.js` *"cannot run from this checkout
+> (`require.resolve` MODULE_NOT_FOUND for `puppeteer-core`; no `node_modules/`,
+> they live on the VPS)."*
+>
+> So: `--opt-in=R6b`. When not run, the summary prints
+> `OPT-IN NOT RUN: R6b (browser cross-product). Run with --opt-in=R6b.` — an
+> explicit line, never an omission. R6a's own output carries
+> `blind spot: R6a reads the branch quantity statically and cannot enumerate the
+> rendered cross-product; R6b does that and is opt-in.`
+
+**WHY THAT IS FALSE.** Measured 2026-09-21 against `claim_gate.py` at `20b9455`,
+denominator 7737 lines:
+
+- `grep -in 'chrome\|chromium'` returns **exactly 2 hits**, and both are inside
+  the gate's own "UNAVAILABLE" message strings. There is no third.
+- `grep -nE 'playwright|puppeteer|selenium|webdriver|--headless|CDP|devtools'`
+  returns **0 hits**. That zero is tested, not assumed: adding `|opt_in` to the
+  same alternation, same tool, same file, same run, returns hits at lines 233,
+  243, 6862 and beyond — so the pattern and the file are both live.
+- There is **no R6b rule function**, **no G3 driver**, and **no
+  `Control("R6b-G3", …)` in `RULES`**. `validate_registry()` never sees R6b
+  because R6b is not a `Rule`.
+- **Chrome IS installed on this machine.** `/Applications/Google
+  Chrome.app/Contents/MacOS/Google Chrome --version` reports **Google Chrome
+  153.0.8010.50**. It is not on `PATH` (`which google-chrome chromium chrome`
+  finds nothing), which is likely how the false reason survived — but the gate
+  never probed either location, because there is no probe.
+
+The DCI measurements quoted in the old text are real: that row did drive 140
+combinations over CDP. What is false is the inference that those measurements
+describe **this gate**. They describe a one-off lane harness, not a rule wired
+into `claim_gate.py`.
+
+**WHAT THE GATE SAYS NOW.** The disclosure lines were rewritten to say
+*unimplemented*, not *unavailable*, and `OPT_IN_RULES["R6b"]` now reads
+`"browser cross-product, UNIMPLEMENTED"` so every line that interpolates it is
+honest:
+
+```
+  OPT-IN NOT RUN: R6b (browser cross-product, UNIMPLEMENTED). `--opt-in=R6b` DISCLOSES this gap; it does not close it, because no R6b implementation exists in this gate (measured 2026-09-21).
+  opt-in rules not run: 1 (R6b -- not requested; also NOT IMPLEMENTED)
+```
+
+and, with `--opt-in=R6b`:
+
+```
+  canary= R6b-G3             (opt-in, browser cross-product)              NOT IMPLEMENTED. This gate contains no browser driver, no R6b rule function and no R6b control -- measured 2026-09-21: 0 hits across claim_gate.py for playwright|puppeteer|selenium|webdriver|--headless|CDP|devtools, and the only 'chrome' literals in the file are these disclosure strings. This is NOT 'unavailable on this machine': Chrome 153.0.8010.50 IS installed here. Nothing ran; nothing is counted as a control; the rendered cross-product was checked by nothing.
+  OPT-IN REQUESTED BUT NOT IMPLEMENTED: R6b (browser cross-product, UNIMPLEMENTED). This gate has no browser driver, no R6b rule function and no R6b control. It is NOT unavailable for want of a Chrome binary -- Chrome 153.0.8010.50 is installed on this machine (measured 2026-09-21). The other ten blocking rules DID run and their verdicts above stand; the rendered cross-product was checked by nothing.
+  opt-in rules not run: 1 (R6b -- requested, NOT IMPLEMENTED, disclosed)
+```
+
+**WHAT WAS NOT DONE, STATED PLAINLY.** R6b **remains unimplemented** after this
+correction. No browser driver was written, no rule function was registered, and
+therefore no positive or negative control for R6b exists or is claimed. Nothing
+was made to pass silently and nothing was deleted to make the discrepancy go
+away — the rule is still named, still opt-in, and now truthfully described. The
+reason for choosing disclosure over implementation: a browser cross-product
+driver is a new subsystem (process launch, CDP transport, input enumeration,
+DOM extraction, two surfaces) whose own controls would have to be built and
+proven before any verdict it produced could be trusted, and a half-built R6b
+that emitted a verdict would be a blindfold wearing a control's name — the exact
+defect class this correction is closing. **Consequence, load-bearing as of
+2026-09-21: LGM's two newly published interactive calculators
+(`insulation-rebate-eligibility-checker-longmont.html` and
+`insulation-rebate-payback-calculator-longmont.html`) have their rendered
+cross-product checked by NOTHING.** R6a's static G1/G2 are the only cover.
+
+**R6a (the static form) is blocking and runs every pass**, and that has not
+changed.
 
 ---
 
@@ -610,7 +682,10 @@ Stated as holes, in the gate's own startup output, not discovered later.
    over a name and phone number."* The gate flags `display:none` / `visibility:
    hidden` on a claim-bearing ancestor selector as an R9 `TRAP` and does not
    claim to be a layout engine.
-9. **The gate does not execute the page's JavaScript** except in opt-in R6b. A
+9. **The gate does not execute the page's JavaScript — AT ALL.** This hole used
+   to read *"except in opt-in R6b"*; **corrected 2026-09-21: R6b is
+   unimplemented** (§6), so there is no exception and no rendered surface is
+   read by anything. A
    claim assembled at runtime from string fragments has **no literal form in the
    bytes** — DCI's D3 row proved the general case: *"no `<label> — <N>% short of
    target.` sentence exists as a literal byte sequence in ANY version of these
@@ -2055,7 +2130,10 @@ label-vs-figure mismatches.** After the fix: **all three measures 0**, histogram
   inclusivity must be declared. DCI's is declared in source: *"`>=` and not `>`
   at 50 on purpose — attic/1980-2010/unknown lands on exactly 50% short, which
   reads as Significantly, not as Moderately."*
-- **G3 — CROSS-PRODUCT UNIQUENESS (dynamic, OPT-IN as R6b).** Enumerate every
+- **G3 — CROSS-PRODUCT UNIQUENESS (dynamic, OPT-IN as R6b). NOT IMPLEMENTED —
+  this paragraph is a SPECIFICATION of a rule that does not exist in
+  `claim_gate.py`, not a description of one that does. See §6's correction of
+  2026-09-21.** Enumerate every
   reachable input combination, collect `(printed_figure, label)` pairs, and
   assert: no figure maps to two labels; no ordinal inversion across all pairs;
   every combination produces a label; no maximal-severity input lands below
@@ -2079,8 +2157,9 @@ short of target.` **15 times** and `Close to code — 47% short of target.`
 **twice**; live renders each **0** times.
 
 **SURFACES.** `JS` (source of the branch), `SRC` (the generator that emits it),
-and for R6b the rendered DOM of both the full page and `EMBED`. Both surfaces
-are required for R6b because **DCI's calculator core is spliced into two
+and — **in R6b's specification only, which is unimplemented (§6), so this
+surface is read by nothing today** — the rendered DOM of both the full page and
+`EMBED`. Both surfaces were specified for R6b because **DCI's calculator core is spliced into two
 surfaces** and Ruling 6 for that pass was precisely that the thresholds and
 headlines stay single-source *"because those are the things that could actually
 drift between the two surfaces."* The D3 pass verified all 140 combinations
@@ -2118,15 +2197,31 @@ if (gap === 0) {
 G1 must fire: branch reads `{gap}`, string interpolates `{pctShort}`. G2 must
 fire on the same file with `TARGETS` supplied from config
 (`wall-existing` R-13, `crawl-encap` R-15, `basement` R-15 all target under 20,
-so `gap >= 20` is unreachable for them while `pctShort` can reach 100). R6b, when
-enabled, must reproduce **15** `Moderately under code — 100% short of target.`
-renders. Expected control output:
+so `gap >= 20` is unreachable for them while `pctShort` can reach 100).
+Expected control output:
 
 ```
   canary+ R6a-G1    fixtures/R6_label_figure_contradiction.js   DETECTED  (branch {gap} != printed {pctShort})
   canary+ R6a-G2    fixtures/R6_label_figure_contradiction.js   DETECTED  (3 areas: tier-1 threshold unreachable)
+```
+
+**THE R6b LINE THAT USED TO APPEAR HERE WAS A WORKED SAMPLE OF OUTPUT THE GATE
+HAS NEVER PRODUCED.** Removed as a *sample*, quoted here as a *correction*.
+This section previously read *"R6b, when enabled, must reproduce **15**
+`Moderately under code — 100% short of target.` renders"* and showed a third
+expected control row, verbatim:
+
+```
   canary+ R6b-G3    (opt-in)                                    DETECTED  (15 same-figure-two-label renders)
 ```
+
+No run of `claim_gate.py` has ever emitted that row, at any SHA. There is no
+`Control("R6b-G3", …)` in `RULES` and no code that could produce a `DETECTED`
+verdict for it; with `--opt-in=R6b` the gate prints one `canary=` disclosure
+line and nothing else (§6). The "15 renders" figure is real — it was measured by
+DCI's `dci-d3-tier-label-fix` lane harness — but it was never measured by this
+gate, and printing it as this gate's expected output made an unwritten rule look
+like a tested one. Corrected 2026-09-21.
 
 **WHAT IT DELIBERATELY DOES NOT CATCH.**
 - **Whether the thresholds are the right thresholds.** The D3 pass's own
@@ -2168,6 +2263,7 @@ renders. Expected control output:
       "boundary_inclusivity": { "50": ">=", "20": ">=" },
       "surfaces": ["public/r-value-needed-calculator.html",
                    "public/r-value-needed-calculator-embed.html"],
+      "r6b_note": "THE THREE r6b_* KEYS BELOW CONFIGURE A RULE THAT DOES NOT EXIST … (full text in config/dci.json)",
       "r6b_inputs": { "area": 7, "era": 4, "current": 5 },
       "r6b_expected_combinations": 140,
       "r6b_expected_histogram": [45, 54, 31, 10] }
@@ -2175,6 +2271,16 @@ renders. Expected control output:
   "opt_in": ["R6b"]
 }
 ```
+
+**NOTE, 2026-09-21: the three `r6b_*` keys above configure a rule that does not
+exist** (§6). Nothing reads `r6b_inputs`, nothing drives 140 combinations and
+nothing compares the histogram; those figures were measured by DCI's
+`dci-d3-tier-label-fix` lane harness, never by this gate. They are kept as the
+specification a future R6b must satisfy and are now labelled in `dci.json` with
+an `r6b_note` so a cold reader cannot mistake them for live configuration. They
+are also invisible to the gate's own dead-config audit, because their parent
+`tools` is in `claim_gate.py`'s `DATA` tuple — the same inertness class that let
+`lgm.json`'s `draft_gate` carry a false corpus assertion unchecked (§10.3).
 
 **EXPECTED FALSE-POSITIVE PRESSURE.** Low for G1/G2 — they are structural. G1's
 real pressure is a helper that legitimately derives the printed value from the
@@ -2824,7 +2930,9 @@ sub-tests:
 - **N3 — VISIBLE vs HIDDEN.** For every tool, the visible output set and the
   hidden-field payload set must agree. From DCI C3's own prescription: *"drive
   the JS across its whole input space and assert payload and visible output never
-  disagree."* Static half blocking; the driven half rides R6b's opt-in harness.
+  disagree."* Static half blocking; the driven half was specified to ride R6b's
+  opt-in harness — **which does not exist (§6), so the driven half is not run by
+  anything.** Corrected 2026-09-21.
 
 **SURFACES.** All of them, including `LLMS` (instances 1 and 2 both live there)
 and `ATTR`/`LOWVIS` (instance 4 is an anchor label).
@@ -3456,13 +3564,54 @@ assumed, in the lane rows cited in §11.
 
   "R11": { "blocking": false, "tracked_terms": [] },
 
+  "draft_gate_retired_note": "RETIRED AND WITHDRAWN 2026-09-21 … (full text in config/lgm.json)"
+}
+```
+
+**CORRECTION, 2026-09-21 — `draft_gate` IS RETIRED, AND THIS SECTION CARRIED THE
+FALSE BLOCK VERBATIM.** Until commit 20b9455 both `config/lgm.json` and this
+listing carried, word for word:
+
+```json
   "draft_gate": { "unpublished_pages": ["insulation-rebates-longmont.html",
                                         "insulation-rebate-eligibility-checker-longmont.html",
                                         "insulation-rebate-payback-longmont.html"],
                   "assertion": "absent from public/, absent from sitemap.xml, absent from llms.txt, HTTP 404 live",
                   "note": "Three rebate pages exist as generators + data and are deliberately unpublished. Their generators exit 2 on a public/ target. Any claim gate run must not treat their absence as a gap." }
-}
 ```
+
+**Every clause of that is false**, measured on LGM at `9dcae1a` on 2026-09-21:
+the three pages are **present** in `public/`, **present** in `sitemap.xml`,
+**present** in `llms.txt`, and return **HTTP 200** live, not 404; and the
+generators no longer `return 2` on a `public/` target, because `ALLOW_PUBLIC =
+True` at `_generate_rebate_hub.py:76`, `_generate_rebate_payback.py:79` and
+`_generate_rebate_checker.py:77` short-circuits the guard. The Director approved
+the copy on 2026-09-20 and the pages were published and verified live on
+2026-09-21.
+
+**It was never a reliable record either.** The third filename,
+`insulation-rebate-payback-longmont.html` (no `-calculator-`), **has never
+existed in LGM**: over a denominator of 296 commits across all refs and 219
+distinct paths ever touched, `grep -F 'insulation-rebate'` over those 219 paths
+returns exactly 3, and that name is not one of them. The block was wrong from
+the day it was written, 2026-09-17, while its premise still held.
+
+**Why nothing caught it, and what changed.** `draft_gate` sat in
+`claim_gate.py`'s `DATA` tuple — the set of config containers the gate's own
+dead-config audit (§"CONFIG KEYS READ BY NO CODE PATH") treats as inert data.
+That made its children unauditable and, because the tuple's entries are string
+literals in `claim_gate.py`, made the key itself count as *read*. A config key
+asserting a falsifiable fact about the corpus therefore had nothing able to
+falsify it. `draft_gate` has been **removed from `DATA`**, and the standing rule
+is now recorded in the code beside the tuple: a key that can make a falsifiable
+claim about the corpus must be read by code that can falsify it, or named with a
+`_DOC_PREFIXES` suffix so the audit reads it as documentation, or declared in
+`documentation_only_keys` with a checkable justification. The retirement was
+taken as **documentation, not as a replacement rule**: LGM now has no unpublished
+pages, so a checkable successor would be a rule configured with an empty input
+set — the blind-rule condition the audit already reports as CONFIG KEYS READ BY
+CODE BUT EMPTY. The live check that the three pages are present is `min_artifacts`
+(62) and `expected_html` (51), both raised for this publication in `6e4c939`.
 
 ### 10.4 GCI — `config/gci.json`
 
