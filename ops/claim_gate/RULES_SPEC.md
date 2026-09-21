@@ -3368,6 +3368,22 @@ assumed, in the lane rows cited in §11.
 
 ### 10.2 DCI — `config/dci.json`
 
+> **SNAPSHOT, 2026-09-17 — TWO VALUES IN THIS BLOCK ARE SUPERSEDED. Read
+> `config/dci.json` for current truth.** (1) `R2.territory_note` below quotes
+> `docs/board/ground-truth.md:5-7` as *"Xcel Energy is both the gas and
+> electric utility for this market … there is no second utility and no
+> service-area hedging required."* **That sentence was RETRACTED on
+> 2026-09-18.** DCI's ground-truth now reads that Xcel is the gas utility for
+> the whole market and the electric utility for all of it **except parts of
+> northern Broomfield (including Anthem), served by United Power** — and that
+> the electric side needed the carve-out all along. (2) Consequently the
+> `"Broomfield"` row below, which shows no electric carve-out, is superseded:
+> the live config carries `"electric": ["Xcel Energy", "United Power"]`,
+> `"electric_state": "PARTIAL"`, `"electric_qualifier": "parts of northern
+> Broomfield, including Anthem"`. The retracted wording is left standing in the
+> block so the snapshot stays a snapshot and the retraction stays legible;
+> it is not the current value. Recorded 2026-09-21.
+
 ```json
 {
   "key": "dci",
