@@ -7165,6 +7165,47 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
         # driver, and no Control("R6b-G3", ...) in RULES; `validate_registry()`
         # never sees R6b because R6b is not a Rule.
         #
+        # THAT GREP NO LONGER MEASURES ANYTHING, BECAUSE THIS DISCLOSURE NOW
+        # QUOTES ITS OWN PATTERN. Re-run it after this commit and it returns 3
+        # lines, not 0, and all three are the comment above and the message
+        # string below. The 'chrome\|chromium' grep is contaminated the same
+        # way: 2 hits at 20b9455, 13 lines in this file as it now stands, every
+        # one of them disclosure text and none of them a code path. Said out
+        # loud so the next reader does not mistake a self-referential hit for
+        # an implementation.
+        #
+        # THE INSTRUMENTS THAT STILL WORK are the import list and the process
+        # table. MEASURED AT THIS COMMIT, on this file, 7889 lines:
+        #
+        #   grep -nE '^(import|from) ' ops/claim_gate/claim_gate.py
+        #     -> exactly 10, all of them: sys, argparse, json, os, re,
+        #        subprocess, tokenize, ast, time, surfaces. Nine stdlib and one
+        #        sibling module. No browser driver is importable from here, and
+        #        RULES_SPEC.md S3's "python3 stdlib only" rule forbids adding
+        #        one without a decision. This one CANNOT be contaminated by
+        #        prose: the pattern is anchored at column 0 and every line of
+        #        this comment begins with whitespace and a '#'.
+        #   grep -n 'subprocess\.' ops/claim_gate/claim_gate.py
+        #     -> 8 lines. THIS COMMENT IS 3 OF THEM -- the two call-site
+        #        quotations below plus the retraction note -- which is the
+        #        same self-contamination as above, disclosed not hidden.
+        #        The 5 CODE lines sit at exactly 2 call sites and BOTH launch
+        #        `git`: subprocess.run(["git"] + list(args), ...) at 334-335
+        #        and subprocess.Popen(["git", "cat-file", "--batch"], ...) at
+        #        829-832.
+        #   grep -nE '^[^#]*subprocess\.' ops/claim_gate/claim_gate.py
+        #     -> exactly 5, and this is the contamination-proof form: the
+        #        [^#]* prefix cannot cross a '#', so no comment quoting the
+        #        call sites can ever be counted. 5 lines, 2 call sites, both
+        #        `git`. There is no third call site, so this process cannot
+        #        start a browser even if a binary were found.
+        #
+        # THE PATCH THIS TEXT CAME FROM SAID "exactly 4 lines at 2 call sites".
+        # THAT COUNT WAS WRONG WHEN IT WAS WRITTEN AND IS CORRECTED HERE: the
+        # Popen call site spans 4 lines, of which 3 carry a `subprocess.`
+        # token, not 2. The conclusion the patch drew from it is unaffected --
+        # 2 call sites, both git, no browser.
+        #
         # (2) CHROME IS PRESENT ON THIS MACHINE, so "cannot assume a Chrome
         # binary" is not the reason. `/Applications/Google Chrome.app/Contents/
         # MacOS/Google Chrome --version` reports Google Chrome 153.0.8010.50.
