@@ -4,11 +4,12 @@
   "repo": "longmontcoloradoinsulation.com",
   "domain": "https://longmontcoloradoinsulation.com",
   "measured_at": {
-    "date": "2026-09-17",
-    "head": "084a423"
+    "date": "2026-09-21",
+    "head": "f89abdd"
   },
-  "min_artifacts": 59,
-  "expected_html": 48,
+  "min_artifacts": 62,
+  "expected_html": 51,
+  "corpus_size_note": "RE-MEASURED 2026-09-21. Was min_artifacts 59 / expected_html 48, measured 2026-09-17 at 084a423. Three Director-approved rebate pages were published on 2026-09-21 (/insulation-rebates-longmont.html, /insulation-rebate-eligibility-checker-longmont.html, /insulation-rebate-payback-calculator-longmont.html), taking html 48 -> 51 and artifacts 59 -> 62. The gate reported the drift itself -- 'the config is stale, not the corpus' -- and these two keys are TRIPWIRES: left stale, the note fires every run on a known cause and masks the next unplanned page add or removal behind an alarm already sounding. Raised deliberately to match a deliberate addition, never to silence a finding. Verify: cd ~/code/longmontcoloradoinsulation.com && find public -name '*.html' | wc -l -> 51, find public -type f | wc -l -> 62.",
   "embed_artifacts": [],
   "embed_artifacts_note": "NULL RESULT — LGM has no embed frame. Verified: ls public/ | /usr/bin/grep -i 'embed|frame|iframe' returns empty.",
   "key_files_excluded": [
