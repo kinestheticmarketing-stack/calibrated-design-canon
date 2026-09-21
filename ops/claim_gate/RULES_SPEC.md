@@ -562,6 +562,33 @@ denominator 7737 lines:
 - There is **no R6b rule function**, **no G3 driver**, and **no
   `Control("R6b-G3", …)` in `RULES`**. `validate_registry()` never sees R6b
   because R6b is not a `Rule`.
+- **The instrument that survives this correction.** The two greps above no
+  longer measure anything, because the corrected disclosure strings now quote
+  their own patterns — re-run them and they return their own text. Measured
+  2026-09-21 on `claim_gate.py` as it now stands, **7889 lines**: the
+  `playwright|…|devtools` alternation returns **3 lines**, not 0, and the
+  `chrome\|chromium` grep returns **13 lines**, not 2 — every hit in both is
+  disclosure text, none is a code path. The contamination-proof measurement is
+  the import list and the process table:
+  `grep -nE '^(import|from) ' claim_gate.py` returns **exactly 10** — `sys`,
+  `argparse`, `json`, `os`, `re`, `subprocess`, `tokenize`, `ast`, `time`,
+  `surfaces` — nine stdlib and one sibling module, no browser driver. That one
+  cannot be contaminated by prose, because the pattern is anchored at column 0
+  and disclosure lines are indented comments. For the process table,
+  `grep -n 'subprocess\.' claim_gate.py` returns **8 lines**, of which **3 are
+  the disclosure comment in `run_controls` quoting the call sites** — so the
+  contamination-proof form is
+  `grep -nE '^[^#]*subprocess\.' claim_gate.py`, which returns **exactly 5
+  lines at 2 call sites, and both launch `git`** (`subprocess.run(["git"] +
+  list(args), …)` at 334-335 and `subprocess.Popen(["git", "cat-file",
+  "--batch"], …)` at 829-832). There is no third call site, so this process
+  cannot start a browser even if a binary were found.
+  *Figure corrected on landing, 2026-09-21.* The recovered row-B patch this
+  bullet came from asserted **"exactly 4 lines at 2 call sites."** That count
+  was wrong when written: the `Popen` call site spans four lines of which
+  three carry a `subprocess.` token, so the true code-line count is 5, not 4.
+  The patch's **conclusion** — two call sites, both `git`, no browser — is
+  unaffected and stands.
 - **Chrome IS installed on this machine.** `/Applications/Google
   Chrome.app/Contents/MacOS/Google Chrome --version` reports **Google Chrome
   153.0.8010.50**. It is not on `PATH` (`which google-chrome chromium chrome`
