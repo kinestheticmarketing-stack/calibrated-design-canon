@@ -574,15 +574,38 @@ denominator 7737 lines:
   `argparse`, `json`, `os`, `re`, `subprocess`, `tokenize`, `ast`, `time`,
   `surfaces` — nine stdlib and one sibling module, no browser driver. That one
   cannot be contaminated by prose, because the pattern is anchored at column 0
-  and disclosure lines are indented comments. For the process table,
+  and disclosure lines are indented comments — **but anchoring at column 0
+  also silently drops every INDENTED import, and this bullet used to read as
+  though 10 were the whole set.** By AST there are **16 imports: 10 top-level
+  and 6 nested inside functions**, the nested ones being only `datetime` (4)
+  and `traceback` (2). The no-browser-driver conclusion survives, but an
+  indented `import webbrowser` would never have appeared in the 10. Enumerate
+  with `ast.walk`, not a column-0 grep. For the process table,
   `grep -n 'subprocess\.' claim_gate.py` returns **8 lines**, of which **3 are
   the disclosure comment in `run_controls` quoting the call sites** — so the
   contamination-proof form is
   `grep -nE '^[^#]*subprocess\.' claim_gate.py`, which returns **exactly 5
   lines at 2 call sites, and both launch `git`** (`subprocess.run(["git"] +
   list(args), …)` at 334-335 and `subprocess.Popen(["git", "cat-file",
-  "--batch"], …)` at 829-832). There is no third call site, so this process
-  cannot start a browser even if a binary were found.
+  "--batch"], …)` at 829-832).
+  **CORRECTED 2026-09-21 — that form is NOT contamination-proof and this
+  bullet used to certify it as such.** It removes false positives from
+  comments and introduces FALSE NEGATIVES: `[^#]*` cannot cross a `#`, so any
+  code line carrying a `#` earlier in it — inside a string literal, say — is
+  skipped entirely. Measured on a probe containing
+  `TAG = "#anchor"; EVIL = subprocess.run([...])`, the pattern returns **0**
+  while the plain grep returns **1**. A real spawn can hide behind it.
+  Likewise the plain count is **not a property of the code**: it was 8 before
+  this correction was written and is 12 after, moved purely by the prose
+  describing it.
+  **THE SOUND INSTRUMENT IS AN AST CENSUS.** Parse the module and walk every
+  `ast.Call` for `subprocess.*`, `os.system`, `os.exec*`, `os.spawn*`,
+  `pty.*`, `webbrowser.*`. It reads structure rather than text, so neither
+  comment contamination nor the `#`-in-string hole touches it. Measured
+  2026-09-21: **exactly 2 spawn calls**, `subprocess.run` at 334 and
+  `subprocess.Popen` at 829, both passing a literal `["git", …]` argv, and
+  **zero** of the other families. That is why this process cannot start a
+  browser. The greps are disclosure; the AST census is the proof.
   *Figure corrected on landing, 2026-09-21.* The recovered row-B patch this
   bullet came from asserted **"exactly 4 lines at 2 call sites."** That count
   was wrong when written: the `Popen` call site spans four lines of which

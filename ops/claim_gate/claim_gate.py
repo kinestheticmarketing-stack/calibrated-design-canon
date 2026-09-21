@@ -7178,27 +7178,59 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
         # table. MEASURED AT THIS COMMIT, on this file, 7889 lines:
         #
         #   grep -nE '^(import|from) ' ops/claim_gate/claim_gate.py
-        #     -> exactly 10, all of them: sys, argparse, json, os, re,
+        #     -> exactly 10 TOP-LEVEL: sys, argparse, json, os, re,
         #        subprocess, tokenize, ast, time, surfaces. Nine stdlib and one
-        #        sibling module. No browser driver is importable from here, and
-        #        RULES_SPEC.md S3's "python3 stdlib only" rule forbids adding
-        #        one without a decision. This one CANNOT be contaminated by
-        #        prose: the pattern is anchored at column 0 and every line of
-        #        this comment begins with whitespace and a '#'.
+        #        sibling module. This pattern cannot be contaminated by prose
+        #        -- it is anchored at column 0 and every line of this comment
+        #        begins with whitespace and a '#'.
+        #
+        #        BUT IT IS NOT THE WHOLE IMPORT SET, AND THIS TEXT USED TO
+        #        IMPLY IT WAS. Anchoring at column 0 silently drops every
+        #        INDENTED import. Measured 2026-09-21 by AST: 16 imports
+        #        total -- 10 top-level and 6 nested inside functions, the
+        #        nested ones being only `datetime` (4) and `traceback` (2).
+        #        The conclusion survives, because neither is a browser driver
+        #        and RULES_SPEC.md S3's "python3 stdlib only" rule forbids
+        #        adding one without a decision -- but an indented
+        #        `import webbrowser` would not have appeared in the 10, and
+        #        the anchored grep would still have read as reassuring.
+        #        Enumerate imports with ast.walk, not with a column-0 grep.
         #   grep -n 'subprocess\.' ops/claim_gate/claim_gate.py
-        #     -> 8 lines. THIS COMMENT IS 3 OF THEM -- the two call-site
-        #        quotations below plus the retraction note -- which is the
-        #        same self-contamination as above, disclosed not hidden.
+        #     -> 12 lines as this file now stands. THIS COMMENT IS 7 OF
+        #        THEM. That figure was 8/3 before the 2026-09-21 correction
+        #        below was written, and it moved purely because the comment
+        #        grew. THE COUNT IS NOT A PROPERTY OF THE CODE; it is a
+        #        property of the code plus however much prose currently
+        #        describes it, and every future edit to this disclosure will
+        #        move it again. That instability is the argument for the AST
+        #        census below, not a reason to keep re-pinning the number.
         #        The 5 CODE lines sit at exactly 2 call sites and BOTH launch
         #        `git`: subprocess.run(["git"] + list(args), ...) at 334-335
         #        and subprocess.Popen(["git", "cat-file", "--batch"], ...) at
         #        829-832.
         #   grep -nE '^[^#]*subprocess\.' ops/claim_gate/claim_gate.py
-        #     -> exactly 5, and this is the contamination-proof form: the
-        #        [^#]* prefix cannot cross a '#', so no comment quoting the
-        #        call sites can ever be counted. 5 lines, 2 call sites, both
-        #        `git`. There is no third call site, so this process cannot
-        #        start a browser even if a binary were found.
+        #     -> exactly 5. This removes the comment contamination -- [^#]*
+        #        cannot cross a '#', so no comment quoting the call sites is
+        #        counted -- but IT IS NOT SOUND AS A SAFETY INSTRUMENT AND
+        #        THIS TEXT USED TO CLAIM IT WAS. It trades false positives for
+        #        FALSE NEGATIVES: any code line with a '#' earlier in it, such
+        #        as inside a string literal, is skipped entirely. Measured
+        #        2026-09-21 on a probe file containing
+        #        `TAG = "#anchor"; EVIL = subprocess.run([...])` the pattern
+        #        returns 0 while the plain grep returns 1. A real spawn can
+        #        hide behind a '#' in a string.
+        #
+        #   THE SOUND INSTRUMENT IS AN AST CENSUS, not any grep. Parsing the
+        #   module and walking every ast.Call for subprocess.*/os.system/
+        #   os.exec*/os.spawn*/pty.*/webbrowser.* is immune to both comment
+        #   contamination and the '#'-in-string hole, because it reads code
+        #   structure rather than text. Measured 2026-09-21:
+        #        spawn calls: EXACTLY 2 -- subprocess.run at 334 and
+        #        subprocess.Popen at 829. Zero os.system, os.exec*, os.spawn*,
+        #        pty.*, webbrowser.*. Both call sites pass a literal ["git",
+        #        ...] argv.
+        #   THAT is why this process cannot start a browser. The greps above
+        #   are disclosure, not proof.
         #
         # THE PATCH THIS TEXT CAME FROM SAID "exactly 4 lines at 2 call sites".
         # THAT COUNT WAS WRONG WHEN IT WAS WRITTEN AND IS CORRECTED HERE: the
