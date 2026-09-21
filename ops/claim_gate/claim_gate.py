@@ -588,6 +588,47 @@ def unread_config_keys(cfg):
     # behavioural again -- "R2.towns.Ault.substring_trap" is a key somebody
     # expected to do something -- so the walk RECURSES FULLY and only declines
     # to report the container's own first level.
+    #
+    # THIS TUPLE IS NOT AN EXEMPTION FOR ASSERTIONS, AND `draft_gate` PROVED IT
+    # COULD BE USED AS ONE. REMOVED 2026-09-21.
+    #
+    # `draft_gate` never met the criterion stated directly above. Its direct
+    # children were not values keyed by anything -- they were the fixed names
+    # `unpublished_pages`, `assertion` and `note`, and the `assertion` was a
+    # falsifiable claim about LGM's live corpus, verbatim: "absent from public/,
+    # absent from sitemap.xml, absent from llms.txt, HTTP 404 live". Membership
+    # here did two harmful things at once. It made those children inert. AND --
+    # because the entries of this tuple are themselves STRING LITERALS in this
+    # file, which is precisely what the audit above counts as evidence that a
+    # key is read -- it made `draft_gate` itself look wired up to code. So the
+    # one key in the portfolio that asserted a corpus fact was the one key
+    # nothing could falsify. It stayed green through the 2026-09-21 publication
+    # that made all four of its clauses false, and through 6e4c939 the day
+    # before, which edited two keys higher in the same file for exactly that
+    # publication. See lgm.json's `draft_gate_retired_note` for the
+    # clause-by-clause refutation and the measurements behind it.
+    #
+    # MEASURED BEFORE REMOVING IT, so this is a rule and not a single sighting:
+    # of the 30 names this tuple carried, `draft_gate` was the ONLY dict whose
+    # direct children were fixed behavioural names carrying a standing claim.
+    # Every other dict entry is keyed by town, alias, domain, program, page
+    # slug, value slot, assembly target, threshold or document field, and the
+    # rest are lists of objects.
+    #
+    # THE RULE. A config key that can make a falsifiable claim about the corpus
+    # must be one of three things: read by code that can falsify it; named so
+    # the audit reads it as documentation (a `_note`, `_reason`, `_basis`,
+    # `_source` or `_why` suffix -- see _DOC_PREFIXES); or declared in
+    # `documentation_only_keys` with a justification `_justified()` accepts. It
+    # must not be parked here, where it gets inertness with no justification and
+    # no check.
+    #
+    # STILL OPEN, DELIBERATELY NOT CHANGED BY THIS COMMIT: `expected`,
+    # `tariff_identity`, `measured_at` and `r6b_inputs` also have fixed children
+    # rather than keyed data. They read as rule inputs and measurement
+    # provenance rather than standing assertions about public/, so they were
+    # left alone rather than churned inside a remediation pass -- but they are
+    # named here so the next reader does not have to re-measure to find them.
     DATA = ("towns", "utility_aliases", "utility_domains", "program_aliases",
             "page_titles", "pinned_pages", "allowed_occurrences",
             "current_replacements", "tariff_identity", "value_slots",
@@ -597,7 +638,7 @@ def unread_config_keys(cfg):
             "superseded_propositions", "retired_propositions",
             "tracked_terms", "anomalies",
             "deliberate_divergence", "deliberate_edition_divergence",
-            "tools", "draft_gate", "known_uncited", "hedge_pairs",
+            "tools", "known_uncited", "hedge_pairs",
             "documentation_only_keys")
     unread = []
     empties = []
@@ -5494,8 +5535,10 @@ def rule_R9(ctx, res):
         hidden = t.get("hidden", []) or []
         # `art.ids` HOLDS STATIC MARKUP IDS ONLY. A hidden field built by
         # document.createElement never appears there, and this gate does not
-        # execute JS outside opt-in R6b -- it says so in its own KNOWN HOLES
-        # header. So a presence check keyed on static ids cannot tell "the
+        # execute JS AT ALL -- it says so in its own KNOWN HOLES header. (That
+        # header used to read "outside opt-in R6b"; corrected 2026-09-21, R6b
+        # is unimplemented, so there is no exception.) So a presence check
+        # keyed on static ids cannot tell "the
         # field does not exist" from "the field is created at runtime", and
         # this one resolved that ambiguity as a BLOCKING failure.
         #
@@ -5620,7 +5663,9 @@ def rule_R9(ctx, res):
         Filt("deliberate_divergence recorded in config", f_delib),
         Filt("N3 payload field is absent from STATIC markup but named by the "
              "page's own JS, i.e. constructed at runtime -- the gate does not "
-             "execute JS outside opt-in R6b (its own KNOWN HOLES header), so "
+             "execute JS AT ALL (its own KNOWN HOLES header; opt-in R6b was "
+             "specified as the one exception and is UNIMPLEMENTED, measured "
+             "2026-09-21), so "
              "it has no evidence either way and REPORTS rather than blocks. A "
              "field named by NO markup and NO script is still `absent` and "
              "still blocks; only this one evidentiary state is filtered, and "
@@ -6566,10 +6611,15 @@ RULES = [
                                        "R5p_struct_first_party.html"))]),
 
     Rule("R6", "SELF-CONTRADICTING OUTPUT", "CLAIM TEST",
-         "JS SRC (and, for opt-in R6b, the rendered DOM of the page and EMBED)",
+         "JS SRC only. (Opt-in R6b was specified to add the rendered DOM of "
+         "the page and EMBED; R6b is UNIMPLEMENTED, so no rendered surface is "
+         "read by anything -- corrected 2026-09-21.)",
          "SRC and RAW -- not TXT, which deletes the script body",
          "R6a reads the branch quantity statically and cannot enumerate the "
-         "rendered cross-product; R6b does that and is opt-in. G1/G2 use a "
+         "rendered cross-product. R6b was specified to do that and is "
+         "UNIMPLEMENTED (measured 2026-09-21: no browser driver in this "
+         "gate), so NOTHING enumerates the rendered cross-product today; "
+         "--opt-in=R6b discloses that gap rather than closing it. G1/G2 use a "
          "line-scoped conditional-chain scanner over the emitted JS, not a "
          "JS parser. It asserts internal consistency, never calibration, and "
          "never that a target value is right.",
@@ -6704,7 +6754,11 @@ RULES = [
 ]
 
 OPT_IN_RULES = {
-    "R6b": "browser cross-product",
+    # "browser cross-product, UNIMPLEMENTED" and not "browser cross-product":
+    # every line that interpolates this value used to read as a rule that
+    # exists and was skipped. It does not exist. See the R6b block in
+    # run_controls() for the 2026-09-21 measurement and the correction.
+    "R6b": "browser cross-product, UNIMPLEMENTED",
 }
 
 
@@ -7083,16 +7137,58 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
         "(no repair fixture)" % (rep_clean, rep_fired, rep_absent))
 
     if "R6b" in opt_in:
-        # RULING A, 2026-09-17: a disclosed non-run, NOT a control failure and
-        # NOT an abort. Section 6 requires the gate to DISCLOSE the opt-in
-        # rather than silently drop it, and disclosure satisfies that;
-        # aborting all eleven rules converted a documented flag into a
-        # permanent red and denied the operator the other ten rules.
+        # RULING A, 2026-09-17, STANDS AS TO DISPOSITION: a non-run here is NOT
+        # a control failure and NOT an abort. Section 6 requires the gate to
+        # DISCLOSE the opt-in rather than silently drop it; aborting all eleven
+        # rules converted a documented flag into a permanent red and denied the
+        # operator the other ten rules.
+        #
+        # CORRECTED 2026-09-21: THE REASON RULING A GAVE WAS FALSE, AND IT
+        # BLAMED THE OPERATOR'S MACHINE. Through 20b9455 this line read,
+        # verbatim: "UNAVAILABLE: requires a Chrome binary this gate cannot
+        # assume (spec 6, 7.3). No browser, no outbound request. Disclosed, not
+        # run, not counted as a control." That sentence says two things, and
+        # both are false: that an R6b exists which a Chrome binary would let
+        # run, and that the binary is what is missing.
+        #
+        # MEASURED 2026-09-21, both halves.
+        #
+        # (1) R6b HAS NO IMPLEMENTATION ANYWHERE IN THIS GATE. Denominator:
+        # claim_gate.py at 20b9455, 7737 lines. `grep -in 'chrome\|chromium'`
+        # returns exactly 2 hits and BOTH are inside these disclosure strings;
+        # there is no third. `grep -nE
+        # 'playwright|puppeteer|selenium|webdriver|--headless|CDP|devtools'`
+        # returns 0 hits. That zero is TESTED, not assumed: adding `|opt_in` to
+        # the same alternation, same tool, same file, same run, returns hits at
+        # lines 233, 243, 6862 and on -- so the pattern and the file are both
+        # live and the 0 is a measurement. There is no R6b rule function, no G3
+        # driver, and no Control("R6b-G3", ...) in RULES; `validate_registry()`
+        # never sees R6b because R6b is not a Rule.
+        #
+        # (2) CHROME IS PRESENT ON THIS MACHINE, so "cannot assume a Chrome
+        # binary" is not the reason. `/Applications/Google Chrome.app/Contents/
+        # MacOS/Google Chrome --version` reports Google Chrome 153.0.8010.50.
+        # It is not on PATH (`which google-chrome chromium chrome` finds
+        # nothing), which is presumably how the false reason survived, but the
+        # gate never probed either location -- see (1), there is no probe.
+        #
+        # AND THE GATE STILL DOES NOT PROBE. Deliberate. A probe would re-imply
+        # that the binary is the blocker and put the operator back on the same
+        # false trail the first time a machine lacks Chrome. The truth is
+        # unconditional: the rule does not exist, so Chrome's presence is
+        # irrelevant to it. R6b REMAINS UNIMPLEMENTED after this commit; this
+        # change makes the gate say so instead of blaming the environment.
         out("  canary= %-18s %-44s %s"
             % ("R6b-G3", "(opt-in, browser cross-product)",
-               "UNAVAILABLE: requires a Chrome binary this gate cannot "
-               "assume (spec 6, 7.3). No browser, no outbound request. "
-               "Disclosed, not run, not counted as a control."))
+               "NOT IMPLEMENTED. This gate contains no browser driver, no "
+               "R6b rule function and no R6b control -- measured 2026-09-21: "
+               "0 hits across claim_gate.py for "
+               "playwright|puppeteer|selenium|webdriver|--headless|CDP|"
+               "devtools, and the only 'chrome' literals in the file are "
+               "these disclosure strings. This is NOT 'unavailable on this "
+               "machine': Chrome 153.0.8010.50 IS installed here. Nothing "
+               "ran; nothing is counted as a control; the rendered "
+               "cross-product was checked by nothing."))
 
     after = mtimes(repo)
     if before != after:
@@ -7172,7 +7268,11 @@ def build_parser():
                    help="suppress the per-hit enumerations (prints "
                         "ENUMERATION SUPPRESSED BY --brief in their place)")
     p.add_argument("--opt-in", action="append", default=[],
-                   metavar="RULE", help="enable an opt-in rule (R6b)")
+                   metavar="RULE",
+                   help="request an opt-in rule. The only one is R6b, and "
+                        "R6b is UNIMPLEMENTED (2026-09-21): passing it "
+                        "discloses the missing browser cross-product, it "
+                        "does not run one")
     p.add_argument("--peer", default=None,
                    help="a second repo for R9's cross-property half")
     p.add_argument("--report", default=None,
@@ -7459,7 +7559,11 @@ def _main(args, out, t0):
             "no generator string run on this property is a stylesheet or a "
             "script body")
     out("KNOWN HOLES, stated up front (spec 7): og-image RASTERS are not read "
-        "(%s); no PDF text extraction; no JS execution outside opt-in R6b; no "
+        "(%s); no PDF text extraction; NO JS EXECUTION AT ALL -- opt-in R6b "
+        "was specified to be the one exception and is UNIMPLEMENTED, so the "
+        "rendered cross-product is checked by nothing (corrected 2026-09-21; "
+        "this line used to say 'outside opt-in R6b', which implied a rule "
+        "that exists); no "
         "outbound request, so a live/repo divergence is invisible here; "
         "index.js / operator email bodies / the leads table are out of scope."
         % ("TOTAL on this property -- og-image.png has no SVG sibling"
@@ -7674,13 +7778,20 @@ def _main(args, out, t0):
         out("  %-4s%-32s RAW %-6d ADJ %-6d %s%s"
             % (rid, name, raw, adj, verdict, tail))
     if "R6b" not in opt_in:
-        out("  OPT-IN NOT RUN: R6b (%s). Run with --opt-in=R6b."
-            % OPT_IN_RULES["R6b"])
+        # The old form of this line was "Run with --opt-in=R6b." -- an
+        # instruction to run a rule that does not exist. Corrected 2026-09-21:
+        # the flag discloses the gap, it does not close it.
+        out("  OPT-IN NOT RUN: R6b (%s). `--opt-in=R6b` DISCLOSES this gap; "
+            "it does not close it, because no R6b implementation exists in "
+            "this gate (measured 2026-09-21)." % OPT_IN_RULES["R6b"])
     else:
-        out("  OPT-IN REQUESTED BUT UNAVAILABLE: R6b (%s) requires a Chrome "
-            "binary this gate cannot assume (spec 6, 7.3). The other ten "
-            "blocking rules DID run and their verdicts above stand."
-            % OPT_IN_RULES["R6b"])
+        out("  OPT-IN REQUESTED BUT NOT IMPLEMENTED: R6b (%s). This gate has "
+            "no browser driver, no R6b rule function and no R6b control. It "
+            "is NOT unavailable for want of a Chrome binary -- Chrome "
+            "153.0.8010.50 is installed on this machine (measured "
+            "2026-09-21). The other ten blocking rules DID run and their "
+            "verdicts above stand; the rendered cross-product was checked by "
+            "nothing." % OPT_IN_RULES["R6b"])
     if not args.peer:
         out("  R9 CROSS-PROPERTY HALF SKIPPED: no --peer given")
     else:
@@ -7713,8 +7824,8 @@ def _main(args, out, t0):
         out("  report-only rules found nothing this run: %s"
             % ", ".join(report_only))
     out("  opt-in rules not run: 1 (R6b -- %s)"
-        % ("requested, UNAVAILABLE, disclosed" if "R6b" in opt_in
-           else "not requested"))
+        % ("requested, NOT IMPLEMENTED, disclosed" if "R6b" in opt_in
+           else "not requested; also NOT IMPLEMENTED"))
     exit_code = 1 if blocking_fail else 0
     out("CLAIM GATE: %s" % ("FAIL" if exit_code else "PASS"))
     _finish(out, args, exit_code, t0)

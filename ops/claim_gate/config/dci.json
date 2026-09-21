@@ -354,6 +354,7 @@
           "public/r-value-needed-calculator.html",
           "public/r-value-needed-calculator-embed.html"
         ],
+        "r6b_note": "THE THREE r6b_* KEYS BELOW CONFIGURE A RULE THAT DOES NOT EXIST. Recorded 2026-09-21. R6b is UNIMPLEMENTED in claim_gate.py -- measured that day against 20b9455, 7737 lines: 0 hits for `grep -nE 'playwright|puppeteer|selenium|webdriver|--headless|CDP|devtools'` (a tested zero -- adding |opt_in to the same alternation returns hits in the same run), and the only 'chrome' literals in the file are the gate's own disclosure strings. There is no R6b rule function, no G3 driver and no Control(\"R6b-G3\", ...). So NOTHING reads area/era/current, NOTHING drives 140 combinations, and NOTHING compares a histogram. The 140 and the [45, 54, 31, 10] are real numbers measured by DCI's dci-d3-tier-label-fix LANE HARNESS over raw CDP; they were never produced by this gate, and a cold reader seeing them here would reasonably conclude otherwise. They are kept as the specification a future R6b should satisfy, not deleted, and they are labelled rather than left to be misread. Note also that these keys are invisible to the gate's own dead-config audit because their parent `tools` is in claim_gate.py's DATA tuple -- the same inertness class that let lgm.json's `draft_gate` assert a false corpus fact unchecked until 2026-09-21.",
         "r6b_inputs": {
           "area": 7,
           "era": 4,
