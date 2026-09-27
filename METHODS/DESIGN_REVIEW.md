@@ -47,9 +47,14 @@ A polished page cannot compensate for a form that does not submit.
 - Neglect signals: a stale year, dated claims, broken interactions or
   outdated examples read as an abandoned business. Forms are proven
   end-to-end on a schedule, not assumed.
+  'Last updated' publishes the last visible-text change date; 'Last
+  reviewed' is never derived.
 - Accessibility: WCAG 2.1 AA baseline. Zero serious or critical axe
   violations; AA contrast (4.5:1 body text, 3:1 large text);
   literal alt text; visible keyboard focus; a skip link.
+  Run axe at 375px AND 1280px; a single viewport misses overflow-only
+  violations. Keyboard checks use sequential Tab; .focus() cannot reach
+  visibility:hidden elements and false-fails.
 
 ## 5. Directing AI builds
 - State one organizing concept before any build. "Make it premium"
