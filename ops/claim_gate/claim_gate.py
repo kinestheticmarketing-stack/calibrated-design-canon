@@ -789,13 +789,30 @@ DATE_LINE_PAT = re.compile(
     r"Last reviewed|<lastmod>|datetime=\"\d{4}-\d{2}-\d{2}\""
     r"|\"dateModified\"|\"datePublished\"")
 
+# The RENDERED text of a <time> element that carries a machine-readable
+# datetime. DATE_LINE_PAT removes the whole SOURCE LINE, which is enough only
+# while the element and its rendering sit on one line -- they do on all three
+# properties today, and relying on that is relying on a generator's line
+# wrapping. A <time datetime="..."> body is by construction the same date the
+# attribute states, so blanking it can never hide editorial prose, and it makes
+# "a commit that changed only a date cannot date itself forward" hold
+# regardless of how the markup is wrapped.
+TIME_INNER_PAT = re.compile(
+    r"(<time\b[^>]*\bdatetime\s*=[^>]*>)(.*?)(</time\s*>)",
+    re.IGNORECASE | re.DOTALL)
+
 
 class GitFacts(object):
-    """Per-file first-appearance and last VISIBLE-TEXT change, with the
-    review-date line itself stripped so it cannot count as its own change --
-    GCI 348baf9 hit that exact false positive and solved it this way."""
+    """Per-file first-appearance and last VISIBLE-TEXT change.
 
-    def __init__(self, repo=None, cap=15):
+    The visible-text half is computed with the gate's OWN extractor
+    (surfaces.visible_text over surfaces.parse_blob), with every date surface
+    normalised out of both sides first so a commit that changed only a review
+    date cannot date itself forward -- GCI 348baf9 hit that exact false
+    positive and the date-stripping is inherited from its fix.
+    """
+
+    def __init__(self, repo=None, cap=40):
         self.repo = repo
         self.cap = cap
         self.commits = {}
@@ -804,6 +821,7 @@ class GitFacts(object):
         self._sidecar = {}
         self.available = False
         self.capped = []
+        self.never_changed = []
         self._proc = None
 
     def load(self, repo, rels):
@@ -865,21 +883,38 @@ class GitFacts(object):
                 pass
             self._proc = None
 
-    def last_content_change(self, rel):
+    def last_visible_text_change(self, rel):
+        """The date of the newest commit that changed this file's VISIBLE TEXT,
+        or None if there is no such commit inside the examined window.
+
+        RETURNS None RATHER THAN A GUESS when the walk finds nothing. The old
+        version fell back to `lst[min(len(lst), cap) - 1][1]` -- the date of the
+        OLDEST COMMIT IT HAPPENED TO EXAMINE -- which is not a measurement of
+        anything: it is the window's edge wearing the name of a finding. With a
+        raw-line diff that fallback was nearly unreachable, because almost every
+        commit changes some raw line; now that the comparison is visible text,
+        markup-only commits are common and the walk goes deeper, so the fallback
+        would have become a manufacturing line for part (d) hits. An unknown
+        date must make part (d) SILENT and SAY SO, never fire.
+        """
         if rel in self._content:
             return self._content[rel]
         lst = self.commits.get(rel) or []
         answer = None
-        for i, (sha, date) in enumerate(lst[:self.cap]):
+        for sha, date in lst[:self.cap]:
             cur = self.blob(sha, rel)
             parent = self.blob(sha + "^", rel)
-            if _differs_outside_date_lines(cur, parent):
+            if _visible_text_differs(rel, cur, parent):
                 answer = date
                 break
         if answer is None and lst:
             if len(lst) > self.cap:
+                # Genuinely truncated: there is more history than was read.
                 self.capped.append(rel)
-            answer = lst[min(len(lst), self.cap) - 1][1]
+            else:
+                # The WHOLE history was examined and this file's visible text
+                # has never changed since it first appeared. Not a degradation.
+                self.never_changed.append(rel)
         self._content[rel] = answer
         return answer
 
@@ -893,10 +928,92 @@ class GitFacts(object):
         self.available = True
 
 
-def _differs_outside_date_lines(a, b):
-    la = [x for x in a.splitlines() if not DATE_LINE_PAT.search(x)]
-    lb = [x for x in b.splitlines() if not DATE_LINE_PAT.search(x)]
-    return la != lb
+def _date_normalised_markup(raw):
+    """Blank the RENDERED body of every <time> element that states a
+    machine-readable date, leaving the markup structure untouched.
+
+    STRUCTURE-PRESERVING ON PURPOSE. The previous implementation normalised
+    dates by DROPPING whole source lines that matched DATE_LINE_PAT, which is
+    safe for a line-oriented file and unsafe for markup: a generator that wraps
+    `<script type="application/ld+json">` so that `"dateModified"` and
+    `</script>` land on a dropped line leaves an unterminated <script>, the
+    script-body regex then matches nothing, and the raw JSON-LD LEAKS INTO THE
+    VISIBLE TEXT of one side of the comparison only -- a date-only commit would
+    report a visible-text change, which is the exact false positive the
+    date-stripping exists to prevent. Caught by
+    fixtures/R8d_part_d/date_only/after.html, which wraps both elements
+    deliberately.
+
+    A <time> body is by construction the same date its datetime attribute
+    states, so blanking it can never hide editorial prose.
+    """
+    return TIME_INNER_PAT.sub(lambda m: m.group(1) + m.group(3), raw)
+
+
+_MONTH_ALT = ("January|February|March|April|May|June|July|August|September"
+              "|October|November|December")
+# The review-date phrase as a READER sees it, for the case R8's own
+# `footer_marker` config exists to cover: a page that prints "Last reviewed:
+# September 18, 2026" as plain text with no <time> element. Scoped to the phrase
+# rather than applied to every date in the document, because a date in editorial
+# prose -- a rebate deadline, a program's effective date -- IS content, and
+# blanking those would make part (d) blind to a real copy change.
+_REVIEW_DATE_TXT = re.compile(
+    r"\b(Last\s+(?:reviewed|updated)|Reviewed|Updated)\b\s*:?\s*"
+    r"(?:(?:%s)\s+\d{1,2},\s*\d{4}|\d{4}-\d{2}-\d{2})" % _MONTH_ALT,
+    re.IGNORECASE)
+
+
+def visible_text_of(rel, raw):
+    """The VISIBLE TEXT of a raw blob, date surfaces normalised out.
+
+    ONE extractor, and it is the gate's own: surfaces.parse_blob ->
+    surfaces.visible_text, the same pair every rule's VIS/LOWVIS/TITLE/ATTR
+    stream comes from. `rel` is passed only so parse_blob can pick the kind from
+    the extension.
+
+    Date normalisation runs in two places for two reasons. In MARKUP, before
+    extraction, because a <time> body has to be neutralised while the element is
+    still recognisable. In LINE-ORIENTED files, by dropping date lines, because
+    that is what a <lastmod> or a llms.txt date line is -- a line. Then once
+    more over the extracted text, for a plain-text review-date phrase that never
+    had a <time> element at all.
+    """
+    if not raw:
+        return ""
+    base = rel.rsplit("/", 1)[-1]
+    low = base.lower()
+    if low.endswith((".html", ".htm", ".svg")):
+        prepared = _date_normalised_markup(raw)
+    else:
+        prepared = "\n".join(x for x in raw.splitlines()
+                             if not DATE_LINE_PAT.search(x))
+    text = S.visible_text(S.parse_blob(base, prepared))
+    return _REVIEW_DATE_TXT.sub(lambda m: m.group(1), text)
+
+
+def visible_text_sha256(rel, raw):
+    """The stable key a `pinned_pages` entry is justified against (spec R8)."""
+    import hashlib
+    return hashlib.sha256(
+        visible_text_of(rel, raw).encode("utf-8")).hexdigest()
+
+
+def _visible_text_differs(rel, a, b):
+    """Did this file's VISIBLE TEXT change between these two blobs?
+
+    THE LABEL NOW MATCHES THE COMPUTATION. This function used to be called
+    `_differs_outside_date_lines` and was a raw full-file LINE diff with
+    date-bearing lines dropped -- so an `aria-expanded` attribute, a class
+    rename or a relocated block all made it answer "yes", and R8 part (d) then
+    printed "published review date X precedes the last visible-text change Y",
+    a claim the implementation did not support. Measured on DCI 2026-09-18:
+    lastMod agreed 14/14 and lastVis agreed 0/14, and DCI's
+    _shared_components.py had recorded the cause in a comment. Measured on GCI
+    2026-09-27: 24 pages fired part (d) and 4 of them -- the three calculators
+    and the rebate-eligibility checker -- had byte-identical visible text.
+    """
+    return visible_text_of(rel, a) != visible_text_of(rel, b)
 
 
 # ---------------------------------------------------------------------------
@@ -5226,6 +5343,26 @@ def rule_R8(ctx, res):
     holds = c.get("known_holds", []) or []
     pub_grace = int(c.get("published_before_git_grace_days", 7))
     hold_note = holds[0].get("report_as") if holds else ""
+    # HASH-KEYED PIN EXPIRY. A pin may carry the visible-text sha256 it was
+    # justified against; it then CEASES TO APPLY the moment the page's current
+    # visible text hashes to anything else. Computed here, once per pinned page,
+    # off the working-tree bytes the rest of the rule reads.
+    pin_state = {}           # base -> "keyed-live" | "keyed-expired" | "unkeyed"
+    pin_expired_detail = {}  # base -> (expected, actual)
+    for _art in ctx.html_artifacts():
+        _base = _art.rel.rsplit("/", 1)[-1]
+        if _base not in pinned:
+            continue
+        _want = (pinned.get(_base) or {}).get("visible_text_sha256") or ""
+        if not _want:
+            pin_state[_base] = "unkeyed"
+            continue
+        _got = visible_text_sha256(_art.rel, _art.raw)
+        if _got == _want:
+            pin_state[_base] = "keyed-live"
+        else:
+            pin_state[_base] = "keyed-expired"
+            pin_expired_detail[_base] = (_want, _got)
 
     # THE AS-OF, STATED ON THE RULE IT GOVERNS. Part (b) is the only place in
     # R8 -- or anywhere in this gate -- that reads it, and on 2026-09-20 a
@@ -5372,6 +5509,24 @@ def rule_R8(ctx, res):
                         note="pin-drifted", sentence=base)
                 h.r8_excluded = excluded_as
                 raw.append(h)
+            # A HASH-KEYED PIN WHOSE PAGE HAS MOVED ON IS EXPIRED, AND SAYING SO
+            # IS THE POINT. The pin was justified against one exact visible text;
+            # the page now has another. The exemption does not apply (see
+            # f_pinned) and this finding names the expiry rather than letting the
+            # page quietly re-enter the blocking set with no explanation.
+            if pin_state.get(base) == "keyed-expired":
+                want, got = pin_expired_detail[base]
+                h = Hit("R8", "p", art.rel, "VIS", base,
+                        "pin EXPIRED: it was justified against visible text "
+                        "%s and this page's visible text now hashes to %s. The "
+                        "exemption no longer applies. Re-measure the page, move "
+                        "its review date if a review actually happened, or "
+                        "re-key the pin to the new hash with a reason that is "
+                        "true of the new text"
+                        % (want[:12], got[:12]),
+                        note="pin-expired", sentence=base)
+                h.r8_excluded = excluded_as
+                raw.append(h)
 
         first = ctx.gitfacts.first_seen.get(art.rel)
         if first:
@@ -5395,25 +5550,35 @@ def rule_R8(ctx, res):
                             note="precedes-creation", sentence=base)
                     h.r8_excluded = excluded_as
                     raw.append(h)
-        last = ctx.gitfacts.last_content_change(art.rel) \
+        last = ctx.gitfacts.last_visible_text_change(art.rel) \
             if ctx.gitfacts.available else None
         if last:
             newest = max(v for _, v in claimed)
             if newest < last:
                 note = "stale-vs-content"
-                if base in pinned:
+                # A pin grants the exemption only while it is LIVE. An expired
+                # hash-keyed pin leaves the note at stale-vs-content, so the
+                # finding blocks exactly as if the pin were absent -- which is
+                # what "the pin expires automatically" has to mean to be worth
+                # anything.
+                if pin_state.get(base) in ("keyed-live", "unkeyed"):
                     note = "pinned"
                 elif hold_note:
                     note = hold_note
                 h = Hit("R8", "d", art.rel, "VIS", base,
-                        "published review date %s precedes the last "
-                        "visible-text change %s" % (newest, last),
+                        "published review date %s precedes the last change to "
+                        "this page's VISIBLE TEXT (%s) -- measured by extracting "
+                        "visible text from both blobs with the gate's own "
+                        "extractor, not by diffing raw markup"
+                        % (newest, last),
                         note=note, sentence=base)
                 h.r8_excluded = excluded_as
                 raw.append(h)
 
     def f_pinned(h):
-        # A DRIFTED pin does not grant the exemption.
+        # A DRIFTED pin does not grant the exemption, and neither does an
+        # EXPIRED one -- note is only ever set to "pinned" above for a pin whose
+        # hash still matches the page, or one that carries no hash at all.
         return h.note == "pinned"
 
     def f_exempt(h):
@@ -5429,7 +5594,9 @@ def rule_R8(ctx, res):
     res.adjudicated, res.rows = adjudicate(raw, [
         Filt("own_effective_date_pages / exempt_pages (raised, then cleared "
              "here -- never dropped before the count)", f_exempt),
-        Filt("pinned_pages (visible text unchanged; JSON-LD only)", f_pinned),
+        Filt("pinned_pages (LIVE pins only -- a hash-keyed pin stops "
+             "filtering the moment the page's visible text changes)",
+             f_pinned),
     ])
     res.levels, res.level_detail = level_counts(
         ctx, ["Last reviewed", "<lastmod>"], ci=False, word=False)
@@ -5444,10 +5611,63 @@ def rule_R8(ctx, res):
     if holds:
         res.notes.append("KNOWN-OPEN hold in force: %s -- %s"
                          % (holds[0].get("id"), holds[0].get("note", "")))
+    # PART (d) SAYS WHAT IT COMPUTES. The label and the computation disagreed
+    # until 2026-09-27: part (d) was a raw full-file line diff with date-bearing
+    # lines dropped, and printed its result as "the last visible-text change".
+    res.notes.append(
+        "part (d) COMPARES EXTRACTED VISIBLE TEXT, not raw markup. Both blobs "
+        "go through the gate's own extractor (surfaces.parse_blob -> "
+        "surfaces.visible_text): the TXT normalization of <body>, plus <title>, "
+        "plus alt/title/aria-label. Class names, ARIA STATE attributes, element "
+        "nesting, JSON-LD, CSS, JS and HTML comments are NOT visible text and "
+        "do not move the date; ORDER IS, so relocating a block of copy does. "
+        "Date surfaces are normalised out of both sides first, so a commit that "
+        "moved only a date cannot date itself forward. Before this, ANY markup "
+        "change made part (d) report a visible-text change that had not "
+        "happened -- measured on DCI 2026-09-18 as lastMod 14/14 agreeing and "
+        "lastVis 0/14, and on GCI 2026-09-27 as 4 of 24 hits standing on pages "
+        "whose visible text was byte-identical.")
+    if pinned:
+        _keyed = sorted(b for b in pinned if pin_state.get(b) == "keyed-live")
+        _exp = sorted(b for b in pinned if pin_state.get(b) == "keyed-expired")
+        _unkeyed = sorted(b for b in pinned if pin_state.get(b) == "unkeyed")
+        _absent = sorted(b for b in pinned if b not in pin_state)
+        res.notes.append(
+            "PINS: %d configured -- %d hash-keyed and LIVE, %d hash-keyed and "
+            "EXPIRED (reported as pin-expired and NOT filtered), %d UNKEYED, "
+            "%d naming a page that is not in the read set."
+            % (len(pinned), len(_keyed), len(_exp), len(_unkeyed),
+               len(_absent)))
+        if _unkeyed:
+            res.notes.append(
+                "UNEXPIRING PINS: %d pin(s) carry NO visible_text_sha256, so "
+                "nothing can ever expire them -- they will keep filtering this "
+                "page however much its visible text changes, until a human "
+                "removes or keys them. Said out loud because a pin with no key "
+                "is a permanent exemption wearing the name of a temporary one: "
+                "%s" % (len(_unkeyed), ", ".join(_unkeyed)))
+        if _absent:
+            res.notes.append(
+                "PINS NAMING NO READ PAGE: %s -- a pin on a page the gate never "
+                "reads exempts nothing and proves nothing" % ", ".join(_absent))
     if ctx.gitfacts.capped:
-        res.notes.append("part (d) history cap reached on %d file(s); the "
-                         "oldest examined commit was used"
-                         % len(ctx.gitfacts.capped))
+        res.notes.append(
+            "part (d) DEGRADED on %d file(s): more than %d commits touch them "
+            "and no visible-text change was found inside that window, so their "
+            "last visible-text change is UNKNOWN and part (d) is silent on "
+            "them rather than guessing. %s"
+            % (len(ctx.gitfacts.capped), ctx.gitfacts.cap,
+               ", ".join(sorted(ctx.gitfacts.capped)[:10])))
+        res.degraded.append(
+            "R8 part (d) DEGRADED on %d file(s): history cap %d reached with no "
+            "visible-text change found" % (len(ctx.gitfacts.capped),
+                                           ctx.gitfacts.cap))
+    if ctx.gitfacts.never_changed:
+        res.notes.append(
+            "%d file(s) have NEVER had a visible-text change in this repo's "
+            "whole public/ history, so part (d) cannot fire on them. This is a "
+            "measurement over the complete history, not a truncation."
+            % len(ctx.gitfacts.never_changed))
     if not ctx.gitfacts.available:
         res.degraded.append("R8 DEGRADED: no git history available; parts (a) "
                             "and (d) not evaluated")
@@ -6686,8 +6906,13 @@ RULES = [
          "RAW for datetime and lastmod; DEC for the visible footer text",
          "a date is a claim about a human act: the gate can prove a date is "
          "impossible or contradicted and can never prove a review occurred. "
-         "Part (d) strips the review-date line before diffing so it cannot "
-         "count as its own change, and walks at most 15 commits back.",
+         "Part (d) compares EXTRACTED VISIBLE TEXT (body TXT + <title> + "
+         "alt/title/aria-label), with date surfaces normalised out of both "
+         "sides, and walks at most 40 commits back -- so it cannot see a "
+         "rewrite that reached only JSON-LD, CSS, JS or an HTML comment, it "
+         "counts a pure RELOCATION of copy as a change because order is part "
+         "of what a reader sees, and where the walk finds nothing it reports "
+         "UNKNOWN instead of firing.",
          rule_R8,
          controls=[
              Control("R8a", "R8", _f("R8a_stale_review_date.html"),
@@ -6913,6 +7138,56 @@ def mtimes(repo):
     return out
 
 
+# The part-(d) comparator's own controls. They are NOT Control objects, because
+# a Control's git facts arrive through a `.gitfacts.json` sidecar -- which hands
+# the rule a last_visible_change and therefore SKIPS the comparator entirely.
+# That is why the raw-line diff survived four adversarial reads with R8a, R8b and
+# R8c all green: no control had ever executed the function whose name was wrong.
+# These three run the comparator directly, on committed fixture blobs, and they
+# are counted in the positive tally so a regression is exit 2 like any other
+# control failure.
+#
+#   (name, directory, must_differ)
+PART_D_CONTROLS = (
+    ("R8d-MARKUP", "markup_only", False),
+    ("R8d-VISIBLE", "visible_text", True),
+    ("R8d-DATE", "date_only", False),
+)
+
+
+def run_part_d_controls():
+    """Returns (rows, detected, missed) for the part-(d) comparator."""
+    rows, detected, missed = [], 0, 0
+    for cid, sub, must_differ in PART_D_CONTROLS:
+        d = os.path.join(FIXTURES, "R8d_part_d", sub)
+        fx = "fixtures/R8d_part_d/%s/" % sub
+        try:
+            with open(os.path.join(d, "before.html"), encoding="utf-8") as fh:
+                before = fh.read()
+            with open(os.path.join(d, "after.html"), encoding="utf-8") as fh:
+                after = fh.read()
+        except OSError as exc:
+            rows.append(("+", cid, fx, "*** MISSED *** fixture unreadable: %s"
+                         % exc))
+            missed += 1
+            continue
+        got = _visible_text_differs("page.html", after, before)
+        if got == must_differ:
+            rows.append(("+", cid, fx, "DETECTED  (visible text %s, as the "
+                         "fixture pair states)"
+                         % ("CHANGED" if got else "UNCHANGED")))
+            detected += 1
+        else:
+            rows.append(("+", cid, fx,
+                         "*** MISSED *** comparator says visible text %s; this "
+                         "fixture pair is built to be %s"
+                         % ("CHANGED" if got else "UNCHANGED",
+                            "a visible-text change" if must_differ
+                            else "markup-only")))
+            missed += 1
+    return rows, detected, missed
+
+
 def run_controls(out, cfg, repo, opt_in, gen, registry=None):
     """Every positive control runs BEFORE any rule touches the real corpus,
     and the gate fails loudly -- exit 2 -- if any control does not fire."""
@@ -6972,6 +7247,11 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
                              "*** MISSED *** (0 hits on the sub-test this "
                              "control proves: %s)" % (c.sub or "any")))
                 pos_missed += 1
+
+    _pd_rows, _pd_det, _pd_missed = run_part_d_controls()
+    rows.extend(_pd_rows)
+    pos_detected += _pd_det
+    pos_missed += _pd_missed
 
     rep_clean = rep_fired = rep_absent = 0
     for rule in RULES:

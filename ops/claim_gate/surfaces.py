@@ -829,7 +829,23 @@ def parse_artifact(rel, path, cited_stat_class="cited-stat"):
     """Parse ONE artifact into every surface it has. One read, one parse."""
     with open(path, "rb") as fh:
         data = fh.read()
-    raw = data.decode("utf-8", "replace")
+    return parse_blob(rel, data.decode("utf-8", "replace"), cited_stat_class)
+
+
+def parse_blob(rel, raw, cited_stat_class="cited-stat"):
+    """parse_artifact() FROM A STRING instead of from a path.
+
+    Split out because R8 part (d) has to extract visible text from a HISTORICAL
+    GIT BLOB, which has no path on disk. Before this existed the only entry
+    point read a file, so part (d) could not reach this extractor at all and
+    compared raw lines instead -- which is the whole defect it was labelled as
+    not having. Writing a second, blob-shaped extractor was the alternative and
+    is exactly what RULES_SPEC.md S3 forbids: two extractors drift, and the one
+    the rules do NOT use is the one that rots.
+
+    parse_artifact() is now a thin file-reading wrapper over this. Identical
+    bytes in, identical Artifact out.
+    """
     low = rel.lower()
     if low.endswith(".html") or low.endswith(".htm"):
         kind = "html"
@@ -895,6 +911,58 @@ def parse_artifact(rel, path, cited_stat_class="cited-stat"):
                 art.surfaces.append(
                     Surface(key, "%s:S%d" % (rel, i + 1), text))
     return art
+
+
+# ---------------------------------------------------------------------------
+# VISIBLE TEXT -- the one composition R8 part (d) compares (spec R8)
+# ---------------------------------------------------------------------------
+
+# The attributes whose values a HUMAN OR A SCREEN READER READS. `href` is a
+# destination, `datetime` is a machine-readable date and `content` is metadata:
+# none of the three is text anybody reads on the page, and all three move for
+# reasons that are not editorial. `alt`, `title` and `aria-label` are read
+# aloud or shown on hover, so rewriting one IS a visible-text change and must
+# not be silently forgiven -- part (d)'s old raw-line diff did catch those, and
+# a fix that quietly stopped catching them would be trading one false label for
+# a false negative.
+VISIBLE_ATTRS = ("alt", "title", "aria-label")
+_VIS_ATTR_LOC = re.compile(r"\[(?:%s)\]$" % "|".join(VISIBLE_ATTRS))
+
+
+def visible_text(art):
+    """The artifact's VISIBLE TEXT, in document order, as ONE string.
+
+    This is the function R8 part (d) means by "visible text", and it is built
+    from surfaces THIS MODULE already extracts -- no second extractor. For HTML
+    that is the TXT normalization of <body> (which is every VIS and LOWVIS
+    span, tags stripped, whitespace collapsed), plus <title>, plus the
+    human-readable attributes above. For every other kind it is the whole
+    document's TXT.
+
+    ORDER IS PART OF THE COMPARISON, deliberately. Two documents with the same
+    words in a different order are not the same page to a reader: GCI's
+    2026-09-27 hero-form lift moved a whole "Straight Answers / Quick Facts"
+    band below the relocated form on 30 pages without adding or removing a
+    sentence, and calling that "no visible change" would be as false as the
+    raw-line diff this replaces.
+
+    What it deliberately does NOT see: class names, ARIA STATE attributes such
+    as aria-expanded, element nesting, JSON-LD, inline CSS and JS, HTML
+    comments, and the ORDER OF ATTRIBUTES on a tag. Those are markup. A page
+    whose markup changes and whose visible text does not has not been reviewed,
+    and part (d) must not say it has.
+    """
+    parts = []
+    if art.kind == "html":
+        parts.append(art.txt)
+        for s in art.surfaces:
+            if s.key == S_TITLE:
+                parts.append(s.text)
+            elif s.key == S_ATTR and _VIS_ATTR_LOC.search(s.locator):
+                parts.append(s.text)
+    else:
+        parts.append(art.doc_txt)
+    return "\n".join(p for p in parts if p)
 
 
 # ---------------------------------------------------------------------------
