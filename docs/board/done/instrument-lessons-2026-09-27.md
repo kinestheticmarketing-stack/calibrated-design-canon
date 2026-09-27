@@ -35,7 +35,7 @@ Landing sites:
 ## Closed 2026-09-27 — all three landed
 
 Commits: claim `47f15c8`, checklist + ground truth `a95df44`, blind-spot
-catalogue `ef844ae`, this closure `<this commit>`.
+catalogue `ef844ae`, this closure `b3c0e35`.
 
 The blind-spot catalogue turned out to BE `METHODS/ARCHITECT_DISCIPLINE.md`'s
 numbered PATTERN series — the doc `ground-truth.md` cites for Patterns 11, 13
