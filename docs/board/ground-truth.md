@@ -57,3 +57,23 @@ These decisions are settled. If your context disagrees, your context is stale.
   `longmontcoloradoinsulation.com/docs/board/ground-truth.md`,
   `greeleycoloradoinsulation.com/docs/board/ground-truth.md`. This is the
   canon home for the ruling; the property files cross-reference back here.
+- **Standing ruling — 2026-09-27 — "LAST UPDATED" PUBLISHES THE LAST
+  VISIBLE-TEXT CHANGE DATE; "LAST REVIEWED" IS NEVER DERIVED.** A
+  modification date is computable from the artifact. A review date is a
+  claim about a human act, and no instrument can produce one — the claim
+  gate spec says exactly that of its own R8: *"Whether a review actually
+  happened. A date is a claim about a human act. The gate can prove a date
+  is impossible or contradicted; it cannot prove a review occurred."* So a
+  footer may publish the date the page's VISIBLE TEXT last changed,
+  computed; it may publish a review date only where a review actually
+  happened, asserted by whoever did it. Markup-only and JSON-LD-only
+  commits move neither, which is why R8 part (d) compares visible text
+  rather than raw lines. Not hypothetical: R8 catches only dates that are
+  too OLD, so batch-stamping a newer one is the cheapest way to green, and
+  on DCI at `ea6c86a` 73 of 75 pages published a 2026-09-27 review date of
+  which **39 had no visible-text change that day**. Verify:
+  `grep -n "A date is a claim about a human act" ops/claim_gate/RULES_SPEC.md`
+  → line 2991, and
+  `grep -n "73 of 75 pages publish a 2026-09-27" ops/claim_gate/RULES_SPEC.md`
+  → line 3005. Also recorded as a review criterion in
+  `METHODS/DESIGN_REVIEW.md` §4 (Neglect signals).
