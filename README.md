@@ -89,6 +89,9 @@ Method specs (METHODS/):
   design-psychology principles (Jakob's Law and others) with
   per-page audit checklists, applied across every Calibrated
   Stack web property
+- [DESIGN_REVIEW.md](METHODS/DESIGN_REVIEW.md) — standing
+  pre-launch/redesign checklist: homepage audit, scoring rubric,
+  review order, tests, and a WCAG 2.1 AA baseline
 - [EXTERNAL_VALIDATION.md](METHODS/EXTERNAL_VALIDATION.md) —
   independent research and adjacent open-source patterns
   validating the Calibrated Stack methodology
