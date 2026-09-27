@@ -1741,7 +1741,53 @@ re-measured from this repo — canon holds no axe output and no page
 HTML — so this entry records the MECHANISM, checkable anywhere by
 the two reproductions above, and not the incident counts, which are
 not checkable from here. Same convention as CANON_QUEUE.md's
-UNVERIFIED-FROM-ANY-REPO entries.
+UNVERIFIED FROM ANY REPO entries.
+
+WHEN FIRST WRITTEN, THE TWO REPRODUCTIONS ABOVE HAD NEVER BEEN RUN,
+AND THIS PARAGRAPH DID NOT SAY SO. That omission is itself an
+instance of this pattern and is recorded rather than quietly fixed.
+The paragraph disclosed that the INCIDENTS were not re-measured and
+that the COUNTS were not checkable, which reads as full disclosure
+and is not: it left a reader to assume the code blocks had been
+executed, and instance (ii) closed with "The reproduction above is
+what settles it, in the browser you ship to" — a sentence that
+implies a run that had not happened. The author's reason for not
+running them was sound (canon is docs-only and installing a browser
+toolchain here to demonstrate a point would be Rule 2 dead weight);
+the defect was stating the limitation incompletely, which is the
+same failure as reporting "axe: 0 serious" without its viewport.
+
+BOTH REPRODUCTIONS WERE THEN EXECUTED, 2026-09-27, by a verification
+agent working in /tmp with no repo writes. BOTH ARE TRUE:
+  - (ii) ran in Chromium 153.0.8010.12. `.focus()` on the
+    `visibility: hidden` anchor left `document.activeElement` at
+    BODY (id ""), and a single Tab moved focus to the toggle (id
+    "t") — both inline annotations in the block are exactly right.
+    Three controls were run beside it: a VISIBLE nav accepted
+    `.focus()` (id "x"), a `display: none` nav did not, and the
+    `visibility: hidden` element measured a real layout box of
+    24.890625 x 18 px while still being unfocusable — which
+    independently confirms this entry's subtler warning that HTML's
+    "being rendered" means "has a layout box" and therefore cannot
+    settle the question on spec text alone. The full user path was
+    also walked: Tab to the toggle, Enter to reveal the nav, Tab
+    again, and focus landed on the revealed link (id "x"). The
+    canon block alone never reveals the nav, so it demonstrates the
+    no-op but not the traversal; the narrative claim needs that
+    fuller path and the fuller path holds.
+  - (i)'s API surface is real — `@axe-core/playwright` 4.13.0
+    exports `{ AxeBuilder, default }`, so the destructuring form in
+    the block is correct — and the block ran verbatim to exit 0.
+    Its PREMISE was tested separately rather than assumed: a page
+    with a 1000px table inside an `overflow: auto` wrapper reports
+    `scrollable-region-focusable` at 375px and reports nothing at
+    1280px. The exact rule id this entry names fires at one width
+    and not the other, which is the claim, measured.
+
+SO THE MECHANISM IS NO LONGER "checkable anywhere" IN PRINCIPLE —
+IT HAS BEEN CHECKED. Anyone re-running the two blocks should get
+the results above; if they do not, this entry is wrong and should
+be corrected rather than defended.
 
 CANON RULE
 AN INSTRUMENT CERTIFIES ONLY THE CONDITIONS ITS CONFIGURATION
