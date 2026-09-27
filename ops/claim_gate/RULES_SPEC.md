@@ -2798,6 +2798,128 @@ a date appears in a description) `EMBED`. Plus `git log` as a non-artifact input
 `DEC` for the visible footer text (`August 24, 2026` must be parsed and compared
 to the `datetime` attribute — a mismatch between the two is part (c)).
 
+#### Part (d) — what "visible-text change" means, and what it used to mean
+
+**CORRECTED 2026-09-27. Until this date part (d) did not compare visible text at
+all, while printing that it did.** The implementation was:
+
+```python
+def _differs_outside_date_lines(a, b):
+    la = [x for x in a.splitlines() if not DATE_LINE_PAT.search(x)]
+    lb = [x for x in b.splitlines() if not DATE_LINE_PAT.search(x)]
+    return la != lb
+```
+
+— a raw full-file **line** diff with date-bearing lines dropped. An
+`aria-expanded` attribute, a class rename, a re-indented block or a JSON-LD edit
+all made it answer "yes", and R8 then printed *"published review date X precedes
+the last visible-text change Y"*, which the implementation did not support. The
+defect is independently corroborated in DCI's own `_shared_components.py`: *"The
+gate labels its test 'last visible-text change' but computes it as a full-file
+diff with the date line stripped, so a markup or schema change moves it"* —
+measured 2026-09-18 as `lastMod` agreeing 14/14 and `lastVis` 0/14. Measured
+again on GCI at `694851c`: **24 pages fired part (d) and 4 of them had
+byte-identical visible text** (the three calculators and the rebate-eligibility
+checker).
+
+**PART (d) NOW COMPARES EXTRACTED VISIBLE TEXT, THROUGH THIS GATE'S OWN
+EXTRACTOR AND NO OTHER.** `surfaces.parse_blob()` → `surfaces.visible_text()`,
+the same pair every rule's `VIS`/`LOWVIS`/`TITLE`/`ATTR` stream comes from.
+`parse_blob()` exists because part (d) reads a **historical git blob**, which has
+no path on disk; `parse_artifact()` is now a thin file-reading wrapper over it.
+Writing a second, blob-shaped extractor was the alternative and is what §3
+forbids — two extractors drift, and the one the rules do *not* use is the one
+that rots. That is precisely how this defect survived: the comparator had no
+control, because R8a/R8b/R8c all supply their git facts through a
+`.gitfacts.json` sidecar and therefore **never execute it**.
+
+`visible_text()` **is**: the `TXT` normalization of `<body>`, plus `<title>`,
+plus the human-readable attributes `alt`, `title` and `aria-label`.
+
+`visible_text()` **is not**: class names, ARIA *state* attributes such as
+`aria-expanded`, element nesting, `href`, `datetime`, `content`, JSON-LD, inline
+CSS or JS, or HTML comments. Those are markup. A page whose markup changed and
+whose visible text did not **has not been reviewed**, and part (d) must not say
+it has.
+
+**ORDER IS PART OF THE COMPARISON, deliberately.** The same words in a different
+order are not the same page to a reader. GCI's 2026-09-27 hero-form lift moved a
+whole *"Straight Answers / Quick Facts"* band below the relocated form on 30
+pages without adding or removing a sentence, and calling that "no visible
+change" would be as false as the raw-line diff it replaces.
+
+**DATE NORMALISATION IS STRUCTURE-PRESERVING.** The old line-dropping is kept
+only for line-oriented files (`<lastmod>`, a `llms.txt` date line — those *are*
+lines). In markup it is replaced by blanking the rendered body of any `<time>`
+element that states a machine-readable date, because line surgery on markup is
+unsafe: a generator that wraps `<script type="application/ld+json">` so that
+`"dateModified"` and `</script>` land on a dropped line leaves an unterminated
+`<script>`, the script-body regex then matches nothing, and the raw JSON-LD
+**leaks into the visible text of one side of the comparison only** — so a
+date-only commit reports a visible-text change, the exact false positive the
+date-stripping exists to prevent. `fixtures/R8d_part_d/date_only/after.html`
+wraps both elements deliberately and fails under the old normalisation. A
+plain-text review-date phrase with no `<time>` element is neutralised once more
+over the extracted text, scoped to the phrase — a date in editorial prose (a
+rebate deadline, a program's effective date) **is** content and is not touched.
+
+**AN UNKNOWN DATE MAKES PART (d) SILENT, NEVER FIRING.** The walk examines at
+most 40 commits (was 15; measured maximum depth to a real visible-text change
+across the three properties is 10). If it finds nothing, part (d) returns
+`None` and reports it — either `DEGRADED` (more history exists than was read) or
+"this file's visible text has never changed in the whole `public/` history". The
+old code instead fell back to *the date of the oldest commit it happened to
+examine*, which is the window's edge wearing the name of a finding. With a
+raw-line diff that fallback was nearly unreachable; with a visible-text diff,
+markup-only commits are common, the walk goes deeper, and the fallback would
+have become a manufacturing line for part (d) hits.
+
+**COST, MEASURED.** Parsing two HTML blobs per commit instead of splitting lines
+roughly doubles to triples gate wall-clock: GCI 5.8s → 11.8s, LGM 7.4s → 18.3s,
+DCI 14.0s → 37.5s. Accepted.
+
+#### `pinned_pages` — hash-keyed, and expiring
+
+A pin records that a page's **date is correct even though part (d) fires**, and
+it must not outlive the text that justified it. Shape:
+
+```json
+"pinned_pages": {
+  "index.html": {
+    "reason": "…measured, and literally true of THIS text…",
+    "visible_text_sha256": "a0cb169f98e4…",
+    "expected_footer": "2026-09-18",
+    "expected_sitemap": "2026-09-18"
+  }
+}
+```
+
+- **`visible_text_sha256`** is `sha256` of exactly what part (d) compares — the
+  output of `visible_text_of()`, date surfaces already normalised out. It is the
+  hash the reason was justified against.
+- **EXPIRY IS AUTOMATIC AND IMMEDIATE.** Before any filtering, the gate hashes
+  the page's *current* visible text. If it differs, the pin is **EXPIRED**: it
+  does not filter, the page's part (d) finding blocks exactly as if no pin
+  existed, **and** a separate `pin-expired` finding names the expiry so the page
+  does not silently re-enter the blocking set with no explanation. Verified by
+  probe: corrupting one pin's hash took GCI from exit 0 / ADJ 0 to exit 1 / ADJ
+  2 with `pin-expired` printed.
+- **`expected_footer` / `expected_sitemap`** are unchanged and independent: a pin
+  whose page has drifted off the *value* it states fires `pin-drifted`. Hash
+  expiry asks "is this still the text I judged?"; drift asks "is this still the
+  date I pinned?". Both must hold.
+- **A PIN WITH NO HASH STILL WORKS, AND THE GATE SAYS IT IS UNEXPIRING.**
+  Backward compatibility is deliberate — a config must not break on upgrade —
+  but an unkeyed pin is a permanent exemption wearing the name of a temporary
+  one, so R8 prints `UNEXPIRING PINS: n pin(s) carry NO visible_text_sha256`
+  and enumerates them. A pin naming a page outside the read set is reported too:
+  it exempts nothing and proves nothing.
+- **GCI was migrated, not left compatible.** All 13 of its unkeyed pins were
+  keyed on 2026-09-27, so the property carries **0 unkeyed pins**. Ten of the 13
+  had reasons asserting *"the gate's part (d) uses a RAW LINE diff and therefore
+  counts schema, which is why the pin is needed"* — no longer true of this gate,
+  and those reasons were replaced rather than edited around.
+
 **POSITIVE-CONTROL FIXTURES — three, one per failure mode.**
 
 `fixtures/R8a_stale_review_date.html` — the live DCI shape. The fixture ships
@@ -2844,6 +2966,27 @@ disagrees with the attribute; `dateModified` disagrees with the attribute; and
   canary+ R8c       fixtures/R8c_future_review_date.html        DETECTED  (parts b, c x2, ordering)
 ```
 
+**THREE MORE CONTROLS, FOR THE PART (d) COMPARATOR ITSELF.** The three above
+cannot test it: each supplies its git facts through a `.gitfacts.json` sidecar,
+which hands the rule a `last_visible_change` and **skips the comparator
+entirely**. That is why a function whose name and behaviour disagreed survived
+four adversarial reads with R8a/R8b/R8c green. `fixtures/R8d_part_d/` holds three
+`before.html` / `after.html` pairs, run through `_visible_text_differs()`
+directly and counted in the positive tally, so a regression is exit 2 like any
+other control failure:
+
+| control | pair | must report |
+|---|---|---|
+| `R8d-MARKUP` | class renames, `aria-expanded` false→true, attribute reorder, `div`→`section`, an added HTML comment, changed JSON-LD `knowsAbout`, changed CSS — same words | visible text **UNCHANGED** |
+| `R8d-VISIBLE` | one duplicated CTA label removed and the form block relocated — GCI's live 2026-09-27 vector | visible text **CHANGED** |
+| `R8d-DATE` | the review date only, with the `<time>` element and the JSON-LD deliberately wrapped across source lines | visible text **UNCHANGED** |
+
+```
+  canary+ R8d-MARKUP   fixtures/R8d_part_d/markup_only/    DETECTED  (visible text UNCHANGED, as the fixture pair states)
+  canary+ R8d-VISIBLE  fixtures/R8d_part_d/visible_text/   DETECTED  (visible text CHANGED, as the fixture pair states)
+  canary+ R8d-DATE     fixtures/R8d_part_d/date_only/      DETECTED  (visible text UNCHANGED, as the fixture pair states)
+```
+
 **WHAT IT DELIBERATELY DOES NOT CATCH.**
 - **Whether a review actually happened.** A date is a claim about a human act.
   The gate can prove a date is impossible or contradicted; it cannot prove a
@@ -2852,7 +2995,21 @@ disagrees with the attribute; `dateModified` disagrees with the attribute; and
   `about.html` correctly keeps `2026-08-07` because its visible text did not
   change — JSON-LD only — and its footer stays pinned at `2026-08-05`;
   *"neither value is false and the 2-day divergence is pre-existing."* The config
-  carries `pinned_pages` per property.
+  carries `pinned_pages` per property. Since 2026-09-27 a pin must be hash-keyed
+  to the visible text it was justified against; see *`pinned_pages` — hash-keyed,
+  and expiring* above.
+- **A DATE THAT MOVED FORWARD WITHOUT A CHANGE.** R8 has **no test in this
+  direction**, and the gap is load-bearing, not theoretical. Part (d) fires only
+  when the published date *precedes* the last visible-text change; a page that
+  stamps a *newer* review date than its visible text can justify passes every
+  part of R8. Measured on DCI at `ea6c86a`: 73 of 75 pages publish a 2026-09-27
+  review date, **34** of them had a real visible-text change that day and **39**
+  had none — their visible text last changed between 2026-08-25 and 2026-09-21.
+  Part (d) flags exactly **1** DCI page (`privacy.html`, already cleared by
+  `own_effective_date_pages`), so DCI is green and 39 pages nonetheless assert a
+  review that did not happen. A gate that only catches dates that are too OLD
+  makes batch-stamping the cheapest way to green, which is exactly what each
+  property's `bump_rule` forbids in prose and nothing enforces.
 - **`privacy.html`'s own effective date.** GCI's stays at `2026-08-30`, its own
   effective date, not a review date. DCI has `PRIVACY_EFFECTIVE_ISO` as a
   separate constant. Different semantics; excluded by config.
@@ -2874,7 +3031,9 @@ disagrees with the attribute; `dateModified` disagrees with the attribute; and
   "date_surfaces": ["time[datetime]", "footer_text", "ld:dateModified",
                     "ld:datePublished", "sitemap:lastmod"],
   "pinned_pages": { "about.html": { "reason": "visible text unchanged; JSON-LD only",
-                                    "expected": "2026-08-07" } },
+                                    "visible_text_sha256": "…64 hex…",
+                                    "expected_footer": "2026-08-07",
+                                    "expected_sitemap": "2026-08-07" } },
   "own_effective_date_pages": ["privacy.html"],
   "exempt_pages": ["404.html"],
   "self_dated_sources": ["EDU_LASTMOD_BY_FILENAME", "MODIFIED_XCEL_GAS_CORRECTION"],
@@ -2894,6 +3053,13 @@ self-dated educational pages on each of LGM and GCI have a separate constant;
 worst false-positive risk is **the review-date line counting as its own change**
 — `348baf9` hit it and solved it by stripping the line before diffing, and the
 gate inherits that exactly.
+
+**AND THE SECOND-WORST WAS SHIPPED FOR WEEKS: part (d) counting MARKUP as
+visible text.** Corrected 2026-09-27; see *Part (d) — what "visible-text change"
+means* above. It cost 4 false part (d) findings on GCI (the three calculators and
+the rebate-eligibility checker, all byte-identical in visible text) and 13
+`pinned_pages` entries on GCI whose only purpose was to express a distinction the
+rule should have drawn itself.
 
 ---
 
@@ -3813,6 +3979,7 @@ CODE BUT EMPTY. The live check that the three pages are present is `min_artifact
   "R8": { "reviewed_iso": "2026-09-09",
           "static_page_constant": "STATIC_PAGE_REVIEWED_ISO",
           "static_page_value": "2026-08-05",
+          "_pinned_pages_note": "SUPERSEDED SNAPSHOT. This block shows the 2-pin unkeyed shape as it stood when this document was written. As of 2026-09-27 gci.json carries 33 pins and EVERY one is hash-keyed; read config/gci.json for the live values and the `pinned_pages — hash-keyed, and expiring` section above for the shape.",
           "pinned_pages": { "about.html": { "reason": "visible text did not change — JSON-LD only — so 2026-08-07 remains its true content date and its footer stays pinned at 2026-08-05; neither value is false and the 2-day divergence is pre-existing", "expected_sitemap": "2026-08-07", "expected_footer": "2026-08-05" },
                             "404.html": { "reason": "schema-only change; pinned" } },
           "own_effective_date_pages": ["privacy.html"],
