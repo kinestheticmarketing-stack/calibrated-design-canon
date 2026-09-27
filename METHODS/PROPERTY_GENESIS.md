@@ -2061,3 +2061,8 @@ gets made on a false premise.
 Greeley's `WEBSITE_ARCHITECTURE.md` replication checklist and
 `DEPLOYMENT_RUNBOOK.md`). It should be updated the same way its sources
 were: by the next genesis wave recording what this version missed.*
+
+---
+
+Before launch, every new property passes METHODS/DESIGN_REVIEW.md
+(five-question audit, rubric, tests, WCAG 2.1 AA baseline).
