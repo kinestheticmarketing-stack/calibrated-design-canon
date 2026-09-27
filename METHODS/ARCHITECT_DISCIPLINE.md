@@ -1656,6 +1656,139 @@ PRACTICAL IMPLEMENTATION
   too.
 
 ═══════════════════════════════════════════════════════════════
+PATTERN 24 — AN INSTRUMENT SEES ONLY WHAT ITS CONFIGURATION ADMITS
+═══════════════════════════════════════════════════════════════
+
+FAILURE MODE
+Two instances, same day, 2026-09-27, both in accessibility
+verification, and neither is Pattern 14's mechanism. In both, the
+instrument ran in the real path, against the real page, and
+returned a clean, well-formed result. What was wrong was the
+instrument's CONFIGURATION, which silently excluded the exact
+condition the check existed to certify.
+
+(i) A SINGLE-VIEWPORT axe RUN IS NOT AN ACCESSIBILITY CHECK. The
+pass ran axe at 1280px only and reported zero serious violations.
+Whether a region overflows is a function of viewport width, so
+`scrollable-region-focusable` — a scrollable region containing
+nothing a keyboard can reach — can only fire at a width where the
+region actually scrolls. Tables, `<pre>` blocks and card rows that
+sit comfortably at 1280px overflow at 375px. Those violations
+shipped. A canary would not have caught it: inject a violation at
+1280px and axe fires correctly, which proves the instrument works
+and says nothing about the widths it was never pointed at.
+
+REPRODUCTION — run the scan at both widths and diff the violation
+id sets. It is not an accessibility check until both runs exist:
+
+```js
+// npm i -D playwright @axe-core/playwright
+const { AxeBuilder } = require('@axe-core/playwright');
+const playwright = require('playwright');
+(async () => {
+  const browser = await playwright.chromium.launch({ headless: true });
+  for (const viewport of [{ width: 375, height: 812 },
+                          { width: 1280, height: 900 }]) {
+    const ctx  = await browser.newContext({ viewport });
+    const page = await ctx.newPage();
+    await page.goto(process.argv[2]);
+    const { violations } = await new AxeBuilder({ page }).analyze();
+    console.log(viewport.width,
+      violations.map(v => v.id).sort().join(',') || '(none)');
+  }
+  await browser.close();
+})();
+// node axe-two-widths.js https://example.com/page.html
+// A non-empty DIFF between the two lines IS the finding.
+```
+
+(ii) `.focus()` IS NOT A KEYBOARD CHECK. The pass probed keyboard
+reachability by calling `.focus()` on each control and asking
+whether `document.activeElement` had moved. An element with
+`visibility: hidden` is not focusable in any current browser, so
+`.focus()` on it is a no-op and the probe reported FAIL — on
+controls a real user reaches without difficulty, by first tabbing
+to the toggle that reveals them. The probe skipped the state
+change that sequential Tab performs, then reported the absence of
+that state change as a defect in the page. False FAILs cost what
+false PASSes cost, in the other direction: they send a pass to
+"fix" a control that was never broken.
+
+REPRODUCTION — the no-op, beside the traversal that works:
+
+```js
+await page.setContent(
+  '<button id="t">toggle</button>' +
+  '<nav style="visibility:hidden"><a id="x" href="/">link</a></nav>');
+await page.evaluate(() => document.getElementById('x').focus());
+await page.evaluate(() => document.activeElement.id);  // -> ""  (BODY)
+await page.keyboard.press('Tab');
+await page.evaluate(() => document.activeElement.id);  // -> "t"
+```
+
+Focusability is gated on the element being rendered (HTML
+Standard, Focus → Data model: the element must be "either being
+rendered, delegating its rendering to its children, or being used
+as relevant canvas fallback content"), and every current browser
+treats `visibility: hidden` as excluded. Do not take that on the
+spec text alone — the spec's "being rendered" is about having a
+layout box, which a `visibility: hidden` element still has. The
+reproduction above is what settles it, in the browser you ship to.
+
+PROVENANCE. Both instances are reported from the 2026-09-27
+transcript-alignment pass on the property repos. Neither was
+re-measured from this repo — canon holds no axe output and no page
+HTML — so this entry records the MECHANISM, checkable anywhere by
+the two reproductions above, and not the incident counts, which are
+not checkable from here. Same convention as CANON_QUEUE.md's
+UNVERIFIED-FROM-ANY-REPO entries.
+
+CANON RULE
+AN INSTRUMENT CERTIFIES ONLY THE CONDITIONS ITS CONFIGURATION
+ADMITS. Before a check is accepted as evidence, name the axis its
+configuration varies on and state the values it was run at. When
+the condition being checked is a FUNCTION of that axis, one value
+is not a run — it is a sample, and it is reported as one.
+
+Two standing applications, not re-litigated per pass:
+
+- Accessibility scans run at 375px AND 1280px, both recorded. A
+  single-width run is reported as a single-width run, never as
+  "axe passes".
+- Keyboard reachability is tested by SEQUENTIAL Tab traversal from
+  the top of the document. `.focus()` SETS focus; it does not ask
+  whether a user can GET there. A probe that cannot perform the
+  state changes a user performs cannot report on the states behind
+  them.
+
+THIS IS NOT PATTERN 14 AND ITS CANARY DOES NOT COVER IT. Pattern
+14 is the check that never runs in the real path. This is the
+check that runs the real path perfectly, at the one coordinate
+where the defect is absent. A canary proves an instrument FIRES.
+It cannot prove the instrument was POINTED at the defect.
+
+PRACTICAL IMPLEMENTATION
+- Record the configuration beside the result, always. "axe: 0
+  serious" is not a result; "axe @375 / @1280: 0 serious, 0
+  serious" is. A result with no configuration is unfalsifiable and
+  gets no weight in a report.
+- When two configurations are cheap, run both and DIFF them. The
+  diff is the finding; agreement is the pass. One run cannot
+  produce a diff, which is why it cannot produce this class.
+- Prefer the instrument that traverses to the instrument that
+  addresses. Sequential Tab, real scrolling, a real form submit —
+  each moves through the states a user moves through. A probe that
+  jumps straight to the element under test has assumed away every
+  state between here and there.
+- A FALSE FAIL IS A DEFECT OF THE SAME SEVERITY AS A FALSE PASS.
+  It is treated as more benign because it is louder, and it is not:
+  it spends a pass changing working code and it trains the next
+  session to discount the instrument.
+- When an instrument reports a failure, reproduce it the way a USER
+  would hit it before fixing anything. If it cannot be reproduced
+  that way, the finding is against the instrument, not the page.
+
+═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
