@@ -85,7 +85,7 @@ this change is revertible.
 
 ---
 
-## DONE 2026-09-28 — fixed in `~/.claude` `2e1d423`; card closed in canon `CANON_SHA`
+## DONE 2026-09-28 — fixed in `~/.claude` `2e1d423`; card closed in canon `9a0467c`
 
 **Two repos, two hashes.** The fix lives in the harness repo `~/.claude` (no
 remote, never pushed) at **`2e1d423`**, "H11: one locked string per
