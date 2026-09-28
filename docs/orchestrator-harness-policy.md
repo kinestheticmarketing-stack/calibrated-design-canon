@@ -121,7 +121,15 @@ Every dispatch declares one of `forbidden`, `allowed`, or `required` for both su
 - The parent integrates and verifies every child result.
 - Concurrency is capped by orchestrator review capacity, normally three active tracks.
 - Mass fan-out requires explicit owner opt-in for that invocation.
-- Prod data writes, destructive operations, live agent pushes, and live external publishing are never delegated.
+- Prod data writes, destructive operations, live deploys to production, and live external publishing are never delegated.
+- **Disambiguated 2026-09-28.** This line read "live agent pushes" until an adversarial read found the phrase undefined and
+  readable two ways: deploying to production, or `git push` to a code remote. It means the FIRST — a push to live, i.e.
+  `ops/push-to-staging.sh` and `/root/deploy.sh`. The portfolio's own vocabulary settles it: `push-to-staging.sh` and
+  `push-backend.sh` are deploy scripts, and the sibling item "live external publishing" would already cover publishing to an
+  external account, so the `git push` reading makes the two redundant. `git push` to a code remote is a SEPARATE operation and
+  is not covered by this line: a lane performs it only when its own brief names it, which is how every lane in `docs/lanes.md`
+  has actually behaved — rows scoped "merge+push main" pushed, rows without it recorded "not pushed to origin — not
+  authorized". Nothing about that behaviour changes; only the ambiguity is removed.
 
 Fable may use workflows and subagents when the brief allows them. That is one of its strongest uses, but it does not relax isolation or review.
 
