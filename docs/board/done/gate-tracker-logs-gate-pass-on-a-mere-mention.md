@@ -223,11 +223,14 @@ jq -nc --arg r /Users/vongimbel/code/denvercoloradoinsulation.com --arg s "$SID2
 awk -F'\t' -v s="$SID2" '$2==s {printf "%s ", $3}' ~/.claude/hooks/hook.log; echo
 # -> GATE_REGEN GATE_POSTBUILD GATE_LINKS
 
-# 3. The predicate exists and gate_tracker uses it, not a substring regex.
-grep -c 'invokes_via_interpreter' ~/.claude/hooks/_lib.sh ~/.claude/hooks/gate_tracker.sh
-# -> _lib.sh:1  gate_tracker.sh:3
-grep -c 'BOUND=' ~/.claude/hooks/gate_tracker.sh
-# -> 0
+# 3. The predicate exists, and gate_tracker.sh no longer runs a substring
+#    regex. Count UNCOMMENTED lines only -- the old BOUND= regex survives on
+#    one line as a quoted comment recording what was replaced, and both files
+#    name the predicate in their comments too.
+grep -c '^[^#]*BOUND=' ~/.claude/hooks/gate_tracker.sh      # -> 0
+grep -c '^[^#]*grep -qE' ~/.claude/hooks/gate_tracker.sh    # -> 0
+grep -c '^[^#]*invokes_via_interpreter' ~/.claude/hooks/gate_tracker.sh  # -> 3
+grep -c '^[^#]*invokes_via_interpreter()' ~/.claude/hooks/_lib.sh        # -> 1
 
 # 4. The harness commit is present and the repo still has no remote.
 git -C ~/.claude log --oneline -1 c9217a3
