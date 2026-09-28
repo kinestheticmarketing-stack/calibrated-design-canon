@@ -147,3 +147,19 @@ Found by the adversarial verification reader of the 2026-09-28
 `harness-hardening-2026-09-28` pass, while verifying row R3's pushes. R3 flagged
 `docs/lanes.md` only; the reader measured the true scope at 11 files, and the
 orchestrator confirmed every figure on this card independently before writing it.
+
+## Closed
+
+Closed by Director ruling 2026-09-28: risk accepted. Canon publicly shows the
+production VPS address (also published by DNS for the property domains), the
+deploy script path, the root login pattern, the backup directory, and the
+command allowlist shape. Mitigation: ssh is key-only. Canon stays public so
+it remains fetchable from chat.
+
+**Verification:**
+
+```bash
+grep -A5 "^## Closed" docs/board/done/canon-is-public-and-publishes-the-production-vps-address.md
+```
+
+Commit: <FILL-IN-AFTER-COMMIT>
