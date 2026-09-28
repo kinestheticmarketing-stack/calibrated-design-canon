@@ -421,6 +421,31 @@ OFFER TO CLOSE IT.
      attention and breaks the thing he asked for most —
      pasting one box and walking away.
 
+<!-- CLOSED-SCOPE-RULE BEGIN -->
+CLOSED SCOPE.
+Kickoff authors: a kickoff names countable units (specific files, pages,
+cards, strings). No kickoff says "sweep", "any other instance", "the
+class", "harden", "prove X can fail", or any other unbounded quantifier.
+If a class needs sweeping, a read-only pass first produces the enumerated
+list, and the fix is a separate kickoff naming that list.
+Executors: the listed items are the whole job. Fix everything within the
+listed scope in the same pass, including defects the pass itself
+introduces. Do not survey unrelated surfaces. Do not build, harden or
+change instruments, gates, hooks or tests unless the kickoff names them;
+a known-blind instrument stays fixable by naming it in a kickoff.
+Readers verify the listed items and everything the pass itself changed,
+including its own output as rendered and its collateral effects. They do
+not survey unrelated surfaces.
+Out-of-scope findings get one line each in the Final Report under "Seen,
+not touched". That list is the Director's queue; he triages it. Executors
+do not fix or card them. Only the Director opens cards.
+Live public harm found out of scope (a false claim live on a site, a
+broken lead form, an exposed secret): halt the pass and report it at the
+top of the Final Report. Do not fix it unless the kickoff names it.
+A pass succeeds when its listed items are done and verified. The open
+count going down is the consequence, not the criterion.
+<!-- CLOSED-SCOPE-RULE END -->
+
 # ARCHITECT_DISCIPLINE.md
 
 *A method-level specification under [Calibrated Vibe Coding](../CVC.md).*
