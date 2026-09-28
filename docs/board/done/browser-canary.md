@@ -19,8 +19,9 @@ property. First clean run: DCI 22/23, GCI 16/17, **LGM 9/10 — the first
 time Longmont's form had ever been shown to work end to end.**
 
 **Verify:**
-```
-ssh root@74.208.181.10 'systemctl list-timers browser-canary.timer --no-pager'
+```bash
+VPS="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/.claude/hooks/h04_wrong_ssh_host.sh | head -1)"   # canon is public; the address is not written here
+ssh root@$VPS 'systemctl list-timers browser-canary.timer --no-pager'
 ```
 
 ---
