@@ -20,7 +20,7 @@ for propline in "${PROPERTIES[@]}"; do
   diffs=()
 
   # index.js
-  scp -q "root@74.208.181.10:${backend}/index.js" "$tmp/index.js.live" 2>/dev/null
+  scp -q "${VPS_HOST}:${backend}/index.js" "$tmp/index.js.live" 2>/dev/null
   if [ -f "$tmp/index.js.live" ]; then
     if ! cmp -s "$tmp/index.js.live" "$repo/index.js"; then
       diffs+=("index.js")
@@ -38,7 +38,7 @@ for propline in "${PROPERTIES[@]}"; do
   # TOOLING_RUNBOOK.md), so comparing it would just alert on an expected,
   # permanent difference (a dev machine plus a VPS never carry identical
   # node_modules/ trees) rather than a real drift.
-  scp -q "root@74.208.181.10:${backend}/package.json" "$tmp/package.json.live" 2>/dev/null
+  scp -q "${VPS_HOST}:${backend}/package.json" "$tmp/package.json.live" 2>/dev/null
   if [ -f "$tmp/package.json.live" ]; then
     if ! cmp -s "$tmp/package.json.live" "$repo/package.json"; then
       diffs+=("package.json")
@@ -49,7 +49,7 @@ for propline in "${PROPERTIES[@]}"; do
 
   # public/ — compare every file that exists in the repo's public dir
   mkdir -p "$tmp/public_live"
-  scp -rq "root@74.208.181.10:${backend}/public/." "$tmp/public_live/" 2>/dev/null
+  scp -rq "${VPS_HOST}:${backend}/public/." "$tmp/public_live/" 2>/dev/null
   while IFS= read -r -d '' f; do
     rel="${f#"$repo"/public/}"
     if [ ! -f "$tmp/public_live/$rel" ]; then

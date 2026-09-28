@@ -87,9 +87,13 @@ isn't ranking, it is DELETED, not carded. The only survivor is
 what is proven to be doing work. Not re-litigated per item.
 
 RULE 3 — NEVER WRITE THE DIRECTOR AN scp COMMAND. Claude Code
-has key auth to root@74.208.181.10 and deploys itself via
-/root/deploy.sh with the FULL repo name. Short names are refused
-by the allowlist.
+has key auth to root@$VPS and deploys itself via /root/deploy.sh
+with the FULL repo name. Short names are refused by the
+allowlist. The address is written `$VPS`, never literally: canon
+is a PUBLIC repo, so the live value stays in the unpublished
+~/.claude/hooks/h04_wrong_ssh_host.sh. Resolve it with
+  VPS="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/.claude/hooks/h04_wrong_ssh_host.sh | head -1)"
+and never paste the result back into a tracked file.
 
 RULE 4 — ANSWER HIS QUESTION FIRST, IN FULL, AT THE TOP, before
 continuing whatever you were doing.

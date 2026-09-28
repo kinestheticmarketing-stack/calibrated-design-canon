@@ -23,7 +23,16 @@ set -uo pipefail
 # bin dirs here (sourced by every check) fixes this for all of them.
 export PATH="/opt/homebrew/bin:/usr/local/bin:${PATH}"
 
-VPS_HOST="root@74.208.181.10"
+# The production VPS address is NOT written here: canon is a public repo and
+# used to publish it. scripts/lib/vps_host.sh resolves it at runtime from
+# $VPS_ADDR or the unpublished ~/.claude/hooks/h04_wrong_ssh_host.sh, and
+# fails loud rather than letting an empty host turn every check below into a
+# silent no-op. `|| exit 1` is mandatory: this file is sourced without `-e`,
+# so an unchecked failure here would leave VPS_HOST as a bare "root@".
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/vps_host.sh"
+VPS_ADDR="$(resolve_vps_addr)" || exit 1
+VPS_HOST="root@${VPS_ADDR}"
+
 STATE_DIR="${HOME}/.claude/hooks/monitoring-state"
 mkdir -p "$STATE_DIR"
 

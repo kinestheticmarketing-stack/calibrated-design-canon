@@ -15,9 +15,19 @@
 # silently pushed without this list naming it first.
 set -euo pipefail
 
-VPS_HOST="root@74.208.181.10"
-VPS_DIR="/root/ops/scripts"
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# The production VPS address is NOT written here: canon is a public repo and
+# used to publish it. scripts/lib/vps_host.sh (the same resolver every
+# scripts/monitoring check gets via _mon_lib.sh, so there is one definition,
+# not two to drift apart) resolves it at runtime from $VPS_ADDR or the
+# unpublished ~/.claude/hooks/h04_wrong_ssh_host.sh, and fails loud rather
+# than letting an empty host silently scp live ops code nowhere.
+source "$DIR/scripts/lib/vps_host.sh"
+VPS_ADDR="$(resolve_vps_addr)" || exit 1
+VPS_HOST="root@${VPS_ADDR}"
+
+VPS_DIR="/root/ops/scripts"
 LOCAL_DIR="$DIR/ops"
 
 FILES=(
