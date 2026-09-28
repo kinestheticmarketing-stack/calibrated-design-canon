@@ -5,6 +5,23 @@ same day from `/root/ops/scripts/` on the VPS, previously unversioned) and
 the Mac-side monitoring layer (`scripts/monitoring/`, built earlier the same
 day). A fresh session should be able to operate both from this file alone.
 
+## The `$VPS` placeholder used throughout this file
+
+Canon is a **public** GitHub repository, so the production VPS address is
+never written literally in a tracked file. Every command below spells it
+`$VPS`. Set it once per shell from the unpublished source of truth — the
+address lives in `~/.claude/hooks/h04_wrong_ssh_host.sh`, in a tree that has
+no git remote:
+
+```bash
+VPS="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/.claude/hooks/h04_wrong_ssh_host.sh | head -1)"
+```
+
+The four scripts in this repo that actually reach the VPS do the same thing
+at runtime, via `scripts/lib/vps_host.sh` (`$VPS_ADDR` from the environment
+first, then that hook file), and exit non-zero with a clear message rather
+than run against an empty host.
+
 ## Why this lives in canon, not a site repo
 
 These scripts serve all three properties (DCI, GCI, LGM) from one shared
@@ -35,7 +52,7 @@ property. Shared infrastructure belongs in canon.
 | File | Purpose | Invoked by |
 |---|---|---|
 | `send_alert.js` | Shared alert-send function: SendGrid, per-(property, check) suppression/recovery state, `ALERT_TEST_MODE` isolation, placeholder-content refusal. State-namespace-isolated between test and real calls since the 2026-08-31 fix (see its own header comment for the incident that caused that). | `stale_site_check.js`, `unhandled_lead_check.js` (direct `node` calls); `send_alert.sh` (bridge, `--force`) |
-| `send_alert.sh` | 3-positional-arg bridge to `send_alert.js --force`, for callers that keep their own suppression state and just want an unconditional send. **Not orphaned** — despite having zero callers anywhere under `/root/`, it is the sole path `scripts/monitoring/_mon_lib.sh`'s `send_alert()` uses, invoked over SSH from this Mac. A 2026-08-31 pass on this file nearly deleted it as an orphan based on a VPS-only `grep`; corrected before anything was removed. | `_mon_lib.sh` (in this repo), via `ssh root@74.208.181.10` |
+| `send_alert.sh` | 3-positional-arg bridge to `send_alert.js --force`, for callers that keep their own suppression state and just want an unconditional send. **Not orphaned** — despite having zero callers anywhere under `/root/`, it is the sole path `scripts/monitoring/_mon_lib.sh`'s `send_alert()` uses, invoked over SSH from this Mac. A 2026-08-31 pass on this file nearly deleted it as an orphan based on a VPS-only `grep`; corrected before anything was removed. | `_mon_lib.sh` (in this repo), via `ssh root@$VPS` |
 | `test_send_alert.js` | Manual verification harness for `send_alert.js`'s test-mode and placeholder-refusal logic (poisons `@sendgrid/mail` in `require.cache` before `send_alert.js` loads, so a structural bug in the short-circuit throws instead of silently passing). Not scheduled — run by hand when verifying a change to `send_alert.js`. | Nothing automatic — manual only |
 | `stale_site_check.js` | Daily: alerts if a property's canary succeeded every day for 7 complete days but zero real leads/pageviews landed in that window. | `stale-site-check.timer` |
 | `test_stale_site_check.js` | Manual verification harness for `stale_site_check.js`'s streak-decision logic (fabricated activity rows, a scratch state dir, a capturing alert-invoker — never Postgres, never a real send). Not scheduled — run by hand when verifying a change to `stale_site_check.js`. | Nothing automatic — manual only |
@@ -484,7 +501,7 @@ backend code, going forward.
 
 | What | Mechanism | Where |
 |---|---|---|
-| `public/` (many files, `--delete` matters) | `ops/push-to-staging.sh <domain>` (repo → VPS staging) then `ssh root@74.208.181.10 '/root/deploy.sh <domain>'` (VPS staging → VPS live) | Each site repo's own `ops/` |
+| `public/` (many files, `--delete` matters) | `ops/push-to-staging.sh <domain>` (repo → VPS staging) then `ssh root@$VPS '/root/deploy.sh <domain>'` (VPS staging → VPS live) | Each site repo's own `ops/` |
 | `index.js`, `package.json` (fixed two-file list, no `--delete`, no staging hop) | `ops/push-backend.sh <domain>` — straight to the VPS live directory | Each site repo's own `ops/`, identical copy in DCI/GCI/LGM (confirmed byte-identical across all three 2026-09-02), same per-property-copy convention `push-to-staging.sh` already uses |
 
 **Why `push-backend.sh` doesn't reuse the `public/` two-hop shape:**

@@ -140,7 +140,8 @@ grep -c 'runCalculators' /Users/vongimbel/code/denvercoloradoinsulation.com/ops/
 grep -c 'figure' /Users/vongimbel/code/denvercoloradoinsulation.com/ops/browser_canary.js           # -> 20 or more
 grep -n 'binds its' /Users/vongimbel/code/calibrated-design-canon/METHODS/PROPERTY_GENESIS.md      # -> the PHASE 8 bullet, one hit
 grep -n 'Resolved 2026-09-03 via Option 2' /Users/vongimbel/code/calibrated-design-canon/METHODS/PROPERTY_GENESIS.md   # -> the live-instance paragraph
-ssh root@74.208.181.10 'journalctl -u browser-canary.service --since 2026-09-03 --no-pager | grep -c "calculator "'   # -> 14 per run
+VPS="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/.claude/hooks/h04_wrong_ssh_host.sh | head -1)"   # canon is public; the address is not written here
+ssh root@$VPS 'journalctl -u browser-canary.service --since 2026-09-03 --no-pager | grep -c "calculator "'   # -> 14 per run
 ```
 
 **Commits.** DCI `3254647` (canary). Canon: this card's move and the

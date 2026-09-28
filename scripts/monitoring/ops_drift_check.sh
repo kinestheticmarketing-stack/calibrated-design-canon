@@ -45,7 +45,7 @@ for f in "${FILES[@]}"; do
     diffs+=("$f (missing from canon ops/)")
     continue
   fi
-  remote_md5="$(ssh root@74.208.181.10 "md5sum ${VPS_OPS_DIR}/${f} 2>/dev/null" | awk '{print $1}')"
+  remote_md5="$(ssh "$VPS_HOST" "md5sum ${VPS_OPS_DIR}/${f} 2>/dev/null" | awk '{print $1}')"
   if [ -z "$remote_md5" ]; then
     diffs+=("$f (could not read live copy)")
     continue
