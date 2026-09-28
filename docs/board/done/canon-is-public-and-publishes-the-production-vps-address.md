@@ -163,3 +163,28 @@ grep -A5 "^## Closed" docs/board/done/canon-is-public-and-publishes-the-producti
 ```
 
 Commit: `002ca34` (row R1, lane `close-down-rev2-2026-09-28`)
+
+## Superseded
+
+Superseded 2026-09-28: reopened by Director and fixed — production IP
+removed from all tracked files at HEAD; it remains in git history, which was
+not rewritten. Deploy path, root login pattern, backup directory and
+allowlist shape remain published — risk accepted.
+
+Row U1 of the FIX FOUR pass. The address is now resolved at runtime via
+`scripts/lib/vps_host.sh` (env `VPS_ADDR` first, then the unpublished
+`~/.claude/hooks/h04_wrong_ssh_host.sh`), fail-loud if neither resolves. The
+figures in the body above (17 occurrences across 11 files) were true when
+written and are now 0 at HEAD on both pushed branches.
+
+**Verification:**
+
+```bash
+VPS="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/.claude/hooks/h04_wrong_ssh_host.sh | head -1)"
+for r in origin/main origin/feat/seo-geo-scaffold; do
+  echo "$r: $(git grep -o -F "$VPS" "$r" -- | wc -l)"
+done   # both must print 0
+```
+
+Commits: `f3580bd` (canon `main`), `36ad27b` (canon `feat/seo-geo-scaffold`),
+`0ccaeb0` (`~/.claude`, rules.md re-sync). Lane `close-down-rev2-2026-09-28`.

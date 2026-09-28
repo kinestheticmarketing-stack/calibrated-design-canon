@@ -161,3 +161,33 @@ grep -A5 "^## Closed" docs/board/done/gci-locked-bullets-match-no-source.md
 ```
 
 Commit: `002ca34` (row R1, lane `close-down-rev2-2026-09-28`)
+
+## Superseded
+
+Superseded 2026-09-28: partially fixed — 2 of 9 locked entries were re-locked
+to the verbatim strings the site actually publishes; the other 7 are editorial
+rules that H11 structurally cannot enforce and were left unchanged; remaining
+items listed in the FIX FOUR report for the Director.
+
+Row U3 of the FIX FOUR pass. Confirmed independently that all 9 entries H11
+parses for GCI occur only in `COPY_VOICE.md` itself. Classification: 0 were
+(b) never-existed, 0 were (c) changed-without-record. Two — Milliken and
+Severance — named live published copy but locked a *description* of it
+(`**Milliken — "most of Milliken".**`) rather than the string, so they matched
+nothing while the copy sat unguarded on 38 pages each; both re-locked to the
+bare verbatim string, citing `e6cb44e` and `5f9698b`. The other 7 are rules
+("Atomic answer 54-60 words."), not quotable copy — deleting them would have
+destroyed live conventions, so they stand. Whether to give GCI real locked
+copy strings, or rule that H11 does not extend to that section, is a Director
+decision.
+
+**Verification:**
+
+```bash
+cd ~/code/greeleycoloradoinsulation.com
+git grep -c -F 'most of Milliken' -- 'public/*'          # 38
+grep -n '^> most of Milliken$' COPY_VOICE.md             # the re-locked entry
+grep -n '^> most locations in Severance$' COPY_VOICE.md
+```
+
+Commit: `3f02425` (GCI `main`). Lane `close-down-rev2-2026-09-28`.

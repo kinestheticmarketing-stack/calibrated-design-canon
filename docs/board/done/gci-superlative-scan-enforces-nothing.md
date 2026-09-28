@@ -94,3 +94,30 @@ grep -A5 "^## Closed" docs/board/done/gci-superlative-scan-enforces-nothing.md
 ```
 
 Commit: `002ca34` (row R1, lane `close-down-rev2-2026-09-28`)
+
+## Superseded
+
+Superseded 2026-09-28: partially fixed — GCI's scan was run read-only and
+measured at 708 raw hits (exit 1), so per the kickoff's own branch it was NOT
+wired into the gate and no copy was changed; remaining items listed in the
+FIX FOUR report for the Director.
+
+Row U2 of the FIX FOUR pass. The card's premise turned out to be wrong in a
+way that matters: GCI's `ops/superlative_scan.py` is not a variant of DCI's.
+It has no `--retired` flag and **no retired-pattern concept at all** — it is a
+deliberately wide, human-adjudicated net (its own docstring: noisy on purpose,
+`honest`/`latest`/`interest`/`request` all land in it). Its self-test passes
+8/8 surfaces, so the 708 is a real reading, not blindness. Wiring it would
+produce a permanently red build — which GCI's own `regen_all.sh` forbids in
+writing: *"a gate wired into a build it fails is a red build nobody can act
+on."* No unsourced business-ranking claim was among the hits.
+
+**Verification:**
+
+```bash
+cd ~/code/greeleycoloradoinsulation.com && python3 ops/superlative_scan.py; echo "EXIT=$?"
+grep -c RETIRED_PATTERNS ops/superlative_scan.py   # 0 — the concept is absent
+grep -c superlative regen_all.sh                   # 0 — deliberately not wired
+```
+
+No commit — measuring row. Lane `close-down-rev2-2026-09-28`.
