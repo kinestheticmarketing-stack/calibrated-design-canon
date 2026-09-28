@@ -14,6 +14,19 @@ classification: DIRECTOR
 options below to take.** Nothing is pending repo-side; every fact on this card
 was measured on 2026-09-28 with the commands shown.
 
+## Running the commands on this card
+
+Every command below uses `$VPS` rather than the literal address, because this
+card lives in the public repo it is about and spelling the address out here
+would add four more published occurrences to the seventeen it reports. Set it
+first from a non-published source — the address is in this repo's
+`TOOLING_RUNBOOK.md` (already published, which is part of the problem) and in
+`~/.claude/hooks/h04_wrong_ssh_host.sh` (not published):
+
+```bash
+VPS="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/.claude/hooks/h04_wrong_ssh_host.sh | head -1)"
+```
+
 ## What is true now
 
 `calibrated-design-canon` is a **PUBLIC** GitHub repository. The three property
@@ -28,7 +41,7 @@ The production VPS address appears in **11 tracked files, 17 occurrences**, all
 on `origin/main`:
 
 ```
-$ git grep -c '74\.208\.181\.10' -- .
+$ git grep -c "$VPS" -- .
 docs/lanes.md:4
 scripts/monitoring/deploy_drift_check.sh:3
 TOOLING_RUNBOOK.md:2
@@ -49,7 +62,7 @@ by an unauthenticated fetch from the CDN rather than from the local checkout:
 $ curl -sS -o /tmp/pub_lanes.md -w 'http=%{http_code} bytes=%{size_download}\n' \
     https://raw.githubusercontent.com/kinestheticmarketing-stack/calibrated-design-canon/main/docs/lanes.md
 http=200 bytes=169445
-$ grep -c '74\.208\.181\.10' /tmp/pub_lanes.md
+$ grep -c "$VPS" /tmp/pub_lanes.md
 4
 ```
 
@@ -61,9 +74,9 @@ configured for it. `METHODS/ARCHITECT_DISCIPLINE.md`'s Rule 3 says so outright.
 commits pushed that day added zero occurrences:
 
 ```
-$ git diff 4c76593..HEAD -- . | grep -c '^[+].*74\.208\.181\.10'
+$ git diff 4c76593..HEAD -- . | grep -c "^[+].*$VPS"
 0
-$ git grep -l '74\.208\.181\.10' 4c76593 -- | wc -l
+$ git grep -l "$VPS" 4c76593 -- | wc -l
 11
 ```
 
@@ -114,6 +127,19 @@ A fourth option, rewriting git history to purge the address, is NOT recommended
 and is not offered: it requires a force-push, which this portfolio forbids, and
 it would break every published `raw.githubusercontent` URL that
 `AUDITOR_PROTOCOL.md` hands to external auditors.
+
+## One occurrence this pass DID add, disclosed rather than hidden
+
+The first version of this card spelled the address out four times. That was
+caught before anything was pushed and replaced with `$VPS` above, so the card's
+own file adds **zero** occurrences. But the commit that created it,
+`6ce922f`, carries the literal address once in its message, and that message
+cannot be corrected: the commit is no longer `HEAD`, three later commits sit on
+top of it, and amending it would mean rewriting history — which this pass is
+explicitly forbidden to do. So the net effect of this pass on the exposure is
+**+1 occurrence, in a commit message**, against the 17 already in tracked files.
+Disclosed here because a card arguing an address is over-published should not
+quietly be the thing that publishes it again.
 
 ## Source
 
