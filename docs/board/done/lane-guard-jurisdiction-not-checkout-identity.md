@@ -134,3 +134,44 @@ grep -A5 "^## Closed" docs/board/done/lane-guard-jurisdiction-not-checkout-ident
 ```
 
 Commit: `002ca34` (row R1, lane `close-down-rev2-2026-09-28`)
+
+## Superseded
+
+Superseded 2026-09-28: reopened by Director and fixed — the lane guard now
+enforces checkout identity as well as jurisdiction. A session rooted in a lane
+worktree may write only inside its own checkout; writes to the main checkout or
+to another lane's worktree are denied on both halves (H9 `Edit|Write`, H19
+`Bash`) unless `CLAUDE_KICKOFF_CROSS_REPO=1`.
+
+Row U4 of the FIX FOUR pass. Implemented with the existing `checkout_root_for`
+resolver — no fourth resolver — using a CONTAINMENT test rather than equality,
+so a nested checkout inside the session's own tree is not falsely denied.
+`git fetch`/`merge`/`rebase` inside the lane and `git worktree`
+add/remove/prune stay allowed; the cross-repo rule is unchanged.
+
+Proven both directions: new suite `hooks/tests/test_checkout_identity.sh`,
+**131 cases, 0 failures** — 36 must-deny (both tool paths, 16 shell write forms
+each) and 95 must-allow (own tree, the git operations, worktree bookkeeping,
+and the override on every deny case). All four harness suites exit 0.
+
+False-deny guard: the transcript corpus was rebuilt (it had never been saved)
+as `hooks/tests/mine_bash_corpus.py` + `replay_corpus.sh` — 722 transcripts,
+25,843 distinct commands, 27,134 replayed cases. Replayed as recorded: **1
+flip, intended**. Because 0 of 27,134 recorded cases has a worktree cwd, that
+run could not exercise the new rule from the lane side at all, so U4 added a
+`REPLAY_REMAP_CWD` mode and re-ran every case as if issued from a lane:
+**144 flips, all ALLOW→DENY, 137 distinct targets, 137 inside the main
+checkout, 0 inside the lane — 0 false denies.**
+
+**Verification:**
+
+```bash
+bash ~/.claude/hooks/tests/test_checkout_identity.sh   # 131 cases, exit 0
+bash ~/.claude/hooks/tests/test_jurisdiction.sh        # 14 cases, exit 0
+# lane -> main must DENY with the env var unset:
+printf '{"cwd":"/Users/vongimbel/code/canon-wt/rule-10-canon","tool_name":"Write","session_id":"v","tool_input":{"file_path":"/Users/vongimbel/code/calibrated-design-canon/zz.md"}}' \
+  | env -u CLAUDE_KICKOFF_CROSS_REPO bash ~/.claude/hooks/h09_lane_guard.sh
+```
+
+Commits: `85f643f` (lane guard), `7c8f7ef` (corpus harness), both in
+`~/.claude`, which has no remote. Lane `close-down-rev2-2026-09-28`.
