@@ -9,8 +9,18 @@ severity: low
 ---
 # GCI's 9 locked strings exist only in COPY_VOICE.md, and LGM has none at all
 
-**Unblocking action: the Director says which shipped strings GCI and LGM
-actually want locked, verbatim as they appear in the generators.**
+**Unblocking action: for GCI, the Director picks one of exactly two options —
+(A) give GCI a real locked copy string, or (B) rule that H11 does not apply to
+GCI. For LGM, the same choice, from a blank slate.**
+
+> Re-framed 2026-09-28 after an adversarial verification reader challenged the
+> original framing. This card is **not** a request to "make the 9 strings
+> match", and must not be read as one. GCI's nine locked entries are **rules**
+> ("Atomic answer 54-60 words.", "Disqualification FAQ sits second-to-last."),
+> not copy. H11 enforces verbatim-string preservation, so it **structurally
+> cannot** enforce a rule — no amount of editing makes a rule into a string a
+> generator emits. The choice below is therefore binary, and one of its two
+> arms is "this guard is the wrong instrument here, say so and stop."
 
 Surfaced 2026-09-28 closing [[h11-locked-strings-inert-on-multi-section-repos]].
 That card fixed H11's parser — DCI now enforces two real locked strings where
@@ -34,9 +44,29 @@ done
 ```
 
 H11 denies an edit only when a locked string is present in the edit's *before*
-text and absent from its *after*. A string that appears in no generator and no
-template can never be in a before text, so **none of the 9 can ever fire.**
-The guard parses them, holds them, and they protect nothing.
+text and absent from its *after*. The nine appear in no generator and no
+template, so **they guard no site copy whatsoever.** The guard parses them,
+holds them, and not one byte of what GCI ships is protected by them.
+
+**Precisely what is and is not true here** (the original wording of this card
+said "none of the 9 can ever fire", and that overstated it):
+
+They *can* fire — on an edit to `COPY_VOICE.md` itself. H11 is registered on
+`Edit|Write` and tests the edit's `old_string`/`new_string` whatever file is
+being edited, so deleting a locked bullet from `COPY_VOICE.md` is denied.
+Verified:
+
+```bash
+# cwd = greeleycoloradoinsulation.com, editing COPY_VOICE.md to change
+# "- Atomic answer 54-60 words." to "- Atomic answer 40 words."
+# -> deny: "edit drops locked string [Atomic answer 54-60 words.] ...
+#           without preserving it verbatim in the replacement"
+```
+
+So the nine are self-guarding: they protect the list of themselves. That is a
+real effect, and it is not the effect a copy lock is for. **The defect is not
+"they never fire" — it is that they guard the rulebook instead of the
+product.**
 
 Two reasons they cannot match, and they need different answers:
 
@@ -61,12 +91,36 @@ grep -cE '^#+[[:space:]].*[Ll]ocked' /Users/vongimbel/code/longmontcoloradoinsul
 # -> 0
 ```
 
-## What closing this looks like
+## The choice — exactly two options, per repo
 
-For each of GCI and LGM, the Director names the strings that are genuinely
-Director-approved and must never be dropped, and each goes under a "Locked"
-heading **as a blockquote holding the exact bytes the generator emits** — the
-shape DCI already uses and that now works:
+**Option A — give GCI a real locked copy string.** The Director names copy
+that GCI actually ships and that must never be dropped, and it goes under a
+"Locked" heading as a blockquote holding the exact bytes the generator emits.
+H11 then guards something. The nine rules move to a heading *without* "locked"
+in it, where they stay useful as conventions and stop being mistaken for
+string locks.
+
+**Option B — rule that H11 does not apply to GCI.** Entirely legitimate: GCI
+may simply have no Director-approved verbatim copy worth locking. Then the
+"Locked" heading is renamed so H11 finds no section, H11 warns once and
+enforces nothing there, and that warning is the honest state of affairs rather
+than a guard pretending to work.
+
+What is **not** on the menu is "edit the nine until they match something".
+They are rules; a string-preservation guard cannot enforce a rule at any
+level of editing effort. `_postbuild_check.py` is the instrument for a rule
+like "Atomic answer 54-60 words." — a card for that is a separate, later
+question, not this one.
+
+LGM faces the same two options from a blank slate, since it has no locked
+heading at all.
+
+## What Option A looks like
+
+The Director names the strings that are genuinely Director-approved and must
+never be dropped, and each goes under a "Locked" heading **as a blockquote
+holding the exact bytes the generator emits** — the shape DCI already uses and
+that now works:
 
 ```markdown
 ## Locked <what> (Director-approved <date>)
@@ -86,6 +140,12 @@ grep -cF -- "<the string>" /Users/vongimbel/code/<repo>/_generate_x.py   # -> >=
 belong in `COPY_VOICE.md`; they are just not string locks. Move them under a
 heading *without* "locked" in it, or leave them and add a real locked section
 alongside — either way H11 stops holding strings it cannot enforce.
+
+Note the interaction with the self-guarding effect above: while the nine sit
+under a "Locked" heading, H11 will **deny the very edit that moves them**.
+Whoever executes the chosen option needs to either preserve each bullet
+verbatim in the replacement text (H11 allows that — it checks preservation,
+not location) or rename the heading first, in an edit that drops nothing.
 
 Related: [[h11-locked-strings-inert-on-multi-section-repos]] (the parser fix,
 `~/.claude` `2e1d423`).
