@@ -121,3 +121,40 @@ grep -c superlative regen_all.sh                   # 0 — deliberately not wire
 ```
 
 No commit — measuring row. Lane `close-down-rev2-2026-09-28`.
+
+## Superseded (final)
+
+Superseded 2026-09-28: closed — GCI's scan is a human-review net by design, not a build gate; 708 hits contain no unsourced business-ranking claim. Its self-test was corrected in the same pass so it cannot pass while blind to body text.
+
+Row K7 of the FINISH rev 2 pass, resolving what row U2 above deferred to the
+Director. U2 measured honestly but rested on one thing that was not true: the
+self-test it cited as proof that 708 was a real reading was itself defective.
+`surfaces()` builds the `body` stream by stripping tags, which leaves
+`<title>` text inside it — so the title plant satisfied the body control, and
+`SELF_TEST=PASS (8 surfaces planted, 8 caught)` printed while the scanner was
+blind to the body surface, 403 of the 708 hits. `d268765` tags each plant with
+its own surface, so every control must now see its own plant in its own
+stream. Real detection is unchanged: `RAW_HITS=708`, exit 1.
+
+The card's proposed fix — port DCI's `--retired` mode and wire it into
+`regen_all.sh` — stays not-done, and that is the ruling rather than an
+omission. GCI's scan is not a variant of DCI's; it has no retired-pattern
+concept because it is a different instrument, a deliberately noisy net for
+human adjudication (`honest`/`latest`/`interest`/`request` all land in it).
+Wiring it would produce exactly the permanently red build GCI's own
+`regen_all.sh` forbids in writing. `grep -c superlative regen_all.sh`
+returning 0 is the intended state here, not the defect.
+
+**Verification:**
+
+```bash
+cd ~/code/greeleycoloradoinsulation.com
+git log --oneline -1 d268765                            # the self-test correction
+python3 ops/superlative_scan.py --self-test | tail -1   # SELF_TEST=PASS (8 surfaces planted, 8 caught)
+python3 ops/superlative_scan.py > /tmp/sup.txt; echo "EXIT=$?"   # EXIT=1
+grep -c 'RAW_HITS=708' /tmp/sup.txt                     # 1
+awk -F'\t' '$2=="body"' /tmp/sup.txt | wc -l            # 403 — the surface the old self-test was blind to
+grep -c superlative regen_all.sh                        # 0 — not wired, by design
+```
+
+Commit: `d268765` (GCI `main`). Row K7, FINISH rev 2 pass.

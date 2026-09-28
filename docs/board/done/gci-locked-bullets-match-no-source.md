@@ -191,3 +191,37 @@ grep -n '^> most locations in Severance$' COPY_VOICE.md
 ```
 
 Commit: `3f02425` (GCI `main`). Lane `close-down-rev2-2026-09-28`.
+
+## Superseded (final)
+
+Superseded 2026-09-28: closed — the 7 remaining entries are editorial rules, not string-locks; 2 string-locks re-locked in 3f02425.
+
+Row K7 of the FINISH rev 2 pass, resolving the Director decision row U3 above
+deferred. The answer is Option A over the part of the section that held
+shippable copy, and "H11 is the wrong instrument" over the rest — not one
+blanket arm for the whole file.
+
+`3f02425` re-locked the Milliken and Severance qualifiers from *descriptions*
+of the copy (`**Milliken — "most of Milliken".**`) to the verbatim published
+strings, each live on 38 pages and each held by `sc.XCEL_GAS_TOWNS` in
+`_shared_components.py`. Those two are now real string-locks: H11 guards the
+product, not the rulebook.
+
+The 7 entries that remain as bullets under GCI's "locked" headings — six
+inherited conventions plus the Johnstown no-qualifier rule — are instructions
+to a writer, not bytes any file ships. A string-preservation guard cannot
+enforce a rule at any level of editing effort, so they were neither edited nor
+deleted, per this card's own standing instruction: *"Do not close this by
+deleting GCI's bullets."* They stand exactly as written.
+
+**Verification:**
+
+```bash
+cd ~/code/greeleycoloradoinsulation.com
+git log --oneline -1 3f02425                     # the re-lock
+grep -c '^> most of Milliken$\|^> most locations in Severance$' COPY_VOICE.md   # 2 — the string-locks
+awk '/^#+[[:space:]]/{insec=(tolower($0) ~ /locked/)} insec && /^- /{n++} END{print n}' COPY_VOICE.md   # 7 — the rule bullets
+git grep -c -F 'most of Milliken' -- 'public/*' | wc -l    # 38 pages
+```
+
+Commit: `3f02425` (GCI `main`). Row K7, FINISH rev 2 pass.
