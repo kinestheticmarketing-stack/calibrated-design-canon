@@ -160,4 +160,4 @@ Closed by Director ruling 2026-09-28: won't do; no live copy is affected.
 grep -A5 "^## Closed" docs/board/done/gci-locked-bullets-match-no-source.md
 ```
 
-Commit: <FILL-IN-AFTER-COMMIT>
+Commit: `002ca34` (row R1, lane `close-down-rev2-2026-09-28`)
