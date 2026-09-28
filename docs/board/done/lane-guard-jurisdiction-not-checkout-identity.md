@@ -188,6 +188,25 @@ that blocks real deploys. `$( )` is now consumed as its own quoting context
 with its body still analysed. Final A/B over 2,224 corpus commands x 5 queries
 = 11,120 decisions: **1 change, an intended gain, 0 false negatives.**
 
+**And fixing THAT exposed a fourth, which the verifier caught: `cf39ce2` gave
+`$( )` its own quoting context but left backticks on the generic quote branch.**
+Harmless before the comment rule; after it, fail-OPEN. A backtick substitution
+containing a double-quoted string containing a `#` desynced the quote state,
+the comment rule ate the rest of the line, and every real command after it
+vanished — taking H2 from BLOCK to ALLOW on an ungated production deploy and
+silently skipping H13's post-deploy verification. Closed in `c2cb694` by giving
+backticks the identical own-context treatment (`btick_end`), body enqueued so
+`` `bash regen_all.sh` `` is still detected. A/B after the fix: **0 changes and
+0 lost detections** against the version that introduced it.
+
+**The recurring lesson, stated because it cost four rounds:** the corpus could
+not see any of these. 817 of 25,870 corpus commands contain a backtick and 337
+contain backtick + `"` + `#`, but none arranges the three around a gate or
+deploy name — and no test payload in any of the four suites used a backtick at
+all. **A corpus is a false-negative detector for over-tightening; it is not an
+adversarial bound.** Every one of these four defects was found by constructing
+an attack, never by measuring history.
+
 Residual, documented accurately and pinned as five tripwire cases: a compound
 command in which a `git worktree` invocation *statically occupies* a
 command-word slot still exempts the whole command — including the lane->lane-B
@@ -221,5 +240,6 @@ printf '{"cwd":"/Users/vongimbel/code/canon-wt/rule-10-canon","tool_name":"Bash"
 
 Commits: `85f643f` (lane guard), `77682cc` (command-word exemption fix),
 `cf39ce2` (comment handling; closes the deploy-authorization forge too),
+`c2cb694` (backticks as their own quoting context),
 `7c8f7ef` (corpus harness), all in
 `~/.claude`, which has no remote. Lane `close-down-rev2-2026-09-28`.
