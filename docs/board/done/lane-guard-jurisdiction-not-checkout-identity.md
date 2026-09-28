@@ -150,7 +150,7 @@ so a nested checkout inside the session's own tree is not falsely denied.
 add/remove/prune stay allowed; the cross-repo rule is unchanged.
 
 Proven both directions: new suite `hooks/tests/test_checkout_identity.sh`,
-**143 cases, 0 failures** — must-deny covers both tool paths and 16 shell write
+**159 cases, 0 failures** — must-deny covers both tool paths and 16 shell write
 forms per direction; must-allow covers own tree, the git operations, worktree
 bookkeeping, and the override on every deny case. All four harness suites
 exit 0.
@@ -167,10 +167,35 @@ commands contain `worktree`, the old regex matched 443, the predicate matches
 423, 26 shifted — and **0 of the 26 resolve a cross-checkout target**, so the
 full replay shows 0 differences either way. The fix also repaired a
 fail-closed bug: `git -c a=b -c c=d -C <main> worktree add` was being denied.
-Residual, documented accurately and pinned as tripwire cases: a compound
-command in which a *genuine* `git worktree` invocation shares the command line
-with another write is still exempt; closing that needs per-target segment
-attribution in `h19_write_targets.py`, a resolver change out of this scope.
+**The verifier then found the fix was one character short, and that the same
+root cause reached much further.** The shared scanner had no `#` comment
+handling at all, so a separator *inside a comment* reset command-word position:
+`echo pwned > <MAIN>/f  #; git worktree list` still allowed. Worse, and
+**pre-existing rather than introduced here** (identical at `7c8f7ef`, before
+this row), the same seam sat under `invokes_via_interpreter`, which
+`gate_tracker`/H2/H3/H13 depend on — so
+`echo hi  #&& bash regen_all.sh && python3 _postbuild_check.py && python3 _check_links.py`
+minted all three `GATE_* PASS` lines while bash ran only `echo hi`, after which
+H2 **allowed a real production deploy**. That is the 745-bogus-gate-lines
+defect class returning. Both closed by one fix in the one shared place
+(`cf39ce2`): an unquoted `#` at a word start now ends the logical line, using
+bash's real rule so `echo a#b`, `$#` and `${#var}` are untouched.
+
+Fixing it exposed a third defect, caught by the row's own exhaustive A/B rather
+than by review: the first comment implementation mis-paired quotes inside
+`$( )`, which silently dropped **three real gate invocations** — the direction
+that blocks real deploys. `$( )` is now consumed as its own quoting context
+with its body still analysed. Final A/B over 2,224 corpus commands x 5 queries
+= 11,120 decisions: **1 change, an intended gain, 0 false negatives.**
+
+Residual, documented accurately and pinned as five tripwire cases: a compound
+command in which a `git worktree` invocation *statically occupies* a
+command-word slot still exempts the whole command — including the lane->lane-B
+direction, and including slots that never execute
+(`false && git worktree prune; echo pwned > <MAIN>/f`). Command-word position
+is not execution, and reachability is undecidable for a static scanner.
+Closing it needs per-target segment attribution in `h19_write_targets.py`, a
+resolver change out of this scope.
 
 False-deny guard: the transcript corpus was rebuilt (it had never been saved)
 as `hooks/tests/mine_bash_corpus.py` + `replay_corpus.sh` — 722 transcripts,
@@ -184,7 +209,7 @@ checkout, 0 inside the lane — 0 false denies.**
 **Verification:**
 
 ```bash
-bash ~/.claude/hooks/tests/test_checkout_identity.sh   # 143 cases, exit 0
+bash ~/.claude/hooks/tests/test_checkout_identity.sh   # 159 cases, exit 0
 bash ~/.claude/hooks/tests/test_jurisdiction.sh        # 14 cases, exit 0
 # lane -> main must DENY with the env var unset:
 printf '{"cwd":"/Users/vongimbel/code/canon-wt/rule-10-canon","tool_name":"Write","session_id":"v","tool_input":{"file_path":"/Users/vongimbel/code/calibrated-design-canon/zz.md"}}' \
@@ -195,5 +220,6 @@ printf '{"cwd":"/Users/vongimbel/code/canon-wt/rule-10-canon","tool_name":"Bash"
 ```
 
 Commits: `85f643f` (lane guard), `77682cc` (command-word exemption fix),
+`cf39ce2` (comment handling; closes the deploy-authorization forge too),
 `7c8f7ef` (corpus harness), all in
 `~/.claude`, which has no remote. Lane `close-down-rev2-2026-09-28`.
