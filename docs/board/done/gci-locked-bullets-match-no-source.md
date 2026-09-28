@@ -149,3 +149,15 @@ not location) or rename the heading first, in an edit that drops nothing.
 
 Related: [[h11-locked-strings-inert-on-multi-section-repos]] (the parser fix,
 `~/.claude` `2e1d423`).
+
+## Closed
+
+Closed by Director ruling 2026-09-28: won't do; no live copy is affected.
+
+**Verification:**
+
+```bash
+grep -A5 "^## Closed" docs/board/done/gci-locked-bullets-match-no-source.md
+```
+
+Commit: <FILL-IN-AFTER-COMMIT>

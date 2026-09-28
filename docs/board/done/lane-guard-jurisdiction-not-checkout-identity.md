@@ -121,3 +121,16 @@ The gaps are documented, so no one has to rediscover them:
 
 Related: [[lane-guard-inert-in-worktrees]] (the worktree scope fix whose
 resolver created this consequence).
+
+## Closed
+
+Closed by Director ruling 2026-09-28: won't do; single-operator portfolio,
+jurisdiction guard suffices.
+
+**Verification:**
+
+```bash
+grep -A5 "^## Closed" docs/board/done/lane-guard-jurisdiction-not-checkout-identity.md
+```
+
+Commit: <FILL-IN-AFTER-COMMIT>

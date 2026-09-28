@@ -81,3 +81,16 @@ retired-pattern list, and found GCI has no such list to belong to. Out of that
 row's scope (its remit was the radon verdict and the unsourced-radon class
 sweep), and wiring a new build-failing gate needs the exits-0 precondition
 measured first, so it was carded rather than folded in.
+
+## Closed
+
+Closed by Director ruling 2026-09-28: won't do; GCI live copy is already
+clean.
+
+**Verification:**
+
+```bash
+grep -A5 "^## Closed" docs/board/done/gci-superlative-scan-enforces-nothing.md
+```
+
+Commit: <FILL-IN-AFTER-COMMIT>
