@@ -6,6 +6,8 @@ Claims were skipped once on the origin project and sessions collided; do not ski
 
 **Merge hazard:** if this file is ever set to `merge=union` in .gitattributes, a cross-lane rebase can silently DUPLICATE rows with no conflict markers. Check row counts after every rebase.
 
+**STANDING RULING — 2026-09-28. Cross-repo authorization is session-scoped.** Authorize multi-repo sessions by launching them with `CLAUDE_KICKOFF_CROSS_REPO=1`; never by a persistent marker or settings key. Both persistent grants created during 2026-09-27's work were removed on 2026-09-28 — `greeleycoloradoinsulation.com/.claude/CROSS_REPO_AUTHORIZED` (a zero-byte marker file) and that same repo's `.claude/settings.local.json`, whose only key was `CLAUDE_KICKOFF_CROSS_REPO`, leaving dead config once the key went. Authorization must expire with the session it was granted to: a committed marker or a settings key silently authorizes every future session in that repo, forever, with no kickoff having said so.
+
 ## Roles in this portfolio
 
 `owner:` on a board card, and the role a lane claim is made under, is one of:
