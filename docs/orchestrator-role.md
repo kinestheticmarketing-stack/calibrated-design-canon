@@ -260,7 +260,7 @@ Every assignment message must be self-contained. The receiving session has none 
 2. **What is already true** so it does not redo work or re-derive settled state
 3. **An explicit owns-list, and an explicit NOT-list naming the other active sessions and their files**
 4. **Lane claim first**: register in `docs/lanes.md` and commit that before touching code
-5. **The boundaries**: gates green before every commit judged on exit code; no prod data writes; no live agent pushes; nothing published to a real external account
+5. **The boundaries**: gates green before every commit judged on exit code; no prod data writes; no live deploys to production; nothing published to a real external account; no `git push` to a code remote unless this brief names it (see `docs/orchestrator-harness-policy.md` for why "live agent pushes" was replaced here on 2026-09-28)
 6. **What to report**: what shipped, what did not, gate exit codes. See RULE 9
    (`METHODS/ARCHITECT_DISCIPLINE.md`) in full; do not weaken or restate this
    rule here. Every artifact named

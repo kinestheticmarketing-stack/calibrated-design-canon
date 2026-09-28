@@ -38,7 +38,8 @@ List settled implementation facts, owner rulings, shipped prerequisites, and mec
 - Adjacent active lanes and their files
 - Main checkout
 - Prod data writes
-- Live agent pushes
+- Live deploys to production (`ops/push-to-staging.sh`, `/root/deploy.sh`)
+- `git push` to a code remote, unless named in the owns-list above
 - Destructive operations
 - Live external publishing
 - Any additional task-specific exclusions
