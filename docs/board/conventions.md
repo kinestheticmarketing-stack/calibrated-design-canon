@@ -3,6 +3,7 @@
 ## The shape
 
 - One card = one FILE: `docs/board/<column>/<id>.md`. Column membership IS the directory, so a move is a file move and there is no status field to desync.
+- The columns are a CLOSED list, so that counting open work is a directory listing and not a judgement call. Open cards = files in intake/, ready/, in-flight/, later/, waiting-on-owner/. Nothing else under docs/board/ is a card. `done/` and `archive/` hold closed cards; a loose `.md` at the board root (`conventions.md`, `ground-truth.md`) is a reference document; and any other directory that appears under `docs/board/` is an artifact — a one-time sweep, a snapshot, scratch output — not a queue, so it must never be counted as open work. Park such artifacts in `docs/audits/` rather than under the board.
 - The filename stem is the card's durable id and equals `id:` in the frontmatter. Editing a card never renames it; a rename is a deliberate, rare act.
 - The one-line rule retires for BODIES and survives for TITLES: `# <title>` alone must say what the card is, because a column listing shows nothing else. Bodies run as long as the card genuinely needs; append updates at the bottom with dates.
 - Real specs still live in `docs/*.md`. Point at them with `doc:`, do not paste them into the card.
