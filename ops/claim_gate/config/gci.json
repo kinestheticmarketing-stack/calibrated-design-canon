@@ -4,13 +4,18 @@
   "repo": "greeleycoloradoinsulation.com",
   "domain": "https://greeleycoloradoinsulation.com",
   "measured_at": {
-    "date": "2026-09-17",
-    "head": "d9ebab7"
+    "date": "2026-09-29",
+    "head": "fe739ff"
   },
-  "min_artifacts": 49,
-  "expected_html": 38,
-  "embed_artifacts": [],
-  "embed_artifacts_note": "NULL RESULT — GCI has no embed frame.",
+  "min_artifacts": 53,
+  "expected_html": 42,
+  "corpus_size_note": "RE-MEASURED 2026-09-29. Was min_artifacts 49 / expected_html 38, measured 2026-09-17 at d9ebab7. Four embed frames were published by lane embed-phase2-2026-09-29-gci, taking html 38 -> 42 and artifacts 49 -> 53. Raised deliberately to match a deliberate addition, never to silence a finding. Verify: cd ~/code/greeleycoloradoinsulation.com && find public -name '*.html' | wc -l -> 42, find public -type f | wc -l -> 53.",
+  "embed_artifacts": [
+    "public/insulation-cost-calculator-greeley-embed.html",
+    "public/insulation-payback-calculator-greeley-embed.html",
+    "public/insulation-rebate-eligibility-checker-embed.html",
+    "public/r-value-calculator-greeley-embed.html"
+  ],
   "key_files_excluded": [
     "public/d38d3ab74418efeba995b5fab6345f07.txt"
   ],
