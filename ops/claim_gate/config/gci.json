@@ -5,12 +5,13 @@
   "domain": "https://greeleycoloradoinsulation.com",
   "measured_at": {
     "date": "2026-09-29",
-    "head": "416250d"
+    "head": "0c5c5b2"
   },
-  "min_artifacts": 53,
-  "expected_html": 42,
-  "corpus_size_note": "RE-MEASURED 2026-09-29. Was min_artifacts 49 / expected_html 38, measured 2026-09-17 at d9ebab7. Four embed frames were published by lane embed-phase2-2026-09-29-gci, taking html 38 -> 42 and artifacts 49 -> 53. Raised deliberately to match a deliberate addition, never to silence a finding. Verify: cd ~/code/greeleycoloradoinsulation.com && find public -name '*.html' | wc -l -> 42, find public -type f | wc -l -> 53.",
+  "min_artifacts": 54,
+  "expected_html": 43,
+  "corpus_size_note": "RE-MEASURED 2026-09-29. Was min_artifacts 49 / expected_html 38, measured 2026-09-17 at d9ebab7. Four embed frames were published by lane embed-phase2-2026-09-29-gci, taking html 38 -> 42 and artifacts 49 -> 53. Raised deliberately to match a deliberate addition, never to silence a finding. Verify: cd ~/code/greeleycoloradoinsulation.com && find public -name '*.html' | wc -l -> 42, find public -type f | wc -l -> 53. PLUS, later the same day: ONE page, public/embed-our-insulation-calculators.html, published by lane embed-code-publish-2026-09-29-gci at 0c5c5b2, taking html 42 -> 43 and artifacts 53 -> 54. That page is the embed-code page for all four frames -- the single INDEXABLE surface of the set -- drafted outside public/ under ruling 12 and published on the Director's approval. It is index,follow with a self-referential canonical and is in sitemap.xml and llms.txt via a new sc.EMBED_PAGES registry; the four FRAMES remain noindex,follow, canonical to their full calculator, and absent from both. It could not land on its first attempt: the gate read its DISPLAYED code snippet as prose and R5 reported the iframe's CSS width as an uncited magnitude claim, measured with the real gate at exit 1. Repaired in the EXTRACTOR at canon d23bcbf (surfaces.txt() drop_code_blocks), never in a config filter. Bumped AFTER the page landed, never before: claim_gate.py:7956-7976 fires only on an UNDER-count, so a pre-bump would have exited 2 against a corpus that was correct. Verify: cd ~/code/greeleycoloradoinsulation.com && find public -name '*.html' | wc -l -> 43, find public -type f | wc -l -> 54.",
   "embed_artifacts": [
+    "public/embed-our-insulation-calculators.html",
     "public/insulation-cost-calculator-greeley-embed.html",
     "public/insulation-payback-calculator-greeley-embed.html",
     "public/insulation-rebate-eligibility-checker-embed.html",
