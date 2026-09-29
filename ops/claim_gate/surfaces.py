@@ -46,6 +46,44 @@ _SCRIPT_STYLE = re.compile(
 _COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 _TAG = re.compile(r"<[^>]+>")
 
+# CODE DISPLAYED TO A READER IS NOT PROSE, AND ITS NUMERALS ARE NOT CLAIMS.
+#
+# Added 2026-09-29. An embed-code page shows a third-party site owner the exact
+# HTML to paste. That snippet is DISPLAYED text, so it reached the proposition
+# pool as prose, and R5 read `style="width:100%"` -- an iframe's CSS WIDTH --
+# as a magnitude claim, with the magnitude word supplied by the tool's own NAME
+# in the neighbouring `title` attribute ("... Payback Calculator ..."). Two
+# properties produced an identical blocking R5 finding from it, on pages
+# carrying no dollar figure and asserting nothing about payback. Denver escaped
+# only because its payback calculator was excluded from the embed set, so no
+# Denver snippet happened to pair a percentage with a magnitude word. That is
+# luck, not immunity: ANY page that shows a reader a code sample hits this.
+#
+# THE BOUNDARY IS `<pre><code>`, AND THAT IS NARROWER THAN IT LOOKS ON PURPOSE:
+#   * NOT every <pre>. A <pre> can legitimately hold prose -- preformatted
+#     address blocks, poetry, fixed-width tables -- and blanking those would
+#     blind every proposition rule to real claims. `pre` stays in _BLOCK_TAGS
+#     as a sentence boundary regardless.
+#   * NOT inline <code>. `the <code>R-60</code> target` is prose with a token
+#     marked up inside it, and a claim written that way must stay readable.
+#   * ONLY <code> AS THE FIRST CHILD OF <pre>, which is the HTML5 idiom for a
+#     code BLOCK and the shape every snippet on these properties uses.
+#
+# AND IT IS NOT A DELETION. Only the code block's CONTENT is blanked; the <pre>
+# and <code> tags survive so _BLOCK_TAG_RE still marks the boundary and two
+# paragraphs either side of a snippet cannot weld into one sentence. It is
+# applied ONLY to `txt_blocks` -- the proposition pool -- never to `txt`. So
+# `visible_text()` still sees the snippet in full and R8 part (d) still counts
+# an edited snippet as a real visible-text change, which it is: the reader can
+# see that code. This mirrors the policy already recorded at
+# claim_gate.py:1457, where a <script> or <style> BODY is excluded from the
+# proposition pool while its string literals are judged separately. A body is
+# not a proposition surface; it is still bytes that shipped.
+_PRE_CODE = re.compile(
+    r"(<pre\b[^>]*>\s*<code\b[^>]*>)(.*?)(</code\s*>)",
+    re.IGNORECASE | re.DOTALL,
+)
+
 # BLOCK-LEVEL ELEMENTS ARE SENTENCE BOUNDARIES. txt() flattened EVERY tag to a
 # single space, so `<li>Air Sealing</li><li>Energy Audit</li>` arrived at the
 # sentence splitter as one unpunctuated run -- and since the splitter needs
@@ -207,7 +245,7 @@ def dec(s):
     return _TOKEN.sub(lambda m: _fold_token(m.group(0)), t)
 
 
-def txt(s, mark_blocks=False):
+def txt(s, mark_blocks=False, drop_code_blocks=False):
     """DEC with script/style bodies removed, remaining tags stripped, and all
     whitespace runs collapsed (spec 3, TXT).
 
@@ -216,9 +254,17 @@ def txt(s, mark_blocks=False):
     False and the default output is BYTE-IDENTICAL to what this function has
     always returned -- every existing occ()/has_any() call over art.txt is
     therefore unaffected. Only segmentation sees the marked variant.
+
+    drop_code_blocks=True blanks the CONTENT of `<pre><code>` blocks, leaving
+    their tags in place. See _PRE_CODE above for why the boundary is exactly
+    that and not `<pre>`. Also defaults False: the ONLY caller that passes it
+    is txt_blocks, the proposition pool. `txt` itself -- and therefore
+    `visible_text()` and R8 part (d) -- still sees displayed code in full.
     """
     s = _COMMENT.sub(" ", s)
     s = _SCRIPT_STYLE.sub(" ", s)
+    if drop_code_blocks:
+        s = _PRE_CODE.sub(lambda m: m.group(1) + " " + m.group(3), s)
     if mark_blocks:
         s = _BLOCK_TAG_RE.sub(_BMARK, s)
     s = _TAG.sub(" ", s)
@@ -596,11 +642,14 @@ class Artifact(object):
             m = re.search(r"<body\b[^>]*>(.*)</body\s*>", raw,
                           re.DOTALL | re.IGNORECASE)
             self.txt = txt(m.group(1)) if m else self.doc_txt
-            # Same bytes, plus block-boundary sentinels. Used ONLY for
-            # sentence segmentation; self.txt is unchanged and every matcher
-            # that reads it is unaffected.
-            self.txt_blocks = (txt(m.group(1), mark_blocks=True) if m
-                               else txt(raw, mark_blocks=True))
+            # Same bytes, plus block-boundary sentinels, MINUS the content of
+            # displayed code blocks. Used ONLY for sentence segmentation --
+            # i.e. the proposition pool; self.txt is unchanged and every
+            # matcher that reads it is unaffected, which is what keeps
+            # visible_text() and R8 part (d) able to see an edited snippet.
+            self.txt_blocks = (
+                txt(m.group(1), mark_blocks=True, drop_code_blocks=True) if m
+                else txt(raw, mark_blocks=True, drop_code_blocks=True))
         else:
             self.txt = self.doc_txt
             self.txt_blocks = self.doc_txt
