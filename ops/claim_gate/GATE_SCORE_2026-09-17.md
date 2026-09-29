@@ -1295,7 +1295,9 @@ mentions of Broomfield (`/usr/bin/grep -n -i "broomfield"` → no match).
 Energy Efficiency (parts of N. Broomfield), Power Ahead Colorado …`
 
 *4. A prior adversarial read examined this exact copy and ruled it correct.*
-`docs/board/read-2026-08-25/groupC.md:462-464`, verbatim:
+`docs/audits/read-2026-08-25/groupC.md:462-464` — cited here on 2026-09-17 as
+`docs/board/read-2026-08-25/groupC.md:462-464`; the directory moved out of the
+board to `docs/audits/` on 2026-09-28, content unchanged — verbatim:
 ```
 - Deliberate per-suburb prose variation (cost ranges, era mix, neighborhood
   names, the United Power carve-out on Broomfield) is intact and is NOT
