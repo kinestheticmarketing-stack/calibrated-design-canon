@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head><title>Negative control</title></head><body>
+<!-- NEG19. CODE DISPLAYED TO A READER IS NOT PROSE.
+     The pre/code block below is a paste-able embed snippet, of exactly the
+     shape the three insulation properties' embed-code pages ship. It carries
+     a CSS width declaration written as a percentage and, a few characters
+     away, the words "Payback Calculator" -- which are the TOOL'S OWN NAME,
+     sitting in a title attribute.
+
+     Before 2026-09-29 the proposition pool read that block as prose. R5 paired
+     the percentage with the magnitude word in the tool's name and reported an
+     UNCITED MAGNITUDE CLAIM. It was a blocking failure on two properties at
+     once (Longmont and Greeley), on pages that carry no dollar figure and
+     assert nothing whatever about how long an upgrade takes to pay for
+     itself. Denver escaped only because its equivalent calculator had been
+     excluded from its embed set, so no Denver snippet happened to put a
+     percentage near a magnitude word -- luck, not immunity.
+
+     The repair is in the EXTRACTOR, never in a config filter: surfaces.txt()
+     takes drop_code_blocks=True when building txt_blocks (the proposition
+     pool) and blanks the CONTENT of a pre/code block while KEEPING the tags,
+     so the block still marks a sentence boundary, and visible_text() -- and
+     therefore R8 part (d) -- still sees the snippet in full.
+
+     THIS FIXTURE IS THE STANDING PROOF. If it ever FALSE ALARMS, displayed
+     code has been let back into the proposition pool, and every page that
+     shows a reader a code sample is reporting its own markup as claims.
+
+     TWO THINGS THIS FILE DELIBERATELY DOES:
+     1. It keeps ordinary prose on BOTH sides of the block, to prove the block
+        is a BOUNDARY and not a hole. Were the snippet simply deleted, the two
+        paragraphs would weld into one sentence and a claim could be assembled
+        from words that never touched on the page.
+     2. It states no figure in THIS COMMENT. An HTML comment is a claim
+        surface here by design, and the first draft of this fixture false
+        alarmed on its own explanation -- it quoted the offending declaration
+        literally. A negative control has to be clean in every surface it
+        occupies, including the one that explains it. -->
+<p>Paste the block below onto any page you control. Nothing needs installing.</p>
+<pre><code>&lt;iframe src="https://example.com/insulation-payback-calculator-embed.html" title="Attic Insulation Payback Calculator - Example Insulation" height="2280" loading="lazy" style="width:100%;height:2280px;border:0;display:block"&gt;&lt;/iframe&gt;</code></pre>
+<p>Keep the credit link under the frame exactly as it arrives.</p>
+</body></html>
