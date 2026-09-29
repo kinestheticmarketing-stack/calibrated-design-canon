@@ -107,8 +107,9 @@ unmatched 260-character splice:
    > Denver Insulation That Stops You Heating the Attic All Winter.
 
    Verbatim in `_generate_homepage.py`, `STATE_OF_PROJECT.md`,
-   `COPY_VOICE.md`, `docs/board/phase-a-rows/index.html.md`, and
-   `public/index.html`.
+   `COPY_VOICE.md`, `docs/audits/phase-a-rows/index.html.md` (moved
+   2026-09-28 from `docs/board/phase-a-rows/`, the path this card cited
+   when written), and `public/index.html`.
 
 2. Under `### Locked acknowledgment line`:
    > The federal IRA Section 25C tax credit ended December 31, 2025, and
