@@ -5,14 +5,15 @@
   "domain": "https://denvercoloradoinsulation.com",
   "measured_at": {
     "date": "2026-09-29",
-    "head": "819cb38"
+    "head": "849480b"
   },
-  "min_artifacts": 89,
-  "expected_html": 79,
-  "corpus_size_note": "RE-MEASURED 2026-09-29. Was min_artifacts 85 / expected_html 75, measured 2026-09-17 at f9e7551. Four embed frames were published by lane embed-phase2-2026-09-29-dci, taking html 75 -> 79 and artifacts 85 -> 89. Raised deliberately to match a deliberate addition, never to silence a finding. A fifth DCI calculator, energy-savings-payback-calculator, was EXCLUDED from the pass by Director ruling under R14 (it renders one result shape regardless of input), so it has no frame and none is expected. Verify: cd ~/code/denvercoloradoinsulation.com && find public -name '*.html' | wc -l -> 79, find public -type f | wc -l -> 89.",
+  "min_artifacts": 90,
+  "expected_html": 80,
+  "corpus_size_note": "RE-MEASURED 2026-09-29 at 849480b. Was min_artifacts 89 / expected_html 79, measured earlier the same day at 819cb38; before that 85 / 75, measured 2026-09-17 at f9e7551. Two deliberate additions, in order. FIRST: four embed frames published by lane embed-phase2-2026-09-29-dci, html 75 -> 79 and artifacts 85 -> 89. SECOND: ONE page, public/insulation-calculator-embeds.html, published by lane embed-code-publish-2026-09-29-dci, html 79 -> 80 and artifacts 89 -> 90. That page is the embed-code page for all four phase-2 frames -- the single indexable surface of the set -- and it was drafted outside public/ under ruling R12 and published on the Director's approval. It is index,follow with a self-referential canonical and it is in sitemap.xml and llms.txt; the four FRAMES remain noindex,follow, canonical to their full calculator, and absent from both. Bumped AFTER the page landed, never before: claim_gate.py:7956-7976 fires only on an UNDER-count, so a pre-bump would have exited 2 and redded the property against a corpus that was correct. Raised deliberately to match a deliberate addition, never to silence a finding. A fifth DCI calculator, energy-savings-payback-calculator, was EXCLUDED from the embed pass by Director ruling under R14 (it renders one result shape regardless of input), so it has no frame and none is expected. Verify: cd ~/code/denvercoloradoinsulation.com && find public -name '*.html' | wc -l -> 80, find public -type f | wc -l -> 90.",
   "embed_artifacts": [
     "public/r-value-needed-calculator-embed.html",
     "public/r-value-needed-calculator-embed-code.html",
+    "public/insulation-calculator-embeds.html",
     "public/xcel-rebate-eligibility-checker-embed.html",
     "public/attic-insulation-cost-calculator-embed.html",
     "public/do-i-need-new-insulation-quiz-embed.html",
