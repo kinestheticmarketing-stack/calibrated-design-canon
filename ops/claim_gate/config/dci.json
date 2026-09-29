@@ -4,14 +4,19 @@
   "repo": "denvercoloradoinsulation.com",
   "domain": "https://denvercoloradoinsulation.com",
   "measured_at": {
-    "date": "2026-09-17",
-    "head": "f9e7551"
+    "date": "2026-09-29",
+    "head": "f0115ee"
   },
-  "min_artifacts": 85,
-  "expected_html": 75,
+  "min_artifacts": 89,
+  "expected_html": 79,
+  "corpus_size_note": "RE-MEASURED 2026-09-29. Was min_artifacts 85 / expected_html 75, measured 2026-09-17 at f9e7551. Four embed frames were published by lane embed-phase2-2026-09-29-dci, taking html 75 -> 79 and artifacts 85 -> 89. Raised deliberately to match a deliberate addition, never to silence a finding. A fifth DCI calculator, energy-savings-payback-calculator, was EXCLUDED from the pass by Director ruling under R14 (it renders one result shape regardless of input), so it has no frame and none is expected. Verify: cd ~/code/denvercoloradoinsulation.com && find public -name '*.html' | wc -l -> 79, find public -type f | wc -l -> 89.",
   "embed_artifacts": [
     "public/r-value-needed-calculator-embed.html",
-    "public/r-value-needed-calculator-embed-code.html"
+    "public/r-value-needed-calculator-embed-code.html",
+    "public/xcel-rebate-eligibility-checker-embed.html",
+    "public/attic-insulation-cost-calculator-embed.html",
+    "public/do-i-need-new-insulation-quiz-embed.html",
+    "public/spray-foam-vs-blown-in-comparator-embed.html"
   ],
   "key_files_excluded": [
     "public/1b79c33b73e0dea0470080c5c9854d20.txt"
