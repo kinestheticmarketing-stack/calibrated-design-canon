@@ -717,6 +717,41 @@ content work" instruction).
    ledger row four waves later. Written here it costs one session and no
    reference is ever dangling.
 
+9. **Complete owner intake form.** The owner's facts are gathered ONCE,
+   through one complete intake form, at genesis. The form is completed
+   once, is complete before any production work begins (nothing in
+   Phase 4 onward starts on an unfilled field), and after it there are
+   ZERO owner questions. A gap found after intake is the form's failure,
+   not a reason to ask: ship without the fact (see ARCHITECT_DISCIPLINE.md,
+   NO OWNER/PARTNER QUESTIONS). The form must capture:
+
+   - **Services offered.**
+   - **Standing offers** (e.g. free diagnostic, free audit, financing),
+     and whether each is true today. Standing offers true/false is a
+     field in its own right; an offer not marked true ships nowhere.
+   - **Hours, INCLUDING the after-hours policy** — who answers, and when
+     calls are returned. After-hours policy wording is a field: the
+     exact sentence that may be published.
+   - **Pricing policy** — publish ranges or not, and the ranges. Approved
+     price ballparks are a field: only a ballpark entered here may appear.
+   - **Credentials** — the legal/public name as it may appear, title,
+     certifications. Name/title/certifications to publish is a field:
+     only what may be published, nothing inferred.
+   - **Fleet terms** — billing terms, and what is offered or explicitly
+     NOT offered.
+   - **Service area.**
+   - **Differentiators.**
+   - **Customer stories / testimonials.** Publish only with a source
+     document on file; never fabricate one.
+   - **What the specials page may contain.**
+   - **Top fleet vehicles worked on.**
+
+   The last seven topics (after-hours wording, standing offers true/false,
+   approved price ballparks, customer stories, name/title/certifications,
+   specials page contents, top fleet vehicles) come from the Don's Garage
+   D.37 rulings, where each was asked of the owner mid-build instead of
+   captured up front.
+
 ---
 
 ## PHASE 2 — PARENT SELECTION
