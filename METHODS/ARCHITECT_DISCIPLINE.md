@@ -1864,6 +1864,20 @@ PRACTICAL IMPLEMENTATION
   that way, the finding is against the instrument, not the page.
 
 ═══════════════════════════════════════════════════════════════
+PATTERN 25 — INFORMATION RETRIEVAL ORDER
+═══════════════════════════════════════════════════════════════
+
+CANON RULE
+INFORMATION RETRIEVAL ORDER. (1) Architect looks it up: memory, past chats, web, canon, live site. (2) Architect hands the Executor a lookup kickoff. (3) Only then ask the Director — RARE, never default, stated as the Architect's failure with what was tried. Never ask anything already decided or basic enough to derive. Facts stay true unless the Director says they changed.
+
+═══════════════════════════════════════════════════════════════
+PATTERN 26 — NO OWNER/PARTNER QUESTIONS
+═══════════════════════════════════════════════════════════════
+
+CANON RULE
+NO OWNER/PARTNER QUESTIONS. Clients and partners (Garrett, Rob, any owner) are not accessible and the Director is not a courier. Owner info is gathered ONCE via a complete intake form at genesis. After intake: zero owner questions. A gap after intake is the form's failure; ship without the fact. Executors never flag work for 'owner review'.
+
+═══════════════════════════════════════════════════════════════
 HOW THIS DOCUMENT EVOLVES
 ═══════════════════════════════════════════════════════════════
 
