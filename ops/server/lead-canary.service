@@ -1,0 +1,12 @@
+[Unit]
+Description=Floate P2 — end-to-end lead-path canary (DCI + Greeley + Longmont)
+After=network.target <redacted>.com.service <redacted>.com.service <redacted>.com.service
+Wants=<redacted>.com.service <redacted>.com.service <redacted>.com.service
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/denvercoloradoinsulation.com
+ExecStart=/usr/bin/node /root/denvercoloradoinsulation.com/ops/canary_check.js
+StandardOutput=journal
+StandardError=journal
