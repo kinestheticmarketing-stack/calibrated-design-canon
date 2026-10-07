@@ -11,17 +11,30 @@ if ! check_local_connectivity; then
   exit 0
 fi
 
+# NOTE: openssl s_client has no "-timeout" flag for a TLS (non-DTLS)
+# connection -- passing one made the handshake fail silently every time,
+# every property, in real testing. `timeout` (the shell command) wrapping
+# the whole invocation is the correct, portable way to bound this.
+read_cert_enddate() {
+  local host="$1"
+  echo | timeout 15 openssl s_client -servername "$host" -connect "$host:443" 2>/dev/null \
+    | openssl x509 -noout -enddate 2>/dev/null | sed 's/notAfter=//'
+}
+
 for propline in "${PROPERTIES[@]}"; do
   prop=$(prop_field "$propline" 1)
   url=$(prop_field "$propline" 2)
   host="${url#https://}"; host="${host#http://}"; host="${host%%/*}"
 
-  # NOTE: openssl s_client has no "-timeout" flag for a TLS (non-DTLS)
-  # connection -- passing one made the handshake fail silently every time,
-  # every property, in real testing. `timeout` (the shell command) wrapping
-  # the whole invocation is the correct, portable way to bound this.
-  enddate=$(echo | timeout 15 openssl s_client -servername "$host" -connect "$host:443" 2>/dev/null \
-    | openssl x509 -noout -enddate 2>/dev/null | sed 's/notAfter=//')
+  enddate=$(read_cert_enddate "$host")
+
+  # One unread certificate can be a transient handshake/network blip, not a
+  # real site-side problem. Wait 20s and try exactly once more; only a
+  # second consecutive failure counts as "could not read certificate".
+  if [ -z "$enddate" ]; then
+    sleep 20
+    enddate=$(read_cert_enddate "$host")
+  fi
 
   if [ -z "$enddate" ]; then
     handle_check_result "tls_expiry" "$prop" 1 \
