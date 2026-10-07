@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily trigger for the Floate P2 lead-path canary
+
+[Timer]
+# 09:00 America/Denver — clearly clear of porter's 03:30 America/Denver
+# db_backup.sh window (root crontab, CRON_TZ=America/Denver).
+OnCalendar=*-*-* 09:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
