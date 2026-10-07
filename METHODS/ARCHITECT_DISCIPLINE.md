@@ -1922,3 +1922,43 @@ under: see METHODS/the-calibrated-stack.md.
 ═══════════════════════════════════════════════════════════════
 END OF DOCUMENT
 ═══════════════════════════════════════════════════════════════
+
+## FINISH RULES (2026-10-07)
+F1. A kickoff may stop only where finishing would put something
+    broken or false live, leave a live site down, or put two
+    sessions in one tree. Every other "if" carries its answer in
+    the kickoff.
+F2. No kickoff depends on how the session was started. Its first
+    step checks the folder it is in and does nothing at all if it
+    is the wrong one. A kickoff writes one repo. Work for another
+    repo is another kickoff.
+F3. No rule in a kickoff may contradict another rule in it. Check
+    every DO NOT against every MUST before delivering.
+F4. Every unit is skip-if-done, so pasting the same box twice is
+    the resume rule.
+F5. Not found, rejected by a validator, reverted, blocked by a
+    hook, not captured: these are dispositions the Executor
+    reports. They are never stops.
+F6. Done means done. A pass cannot close until the record that
+    tracks it is updated, by a kickoff that can write that record.
+F7. One thing found wrong means every instance of it is fixed in
+    the same pass, by name. A new rule means existing work is
+    brought into line when the rule is made.
+F8. Task first, then every open item, unprompted, as the next work.
+F9. Never port a fact, a sentence, or generator structure from one
+    property to another. Each property is corrected against its
+    own source with its own mechanism.
+F10. The Unit Ledger opens the kickoff. One row per file, one agent
+    per row, declared count equal to row count. Executor steps and
+    deploys run by the Executor are declared outside the ledger
+    with zero agents. (Ran clean under the harness in Kickoffs 13B
+    through 19.)
+F11. Every Final Report names its kickoff in its first line.
+F12. A transcript sent with no message is analyzed and compared to
+    canon. Asking what is wanted, or doing nothing, is a defect.
+F13. Sessions that share one server do not hit it at the same
+    time. Concurrent kickoffs stagger their server steps, and all
+    server work in one session reuses one connection.
+F14. A secret is never rotated before everything that presents it
+    has been listed by name. A check that cannot reach its target
+    says so and counts it; it never reports "no problem".

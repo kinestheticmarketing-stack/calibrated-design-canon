@@ -55,6 +55,7 @@ A polished page cannot compensate for a form that does not submit.
   Run axe at 375px AND 1280px; a single viewport misses overflow-only
   violations. Keyboard checks use sequential Tab; .focus() cannot reach
   visibility:hidden elements and false-fails.
+- Long-copy section: when a section reads as one block, split it into its smallest units, group the units by subject, and give each group its own element. Group headings come from the approved copy or go through copy approval; layout never invents them. Do not lower body-text contrast to create hierarchy.
 
 ## 5. Directing AI builds
 - State one organizing concept before any build. "Make it premium"

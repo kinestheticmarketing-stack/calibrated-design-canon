@@ -288,6 +288,10 @@ a voice canon):
 DIMENSIONS NOT APPLICABLE:
   - [list]
 
+(REQUIRED in every kickoff audit:)
+EVERY WAY THIS KICKOFF CAN STOP. Name each one. For each, say whether finishing would have been safe. A stop that finishing would have made safe is a FAIL, whatever else passes. A case where finishing is NOT safe and the kickoff has no stop is also a FAIL.
+  1. [stop condition — would finishing have been safe? yes/no, why]
+
 VERDICT MEANINGS:
   PASS                = Fire it / deploy it.
   PASS-WITH-FLAGS     = Fire it, but read flags first. Director's call
