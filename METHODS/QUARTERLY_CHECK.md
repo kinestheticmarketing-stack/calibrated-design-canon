@@ -26,3 +26,9 @@ Per site, one kickoff, run in that site's repo:
    rules each page.
 The Final Report states the finding count and the previous
 check's count.
+
+# RULES ADDED 2026-10-11
+1. When the check finds a topic false on one page, the correction pass covers every sentence on every page of every property that mentions that topic, listed by a term sweep with a positive control, not only the sentences the check quoted.
+2. Sweeps read rendered text including text a page's own script generates (run the page in a browser, or extract the script's own string constants), and also list sentences that state a topic's status without naming the program (launch, coming, open, closed, waitlist, and number words for counts).
+3. When a unit changes a count (three to four), the list it counts changes in the same unit.
+4. The correction pass sets REBATE_VERIFIED_DATE in the same pass once every CHANGED entry for that property is corrected to source.

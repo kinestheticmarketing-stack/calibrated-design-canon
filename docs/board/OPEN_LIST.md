@@ -1,6 +1,6 @@
 # OPEN LIST — DCI / LGM / GCI insulation properties
 
-Date: 2026-10-05. One-time Director-ordered inventory (Rule 6 exception). Read-only pass; nothing was fixed. Updated 2026-10-07 by Kickoffs 20 and 21.
+Date: 2026-10-05. One-time Director-ordered inventory (Rule 6 exception). Read-only pass; nothing was fixed. Updated 2026-10-07 by Kickoffs 20 and 21, and 2026-10-11 by Kickoff 33.
 
 This list is frozen. Items leave it by being fixed and verified, or by Director strike. Nothing is added except a defect found on a live page.
 
@@ -16,11 +16,11 @@ STILL TRUE by kind (total 53):
 | DIRECTOR ACTION (browser only) | 3 |
 | FUTURE WORK | 35 |
 
-NOT CHECKABLE: 39. ALREADY FIXED / NOT APPLICABLE (closed on the record, second table): 357.
+NOT CHECKABLE: 39. ALREADY FIXED / NOT APPLICABLE (closed on the record, second table): 358.
 
 | site | STILL TRUE | NOT CHECKABLE | ALREADY FIXED | NOT APPLICABLE |
 |---|---|---|---|---|
-| DCI | 8 | 26 | 235 | 42 |
+| DCI | 8 | 26 | 236 | 42 |
 | LGM | 22 | 8 | 46 | 6 |
 | GCI | 23 | 5 | 25 | 3 |
 
@@ -46,7 +46,7 @@ Sources (closed scope): each repo's STATE_OF_PROJECT.md and docs/board/ (DCI als
 | DCI-140 | DCI | Archive.org lookup of the deleted DOE cellulose-settling page (queued for completeness) | NOT CHECKABLE | [r1#16; src: STATE do-next item 8.9 + "Queued" bullet 2026-08-10] external archive lookup; energy.gov path excluded from this pass by instruction | FUTURE WORK |
 | DCI-141 | DCI | NAP setup (GBP, Yelp, BBB, Apple Maps, directory citations); GBP gray-zone go/no-go | NOT CHECKABLE | [r1#20; src: STATE do-next 2; Phase 5 candidates; Open Strategic Question 3] external listings; blocked by Build Order Law (ground-truth) | DIRECTOR DECISION: GBP go/no-go for a storefront-less lead-gen brand |
 | DCI-142 | DCI | Quarterly rebate review due 2026-09-10 (incl. outbound-link freshness) | NOT CHECKABLE | [r1#23; src: STATE do-next 8; COPY_VOICE header] COPY_VOICE.md:353 still reads "Next quarterly review due: September 10, 2026"; no dated review-complete record in named sources | DIRECTOR DECISION: was the Sept review run? |
-| DCI-144 | DCI | Quarterly backup restore drill (Sept 10 cycle = `insulation`); host-cluster role-password reset not exercised until ~June 2027 | NOT CHECKABLE | [r1#29; src: STATE do-next 8.6] VPS/B2 operation, outside repo | DIRECTOR DECISION: pull `totefinders` forward or run step-4 drill standalone? |
+| DCI-144 | DCI | Host-cluster role-password reset not exercised until ~June 2027 (insulation restore-drill part split to DCI-144A, closed 2026-10-11) | NOT CHECKABLE | [r1#29; src: STATE do-next 8.6] VPS/B2 operation, outside repo | DIRECTOR DECISION: pull `totefinders` forward or run step-4 drill standalone? |
 | DCI-145 | DCI | Original research / proprietary data from contractor job data | NOT CHECKABLE | [r1#30; src: STATE do-next 9] depends on partner data | FUTURE WORK |
 | DCI-146 | DCI | Backlink building (months 6-9+) | NOT CHECKABLE | [r1#31; src: STATE do-next 10] external; blocked by Build Order Law | FUTURE WORK |
 | DCI-147 | DCI | Hermes ToteFinders hardcoded password | NOT CHECKABLE | [r1#32; src: STATE do-next 11; STATE Known issues] separate codebase, outside this row's closed scope (value not repeated here) | SECURITY |
@@ -484,3 +484,4 @@ Sources (closed scope): each repo's STATE_OF_PROJECT.md and docs/board/ (DCI als
 | LGM-044 | LGM | Health-check tokens exposed 2026-09-30; rotation not done | ALREADY FIXED | [K20 2026-10-07; VPS env rotation, no repo commit] HEALTH_CHECK_TOKEN rotated on the VPS for Longmont (LGM): against 127.0.0.1 new token 200, no token 403, old token 403, homepage 200, service active; the only consumer is Longmont (LGM) index.js reading the site's own .env (the rotated file); no other VPS or Mac consumer holds a copy; the one outside consumer, UptimeRobot (three /health monitors), is named and the Director updates it from the Mac file; no token value printed | SECURITY |
 | DCI-143 | DCI | Full-text claims sweep of the 3 neighborhood pages' FAQ answers + JSON-LD descriptions | NOT APPLICABLE | [K21 2026-10-07] superseded: Kickoff 13 read every page once, record at DCI docs/audits/k13-page-read-2026-10-05.md, and Kickoffs 16-17 disposed of every finding; [r1#26; src: STATE do-next 8.3] a review task; no record of it in sources; would need a claim-by-claim read | INTERNAL DEFECT |
 | GCI-036 | GCI | Inherited client-side hardcoded-phone bug "still live in the control" (DCI) | ALREADY FIXED | [K21 2026-10-07] L1: 0 DCI public pages carry a phone literal in client-side script not read from a shared constant; the error-path strings now use __PHONE_DISPLAY__ substituted from PHONE_DISPLAY with an assert (DCI _shared_components.py:2903, :2934-2935); the only other numbers in inline scripts are third-party program lines in JSON-LD (Xcel 800-895-4999, DRCOG 844-303-9333), not tel: links; [r3#31; src: SOP Sibling relationship] The bug is in the DCI repo and site, outside this row's scope | PUBLIC DEFECT |
+| DCI-144A | DCI | Quarterly backup restore drill, insulation databases (split from DCI-144) | ALREADY FIXED | [K33 2026-10-11; record `docs/audits/restore-drill-2026-10-11.md`] 2026-10-11 03:30 local dumps restored into scratch `drill_<site>_20261011` databases on the docker cluster and dropped: denver (`insulation`) RESTORES, longmont (`longmont_insulation`) RESTORES, greeley (`greeley_insulation`) RESTORES; table sets identical, row counts equal or short only by rows created after the backup; 0 `drill%` databases remain | DIRECTOR DECISION |
