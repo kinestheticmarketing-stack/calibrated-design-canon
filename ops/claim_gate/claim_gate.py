@@ -1395,6 +1395,15 @@ class Ctx(object):
         self.repo = repo
         self.cfg = cfg
         self.control = control
+        # K45 R3a. A CONTROL context is always ENFORCED with an empty
+        # allowlist and the built-in program list, whatever the site has on
+        # disk; the real run reads both files through r3a_load_site_files().
+        self.r3a_enforced = bool(control)
+        self.r3a_allowlist = list(R3A_CONTROL_ALLOWLIST) if control else []
+        self.r3a_site_programs = []
+        self.r3a_allowlist_rel = None
+        self.r3a_programs_rel = None
+        self.r3a_programs_line = ""
         self.artifacts = []
         self.by_rel = {}
         self.gen = S.GeneratorFacts()
@@ -3161,7 +3170,9 @@ def rule_R3(ctx, res):
         return has_any(h.sentence, marks, word=False)
 
     res.raw = raw
-    res.adjudicated, res.rows = adjudicate(raw, [
+    # K45: the filter list is NAMED so R3b can re-run the very same predicates
+    # over its own partition (rule_R3b). Behaviour is byte-identical.
+    res.r3_filters = [
         Filt("the generator SRC surface is a STYLESHEET or a SCRIPT BODY, not "
              "prose -- its quoted string LITERALS are judged separately "
              "under a #strN locator", f_srccode),
@@ -3180,7 +3191,8 @@ def rule_R3(ctx, res):
         Filt("allowed_structure_percentages (Ruling 2, none added)", f_struct),
         Filt("CSS surface (stroke-width class of false positive)", f_css),
         Filt("correction marker in scope", f_corr),
-    ])
+    ]
+    res.adjudicated, res.rows = adjudicate(raw, res.r3_filters)
     res.levels, res.level_detail = level_counts(
         ctx, ["$"] + [str(x) for x in (c.get("known_figures") or [])[:8]],
         ci=False, word=False)
@@ -3206,6 +3218,470 @@ def rule_R3(ctx, res):
                         len([h for h in raw if h.sub == "T3"]), t4))
     return "money figures, bare numerals and rank claims found", \
            "figures or rank claims stating what a rebate pays"
+
+
+# ---------------------------------------------------------------------------
+# K45 -- R3 SPLIT. R3a (BLOCKING): a rebate AMOUNT in the same sentence as a
+# rebate trigger or a program name. R3b (REPORT-ONLY): today's R3, minus the
+# T1/T2 hits R3a claims.
+#
+# R3a classifies R3's RAW T1/T2 hits BEFORE adjudication, so no R3 filter can
+# hide a rebate amount from it, plus a word-form detector ("five hundred dollar
+# rebate"). R3's own pipeline (rule_R3 above) runs ONCE per context over the
+# FULL raw set, exactly as before, so allowed_occurrences cap counting and
+# every filter predicate are unchanged; R3b then re-runs those same predicates
+# over its partition and the gate CROSS-CHECKS the result against R3's own
+# adjudication (ArithmeticMismatch, exit 2, on any disagreement).
+# ---------------------------------------------------------------------------
+
+# The program-name FLOOR. A site's <repo>/ops/r3a_programs.json ADDS to it and
+# never replaces it. Matched CASE-SENSITIVELY on word boundaries, so "HEAR"
+# never matches the verb "hear" and lower-case "weatherization" (the activity)
+# is not the program.
+R3A_BUILTIN_PROGRAMS = ("Xcel", "Atmos", "Efficiency Works", "HEAR",
+                        "Power Ahead", "25C", "Weatherization")
+# Case-insensitive, word-bounded. Bare "credit", "pay" and "payment" are NEVER
+# triggers (ruling); "pays"/"paid" count only beside a program name.
+_R3A_TRIGGER_RE = re.compile(
+    r"\b(rebates?|incentives?|refunds?|cash\s+back|tax\s+credits?)\b", re.I)
+_R3A_PAYS_RE = re.compile(r"\b(pays|paid)\b", re.I)
+_R3A_UNITS = (r"(?:seventeen|thirteen|fourteen|eighteen|nineteen|fifteen|"
+              r"sixteen|eleven|twelve|three|seven|eight|four|five|nine|one|"
+              r"two|six|ten)")
+_R3A_TENS = r"(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)"
+_R3A_NUM = r"(?:%s(?:[\s-]+%s)?|%s)" % (_R3A_TENS, _R3A_UNITS, _R3A_UNITS)
+_R3A_MAG = r"(?:hundred|thousand|million)"
+_R3A_SEP = r"(?:\s+|-)"
+# "five hundred dollars", "a thousand dollars", "twelve hundred dollars",
+# "five hundred dollar rebate", "two thousand five hundred dollars".
+_R3A_WORDFORM_RE = re.compile(
+    r"\b(?:(?:an?|%(n)s)%(s)s%(m)s(?:%(s)s(?:and%(s)s)?%(n)s(?:%(s)s%(m)s)?)*"
+    r"|%(n)s)%(s)sdollars?\b"
+    % {"n": _R3A_NUM, "m": _R3A_MAG, "s": _R3A_SEP}, re.I)
+# Plane-15 private-use code points: never \w, never whitespace, untouched by
+# surfaces.dec(). Used to MARK a hit's position before re-parsing, so the
+# figure's own sentence can be found on the surface that carries it.
+_R3A_MARK_BASE = 0xF0000
+_R3A_LOC_RE = re.compile(r"^(raw|dec|rate)@(\d+)$")
+_R3A_ATTR_RE = re.compile(
+    r"""[\w:.-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)""")
+_R3A_NOT_RENDERED = (S.S_CITE, S.S_CONST, S.S_SRC)
+
+# THE CONTROL CONTEXT'S ALLOWLIST -- control and negative fixtures ONLY, never a
+# real run. NEG08 is correct copy that R3a, by ruling, flags: an income
+# threshold in a sentence naming Weatherization. On a property that sentence
+# needs an allowlist entry; in the control harness this entry is that entry, so
+# NEG08 now proves the allowlist path clears an exact ruled sentence while the
+# other negatives prove R3a stays silent on correct copy. The positive R3a
+# controls' sentences are deliberately absent, so they still fire.
+R3A_CONTROL_ALLOWLIST = [{
+    "sentence": "Weatherization is free if your household is at or below "
+                "$70,000 for one person or $99,920 for four, per the Colorado "
+                "Energy Office; checked September 10, 2026.",
+    "reason": "WAP income-eligibility threshold, not a payout (R3 f_income "
+              "standing exception)",
+    "ruling": "K45 control harness: NEG08 correct-copy vector"}]
+
+_RETIRED_LOCK_NORMALIZER = []
+
+
+def r3a_normalize(s):
+    """The RETIRED-STRING LOCK's own normalizer, imported, not rewritten:
+    ops/checks/modules/retired_strings.py `_collapse` (whitespace runs -> one
+    space, stripped; the canon port of DCI _postbuild_check.py `_l7_collapse`).
+    Applied to BOTH sides of an R3a allowlist comparison."""
+    if not _RETIRED_LOCK_NORMALIZER:
+        import importlib.util
+        p = os.path.join(_HERE, os.pardir, "checks", "modules",
+                         "retired_strings.py")
+        spec = importlib.util.spec_from_file_location(
+            "_k45_retired_strings_lock", p)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _RETIRED_LOCK_NORMALIZER.append(mod._collapse)
+    return _RETIRED_LOCK_NORMALIZER[0](s or "")
+
+
+def r3a_load_site_files(ctx, repo):
+    """Read <repo>/<R3.r3a_programs_path> and <repo>/<R3.r3a_allowlist_path>.
+
+    ENFORCEMENT IS KEYED TO THE ALLOWLIST FILE: present (even with zero
+    entries) -> R3a blocks; absent -> R3a reports, never fails, and says
+    NOT ENFORCED. Invalid JSON, a wrong shape, or an entry with an empty
+    sentence/reason/ruling is a ConfigError (exit 2)."""
+    c = ctx.r("R3")
+    al_rel = c.get("r3a_allowlist_path") or "ops/r3a_allowlist.json"
+    pr_rel = c.get("r3a_programs_path") or "ops/r3a_programs.json"
+    ctx.r3a_allowlist_rel = al_rel
+    ctx.r3a_programs_rel = pr_rel
+
+    def _load(rel):
+        p = os.path.join(repo, rel)
+        if not os.path.isfile(p):
+            return None
+        try:
+            with open(p, "r", encoding="utf-8") as fh:
+                return json.load(fh)
+        except ValueError as exc:
+            raise ConfigError("R3a: %s is not valid JSON: %s" % (rel, exc))
+
+    doc = _load(pr_rel)
+    if doc is None:
+        ctx.r3a_site_programs = []
+        ctx.r3a_programs_line = "R3A PROGRAMS: built-in list only"
+    else:
+        progs = doc.get("programs") if isinstance(doc, dict) else None
+        if not isinstance(progs, list) or not all(
+                isinstance(x, str) and x.strip() for x in progs):
+            raise ConfigError(
+                "R3a: %s must be {\"programs\": [non-empty strings]}" % pr_rel)
+        site = [x.strip() for x in progs]
+        added = [x for x in site if x not in R3A_BUILTIN_PROGRAMS]
+        ctx.r3a_site_programs = site
+        ctx.r3a_programs_line = (
+            "R3A PROGRAMS: built-in %d + site %d (%s; %d new) = %d names"
+            % (len(R3A_BUILTIN_PROGRAMS), len(site), pr_rel, len(added),
+               len(R3A_BUILTIN_PROGRAMS) + len(added)))
+
+    doc = _load(al_rel)
+    if doc is None:
+        ctx.r3a_enforced = False
+        ctx.r3a_allowlist = []
+        return
+    entries = doc.get("entries") if isinstance(doc, dict) else None
+    if not isinstance(entries, list):
+        raise ConfigError("R3a: %s must be {\"entries\": [...]}" % al_rel)
+    for i, e in enumerate(entries):
+        if not isinstance(e, dict):
+            raise ConfigError("R3a: %s entry %d is not an object" % (al_rel, i))
+        for k in ("sentence", "reason", "ruling"):
+            v = e.get(k)
+            if not isinstance(v, str) or not v.strip():
+                raise ConfigError(
+                    "R3a: %s entry %d has a missing or empty %r -- an "
+                    "allowlisted rebate sentence must say why and under whose "
+                    "ruling" % (al_rel, i, k))
+    ctx.r3a_enforced = True
+    ctx.r3a_allowlist = entries
+
+
+def _r3a_programs(ctx):
+    names = list(R3A_BUILTIN_PROGRAMS)
+    for x in getattr(ctx, "r3a_site_programs", []) or []:
+        if x not in names:
+            names.append(x)
+    return [(n, re.compile(r"(?<!\w)%s(?!\w)" % re.escape(n))) for n in names]
+
+
+def r3a_triggers(sentence, programs):
+    """Trigger words found in ONE sentence, in order, de-duplicated."""
+    found = [S.collapse(m.group(1)).lower()
+             for m in _R3A_TRIGGER_RE.finditer(sentence)]
+    progs = [n for n, rx in programs if rx.search(sentence)]
+    found += progs
+    if progs:
+        found += [m.group(1).lower() for m in _R3A_PAYS_RE.finditer(sentence)]
+    out = []
+    for t in found:
+        if t not in out:
+            out.append(t)
+    return out
+
+
+def _r3a_marks(text, n):
+    out = []
+    cp = _R3A_MARK_BASE
+    while len(out) < n:
+        ch = chr(cp)
+        if ch not in text:
+            out.append(ch)
+        cp += 1
+    return out
+
+
+def _r3a_resolve(art, text, positions):
+    """{pos: (surface key, sentence) or None} for figure positions in `text`
+    (art.raw or art.dec). Each position is MARKED one character in, the text
+    is re-parsed by the same extractor the rules use (surfaces.parse_blob),
+    and the marked sentence is read back off the surface that carries it:
+    body text through the block-aware TXT stream, everything else (TITLE,
+    META, OG, TW, LD, JS, CSS, ATTR, COMMENT, LLMS ...) through its own
+    surface text, split with surfaces.sentences()."""
+    out = {}
+    ps = sorted(set(p for p in positions if 0 <= p < len(text)))
+    for b0 in range(0, len(ps), 4000):
+        batch = ps[b0:b0 + 4000]
+        marks = _r3a_marks(text, len(batch))
+        mset = set(marks)
+        strip = dict((ord(ch), None) for ch in marks)
+        pieces, last = [], 0
+        for p, ch in zip(batch, marks):
+            pieces.append(text[last:p + 1])
+            pieces.append(ch)
+            last = p + 1
+        pieces.append(text[last:])
+        blob = "".join(pieces)
+        sub = S.parse_blob(art.rel, blob, getattr(art, "cited_stat_class",
+                                                  "cited-stat"))
+        body_sent = {}
+        if art.kind == "html":
+            m = re.search(r"<body\b[^>]*>(.*)</body\s*>", blob,
+                          re.DOTALL | re.IGNORECASE)
+            for sent in S.sentences(S.txt(m.group(1) if m else blob,
+                                          mark_blocks=True)):
+                for ch in mset.intersection(sent):
+                    body_sent.setdefault(ch, sent)
+        cands = {}
+        for sf in sub.surfaces:
+            for ch in mset.intersection(sf.text):
+                cands.setdefault(ch, []).append(sf)
+        for p, ch in zip(batch, marks):
+            cs = cands.get(ch, [])
+            vis = [s for s in cs if s.key in (S.S_VIS, S.S_LOWVIS)]
+            if ch in body_sent and (vis or not cs):
+                out[p] = (vis[0].key if vis else S.S_VIS,
+                          S.collapse(body_sent[ch].translate(strip)))
+                continue
+            at = blob.find(ch)
+            if cs:
+                cs = sorted(cs, key=lambda s: (s.locator.endswith("body"),
+                                               len(s.text)))
+                s = cs[0]
+                src = s.text
+                if s.locator.endswith("body") and at >= 0:
+                    # A STYLESHEET OR SCRIPT BODY HAS NO SENTENCES. Splitting
+                    # it with sentences() welds a `font-weight: 600` onto a
+                    # comment forty declarations away. Its unit is the source
+                    # LINE inside the nearest braces -- which keeps
+                    # `cap = 1550; // Atmos rebate` together on purpose.
+                    lo = max(blob.rfind(x, 0, at) for x in "\n{}") + 1
+                    his = [i for i in (blob.find(x, at) for x in "\n{}")
+                           if i >= 0]
+                    src = S.collapse(S.dec(blob[lo:min(his) if his
+                                                else len(blob)]))
+                sent = next((x for x in S.sentences(src) if ch in x), src)
+                out[p] = (s.key, S.collapse(sent.translate(strip)))
+                continue
+            if at >= 0:
+                # Inside a TAG but in an attribute no surface extracts
+                # (height=, style=, data-*): the attribute value is the unit.
+                lt = blob.rfind("<", 0, at)
+                gt = blob.find(">", at)
+                if lt >= 0 and gt >= 0 and ">" not in blob[lt:at]:
+                    for am in _R3A_ATTR_RE.finditer(blob, lt, gt):
+                        if am.start() <= at < am.end():
+                            out[p] = (S.S_ATTR, S.collapse(S.dec(
+                                am.group(0)).translate(strip)))
+                            break
+                    if p in out:
+                        continue
+            out[p] = None
+    return out
+
+
+def _r3a_raw_pos(art, fig, dec_pos, cache):
+    """Map a DEC-level figure position back to RAW by occurrence index.
+    DEC decodes entities, so re-parsing DEC turns displayed code
+    (`&lt;iframe height="3740"&gt;`) into live markup and loses the surface.
+    The digits of a figure survive decoding, so the k-th occurrence in DEC is
+    the k-th in RAW whenever both texts carry the same number of them; when
+    they do not (an entity code that happens to contain the digits), None."""
+    core = (fig or "").lstrip("$")
+    if not core:
+        return None
+    key = (art.rel, core)
+    if key not in cache:
+        # Not preceded by a digit, nor by `#` / `#x` (a numeric character
+        # reference such as &#x2026; is not a figure and never reaches DEC).
+        rx = re.compile(r"(?<![0-9])(?<!#)(?<!#x)(?<!#X)%s(?![0-9])"
+                        % re.escape(core))
+        cache[key] = ([m.start() for m in rx.finditer(art.dec)],
+                      [m.start() for m in rx.finditer(art.raw)])
+    d, r = cache[key]
+    if len(d) != len(r):
+        return None
+    off = 1 if (fig or "").startswith("$") else 0
+    for i, x in enumerate(d):
+        if x == dec_pos + off:
+            return r[i]
+    return None
+
+
+def _r3_shared(ctx):
+    """R3's pipeline ONCE per context, plus the R3a/R3b partition."""
+    got = getattr(ctx, "_r3_k45", None)
+    if got is not None:
+        return got
+    core = RuleResult(None)
+    labels = rule_R3(ctx, core)
+    programs = _r3a_programs(ctx)
+    arts = dict((a.rel, a) for a in ctx.read_artifacts())
+
+    want = {}
+    coord = {}
+    pos_cache = {}
+    for h in core.raw:
+        if h.sub not in ("T1", "T2"):
+            continue
+        m = _R3A_LOC_RE.match(str(h.locator))
+        art = arts.get(h.rel)
+        if not m or art is None:
+            continue
+        level = S.NORM_RAW if m.group(1) == "raw" else S.NORM_DEC
+        pos = int(m.group(2))
+        if level == S.NORM_DEC:
+            rp = _r3a_raw_pos(art, h.note, pos, pos_cache)
+            if rp is not None:
+                level, pos = S.NORM_RAW, rp
+        coord[id(h)] = (level, pos)
+        want.setdefault((h.rel, level), set()).add(pos)
+    resolved = {}
+    for (rel, level), ps in sorted(want.items()):
+        art = arts[rel]
+        text = art.raw if level == S.NORM_RAW else art.dec
+        for p, v in _r3a_resolve(art, text, ps).items():
+            resolved[(rel, level, p)] = v
+
+    r3a, a_ids = [], set()
+    fb_vis = fb_win = 0
+    for h in core.raw:
+        if h.sub not in ("T1", "T2"):
+            continue
+        r = None
+        if id(h) in coord:
+            level, pos = coord[id(h)]
+            r = resolved.get((h.rel, level, pos))
+        unresolved = ""
+        if r is None:
+            # NEVER DROPPED. Fall back to the visible sentence holding the
+            # figure, then to R3's own 120-character window, and count it.
+            art = arts.get(h.rel)
+            vis = S.sentences(getattr(art, "txt_blocks", "") or
+                              getattr(art, "txt", "")) if art else []
+            sent = next((x for x in vis if h.note and h.note in x), None)
+            if sent is not None:
+                fb_vis += 1
+                r = (h.surface, sent)
+                unresolved = " [surface unresolved: visible sentence]"
+            else:
+                fb_win += 1
+                r = (h.surface, h.sentence)
+                unresolved = " [surface unresolved: R3 window]"
+        skey, sent = r
+        trig = r3a_triggers(sent, programs)
+        if not trig:
+            continue
+        a_ids.add(id(h))
+        r3a.append(Hit("R3a", h.sub, h.rel, skey, h.locator,
+                       "%s | trigger: %s | %s%s"
+                       % (h.note, ",".join(trig), sent, unresolved),
+                       note=h.note, sentence=sent))
+
+    wf_all = wf_trig = 0
+    for art in ctx.read_artifacts():
+        if art.kind == "src":
+            continue
+        for skey, loc, sent in ctx.pool(art):
+            if skey in _R3A_NOT_RENDERED or skey == S.S_LOWVIS:
+                continue
+            for k, m in enumerate(_R3A_WORDFORM_RE.finditer(sent)):
+                wf_all += 1
+                trig = r3a_triggers(sent, programs)
+                if not trig:
+                    continue
+                wf_trig += 1
+                fig = S.collapse(m.group(0))
+                r3a.append(Hit("R3a", "WF", art.rel, skey,
+                               "%s#wf%d@%d" % (loc, k, m.start()),
+                               "%s | trigger: %s | %s"
+                               % (fig, ",".join(trig), sent),
+                               note=fig, sentence=sent))
+
+    n_raw = len(core.raw)
+    a_t = len(a_ids)
+    b_raw = len([h for h in core.raw if id(h) not in a_ids])
+    if a_t + b_raw != n_raw:
+        raise ArithmeticMismatch("R3 split: R3a %d + R3b %d != R3 raw %d"
+                                 % (a_t, b_raw, n_raw))
+    j = len([h for h in core.adjudicated if id(h) in a_ids])
+    got = {"core": core, "labels": labels, "r3a": r3a, "a_ids": a_ids,
+           "a_t": a_t, "b_raw": b_raw, "wf": wf_trig, "wf_all": wf_all,
+           "j": j, "fb_vis": fb_vis, "fb_win": fb_win}
+    ctx._r3_k45 = got
+    return got
+
+
+def rule_R3a(ctx, res):
+    sh = _r3_shared(ctx)
+    core = sh["core"]
+    allow = getattr(ctx, "r3a_allowlist", []) or []
+    allowed = set(r3a_normalize(e.get("sentence", "")) for e in allow)
+    al_rel = getattr(ctx, "r3a_allowlist_rel", None) or "ops/r3a_allowlist.json"
+
+    def f_allow(h):
+        return r3a_normalize(h.sentence) in allowed
+
+    res.raw = list(sh["r3a"])
+    res.adjudicated, res.rows = adjudicate(res.raw, [
+        Filt("r3a allowlist: the exact sentence is ruled on (%s; reason + "
+             "ruling required)" % al_rel, f_allow)])
+    res.levels, res.level_detail = core.levels, core.level_detail
+    res.notes.append(getattr(ctx, "r3a_programs_line", "")
+                     or "R3A PROGRAMS: built-in list only")
+    res.notes.append(
+        "R3a raw %d = %d T1 + %d T2 (R3's raw hits, classified BEFORE any R3 "
+        "filter) + %d word-form (of %d word-form amounts found; the %d with no "
+        "trigger are reported nowhere)"
+        % (len(res.raw), len([h for h in res.raw if h.sub == "T1"]),
+           len([h for h in res.raw if h.sub == "T2"]), sh["wf"],
+           sh["wf_all"], sh["wf_all"] - sh["wf"]))
+    if sh["fb_vis"] or sh["fb_win"]:
+        res.notes.append(
+            "R3A SENTENCE FALLBACK: %d T1/T2 hit(s) whose own surface could "
+            "not be resolved -- %d judged on the visible sentence holding the "
+            "figure, %d on R3's 120-char window. None dropped."
+            % (sh["fb_vis"] + sh["fb_win"], sh["fb_vis"], sh["fb_win"]))
+    seen = set(r3a_normalize(h.sentence) for h in res.raw)
+    for e in allow:
+        s = r3a_normalize(e.get("sentence", ""))
+        if s not in seen:
+            res.notes.append("STALE ALLOWLIST ENTRY: %s"
+                             % (s if len(s) <= 100 else s[:97] + "..."))
+    if not getattr(ctx, "r3a_enforced", False):
+        res.notes.append("R3A NOT ENFORCED: no allowlist at %s (%d hits)"
+                         % (al_rel, len(res.adjudicated)))
+    return ("rebate amounts ($ figure, money numeral or word form) in a "
+            "sentence naming a trigger or program",
+            "rebate-sentence amounts not on the allowlist")
+
+
+def rule_R3b(ctx, res):
+    sh = _r3_shared(ctx)
+    core = sh["core"]
+    a_ids = sh["a_ids"]
+    res.raw = [h for h in core.raw if id(h) not in a_ids]
+    res.adjudicated, res.rows = adjudicate(res.raw, core.r3_filters)
+    want = set(id(h) for h in core.adjudicated if id(h) not in a_ids)
+    if set(id(h) for h in res.adjudicated) != want:
+        raise ArithmeticMismatch(
+            "R3b: re-adjudicating the R3b partition gave %d, R3's own "
+            "adjudication minus R3a gives %d" % (len(res.adjudicated),
+                                                  len(want)))
+    if len(res.adjudicated) + sh["j"] != len(core.adjudicated):
+        raise ArithmeticMismatch(
+            "R3b reconcile: %d + %d != %d" % (len(res.adjudicated), sh["j"],
+                                              len(core.adjudicated)))
+    res.levels, res.level_detail = core.levels, core.level_detail
+    res.notes.extend(core.notes)
+    res.notes.append(
+        "R3 RAW SPLIT: R3 raw %d = R3a raw %d + R3b raw %d  (word-form R3a "
+        "hits, outside the equation: %d)"
+        % (len(core.raw), sh["a_t"], sh["b_raw"], sh["wf"]))
+    res.notes.append(
+        "R3 REPORTED RECONCILE: today's R3 adjudication %d = R3b reported %d "
+        "+ R3a hits today's filters would have reported %d"
+        % (len(core.adjudicated), len(res.adjudicated), sh["j"]))
+    return sh["labels"]
 
 
 R4_KEYS = (S.S_VIS, S.S_TITLE, S.S_META, S.S_OG, S.S_TW, S.S_LD, S.S_JS,
@@ -6616,21 +7092,56 @@ RULES = [
                      R2_CONTROL_OVERLAY, sub="a",
                      repaired=_f("repaired", "R2e_src_js_comment.py"))]),
 
-    Rule("R3", "REBATE DOLLAR FIGURE",
+    # K45: R3 IS SPLIT. R3a runs FIRST and blocks (when the site's allowlist
+    # file exists); R3b is today's R3 minus R3a's T1/T2 hits, report-only.
+    # The config block stays "R3" (R5 and others read ctx.r("R3")).
+    # The control ids were R3a/R3b/R3c before the split; they are renamed
+    # R3b-T2/R3b-T3 and R3a-LD (the JSON-LD fixture's amounts sit in rebate
+    # sentences, so they are R3a's now). Fixture FILE names are unchanged.
+    Rule("R3a", "REBATE AMOUNT, TRIGGER SENTENCE",
+         "CLAIM TEST: an amount ($ figure, R3 T2 money numeral, or a word "
+         "form) in the SAME SENTENCE as a rebate trigger or a program name; "
+         "no R3 filter applies -- only the per-property sentence allowlist",
+         "VIS TITLE META OG TW LD JS CSS LOWVIS ATTR COMMENT LLMS SITEMAP "
+         "SVGTEXT EMBED (rendered artifacts only, never generator SRC)",
+         "RAW+DEC for the figure (R3's T1/T2 raw hits, before adjudication); "
+         "the sentence by surfaces.sentences() on the hit's own surface; TXT "
+         "sentence pool for word forms",
+         "sentence-scoped: an amount whose trigger sits in a NEIGHBOURING "
+         "sentence ('Xcel runs a program. It pays $500.') is not R3a and "
+         "stays in R3b. A bare numeral reaches R3a only if R3 T2 raised it "
+         "(3-6 digits or a 0.xx rate with a money word within 120 chars), so "
+         "'50 dollars' is not seen. Bare 'credit', 'pay' and 'payment' are "
+         "not triggers by ruling, and program names match case-sensitively.",
+         rule_R3a,
+         controls=[
+             Control("R3a-T1", "R3a", _f("R3a_rebate_sentence.html"),
+                     sub="T1",
+                     repaired=_f("repaired", "R3a_rebate_sentence.html")),
+             Control("R3a-WF", "R3a", _f("R3a_rebate_sentence.html"),
+                     sub="WF",
+                     repaired=_f("repaired", "R3a_rebate_sentence.html")),
+             Control("R3a-LD", "R3a", _f("R3b_jsonld_amount.html"),
+                     sub="T1",
+                     repaired=_f("repaired", "R3b_jsonld_amount.html"))]),
+
+    Rule("R3b", "REBATE DOLLAR FIGURE (R3 REST)",
          "CLAIM TEST for the rank/magnitude half (T3); STRING+WINDOW LIST for "
-         "the numeral half (T1 T2 T4), declared",
+         "the numeral half (T1 T2 T4), declared. R3 minus the T1/T2 hits R3a "
+         "claims; REPORT-ONLY",
          "VIS TITLE META OG TW LD JS CSS LOWVIS ATTR LLMS SITEMAP EMBED SVGTEXT",
          "RAW for T1/T2/T4; TXT for T3; SRC for the generator reachability check",
          "T1 is anchored on `$`, so it cannot see a figure written as bare "
          "digits -- that is what T2 exists for; and neither can see a removal "
-         "note that restates the figure in words with no numeral.",
-         rule_R3,
+         "note that restates the figure in words with no numeral. "
+         "Report-only: it never changes the exit code.",
+         rule_R3b,
          controls=[
-             Control("R3a", "R3", _f("R3a_js_comment_cap.html"),
+             Control("R3b-T2", "R3b", _f("R3a_js_comment_cap.html"),
                      R3_CONTROL_OVERLAY, sub="T2", repaired=_f("repaired", "R3a_js_comment_cap.html")),
-             Control("R3b", "R3", _f("R3b_jsonld_amount.html"),
-                     R3_CONTROL_OVERLAY, sub="T1", repaired=_f("repaired", "R3b_jsonld_amount.html")),
-             Control("R3c", "R3", _f("R3c_rank_claim_no_numeral.html"),
+             Control("R3b-T1", "R3b", _f("R3b_dollar_no_trigger.html"),
+                     R3_CONTROL_OVERLAY, sub="T1", repaired=_f("repaired", "R3b_dollar_no_trigger.html")),
+             Control("R3b-T3", "R3b", _f("R3c_rank_claim_no_numeral.html"),
                      R3_CONTROL_OVERLAY, sub="T3", repaired=_f("repaired", "R3c_rank_claim_no_numeral.html"))]),
 
     Rule("R4", "STACKING ASSERTION OR DENIAL", "CLAIM TEST",
@@ -7868,6 +8379,13 @@ def _main(args, out, t0):
 
     # parse once
     ctx = Ctx(cfg["key"], repo, cfg)
+    try:
+        r3a_load_site_files(ctx, repo)
+    except ConfigError as exc:
+        out("CONFIG ERROR: %s" % exc)
+        out("CLAIM GATE: NOT RUN")
+        _finish(out, args, 2, t0)
+        return 2
     kinds = {"html": 0, "txt": 0, "xml": 0, "svg": 0, "js": 0}
     parse_failures = []
     for rel in corpus.read_set:
@@ -8188,7 +8706,12 @@ def _main(args, out, t0):
         # while still red manufactures the appearance of coverage. The
         # measurement is data, so it lives in config and is re-taken, not
         # remembered.
-        demo = (cfg.get("false_positive_measurements", {}) or {}).get(rule.rid)
+        fpm = cfg.get("false_positive_measurements", {}) or {}
+        demo = fpm.get(rule.rid)
+        if rule.rid == "R3b" and not demo:
+            # R3b IS today's R3 minus R3a, so R3's measurement still
+            # describes it until R3b is re-measured under its own key.
+            demo = fpm.get("R3")
         demoted = False
         if demo and blocking:
             rate = float(demo.get("fp_rate_pct", 0))
@@ -8214,7 +8737,31 @@ def _main(args, out, t0):
                     res.notes.append("  FP class: %s" % cls)
                 for cls in demo.get("review_classes", []) or []:
                     res.notes.append("  REVIEW class: %s" % cls)
-        if not blocking:
+        # K45. R3b NEVER blocks, measured or not. R3a blocks ONLY when the
+        # site's allowlist file exists; without it R3a still runs and
+        # reports, and its verdict says NOT ENFORCED -- never PASS.
+        r3b_forced = rule.rid == "R3b" and blocking
+        if r3b_forced:
+            blocking = False
+        r3a_unenforced = (rule.rid == "R3a" and
+                          not getattr(ctx, "r3a_enforced", False))
+        if r3a_unenforced:
+            blocking = False
+            res.verdict = "NOT ENFORCED"
+            res.reason = (
+                "%d finding(s) reported; no allowlist file at %s, so R3a "
+                "cannot change the exit code. Creating that file (even "
+                "{\"entries\": []}) turns enforcement on."
+                % (n, getattr(ctx, "r3a_allowlist_rel", "?")))
+            report_only.append(rule.rid)
+            report_only_counts.append((rule.rid, n))
+        elif r3b_forced:
+            res.verdict = "REPORT"
+            res.reason = ("%d finding(s) reported; R3b is REPORT-ONLY by "
+                          "ruling (K45) and never changes the exit code" % n)
+            report_only.append(rule.rid)
+            report_only_counts.append((rule.rid, n))
+        elif not blocking:
             res.verdict = "REPORT"
             res.reason = (
                 ("%d finding(s) reported; REPORT-ONLY by measurement "
@@ -8240,7 +8787,8 @@ def _main(args, out, t0):
     out()
     out.head("SUMMARY")
     for rid, name, raw, adj, verdict in summary:
-        tail = " (non-blocking)" if verdict == "REPORT" else ""
+        tail = " (non-blocking)" if verdict in ("REPORT",
+                                                "NOT ENFORCED") else ""
         out("  %-4s%-32s RAW %-6d ADJ %-6d %s%s"
             % (rid, name, raw, adj, verdict, tail))
     if "R6b" not in opt_in:

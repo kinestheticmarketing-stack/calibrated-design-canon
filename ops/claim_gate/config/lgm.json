@@ -221,6 +221,8 @@
     "quotation_allowlist_reason": "Three entries, each an EXACT phrase from one page, each naming why the claim is compliant rather than why it is inconvenient. Two are a verbatim quotation whose provenance record now exists in the repo; the third is a double-count of a quotation the same rule already cleared. No entry pardons an unsourced quotation, and common.json's empty quotation_allowlist is untouched, so neither sibling is affected."
   },
   "R3": {
+    "r3a_allowlist_path": "ops/r3a_allowlist.json",
+    "r3a_programs_path": "ops/r3a_programs.json",
     "allowed_figures": [
       "$1.50",
       "$3.00",
