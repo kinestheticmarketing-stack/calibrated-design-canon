@@ -257,6 +257,8 @@
     "allowlist_note": "Director-granted. GCI is the only property with one."
   },
   "R3": {
+    "r3a_allowlist_path": "ops/r3a_allowlist.json",
+    "r3a_programs_path": "ops/r3a_programs.json",
     "allowed_figures": [
       "$70,000",
       "$99,920"
