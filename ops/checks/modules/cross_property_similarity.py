@@ -1,0 +1,117 @@
+"""cross_property_similarity -- a page that copies its counterpart on a peer
+property. Source: GCI _similarity_check.py:main (GCI only; no build runs it).
+
+For each (local page, peer page, label) pair: strip the shared chrome
+(STRIP_PATTERNS), take the remaining text lowercased and normalised, build the
+set of N-word shingles and compute Jaccard similarity. PASS is strictly below
+THRESHOLD. A missing local or peer page is a finding (the site check exits 1
+on LOCAL MISSING / CONTROL MISSING too).
+
+Every site-specific value is read from the site by declared paths:
+  data.peer_public  the peer property's built public dir (read only)
+  data.config       the site's .py check file (top-level literal assignments
+                    PAIRS, STRIP_PATTERNS, THRESHOLD, SHINGLE_N, extracted with
+                    ast.literal_eval; site code is never imported or executed)
+                    or a JSON object with those keys.
+Assignment names are options, so a site with different names can map them.
+"""
+
+import ast
+import html
+import json
+import re
+
+NAME = "cross_property_similarity"
+DESCRIPTION = ("Shingle-Jaccard similarity of each listed page against its "
+               "peer-property counterpart must stay below the site threshold.")
+REQUIRES = {
+    "peer_public": "the peer property's built public dir (absolute or "
+                   "relative to the site root); read only",
+    "config": "file holding PAIRS, STRIP_PATTERNS, THRESHOLD, SHINGLE_N: a .py "
+              "file (literal top-level assignments, read with ast.literal_eval) "
+              "or a JSON object with those keys",
+}
+OPTIONS = {
+    "pairs_name": "PAIRS",
+    "strip_name": "STRIP_PATTERNS",
+    "threshold_name": "THRESHOLD",
+    "shingle_name": "SHINGLE_N",
+}
+
+
+def _load_config(path, names):
+    if str(path).endswith(".json"):
+        obj = json.loads(open(path, encoding="utf-8").read())
+        return {k: obj[v] for k, v in names.items()}
+    tree = ast.parse(open(path, encoding="utf-8").read(), filename=str(path))
+    found = {}
+    for node in tree.body:
+        targets = []
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            targets = [node.target]
+        for t in targets:
+            if isinstance(t, ast.Name):
+                for k, v in names.items():
+                    if t.id == v:
+                        found[k] = ast.literal_eval(node.value)
+    missing = [names[k] for k in names if k not in found]
+    if missing:
+        raise ValueError("%s: no literal assignment(s) %s" % (path, ", ".join(missing)))
+    return found
+
+
+def _text(path, strip):
+    s = open(path, encoding="utf-8").read()
+    for pat in strip:
+        s = re.sub(pat, " ", s, flags=re.S | re.I)
+    s = re.sub(r"<[^>]+>", " ", s)
+    s = html.unescape(s)
+    s = s.lower()
+    s = re.sub(r"[^a-z0-9$%. ]+", " ", s)
+    s = re.sub(r"\s+", " ", s)
+    return s.strip()
+
+
+def _shingles(text, n):
+    w = text.split()
+    return {" ".join(w[i:i + n]) for i in range(max(0, len(w) - n + 1))}
+
+
+def _jaccard(a, b):
+    if not a or not b:
+        return 0.0
+    return len(a & b) / len(a | b)
+
+
+def check(ctx):
+    o = ctx.options
+    cfg = _load_config(ctx.data["config"], {
+        "pairs": o["pairs_name"], "strip": o["strip_name"],
+        "threshold": o["threshold_name"], "n": o["shingle_name"]})
+    pairs, strip = cfg["pairs"], cfg["strip"]
+    threshold, n = float(cfg["threshold"]), int(cfg["n"])
+    if not pairs:
+        raise ValueError("config PAIRS is empty; nothing to judge")
+    peer = ctx.data["peer_public"]
+    if not peer.is_dir():
+        raise ValueError("peer_public is not a directory: %s" % peer)
+    findings = []
+    for local, control, label in pairs:
+        lp, cp = ctx.public_dir / local, peer / control
+        if not lp.is_file():
+            findings.append(ctx.finding(local, "LOCAL MISSING (%s)" % label, local))
+            continue
+        if not cp.is_file():
+            findings.append(ctx.finding(local, "CONTROL MISSING (%s): peer %s"
+                                        % (label, control), control))
+            continue
+        score = _jaccard(_shingles(_text(lp, strip), n),
+                         _shingles(_text(cp, strip), n))
+        if score >= threshold:
+            findings.append(ctx.finding(
+                lp, "Jaccard %.4f >= %.2f vs peer %s (%s)"
+                % (score, threshold, control, label),
+                "%s vs %s: %.4f" % (local, control, score)))
+    return findings

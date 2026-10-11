@@ -1,0 +1,10 @@
+{
+  "data": {
+    "constants": "lock_constants.py",
+    "extra_files": ["public/llms.txt"],
+    "edition_needle": "2021 IECC",
+    "cap_needle": "R-60",
+    "cap_allow_words": ["Denver", "ENERGY STAR"]
+  },
+  "options": {}
+}

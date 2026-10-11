@@ -1,0 +1,6 @@
+{
+  "extends": "../../../../claim_gate/config/dci.json",
+  "min_artifacts": 1,
+  "expected_html": 1,
+  "R6": {"label_chains": []}
+}

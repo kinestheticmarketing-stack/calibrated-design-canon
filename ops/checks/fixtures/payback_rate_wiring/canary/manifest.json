@@ -1,0 +1,18 @@
+{
+  "data": {
+    "page": "public/payback.html",
+    "rate_source": "sources.py",
+    "rate_name": "CITED_SOURCES.RATE_KEY.stat",
+    "rate_regex": "save an average of (\\d+)% on heating and cooling costs",
+    "needles": [
+      "var RATE_PCT = {rate};",
+      "var n = Math.round(cost * RATE_PCT / 1000) * 10;",
+      "'<p class=\"calc-headline\">About ' + fmt(n) + ' a year</p>'",
+      "writeHidden(r.inputs, r.payload);"
+    ],
+    "forbidden": [
+      "prints no savings"
+    ]
+  },
+  "options": {}
+}

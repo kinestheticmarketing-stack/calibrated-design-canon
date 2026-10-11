@@ -1,0 +1,50 @@
+{
+ "data": {},
+ "options": {
+  "rules": [
+   {
+    "label": "DCI name / domain / phone",
+    "pattern": "denver colorado insulation|denvercoloradoinsulation\\.com|\\(888\\) ?707-8399|888-707-8399|8887078399"
+   },
+   {
+    "label": "DCI -denver slug in href",
+    "pattern": "href=\"[^\"]*-denver[^\"]*\""
+   },
+   {
+    "label": "DCI elevation framing",
+    "pattern": "5,?280|mile[- ]high"
+   },
+   {
+    "label": "DCI service-area town names",
+    "pattern": "\\b(Lakewood|Arvada|Aurora|Wheat Ridge|Centennial|Englewood|Littleton|Westminster|Thornton|Park Hill|Washington Park|Highland|Golden|Broomfield|Northglenn)\\b"
+   },
+   {
+    "label": "LGM name / domain / phone",
+    "pattern": "longmont colorado insulation|longmontcoloradoinsulation\\.com|\\(720\\) ?491-3309|720-491-3309|7204913309"
+   },
+   {
+    "label": "LGM -longmont slug in href",
+    "pattern": "href=\"[^\"]*-longmont[^\"]*\""
+   },
+   {
+    "label": "LGM elevation framing",
+    "pattern": "\\b4,?980\\b"
+   },
+   {
+    "label": "LGM service-area town names",
+    "pattern": "\\b(Longmont|Erie|Lafayette|Louisville|Niwot)\\b"
+   },
+   {
+    "label": "Xcel amounts / bonuses as Greeley claims",
+    "pattern": "whole home efficiency bonus|WHE Bonus|Xcel IQ|Combo Bonus"
+   },
+   {
+    "label": "'denver' outside the DRCOG allowlist",
+    "pattern": "denver",
+    "allow": [
+     "Denver Regional Council of Governments"
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,3 @@
+# Canary: two retired superlatives, one per line (regex).
+highest[- ]leverage
+smallest area,
