@@ -1,0 +1,16 @@
+{
+  "data": {"contract": {
+    "site_url": "https://example.test/",
+    "result_id": "calcOutput",
+    "attrib_class": "embed-attrib",
+    "frames": {"tool-embed.html": {"page": "tool.html", "button": "t-calc"}},
+    "host_heights": {"tool-embed.html": 900},
+    "lead_pages": {"tool.html": "t-calc"},
+    "lead_form": {"form_id": "leadForm", "controls": 7, "hidden": 3, "required": 2,
+                  "honeypot": "company_website", "injected_hidden": ["calc_inputs", "calc_output"],
+                  "tool_id": "calcTool", "ids": ["quote", "thankYou", "lf-submit"],
+                  "endpoint_marker": "fetch('/lead'"},
+    "bare_defaults": {"tool.html": {"t-area": "attic", "t-goal": ["cheap"], "#t-sqft": "1500"}}
+  }},
+  "options": {}
+}

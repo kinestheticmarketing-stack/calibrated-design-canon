@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="en"><head><title>Tool (Embeddable)</title></head><body>
+<div class="calc-tool" id="calcTool">
+  <select id="t-area"><option value="attic" selected>Attic</option><option value="wall">Wall</option><option value="rim">Rim joist</option></select>
+  <label><input type="checkbox" name="t-goal" value="cheap"> Cheap</label>
+  <label><input type="checkbox" name="t-goal" value="fast"> Fast</label>
+  <input type="number" id="t-sqft" min="50" max="6000" value="1500">
+  <button type="button" id="t-calc">Calculate</button>
+</div>
+<div class="calc-output" id="calcOutput"></div>
+<p class="embed-attrib"><a href="https://example.test/tool.html" target="_blank" rel="noopener">Tool by Example</a></p>
+<script>
+function deeplink(){ return 'https://example.test/tool.html' + '?area=attic'; }
+var cta = '<a href="' + deeplink() + '" class="calc-cta" target="_blank" rel="noopener">Open</a>';
+</script>
+</body></html>

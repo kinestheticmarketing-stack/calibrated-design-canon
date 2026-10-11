@@ -1,0 +1,27 @@
+<!DOCTYPE html><html lang="en"><head><title>Tool</title></head><body>
+<div class="calc-tool" id="calcTool">
+  <label><input type="radio" name="t-area" value="attic" checked> Attic</label>
+  <label><input type="radio" name="t-area" value="wall"> Wall</label>
+  <label><input type="checkbox" name="t-goal" value="cheap" checked> Cheap</label>
+  <label><input type="checkbox" name="t-goal" value="fast"> Fast</label>
+  <label for="t-sqft">Area</label><input type="number" id="t-sqft" min="50" max="6000" value="1500">
+  <button type="button" id="t-calc">Calculate</button>
+</div>
+<div class="calc-output" id="calcOutput"></div>
+<section id="quote">
+<form id="leadForm" novalidate>
+  <input id="lf-name" name="name" type="text" required>
+  <input id="lf-phone" name="phone" type="tel" required>
+  <div aria-hidden="true"><input id="lf-cw" name="company_website" type="text" tabindex="-1"></div>
+  <input type="hidden" name="source_page" id="lf-source">
+  <button type="submit" id="lf-submit">Send</button>
+</form>
+<div id="thankYou"></div>
+</section>
+<script>
+if (document.getElementById('calcTool')) {
+  ['calc_inputs', 'calc_output'].forEach(function (n) { /* injected hidden */ });
+}
+fetch('/lead', {method: 'POST'});
+</script>
+</body></html>

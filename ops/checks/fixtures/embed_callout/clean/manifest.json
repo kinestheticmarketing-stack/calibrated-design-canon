@@ -1,0 +1,4 @@
+{
+  "data": {"pages": "pages.py", "pages_var": "CALCULATOR_PAGES"},
+  "options": {"button_href": "/embeds.html", "expected_page_count": 1}
+}

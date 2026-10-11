@@ -1,0 +1,1 @@
+Walls take continuous continuous insulation.

@@ -1,0 +1,4 @@
+{
+  "data": {"shared": "shared.py"},
+  "options": {"git_snapshot": true, "snapshot_date": "2000-01-02T12:00:00+00:00"}
+}
