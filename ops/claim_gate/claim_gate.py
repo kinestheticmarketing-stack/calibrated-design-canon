@@ -964,8 +964,114 @@ _REVIEW_DATE_TXT = re.compile(
     re.IGNORECASE)
 
 
-def visible_text_of(rel, raw):
+_CHROME_TAGS = ("header", "nav", "footer")
+_VOID_TAGS = frozenset((
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link",
+    "meta", "param", "source", "track", "wbr"))
+# Start tags that implicitly close an open <p> (HTML parsing rules), so an
+# unclosed <p> before a <footer> does not make the footer look nested in it.
+_CLOSES_P = frozenset((
+    "address", "article", "aside", "blockquote", "details", "div", "dl",
+    "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3",
+    "h4", "h5", "h6", "header", "hr", "main", "nav", "ol", "p", "pre",
+    "section", "table", "ul"))
+
+
+def strip_site_chrome(raw):
+    """Remove SITE CHROME from raw HTML: <header>, <nav>, <footer> outside <main>.
+
+    K14: shared chrome does not move a page's date (K37). R8 only: R2, R3 and the retired-string lock still scan chrome.
+
+    With a <main> on the page, every <header>/<nav>/<footer> that is not a
+    descendant of <main> goes, contents and nested chrome included. With NO
+    <main>, only those that are DIRECT CHILDREN of <body> go. Nothing in <head>
+    is touched, so <title> still counts. html.parser treats <script>/<style>
+    bodies as raw text and comments as comments, so tag-like text there is never
+    an element. Each removed span becomes "<div></div>" so surfaces' block
+    splitting keeps a boundary and the text either side is not welded together.
+    Unparseable input comes back unchanged (full comparison, never a blind one).
+    """
+    from html.parser import HTMLParser
+
+    line_starts = [0]
+    for i, ch in enumerate(raw):
+        if ch == "\n":
+            line_starts.append(i + 1)
+    events = []  # (kind, tag, offset)
+
+    class _P(HTMLParser):
+        def _off(self):
+            ln, col = self.getpos()
+            return line_starts[ln - 1] + col
+
+        def handle_starttag(self, tag, attrs):
+            events.append(("start", tag, self._off()))
+
+        def handle_startendtag(self, tag, attrs):
+            # HTML ignores the self-closing slash on a non-void element: a
+            # browser opens <div/> and nests what follows inside it.
+            events.append(("void" if tag in _VOID_TAGS else "start", tag,
+                           self._off()))
+
+        def handle_endtag(self, tag):
+            events.append(("end", tag, self._off()))
+
+    try:
+        p = _P(convert_charrefs=True)
+        p.feed(raw)
+        p.close()
+    except Exception:
+        return raw
+    has_main = any(k == "start" and t == "main" for k, t, _ in events)
+
+    stack = []          # open element names
+    spans = []          # (start, end) offsets to remove
+    chrome_at = None    # (stack depth of the chrome element, start offset)
+    for kind, tag, off in events:
+        if kind == "void" or (kind == "start" and tag in _VOID_TAGS):
+            continue
+        if kind == "start":
+            if tag in _CLOSES_P and stack and stack[-1] == "p":
+                stack.pop()
+            if tag == "li" and stack and stack[-1] == "li":
+                stack.pop()
+            if chrome_at is None and tag in _CHROME_TAGS:
+                if has_main:
+                    remove = "main" not in stack
+                else:
+                    remove = bool(stack) and stack[-1] == "body"
+                if remove:
+                    chrome_at = (len(stack), off)
+            stack.append(tag)
+            continue
+        # end tag: pop to the nearest matching open element, if any
+        if tag not in stack:
+            continue
+        idx = len(stack) - 1 - stack[::-1].index(tag)
+        if chrome_at is not None and idx <= chrome_at[0]:
+            if idx == chrome_at[0]:
+                gt = raw.find(">", off)
+                if gt != -1:
+                    spans.append((chrome_at[1], gt + 1))
+            chrome_at = None
+        del stack[idx:]
+    if not spans:
+        return raw
+    out, pos = [], 0
+    for a, b in spans:
+        out.append(raw[pos:a])
+        out.append("<div></div>")
+        pos = b
+    out.append(raw[pos:])
+    return "".join(out)
+
+
+def visible_text_of(rel, raw, drop_chrome=False):
     """The VISIBLE TEXT of a raw blob, date surfaces normalised out.
+
+    drop_chrome=True (R8 part (d) only, .html/.htm only) first removes site
+    chrome via strip_site_chrome. Default False keeps visible_text_sha256 and
+    every other caller byte-for-byte unchanged.
 
     ONE extractor, and it is the gate's own: surfaces.parse_blob ->
     surfaces.visible_text, the same pair every rule's VIS/LOWVIS/TITLE/ATTR
@@ -984,6 +1090,8 @@ def visible_text_of(rel, raw):
     base = rel.rsplit("/", 1)[-1]
     low = base.lower()
     if low.endswith((".html", ".htm", ".svg")):
+        if drop_chrome and low.endswith((".html", ".htm")):
+            raw = strip_site_chrome(raw)
         prepared = _date_normalised_markup(raw)
     else:
         prepared = "\n".join(x for x in raw.splitlines()
@@ -1013,7 +1121,8 @@ def _visible_text_differs(rel, a, b):
     2026-09-27: 24 pages fired part (d) and 4 of them -- the three calculators
     and the rebate-eligibility checker -- had byte-identical visible text.
     """
-    return visible_text_of(rel, a) != visible_text_of(rel, b)
+    return (visible_text_of(rel, a, drop_chrome=True)
+            != visible_text_of(rel, b, drop_chrome=True))
 
 
 # ---------------------------------------------------------------------------
@@ -5626,7 +5735,11 @@ def rule_R8(ctx, res):
         "change made part (d) report a visible-text change that had not "
         "happened -- measured on DCI 2026-09-18 as lastMod 14/14 agreeing and "
         "lastVis 0/14, and on GCI 2026-09-27 as 4 of 24 hits standing on pages "
-        "whose visible text was byte-identical.")
+        "whose visible text was byte-identical. Site-level <header>, <nav> "
+        "and <footer> outside <main> (direct children of <body> on a page "
+        "with no <main>) are EXCLUDED from the part (d) comparison (K14, "
+        "K37). <title> still counts. Meta description was never part of "
+        "visible text and still is not.")
     if pinned:
         _keyed = sorted(b for b in pinned if pin_state.get(b) == "keyed-live")
         _exp = sorted(b for b in pinned if pin_state.get(b) == "keyed-expired")
