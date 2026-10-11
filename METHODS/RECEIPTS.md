@@ -759,6 +759,20 @@ Format: [DATE] · [ASSET] · [CAUGHT: PRE-LIVE | POST-LIVE] · [WHAT] ·
 
 SUMMARY: 24 rows · 9 PRE-LIVE · 15 POST-LIVE · computed 2026-09-21
 
+───────────────────────────────────────────────────────────────
+LIBRARY (second brain course library)
+───────────────────────────────────────────────────────────────
+
+- 2026-10-11 · LIBRARY · CAPABILITY · Verified inventory of the full shared course library: 533 folders, 124,450 files, 26,450 videos, 6,051 GB of video, 0 folders failed, positive control passed. · course-library inventory_v3 Final Report
+
+- 2026-10-11 · LIBRARY · PERFORMANCE · One 120-video copywriting course transcribed on a laptop at 11.44x real time: 50.5 hours of video in 4.4 hours, 503,956 words. · course-library stage 2 pilot Final Report
+
+- 2026-10-11 · LIBRARY · CAPABILITY · That course distilled into 776 attributed tactics and merged into a 630-entry playbook; 93 entries taught in two or more lessons; 776 of 776 tactics mapped to a source lesson; 0 copy-check failures. · course-library stage 4 and stage 5 Final Reports
+
+- 2026-10-11 · LIBRARY · PERFORMANCE · Blind test: the Director chose the email series written with the course-derived pack over the no-pack series, without knowing which was which. One offer, one judge; the baseline was the model alone. · course-library test/email-blind key file
+
+- 2026-10-11 · LIBRARY · CAPABILITY · All 630 playbook entries tagged with a cross-field principle; 111 principles in the shared list. · course-library stage 6 Progress report
+
 ═══════════════════════════════════════════════════════════════
 PROJECTIONS (not receipts — targets awaiting real numbers)
 ═══════════════════════════════════════════════════════════════
