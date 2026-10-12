@@ -8,7 +8,10 @@ THRESHOLD. A missing local or peer page is a finding (the site check exits 1
 on LOCAL MISSING / CONTROL MISSING too).
 
 Every site-specific value is read from the site by declared paths:
-  data.peer_public  the peer property's built public dir (read only)
+  data.peer_public  the peer property's built public dir (read only). A
+                    relative value resolves against the site's MAIN checkout
+                    (parent of git --git-common-dir), so it works from a git
+                    worktree; absolute and canon: values are used as given.
   data.config       the site's .py check file (top-level literal assignments
                     PAIRS, STRIP_PATTERNS, THRESHOLD, SHINGLE_N, extracted with
                     ast.literal_eval; site code is never imported or executed)
@@ -20,23 +23,49 @@ import ast
 import html
 import json
 import re
+import subprocess
+from pathlib import Path
 
 NAME = "cross_property_similarity"
 DESCRIPTION = ("Shingle-Jaccard similarity of each listed page against its "
                "peer-property counterpart must stay below the site threshold.")
 REQUIRES = {
-    "peer_public": "the peer property's built public dir (absolute or "
-                   "relative to the site root); read only",
+    "peer_public": "the peer property's built public dir; absolute, canon:, "
+                   "or relative to the site's main git checkout (not a "
+                   "worktree); read only",
     "config": "file holding PAIRS, STRIP_PATTERNS, THRESHOLD, SHINGLE_N: a .py "
               "file (literal top-level assignments, read with ast.literal_eval) "
               "or a JSON object with those keys",
 }
+LITERAL_KEYS = {"peer_public"}
 OPTIONS = {
     "pairs_name": "PAIRS",
     "strip_name": "STRIP_PATTERNS",
     "threshold_name": "THRESHOLD",
     "shingle_name": "SHINGLE_N",
 }
+
+
+def _git(root, *args):
+    r = subprocess.run(["git", "-C", str(root), "rev-parse", *args],
+                       capture_output=True, text=True, check=False)
+    return r.stdout.strip() if r.returncode == 0 and r.stdout.strip() else None
+
+
+def _resolve_peer(ctx, raw):
+    """canon:/absolute via ctx.resolve; relative against the main checkout."""
+    if not isinstance(raw, str) or not raw:
+        raise ValueError("CONFIG ERROR: peer_public must be a non-empty path "
+                         "string, got %r" % (raw,))
+    if raw.startswith("canon:") or Path(raw).expanduser().is_absolute():
+        return ctx.resolve(raw)
+    site = Path(ctx.site_root).resolve()
+    top = _git(site, "--show-toplevel")
+    common = _git(site, "--path-format=absolute", "--git-common-dir")
+    base = site
+    if top and common:
+        base = Path(common).parent / site.relative_to(Path(top).resolve())
+    return (base / Path(raw).expanduser()).resolve()
 
 
 def _load_config(path, names):
@@ -94,9 +123,11 @@ def check(ctx):
     threshold, n = float(cfg["threshold"]), int(cfg["n"])
     if not pairs:
         raise ValueError("config PAIRS is empty; nothing to judge")
-    peer = ctx.data["peer_public"]
+    raw = ctx.data["peer_public"]
+    peer = _resolve_peer(ctx, raw)
     if not peer.is_dir():
-        raise ValueError("peer_public is not a directory: %s" % peer)
+        raise ValueError("CONFIG ERROR: peer_public %r resolves to %s, which "
+                         "is not an existing directory" % (raw, peer))
     findings = []
     for local, control, label in pairs:
         lp, cp = ctx.public_dir / local, peer / control

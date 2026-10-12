@@ -19,13 +19,15 @@ joined with a space and whitespace-collapsed before matching (GCI flattens; DCI
 joins with newlines, which a collapsed haystack also matches). Recursive over
 public/ (sites list public/ top level only; identical on today's flat trees).
 
-The patterns are site data: `patterns` points at a file the site already has.
-For a .py file, `patterns_var` names a top-level assignment, read with ast (no
+Patterns: the default list (RETIRED_PATTERNS in ops/checks/
+superlative_default.py) always applies. A site `patterns` file is ADDED to it
+(union, deduped by regex source, default first), never a replacement. For a
+site .py file, `patterns_var` names a top-level assignment, read with ast (no
 import/exec): `NAME = re.compile("<regex>", ...)` -> one pattern, or a literal
 list of regex strings or (name, regex) pairs. Any other file: one regex per
 line, '#' comments and blanks skipped. Matching is case-insensitive (both
-sites). An empty pattern set raises (a scan that looks for nothing tests
-nothing).
+sites). An absent or empty site list does not disable the scan (default only);
+an empty default list raises (a scan that looks for nothing tests nothing).
 """
 
 import ast
@@ -33,15 +35,21 @@ import html
 import re
 from collections import defaultdict
 from html.parser import HTMLParser
+from pathlib import Path
 
 NAME = "superlative_scan"
-DESCRIPTION = ("A ruled-out ranking superlative (site pattern list) renders on "
-               "any of 8 surfaces: body, title, meta, og, twitter, JSON-LD, "
-               "img alt, llms.txt.")
+DESCRIPTION = ("A ruled-out ranking superlative (default list + site list) "
+               "renders on any of 8 surfaces: body, title, meta, og, "
+               "twitter, JSON-LD, img alt, llms.txt.")
 REQUIRES = {
-    "patterns": "file holding the site's superlative regexes (.py read via "
-                "ast, or one regex per line)",
+    "patterns": "file of site superlative regexes (.py read via ast, or one "
+                "regex per line), added to the default list; null or \"\" = "
+                "default only",
 }
+# Passed raw so null / "" can mean "default only"; check() resolves the path.
+LITERAL_KEYS = {"patterns"}
+DEFAULT_PATH = Path(__file__).resolve().parent.parent / "superlative_default.py"
+DEFAULT_VAR = "RETIRED_PATTERNS"
 OPTIONS = {
     # Top-level assignment to read when `patterns` is a .py file.
     "patterns_var": None,
@@ -90,9 +98,35 @@ def _load_patterns(path, var, text):
         pats = [("line%d" % n, ln.strip())
                 for n, ln in enumerate(text.splitlines(), 1)
                 if ln.strip() and not ln.strip().startswith("#")]
-    if not pats:
-        raise ValueError("superlative_scan: empty pattern set in %s" % path)
     return pats
+
+
+def _all_patterns(ctx):
+    """Default list, then the site list (if any); deduped by regex source."""
+    pats = [("default:%s" % n, p) for n, p in _load_patterns(
+        DEFAULT_PATH, DEFAULT_VAR, ctx.read_text(DEFAULT_PATH))]
+    if not pats:
+        raise ValueError("superlative_scan: empty default pattern set in %s"
+                         % DEFAULT_PATH)
+    raw = ctx.data.get("patterns")
+    if raw in (None, "", []):
+        site = []
+    elif isinstance(raw, str):
+        path = ctx.resolve(raw)
+        if not path.exists():
+            raise ValueError("CONFIG ERROR: superlative_scan: patterns path "
+                             "does not exist: %s" % path)
+        site = _load_patterns(path, ctx.options.get("patterns_var"),
+                              ctx.read_text(path))
+    else:
+        raise ValueError("CONFIG ERROR: superlative_scan: patterns must be a "
+                         "path string, null or \"\", got %r" % (raw,))
+    seen, out = set(), []
+    for n, p in pats + site:
+        if p not in seen:
+            seen.add(p)
+            out.append((n, p))
+    return out
 
 
 # ------------------------------------------------- extractor 1: DCI parser
@@ -224,11 +258,8 @@ def _hits(surfaces, pats):
 
 
 def check(ctx):
-    path = ctx.data["patterns"]
     flags = re.I if ctx.options.get("ignorecase", True) else 0
-    pats = [(n, re.compile(p, flags)) for n, p in
-            _load_patterns(path, ctx.options.get("patterns_var"),
-                           ctx.read_text(path))]
+    pats = [(n, re.compile(p, flags)) for n, p in _all_patterns(ctx)]
     findings = []
 
     def emit(page, merged):
