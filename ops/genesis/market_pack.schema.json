@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ops/genesis/market_pack.schema.json",
+  "title": "Market pack",
+  "description": "A property's ops/market_pack.json: the research output for its service area, every entry backed by facts registry keys.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["towns", "programs", "housing", "code_facts", "peer_publics"],
+  "properties": {
+    "towns": {
+      "description": "One entry per researched town in the service area.",
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/town"}
+    },
+    "programs": {
+      "description": "Incentive or assistance programs, wayfinding only; may be empty.",
+      "type": "array",
+      "items": {"$ref": "#/$defs/program"}
+    },
+    "housing": {
+      "description": "Housing-stock facts for the service area.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["facts_keys"],
+      "properties": {
+        "facts_keys": {"$ref": "#/$defs/facts_keys"}
+      }
+    },
+    "code_facts": {
+      "description": "Energy-code requirements that apply in the service area.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attic_r", "wall_r", "floor_r", "ci_condition", "facts_keys"],
+      "properties": {
+        "attic_r": {"$ref": "#/$defs/nonempty"},
+        "wall_r": {"$ref": "#/$defs/nonempty"},
+        "floor_r": {"$ref": "#/$defs/nonempty"},
+        "ci_condition": {
+          "description": "When continuous insulation is required.",
+          "type": "string",
+          "minLength": 1
+        },
+        "blower_door_ach": {
+          "description": "Maximum air changes per hour at 50 Pa; this or cfm50_rule is required.",
+          "type": "number"
+        },
+        "cfm50_rule": {
+          "description": "Air-leakage rule stated as CFM50; this or blower_door_ach is required.",
+          "type": "string"
+        },
+        "facts_keys": {"$ref": "#/$defs/facts_keys"}
+      },
+      "anyOf": [{"required": ["blower_door_ach"]}, {"required": ["cfm50_rule"]}]
+    },
+    "citations_floor": {
+      "description": "Minimum citations per page; optional, default 3 when absent.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "peer_publics": {
+      "description": "Paths to peer public properties to learn from; may be empty.",
+      "type": "array",
+      "items": {"$ref": "#/$defs/nonempty"}
+    }
+  },
+  "$defs": {
+    "nonempty": {"type": "string", "minLength": 1},
+    "facts_key": {
+      "description": "A facts registry key.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "facts_keys": {
+      "description": "Facts registry keys that back this entry.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/facts_key"}
+    },
+    "town": {
+      "description": "One town: jurisdiction, code, climate and utility territory.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "county", "jurisdiction", "building_dept_url", "code_edition", "climate_zone", "elevation_ft", "gas_utility", "electric_utility", "territory_state", "facts_keys"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonempty"},
+        "county": {"$ref": "#/$defs/nonempty"},
+        "jurisdiction": {"$ref": "#/$defs/nonempty"},
+        "building_dept_url": {"$ref": "#/$defs/nonempty"},
+        "code_edition": {"$ref": "#/$defs/nonempty"},
+        "climate_zone": {"$ref": "#/$defs/nonempty"},
+        "elevation_ft": {
+          "description": "Elevation in feet.",
+          "type": "integer"
+        },
+        "gas_utility": {"$ref": "#/$defs/nonempty"},
+        "electric_utility": {"$ref": "#/$defs/nonempty"},
+        "territory_state": {
+          "description": "NAMED: a source names the town's utilities; SPLIT: the town is split between territories; UNKNOWN: no source settles it.",
+          "enum": ["NAMED", "SPLIT", "UNKNOWN"]
+        },
+        "absence_reason": {
+          "description": "Why territory is unsettled; required and non-empty when territory_state is UNKNOWN.",
+          "type": ["string", "null"]
+        },
+        "facts_keys": {
+          "description": "Registry keys that back this town's entries; at least one must carry territory_evidence for the town and its state must equal territory_state (cross-checked by validate_genesis.py).",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/facts_key"}
+        }
+      },
+      "if": {
+        "required": ["territory_state"],
+        "properties": {"territory_state": {"const": "UNKNOWN"}}
+      },
+      "then": {
+        "required": ["absence_reason"],
+        "properties": {"absence_reason": {"type": "string", "minLength": 1}}
+      }
+    },
+    "program": {
+      "description": "A program, wayfinding only: no dollar or amount field exists, and additionalProperties false rejects one.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "operator", "page_url", "towns_served", "facts_key"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonempty"},
+        "operator": {"$ref": "#/$defs/nonempty"},
+        "page_url": {"$ref": "#/$defs/nonempty"},
+        "towns_served": {
+          "description": "Town names the program serves.",
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/nonempty"}
+        },
+        "facts_key": {"$ref": "#/$defs/facts_key"}
+      }
+    }
+  }
+}
