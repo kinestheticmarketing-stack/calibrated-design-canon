@@ -118,7 +118,7 @@
       },
       "then": {
         "required": ["absence_reason"],
-        "properties": {"absence_reason": {"minLength": 1}}
+        "properties": {"absence_reason": {"type": "string", "minLength": 1}}
       }
     },
     "program": {

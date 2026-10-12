@@ -15,7 +15,10 @@ What it validates:
   5. each town's territory_state equals the state in the territory_evidence of
      the registry facts it cites, and at least one cited fact carries evidence.
   6. no string value in the intake or market pack is shaped like a secret (the
-     error names only the file and JSON path, never the value).
+     error names only the file and JSON path, never the value). Secret-shaped
+     means: contains "-----BEGIN", an SG. key, AC + 32 hex, a 32+ hex run, or
+     a 40+ char run of [A-Za-z0-9+/_=-] that mixes upper, lower AND digits
+     (token entropy), so lowercase URL paths and slugs pass.
   7. the intake's property_code is not listed in its own sibling_properties.
 One error per defect. Cross-reference rules skip any part the schema already
 rejected, so a structural error does not cascade.
@@ -47,8 +50,11 @@ _SECRET_RES = (
     re.compile(r"\bSG\.[A-Za-z0-9_-]{8,}"),
     re.compile(r"\bAC[0-9a-fA-F]{32}\b"),
     re.compile(r"\b[0-9a-fA-F]{32,}\b"),
-    re.compile(r"[A-Za-z0-9+/_-]{40,}={0,2}"),
 )
+# Long-run rule: a 40+ char run of token characters is secret-shaped only if
+# that run holds at least one uppercase letter, one lowercase letter and one
+# digit. Plain lowercase URL paths and slugs pass; base64/API tokens fail.
+_LONG_RUN_RE = re.compile(r"[A-Za-z0-9+/_=-]{40,}")
 
 
 class GenesisUnreadable(ValueError):
@@ -71,7 +77,11 @@ def _load_object(path, label):
 
 
 def _secret_shaped(s):
-    return any(r.search(s) for r in _SECRET_RES)
+    if any(r.search(s) for r in _SECRET_RES):
+        return True
+    return any(re.search(r"[A-Z]", run) and re.search(r"[a-z]", run)
+               and re.search(r"[0-9]", run)
+               for run in _LONG_RUN_RE.findall(s))
 
 
 def _at(doc, path):
