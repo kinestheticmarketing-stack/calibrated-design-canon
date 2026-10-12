@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ops/genesis/intake.schema.json",
+  "title": "Property intake form",
+  "description": "The Director's intake form, one per property; stored only in the private site repo as ops/intake.json, never in canon (canon holds only the fictional FIXTURE). The form carries NO secrets: no API key, token, password or SID belongs in any field, and the validator rejects secret-shaped values.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["property_code", "domain", "display_name", "city", "state", "service_area_towns", "services", "tracking_phone", "lead_destination", "sibling_properties", "industry_pack", "launch_notes"],
+  "properties": {
+    "property_code": {
+      "description": "Three-letter uppercase code; the system uses it to name the property's lanes, files and facts keys and to tell it apart from siblings.",
+      "$ref": "#/$defs/property_code"
+    },
+    "domain": {
+      "description": "Lowercase hostname the site is served from; the system needs it for canonical URLs, sitemaps and schema markup.",
+      "type": "string",
+      "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$"
+    },
+    "display_name": {
+      "description": "Business name as shown to visitors; the system renders it in titles, headers and structured data.",
+      "$ref": "#/$defs/nonempty"
+    },
+    "city": {
+      "description": "Home city of the business; the system anchors local copy, the address block and market research on it.",
+      "$ref": "#/$defs/nonempty"
+    },
+    "state": {
+      "description": "Two-letter uppercase state code; the system needs it to pick the energy code, utilities and programs to research.",
+      "type": "string",
+      "pattern": "^[A-Z]{2}$"
+    },
+    "service_area_towns": {
+      "description": "Towns the property will serve; the system builds one town page per entry and requires each to appear in the market pack. May be empty, meaning research decides.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/nonempty"}
+    },
+    "services": {
+      "description": "Services the business offers, as slugs from the portfolio's shared list; the system builds service pages and navigation only for these.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["air-sealing", "attic", "basement", "blower-door-test", "blown-in", "builders-contractors", "cathedral-ceiling", "cellulose", "crawl-space", "dense-pack-cellulose", "duct", "duct-sealing", "energy-audit", "fiberglass-batt", "garage", "hybrid-flash-batt", "knob-and-tube", "new-construction", "radiant-barrier", "removal", "rim-joist", "rodent-damaged", "rodent-remediation", "spray-foam", "vermiculite-abatement", "vermiculite-asbestos-removal", "wall"]
+      }
+    },
+    "tracking_phone": {
+      "description": "Public call-tracking number in E.164 form; the system renders it on every page and in click-to-call links so calls are attributed to this property.",
+      "$ref": "#/$defs/e164"
+    },
+    "lead_destination": {
+      "description": "Where form leads are delivered; the system routes each submitted lead here. Stored only in the private site repo (ops/intake.json), never in canon. Addresses and numbers only: no API key, token, password or SID.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["emails", "sms"],
+      "properties": {
+        "emails": {
+          "description": "At least one email address that receives each lead; the system needs one so no lead is dropped.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+          }
+        },
+        "sms": {
+          "description": "E.164 numbers that get a text alert per lead; may be empty when no text alert is wanted.",
+          "type": "array",
+          "items": {"$ref": "#/$defs/e164"}
+        }
+      }
+    },
+    "sibling_properties": {
+      "description": "Property codes of portfolio siblings; the system uses them to avoid cross-property duplication and to share canon. May be empty; must not include this property's own code.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/property_code"}
+    },
+    "industry_pack": {
+      "description": "Industry content pack to build from; the system selects page templates, service vocabulary and research checklists by it.",
+      "enum": ["insulation"]
+    },
+    "launch_notes": {
+      "description": "Free-text notes for the launch session; the system passes them to the builder as context. May be empty. No secrets.",
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "nonempty": {"type": "string", "minLength": 1},
+    "property_code": {
+      "description": "Three uppercase letters.",
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "e164": {
+      "description": "Phone number in E.164 form, e.g. +15555550123.",
+      "type": "string",
+      "pattern": "^\\+[1-9][0-9]{6,14}$"
+    }
+  }
+}
