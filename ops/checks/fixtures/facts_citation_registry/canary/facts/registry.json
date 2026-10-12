@@ -1,0 +1,7 @@
+[
+  {
+    "key": "canary-stale-source",
+    "source": {"title": "Canary Source", "publisher": "Canary Publisher", "url": "https://example.org/canary/stale-source"},
+    "retrieved": {"date": "2000-01-01", "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000"}
+  }
+]

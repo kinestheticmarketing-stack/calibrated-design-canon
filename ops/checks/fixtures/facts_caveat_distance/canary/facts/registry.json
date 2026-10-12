@@ -1,0 +1,54 @@
+[
+  {
+    "key": "spray-foam-air-leakage",
+    "claim": "Closed-cell spray foam cut measured air leakage through the attic floor by about half",
+    "source": {
+      "title": "Field Study: Closed-Cell Foam at the Attic Floor",
+      "publisher": "Example Building Science Lab",
+      "url": "https://example.org/bsl/spray-foam-field-study"
+    },
+    "retrieved": {
+      "date": "2000-01-01",
+      "fingerprint": "062477a50c5aa473f41458105a14297bfccbd9a6fd66e5aae56ac8fdce1b3ffe"
+    },
+    "quote": {
+      "text": "closed-cell spray foam reduced measured attic-floor air leakage by roughly half",
+      "mode": "paraphrase"
+    },
+    "territory": {},
+    "territory_evidence": {},
+    "status": {
+      "value": "n/a",
+      "as_of": "2000-01-01"
+    },
+    "next_review": "2000-01-01",
+    "hedge": {
+      "text": "in most tested homes",
+      "max_words": 6
+    },
+    "safety_caveat": "Keep occupants out of the house for at least 24 hours after spray foam is applied.",
+    "applies_to": {
+      "page_types": [
+        "service"
+      ],
+      "services": [
+        "spray-foam"
+      ]
+    },
+    "actor": "publisher",
+    "pages": [
+      {
+        "path": "index.html",
+        "surfaces": [
+          "body"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "16462ca",
+      "command": "python3 ops/facts/validate_facts.py ops/checks/fixtures/facts/clean/facts/registry.json"
+    }
+  }
+]
