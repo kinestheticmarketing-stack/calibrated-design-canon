@@ -1521,7 +1521,8 @@ exits 0 (1 invalid, 2 unreadable). Beyond the schemas and the registry,
 it cross-checks: every facts key the pack uses exists in the registry;
 every intake town has a market pack town; every program town is a pack
 town; each town's territory state agrees with the `territory_evidence`
-of the facts it cites; no value in either file is shaped like a secret.
+of the facts it cites; the intake's `property_code` is not in its own
+`sibling_properties`; no value in either file is shaped like a secret.
 
 The steps only the Director can do (tracking number, sending email,
 server secrets, Search Console) live in `METHODS/INTAKE_FORM.md`, "Only

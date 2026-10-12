@@ -137,6 +137,36 @@ class GenesisTest(unittest.TestCase):
         self.assertNotIn(value, r.stdout + r.stderr)
         self.assertNotIn(value[3:25], r.stdout + r.stderr)
 
+    def test_long_url_not_secret(self):
+        # Negative control: a long lowercase URL path must not trip the
+        # long-run secret rule (no upper+lower+digit mix in the run).
+        url = ("https://example.invalid/departments/building-permits-and-"
+               "inspections/residential-energy-code")
+        self.edit(self.mp, lambda d: d["towns"][0].__setitem__("building_dept_url", url))
+        self.assertEqual(self.errors(), [])
+        r = self.cli()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_base64_run_is_secret(self):
+        # Built at runtime so no secret-shaped literal sits in this file.
+        value = "Zx9Kp4Lm" * 6
+        self.assertEqual(len(value), 48)
+        self.edit(self.intake, lambda d: d.__setitem__("launch_notes", value))
+        errs, r = self.assert_one_defect()
+        self.assertTrue(errs[0].startswith("secret:"), errs)
+        for e in errs:
+            self.assertNotIn(value, e)
+        self.assertNotIn(value, r.stdout + r.stderr)
+
+    def test_unknown_town_null_absence_reason(self):
+        def plant(d):
+            towns = [t for t in d["towns"] if t["name"] == "Sampleville (FIXTURE)"]
+            self.assertEqual(len(towns), 1)
+            self.assertEqual(towns[0]["territory_state"], "UNKNOWN")
+            towns[0]["absence_reason"] = None
+        self.edit(self.mp, plant)
+        self.assert_one_defect()
+
     def test_program_dollar_field(self):
         self.edit(self.mp, lambda d: d["programs"][0].__setitem__("amount_usd", 500))
         errs, _ = self.assert_one_defect()
