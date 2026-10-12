@@ -1962,3 +1962,26 @@ F13. Sessions that share one server do not hit it at the same
 F14. A secret is never rotated before everything that presents it
     has been listed by name. A check that cannot reach its target
     says so and counts it; it never reports "no problem".
+F15. Find every instance before the box is written (2026-10-12). F7
+    says every instance is fixed in one pass; this is how. A fix
+    kickoff opens with a read-only inventory row (wave W0). For each
+    item the box fixes, it lists every place the item exists: every
+    rendered surface (head, meta, og, twitter, JSON-LD, llms.txt,
+    body), every source file that generates it, and every file, hook
+    or server script that runs, imports, sources, configures or
+    documents it. The ledger then gets one row per file found, before
+    any edit. The pass ends by running the same inventory again, and
+    it must return 0 for every item. A pass that fixes some instances
+    and finds the rest afterwards has failed F7. The inventory looks
+    only for the items the box names, never for new kinds of problems
+    (Rule 6).
+F16. Warn before a stricter instrument (2026-10-12). Before any check,
+    instrument, data layer or generator is built or switched on where
+    it will run against work the Director considers finished, the
+    Architect tells him, before any kickoff:
+    - that it can surface problems on that finished work;
+    - why: it measures what the old checks did not;
+    - roughly what it may find and what fixing that would cost;
+    - the option to run it on new properties only.
+    He decides before it is built. If it surfaces findings anyway, the
+    report opens with that explanation, unasked.
