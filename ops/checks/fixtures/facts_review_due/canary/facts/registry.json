@@ -1,0 +1,59 @@
+[
+  {
+    "key": "air-sealing-savings",
+    "claim": "The Example Energy Office says homeowners can save “up to 20% on heating and cooling costs” by air sealing and adding attic insulation.",
+    "source": {
+      "title": "Air Sealing Your Home",
+      "publisher": "Example Energy Office",
+      "url": "https://example.org/energy-office/air-sealing-guide"
+    },
+    "retrieved": {
+      "date": "2000-01-01",
+      "fingerprint": "bf0743d0a85719d1b935add73adc9a51c7dd41489854988428b048cccab09fa4"
+    },
+    "quote": {
+      "text": "up to 20% on heating and cooling costs",
+      "mode": "quote"
+    },
+    "territory": {},
+    "territory_evidence": {},
+    "status": {
+      "value": "n/a",
+      "as_of": "2000-01-01"
+    },
+    "next_review": "2000-01-01",
+    "hedge": null,
+    "safety_caveat": null,
+    "applies_to": {
+      "page_types": [
+        "home"
+      ],
+      "services": [
+        "air-sealing",
+        "attic-insulation"
+      ]
+    },
+    "actor": "publisher",
+    "pages": [
+      {
+        "path": "index.html",
+        "surfaces": [
+          "body",
+          "meta"
+        ]
+      },
+      {
+        "path": "llms.txt",
+        "surfaces": [
+          "llms"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "16462ca",
+      "command": "python3 ops/facts/validate_facts.py ops/checks/fixtures/facts_review_due/canary/facts/registry.json"
+    }
+  }
+]
