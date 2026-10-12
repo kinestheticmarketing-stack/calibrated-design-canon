@@ -1,0 +1,6 @@
+{
+ "module": "facts_schema",
+ "expected": 3,
+ "dates": {},
+ "description": "air-sealing-savings missing actor (1); nfr-gas-attic-rebate territory adds Windsor with no evidence (1); spray-foam-air-leakage re-keyed to duplicate attic-r-value-zone5, otherwise valid (1)."
+}

@@ -143,6 +143,10 @@ def build_context(mod, entry, site_root: Path, public_rel: str, site_name: str,
     if not isinstance(data_in, dict) or not isinstance(opts_in, dict):
         raise C.ConfigError("module %s: data and options must be objects" % name)
     literal = set(getattr(mod, "LITERAL_KEYS", set()) or set())
+    optional = set(getattr(mod, "OPTIONAL_KEYS", set()) or set())
+    if optional - set(mod.REQUIRES):
+        raise C.ConfigError("module %s: OPTIONAL_KEYS not in REQUIRES: %s" % (
+            name, ", ".join(sorted(optional - set(mod.REQUIRES)))))
     unknown = set(data_in) - set(mod.REQUIRES)
     if unknown:
         raise C.ConfigError("module %s: unknown data key(s) %s (REQUIRES: %s)"
@@ -156,6 +160,9 @@ def build_context(mod, entry, site_root: Path, public_rel: str, site_name: str,
                                ", ".join(sorted(defaults)) or "none"))
     data = {}
     for key, desc in mod.REQUIRES.items():
+        if key not in data_in and key in optional:
+            data[key] = None
+            continue
         if key not in data_in:
             raise C.ConfigError("module %s: required data key %r is missing "
                                 "from the manifest (%s)" % (name, key, desc))

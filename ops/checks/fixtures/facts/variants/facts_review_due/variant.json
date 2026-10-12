@@ -1,0 +1,10 @@
+{
+ "module": "facts_review_due",
+ "expected": 1,
+ "dates": {
+  "spray-foam-air-leakage": {
+   "next_review": -1
+  }
+ },
+ "description": "spray-foam-air-leakage next_review = today-1 (overdue by one day)."
+}

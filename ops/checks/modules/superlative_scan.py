@@ -43,11 +43,12 @@ DESCRIPTION = ("A ruled-out ranking superlative (default list + site list) "
                "twitter, JSON-LD, img alt, llms.txt.")
 REQUIRES = {
     "patterns": "file of site superlative regexes (.py read via ast, or one "
-                "regex per line), added to the default list; null or \"\" = "
-                "default only",
+                "regex per line), added to the default list; absent, null or "
+                "\"\" = default list only",
 }
 # Passed raw so null / "" can mean "default only"; check() resolves the path.
 LITERAL_KEYS = {"patterns"}
+OPTIONAL_KEYS = {"patterns"}
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "superlative_default.py"
 DEFAULT_VAR = "RETIRED_PATTERNS"
 OPTIONS = {

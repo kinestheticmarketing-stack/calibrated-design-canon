@@ -1,0 +1,6 @@
+{
+ "module": "facts_pages_coverage",
+ "expected": 3,
+ "dates": {},
+ "description": "nfr-gas-attic-rebate claim planted on unlisted (rebates.html, og) (1); spray-foam-air-leakage claim removed from llms.txt, its single listed surface there (1); attic-r-value-zone5 paraphrase quote.text planted inside quotation marks on (attic.html, body) (1)."
+}

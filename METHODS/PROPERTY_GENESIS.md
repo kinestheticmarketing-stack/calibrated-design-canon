@@ -1460,6 +1460,43 @@ is the point of continuity between genesis waves.
 
 ---
 
+## Facts registry (2026-10)
+
+A standing requirement across Phases 4 through 8, not a step inside one.
+**A new property carries a facts registry from its FIRST build:**
+
+- `facts/registry.json`: one record per sourced claim, schema
+  `ops/facts/schema.json`, validated by
+  `python3 ops/facts/validate_facts.py facts/registry.json` (exit 0 valid,
+  1 invalid, 2 unreadable).
+- `facts/snapshots/<key>.txt`: the stored source text each record's quote
+  is checked against.
+
+The property enables all six `facts_*` modules in its `ops/checks.manifest`
+by explicit entries: `facts_schema`, `facts_review_due`,
+`facts_quote_snapshot`, `facts_pages_coverage`, `facts_citation_registry`,
+`facts_caveat_distance`. Each takes data `facts_registry:
+"facts/registry.json"`; `facts_quote_snapshot` also takes `facts_snapshots:
+"facts/snapshots"`. **No module is ever auto-added.** Enabling is always an
+explicit manifest entry.
+
+The three existing properties (DCI, LGM, GCI) do not carry the registry
+until the Director orders it at a quarterly check.
+
+By design, `facts_citation_registry` and `facts_review_due` fail the build
+when the property misses its quarterly re-verification: a cited source
+whose `retrieved.date` is 93 or more days old, or a record past its
+`next_review`. A red build here is the re-verification reminder, not a
+defect in the gate.
+
+Module behavior and finding units: `ops/checks/README.md`, "Facts registry
+modules (K50, 2026-10-12)". Worked example: the fixture
+`ops/checks/fixtures/facts/`.
+
+Verify: `grep -n "Facts registry (2026-10)" METHODS/PROPERTY_GENESIS.md`
+
+---
+
 ## What a green gate does not prove
 
 Phase 8 ends on a sentence this section exists to generalize: *a gate

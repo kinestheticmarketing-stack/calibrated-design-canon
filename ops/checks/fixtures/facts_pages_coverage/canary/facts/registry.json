@@ -1,0 +1,10 @@
+[
+  {
+    "key": "canary-listed-claim",
+    "claim": "Canary Co. installed attic insulation in 1,000 homes.",
+    "retrieved": {"date": "2000-01-01"},
+    "quote": {"text": "Canary Co. completed 1,000 attic jobs", "mode": "paraphrase"},
+    "next_review": "2000-01-01",
+    "pages": [{"path": "index.html", "surfaces": ["body"]}]
+  }
+]

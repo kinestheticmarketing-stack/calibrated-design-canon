@@ -1,0 +1,243 @@
+[
+  {
+    "key": "air-sealing-savings",
+    "claim": "The Example Energy Office says homeowners can save “up to 20% on heating and cooling costs” by air sealing and adding attic insulation.",
+    "source": {
+      "title": "Air Sealing Your Home",
+      "publisher": "Example Energy Office",
+      "url": "https://example.org/energy-office/air-sealing-guide"
+    },
+    "retrieved": {
+      "date": "2026-10-02",
+      "fingerprint": "0687be819a286755d2d4422b53bdd9812e345a7625da3e10c522b14682f9dc1c"
+    },
+    "quote": {
+      "text": "up to 25% on heating and cooling costs",
+      "mode": "quote"
+    },
+    "territory": {},
+    "territory_evidence": {},
+    "status": {
+      "value": "n/a",
+      "as_of": "2026-10-02"
+    },
+    "next_review": "2026-12-31",
+    "hedge": null,
+    "safety_caveat": null,
+    "applies_to": {
+      "page_types": [
+        "home"
+      ],
+      "services": [
+        "air-sealing",
+        "attic-insulation"
+      ]
+    },
+    "actor": "publisher",
+    "pages": [
+      {
+        "path": "index.html",
+        "surfaces": [
+          "body",
+          "meta"
+        ]
+      },
+      {
+        "path": "llms.txt",
+        "surfaces": [
+          "llms"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "16462ca",
+      "command": "python3 ops/facts/validate_facts.py ops/checks/fixtures/facts/clean/facts/registry.json"
+    }
+  },
+  {
+    "key": "nfr-gas-attic-rebate",
+    "claim": "Northern Front Range Gas pays “$0.40 per square foot, up to $400” for attic insulation installed by a participating contractor.",
+    "source": {
+      "title": "2026 Residential Attic Insulation Rebate",
+      "publisher": "Northern Front Range Gas",
+      "url": "https://example.org/nfr-gas/2026-attic-rebate",
+      "doc_id": "NFRG-REB-2026-04"
+    },
+    "retrieved": {
+      "date": "2026-10-02",
+      "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "quote": {
+      "text": "$0.40 per square foot, up to $400",
+      "mode": "quote"
+    },
+    "territory": {
+      "Fort Collins": {
+        "gas_utility": "Northern Front Range Gas",
+        "electric_utility": "Fort Collins Light & Power",
+        "jurisdiction": "City of Fort Collins",
+        "code_edition": "2021 IECC"
+      },
+      "Loveland": {
+        "gas_utility": "Northern Front Range Gas",
+        "electric_utility": "Loveland Municipal Power",
+        "jurisdiction": "City of Loveland",
+        "code_edition": "2021 IECC"
+      }
+    },
+    "territory_evidence": {
+      "Fort Collins": {
+        "town_source": "https://example.org/nfr-gas/service-area",
+        "utility_filing": "NFRG Advice Letter 112, service-area exhibit",
+        "state": "NAMED",
+        "absence_reason": null
+      },
+      "Loveland": {
+        "town_source": "",
+        "utility_filing": "",
+        "state": "UNKNOWN",
+        "absence_reason": "Service-area exhibit lists Larimer County only; no filing names Loveland."
+      }
+    },
+    "status": {
+      "value": "open",
+      "as_of": "2026-10-02"
+    },
+    "next_review": "2026-12-31",
+    "hedge": null,
+    "safety_caveat": null,
+    "applies_to": {
+      "page_types": [
+        "rebates"
+      ],
+      "services": [
+        "attic-insulation"
+      ]
+    },
+    "actor": "utility",
+    "pages": [
+      {
+        "path": "rebates.html",
+        "surfaces": [
+          "body"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "16462ca",
+      "command": "python3 ops/facts/validate_facts.py ops/checks/fixtures/facts/clean/facts/registry.json"
+    }
+  },
+  {
+    "key": "attic-r-value-zone5",
+    "claim": "Attic insulation guidance for Northern Colorado's climate zone recommends a level between R49 and R60.",
+    "source": {
+      "title": "Attic Insulation Guidance for Climate Zone 5",
+      "publisher": "Example Building Codes Council",
+      "url": "https://example.org/building-codes/zone-5-attic-guidance",
+      "doc_id": "EBCC-AG-5"
+    },
+    "retrieved": {
+      "date": "2026-10-02",
+      "fingerprint": "7d5100fec55c72282b2ddb0906994a7a0abfaaa50666b826fca017bccfd62e43"
+    },
+    "quote": {
+      "text": "Uninsulated attics in Climate Zone 5 should be brought to R49 to R60.",
+      "mode": "paraphrase"
+    },
+    "territory": {},
+    "territory_evidence": {},
+    "status": {
+      "value": "n/a",
+      "as_of": "2026-10-02"
+    },
+    "next_review": "2026-12-31",
+    "hedge": null,
+    "safety_caveat": null,
+    "applies_to": {
+      "page_types": [
+        "service"
+      ],
+      "services": [
+        "attic-insulation"
+      ]
+    },
+    "actor": "publisher",
+    "pages": [
+      {
+        "path": "attic.html",
+        "surfaces": [
+          "body"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "16462ca",
+      "command": "python3 ops/facts/validate_facts.py ops/checks/fixtures/facts/clean/facts/registry.json"
+    }
+  },
+  {
+    "key": "spray-foam-air-leakage",
+    "claim": "Closed-cell spray foam cut measured air leakage through the attic floor by about half",
+    "source": {
+      "title": "Field Study: Closed-Cell Foam at the Attic Floor",
+      "publisher": "Example Building Science Lab",
+      "url": "https://example.org/bsl/spray-foam-field-study"
+    },
+    "retrieved": {
+      "date": "2026-10-02",
+      "fingerprint": "062477a50c5aa473f41458105a14297bfccbd9a6fd66e5aae56ac8fdce1b3ffe"
+    },
+    "quote": {
+      "text": "closed-cell spray foam reduced measured attic-floor air leakage by roughly half",
+      "mode": "paraphrase"
+    },
+    "territory": {},
+    "territory_evidence": {},
+    "status": {
+      "value": "n/a",
+      "as_of": "2026-10-02"
+    },
+    "next_review": "2026-12-31",
+    "hedge": {
+      "text": "in most tested homes",
+      "max_words": 6
+    },
+    "safety_caveat": "Keep occupants out of the house for at least 24 hours after spray foam is applied.",
+    "applies_to": {
+      "page_types": [
+        "service"
+      ],
+      "services": [
+        "spray-foam"
+      ]
+    },
+    "actor": "publisher",
+    "pages": [
+      {
+        "path": "attic.html",
+        "surfaces": [
+          "body"
+        ]
+      },
+      {
+        "path": "llms.txt",
+        "surfaces": [
+          "llms"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "16462ca",
+      "command": "python3 ops/facts/validate_facts.py ops/checks/fixtures/facts/clean/facts/registry.json"
+    }
+  }
+]

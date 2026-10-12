@@ -1,0 +1,7 @@
+{
+ "data": {
+  "facts_registry": "facts/registry.json",
+  "facts_snapshots": "facts/snapshots"
+ },
+ "options": {}
+}

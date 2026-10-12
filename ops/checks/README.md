@@ -26,9 +26,10 @@ python3 ops/checks/run_checks.py --site ~/code/denvercoloradoinsulation.com \
 Order of a run:
 
 1. Load the manifest. A module name not present in `modules/` is a config error.
-2. For every selected module: import it, verify every `REQUIRES` key is in the
-   manifest and every path exists; unknown data keys or options are errors too.
-   Any failure stops the run, naming module, key and path.
+2. For every selected module: import it, verify every `REQUIRES` key not in
+   `OPTIONAL_KEYS` is in the manifest and every path exists; unknown data keys
+   or options are errors too. Any failure stops the run, naming module, key and
+   path.
 3. Run **every** selected module's canary before any real check. Missing
    fixture = `NO CANARY`; zero findings = `BLIND INSTRUMENT`; an exception =
    `CANARY ERROR`. If any canary fails, no real check runs.
@@ -72,6 +73,13 @@ resolved as: `canon:<path>` → relative to the canon repo root; absolute → as
 is; anything else → relative to the site root. A value may be a list of such
 paths. Keys the module lists in `LITERAL_KEYS` are passed through unchanged
 (strings, numbers, lists) and get no existence check.
+
+**K50 (2026-10-12), optional keys:** a module may declare `OPTIONAL_KEYS`
+(set, a subset of `REQUIRES`; a key outside `REQUIRES` is a CONFIG ERROR). An
+optional key absent from the manifest reaches the module as `None`; a
+required key absent from the manifest stays a CONFIG ERROR (exit 2).
+`superlative_scan` declares `patterns` optional (absent = the canon default
+list).
 
 ## Module contract (how to add a module)
 
@@ -176,7 +184,7 @@ Also not modules, for the same reason: `links_canary`, `similarity_canary`, `pag
 list `ops/checks/superlative_default.py` (`RETIRED_PATTERNS`, byte-copied from
 DCI). A site `patterns` file is ADDED to it (union, deduplicated), never a
 replacement; an empty patterns list does not disable the scan. `"patterns":
-null` or `""` means default only (the runner still requires the key).
+null` or `""` means default only, and the key may be omitted (K50).
 
 **K47 (2026-10-12), cross_property_similarity:** a relative `peer_public` that
 stays inside the site's own checkout resolves within that checkout; one that
@@ -185,3 +193,73 @@ site's MAIN checkout root (parent of `git rev-parse --path-format=absolute
 --git-common-dir`), so the suite runs from a site worktree and the module
 canary reads its own worktree's fixture; an absolute path is used as given. A
 missing peer is a CONFIG ERROR (exit 2).
+
+## Facts registry modules (K50, 2026-10-12)
+
+Six modules read a property's facts registry. Each one is **NOT ENABLED**
+unless a site manifest names it, and is never auto-added: no generator or
+"enable all" helper may add a `facts_*` module; enabling one is always an
+explicit manifest entry.
+
+- `facts_schema`: the registry is not a valid registry, one finding per
+  validator error (registry validity, the substrate the other five read).
+- `facts_review_due`: a record past its `next_review` date (K02).
+- `facts_quote_snapshot`: a quote absent from its stored snapshot, a
+  fingerprint that does not match the quote, or a missing snapshot (K03,
+  script half).
+- `facts_citation_registry`: a `cited-stat` link whose URL is no record's
+  `source.url`, or whose record was retrieved 93+ days ago (K04).
+- `facts_pages_coverage`: a claim missing where listed or rendered where
+  unlisted; a quote or paraphrase rendered against its `quote.mode` (K08,
+  K19).
+- `facts_caveat_distance`: a claim rendered without its hedge within
+  `max_words`, or a listed page missing the safety caveat (K22).
+
+**Registry.** `facts/registry.json` in the site repo: a JSON array of
+records, validated by `ops/facts/schema.json` via
+`python3 ops/facts/validate_facts.py <registry.json>` (exit 0 valid / 1
+invalid / 2 unreadable). Stored source text lives at
+`facts/snapshots/<key>.txt`. An unreadable registry makes any `facts_*`
+module raise (run exit 2); the other five skip malformed fields silently and
+leave them to `facts_schema`.
+
+**Enabling.** One manifest entry per module. Five take only the registry:
+
+```json
+"facts_review_due": {
+  "data": {"facts_registry": "facts/registry.json"},
+  "options": {}
+}
+```
+
+`facts_quote_snapshot` also takes the snapshots directory:
+
+```json
+"facts_quote_snapshot": {
+  "data": {"facts_registry": "facts/registry.json",
+           "facts_snapshots": "facts/snapshots"},
+  "options": {}
+}
+```
+
+`facts_review_due` and `facts_citation_registry` accept `options.today`
+(`"YYYY-MM-DD"`), for tests only; the default (`null`) is the UTC date at
+run time.
+
+**Fingerprint and quote rules.** `retrieved.fingerprint` = sha256 of the
+normalized `quote.text`. The normalizer is retired_strings' decoded-surface
+pipeline `_collapse(_unjs(html.unescape(t)))`, exposed as
+`validate_facts.normalize` (imported, not copied). `quote.text` is always
+the source's own words. Mode `quote`: the page renders it inside quotation
+marks equal to `quote.text`. Mode `paraphrase`: the page must not render
+`quote.text` inside quotation marks.
+
+facts_citation_registry and facts_review_due fail the build when a property misses its quarterly re-verification (day 93 / next_review), by design.
+
+**Fixture and tests.** `ops/checks/fixtures/facts/` (a clean property plus
+one variant per module); each module also keeps its own canary under
+`fixtures/<module>/canary/`. Run:
+
+```bash
+cd ops/checks && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest test_facts -v
+```
