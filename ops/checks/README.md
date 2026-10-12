@@ -118,8 +118,10 @@ Copy [`MODULE_TEMPLATE.md`](MODULE_TEMPLATE.md). In short:
 per blocking rule whose SUMMARY row is `FAIL` (page `public/`; for the per-hit
 enumeration run, from the canon root, `python3 ops/claim_gate/claim_gate.py
 --config <config> --repo <site>`). Exit 2 means the gate could not judge and
-surfaces as a module `ERROR` (run exit 2). **K47 (2026-10-12):** the finding
-message now names that direct command for the hits.
+surfaces as a module `ERROR` (run exit 2).
+
+**K47 (2026-10-12), claim_gate:** the finding message names the direct command
+above for the hits instead of the site wrapper.
 
 Its canary (`fixtures/claim_gate/canary/`) is claim_gate's own
 `R1_fabricated_quotation.html` fixture as `public/index.html`, run against a
@@ -176,8 +178,10 @@ DCI). A site `patterns` file is ADDED to it (union, deduplicated), never a
 replacement; an empty patterns list does not disable the scan. `"patterns":
 null` or `""` means default only (the runner still requires the key).
 
-**K47 (2026-10-12), cross_property_similarity:** a relative `peer_public` is
-resolved against the site's MAIN checkout root (parent of `git rev-parse
---path-format=absolute --git-common-dir`), not the worktree or cwd, so the
-suite runs from a site worktree; an absolute path is used as given. A missing
-peer is a CONFIG ERROR (exit 2).
+**K47 (2026-10-12), cross_property_similarity:** a relative `peer_public` that
+stays inside the site's own checkout resolves within that checkout; one that
+leaves it (e.g. `../denvercoloradoinsulation.com/public`) resolves against the
+site's MAIN checkout root (parent of `git rev-parse --path-format=absolute
+--git-common-dir`), so the suite runs from a site worktree and the module
+canary reads its own worktree's fixture; an absolute path is used as given. A
+missing peer is a CONFIG ERROR (exit 2).
