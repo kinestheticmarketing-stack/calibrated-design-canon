@@ -9,9 +9,11 @@ on LOCAL MISSING / CONTROL MISSING too).
 
 Every site-specific value is read from the site by declared paths:
   data.peer_public  the peer property's built public dir (read only). A
-                    relative value resolves against the site's MAIN checkout
-                    (parent of git --git-common-dir), so it works from a git
-                    worktree; absolute and canon: values are used as given.
+                    relative path that stays inside the site's checkout
+                    resolves within it; one that leaves it resolves against
+                    the MAIN checkout root (parent of git --git-common-dir),
+                    so it works from a git worktree; absolute and canon:
+                    values are used as given.
   data.config       the site's .py check file (top-level literal assignments
                     PAIRS, STRIP_PATTERNS, THRESHOLD, SHINGLE_N, extracted with
                     ast.literal_eval; site code is never imported or executed)
@@ -31,8 +33,9 @@ DESCRIPTION = ("Shingle-Jaccard similarity of each listed page against its "
                "peer-property counterpart must stay below the site threshold.")
 REQUIRES = {
     "peer_public": "the peer property's built public dir; absolute, canon:, "
-                   "or relative to the site's main git checkout (not a "
-                   "worktree); read only",
+                   "or relative: a relative path that stays inside the site's "
+                   "checkout resolves within it; one that leaves it resolves "
+                   "against the MAIN checkout root; read only",
     "config": "file holding PAIRS, STRIP_PATTERNS, THRESHOLD, SHINGLE_N: a .py "
               "file (literal top-level assignments, read with ast.literal_eval) "
               "or a JSON object with those keys",
@@ -53,26 +56,33 @@ def _git(root, *args):
 
 
 def _resolve_peer(ctx, raw):
-    """canon:/absolute via ctx.resolve; relative against the main checkout."""
+    """canon:/absolute via ctx.resolve. A relative path that stays inside the
+    site's checkout resolves within it; one that leaves it resolves against
+    the MAIN checkout root."""
     if not isinstance(raw, str) or not raw:
         raise ValueError("CONFIG ERROR: peer_public must be a non-empty path "
                          "string, got %r" % (raw,))
     if raw.startswith("canon:") or Path(raw).expanduser().is_absolute():
         return ctx.resolve(raw)
     site = Path(ctx.site_root).resolve()
+    rel = Path(raw).expanduser()
     top = _git(site, "--show-toplevel")
     common = _git(site, "--path-format=absolute", "--git-common-dir")
-    base = site
     if top and common:
-        base = Path(common).parent / site.relative_to(Path(top).resolve())
-    return (base / Path(raw).expanduser()).resolve()
+        top = Path(top).resolve()
+        candidate = (site / rel).resolve()
+        if candidate.is_relative_to(top):
+            return candidate
+        base = Path(common).parent / site.relative_to(top)
+        return (base / rel).resolve()
+    return (site / rel).resolve()
 
 
 def _load_config(path, names):
     if str(path).endswith(".json"):
-        obj = json.loads(open(path, encoding="utf-8").read())
+        obj = json.loads(Path(path).read_text(encoding="utf-8"))
         return {k: obj[v] for k, v in names.items()}
-    tree = ast.parse(open(path, encoding="utf-8").read(), filename=str(path))
+    tree = ast.parse(Path(path).read_text(encoding="utf-8"), filename=str(path))
     found = {}
     for node in tree.body:
         targets = []
@@ -92,7 +102,7 @@ def _load_config(path, names):
 
 
 def _text(path, strip):
-    s = open(path, encoding="utf-8").read()
+    s = Path(path).read_text(encoding="utf-8")
     for pat in strip:
         s = re.sub(pat, " ", s, flags=re.S | re.I)
     s = re.sub(r"<[^>]+>", " ", s)

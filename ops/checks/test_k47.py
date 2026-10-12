@@ -14,6 +14,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.dont_write_bytecode = True
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -99,6 +100,20 @@ class TestA(TempCase):
         p.write_text("# nothing here\n\n# still nothing\n", encoding="utf-8")
         self.assertDefault(self.msgs({"patterns": str(p)}))
 
+    def test_a_v_identical_site_pattern_deduplicated(self):
+        default = self.mod._load_patterns(
+            self.mod.DEFAULT_PATH, self.mod.DEFAULT_VAR,
+            self.mod.DEFAULT_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(len(default), 1, default)
+        src = default[0][1]
+        self.assertNotIn("\n", src)
+        p = self.site / "sup.txt"
+        p.write_text(src + "\n", encoding="utf-8")
+        hits = [m for m in self.msgs({"patterns": str(p)})
+                if "highest-leverage" in m]
+        self.assertEqual(len(hits), 1, hits)
+        self.assertIn("default:RETIRED_PATTERNS", hits[0])
+
 
 # ---------------------------------------------------------------- (b)
 
@@ -160,16 +175,57 @@ class TestB(TempCase):
         self.assertIn("CONFIG ERROR", out)
         self.assertRegex(out, r"cross_property_similarity\s+ERROR")
 
+    def test_b4_absolute_peer_used_as_given(self):
+        peer = (self.T / "peer" / "public").resolve()
+        self.assertFalse(peer.is_relative_to(self.site.resolve()))
+        self.assertEqual(self.run_check(self.site, str(peer)), [])
+        with self.assertRaises(ValueError):
+            self.run_check(self.site, str(self.T / "nope" / "public"))
+
+    def test_b5_in_tree_relative_peer_resolves_within_worktree(self):
+        local = (self.site / "public" / "index.html").read_text(encoding="utf-8")
+        (self.site / "control").mkdir()
+        (self.site / "control" / "x.html").write_text(
+            "<html><body><p>kilo lima mike november oscar papa quebec romeo"
+            "</p></body></html>", encoding="utf-8")
+        git(self.site, "add", "-A")
+        git(self.site, "commit", "-q", "-m", "control")
+        self.wt = self.T / "wt" / "site-wt"
+        self.wt.parent.mkdir()
+        git(self.site, "worktree", "add", "-q", str(self.wt), "-b", "k47test")
+        # Worktree-only, uncommitted: the control copy equals the local page.
+        (self.wt / "control" / "x.html").write_text(local, encoding="utf-8")
+        # Main checkout's copy is distinct: no finding there.
+        self.assertEqual(self.run_check(self.site, "control"), [])
+        # From the worktree, the worktree's copy is read: Jaccard finding.
+        f = self.run_check(self.wt, "control")
+        self.assertEqual(len(f), 1, f)
+        self.assertIn("Jaccard 1.0000", f[0].message)
+
 
 # ---------------------------------------------------------------- (c)
 
-class TestC(unittest.TestCase):
+class TestC(TempCase):
     def test_c_claim_gate_message_names_direct_command(self):
-        src = (MODULES / "claim_gate.py").read_text(encoding="utf-8")
-        self.assertNotIn("ops/claim_gate.sh", src)
-        flat = " ".join(src.replace('"', " ").split())
-        self.assertIn("ops/claim_gate/claim_gate.py --config <config>", flat)
-        self.assertIn("--repo <site>", flat)
+        mod = load("claim_gate")
+        site = self.T / "site"
+        (site / "public").mkdir(parents=True)
+        stdout = ("CLAIM GATE SUMMARY\n"
+                  "  R3a  unsourced figure  RAW 4  ADJ 2  FAIL\n"
+                  "CLAIM GATE: FAIL\n")
+        cp = subprocess.CompletedProcess(args=[], returncode=1,
+                                         stdout=stdout, stderr="")
+        fake = mock.Mock()
+        fake.run.return_value = cp
+        with mock.patch.object(mod, "subprocess", fake):
+            out = mod.check(ctx_for(mod, site, {"config": site / "cg.json"}))
+        fake.run.assert_called_once()
+        self.assertEqual(len(out), 1, out)
+        msg = out[0].message
+        self.assertIn("R3a unsourced figure: 2 blocking", msg)
+        self.assertNotIn("ops/claim_gate.sh", msg)
+        self.assertIn("ops/claim_gate/claim_gate.py --config <config> "
+                      "--repo <site>", msg)
 
 
 if __name__ == "__main__":
