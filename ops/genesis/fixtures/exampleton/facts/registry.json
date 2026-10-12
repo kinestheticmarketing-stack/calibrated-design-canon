@@ -1,0 +1,237 @@
+[
+  {
+    "key": "ext-utility-territory",
+    "claim": "Exampleton Gas Co. (FIXTURE) serves Exampleton (FIXTURE) and part of North Exampleton (FIXTURE).",
+    "source": {
+      "title": "Service Territory Exhibit (FIXTURE)",
+      "publisher": "Exampleton Gas Co. (FIXTURE)",
+      "url": "https://example.invalid/exampleton-gas/service-territory",
+      "doc_id": "EXG-TERR-FIXTURE-1"
+    },
+    "retrieved": {
+      "date": "2026-10-02",
+      "fingerprint": "f7b42ac5c79d70ecc1827553b7100df4733176b6e99592f7e552237a091731fd"
+    },
+    "quote": {
+      "text": "Natural gas service is provided in the City of Exampleton and in the portion of North Exampleton east of Fixture Creek.",
+      "mode": "paraphrase"
+    },
+    "territory": {
+      "Exampleton (FIXTURE)": {
+        "gas_utility": "Exampleton Gas Co. (FIXTURE)",
+        "electric_utility": "Exampleton Electric Co-op (FIXTURE)",
+        "jurisdiction": "City of Exampleton (FIXTURE)",
+        "code_edition": "2021 IECC"
+      },
+      "North Exampleton (FIXTURE)": {
+        "gas_utility": "Exampleton Gas Co. (FIXTURE) (east of Fixture Creek only)",
+        "electric_utility": "Exampleton Electric Co-op (FIXTURE)",
+        "jurisdiction": "Example County (FIXTURE)",
+        "code_edition": "2021 IECC"
+      },
+      "Sampleville (FIXTURE)": {
+        "gas_utility": "",
+        "electric_utility": "",
+        "jurisdiction": "Example County (FIXTURE)",
+        "code_edition": "2021 IECC"
+      }
+    },
+    "territory_evidence": {
+      "Exampleton (FIXTURE)": {
+        "town_source": "https://example.invalid/exampleton-gas/service-territory",
+        "utility_filing": "EXG Advice Letter 7 (FIXTURE), service-territory exhibit",
+        "state": "NAMED",
+        "absence_reason": null
+      },
+      "North Exampleton (FIXTURE)": {
+        "town_source": "https://example.invalid/exampleton-gas/service-territory",
+        "utility_filing": "EXG Advice Letter 7 (FIXTURE), service-territory exhibit",
+        "state": "SPLIT",
+        "absence_reason": null
+      },
+      "Sampleville (FIXTURE)": {
+        "town_source": "",
+        "utility_filing": "",
+        "state": "UNKNOWN",
+        "absence_reason": "No utility filing names Sampleville (FIXTURE); the service-territory map is county-level only."
+      }
+    },
+    "status": {
+      "value": "n/a",
+      "as_of": "2026-10-02"
+    },
+    "next_review": "2027-01-02",
+    "hedge": null,
+    "safety_caveat": null,
+    "applies_to": {
+      "page_types": [
+        "home",
+        "service_area"
+      ],
+      "services": []
+    },
+    "actor": "utility",
+    "pages": [
+      {
+        "path": "service-area.html",
+        "surfaces": [
+          "body"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "FIXTURE",
+      "command": "python3 ops/genesis/validate_genesis.py ops/genesis/fixtures/exampleton/intake.json ops/genesis/fixtures/exampleton/market_pack.json ops/genesis/fixtures/exampleton/facts/registry.json"
+    }
+  },
+  {
+    "key": "ext-rebate-program",
+    "claim": "Exampleton Gas Co. (FIXTURE) runs the Exampleton Home Energy Program (FIXTURE); homeowners apply after a participating contractor completes an energy assessment.",
+    "source": {
+      "title": "Exampleton Home Energy Program (FIXTURE)",
+      "publisher": "Exampleton Gas Co. (FIXTURE)",
+      "url": "https://example.invalid/exampleton-gas/home-energy-program"
+    },
+    "retrieved": {
+      "date": "2026-10-02",
+      "fingerprint": "ce2013f44a41609fe39863a5cfa35d718d6095a06f218b2896c354146f4f5ec5"
+    },
+    "quote": {
+      "text": "Homeowners in our service territory can apply for the Exampleton Home Energy Program after a participating contractor completes an energy assessment.",
+      "mode": "paraphrase"
+    },
+    "territory": {},
+    "territory_evidence": {},
+    "status": {
+      "value": "open",
+      "as_of": "2026-10-02"
+    },
+    "next_review": "2027-01-02",
+    "hedge": null,
+    "safety_caveat": null,
+    "applies_to": {
+      "page_types": [
+        "rebates"
+      ],
+      "services": [
+        "attic",
+        "air-sealing",
+        "energy-audit"
+      ]
+    },
+    "actor": "program",
+    "pages": [
+      {
+        "path": "rebates.html",
+        "surfaces": [
+          "body"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "FIXTURE",
+      "command": "python3 ops/genesis/validate_genesis.py ops/genesis/fixtures/exampleton/intake.json ops/genesis/fixtures/exampleton/market_pack.json ops/genesis/fixtures/exampleton/facts/registry.json"
+    }
+  },
+  {
+    "key": "ext-housing-age",
+    "claim": "Example County (FIXTURE) housing data shows “more than half of owner-occupied homes in Exampleton were built before 1980”.",
+    "source": {
+      "title": "Example County Housing Profile (FIXTURE)",
+      "publisher": "Example County (FIXTURE)",
+      "url": "https://example.invalid/example-county/housing-profile"
+    },
+    "retrieved": {
+      "date": "2026-10-02",
+      "fingerprint": "8d6b50cabbb4f32b75fb08893807734305ed8e1592c8d2c248816f77772e6dc9"
+    },
+    "quote": {
+      "text": "more than half of owner-occupied homes in Exampleton were built before 1980",
+      "mode": "quote"
+    },
+    "territory": {},
+    "territory_evidence": {},
+    "status": {
+      "value": "n/a",
+      "as_of": "2026-10-02"
+    },
+    "next_review": "2027-01-02",
+    "hedge": null,
+    "safety_caveat": null,
+    "applies_to": {
+      "page_types": [
+        "home"
+      ],
+      "services": []
+    },
+    "actor": "publisher",
+    "pages": [
+      {
+        "path": "index.html",
+        "surfaces": [
+          "body"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "FIXTURE",
+      "command": "python3 ops/genesis/validate_genesis.py ops/genesis/fixtures/exampleton/intake.json ops/genesis/fixtures/exampleton/market_pack.json ops/genesis/fixtures/exampleton/facts/registry.json"
+    }
+  },
+  {
+    "key": "ext-energy-code",
+    "claim": "Exampleton (FIXTURE) builds to the 2021 IECC, which calls for R-60 attic insulation in new homes.",
+    "source": {
+      "title": "Adopted Building Codes (FIXTURE)",
+      "publisher": "City of Exampleton (FIXTURE) Building Department",
+      "url": "https://example.invalid/exampleton/building/adopted-codes"
+    },
+    "retrieved": {
+      "date": "2026-10-02",
+      "fingerprint": "8f570930b7361d22c69c1f89ba6f3a07a6d082623d17e57d11357fa904a454fe"
+    },
+    "quote": {
+      "text": "The City of Exampleton has adopted the 2021 IECC, which requires R-60 ceiling insulation for new construction in this climate zone.",
+      "mode": "paraphrase"
+    },
+    "territory": {},
+    "territory_evidence": {},
+    "status": {
+      "value": "n/a",
+      "as_of": "2026-10-02"
+    },
+    "next_review": "2027-01-02",
+    "hedge": null,
+    "safety_caveat": null,
+    "applies_to": {
+      "page_types": [
+        "service"
+      ],
+      "services": [
+        "attic",
+        "blown-in"
+      ]
+    },
+    "actor": "publisher",
+    "pages": [
+      {
+        "path": "attic.html",
+        "surfaces": [
+          "body"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "FIXTURE",
+      "command": "python3 ops/genesis/validate_genesis.py ops/genesis/fixtures/exampleton/intake.json ops/genesis/fixtures/exampleton/market_pack.json ops/genesis/fixtures/exampleton/facts/registry.json"
+    }
+  }
+]

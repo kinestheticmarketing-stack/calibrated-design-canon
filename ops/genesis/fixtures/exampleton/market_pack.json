@@ -1,0 +1,82 @@
+{
+  "towns": [
+    {
+      "name": "Exampleton (FIXTURE)",
+      "county": "Example County (FIXTURE)",
+      "jurisdiction": "City of Exampleton (FIXTURE)",
+      "building_dept_url": "https://example.invalid/exampleton/building",
+      "code_edition": "2021 IECC (FIXTURE adoption)",
+      "climate_zone": "5B",
+      "elevation_ft": 5280,
+      "gas_utility": "Exampleton Gas Co. (FIXTURE)",
+      "electric_utility": "Exampleton Electric Co-op (FIXTURE)",
+      "territory_state": "NAMED",
+      "absence_reason": null,
+      "facts_keys": [
+        "ext-utility-territory",
+        "ext-energy-code"
+      ]
+    },
+    {
+      "name": "North Exampleton (FIXTURE)",
+      "county": "Example County (FIXTURE)",
+      "jurisdiction": "Town of North Exampleton (FIXTURE)",
+      "building_dept_url": "https://example.invalid/north-exampleton/building",
+      "code_edition": "2021 IECC (FIXTURE adoption)",
+      "climate_zone": "5B",
+      "elevation_ft": 5410,
+      "gas_utility": "Exampleton Gas Co. (FIXTURE)",
+      "electric_utility": "Exampleton Electric Co-op (FIXTURE)",
+      "territory_state": "SPLIT",
+      "absence_reason": null,
+      "facts_keys": [
+        "ext-utility-territory"
+      ]
+    },
+    {
+      "name": "Sampleville (FIXTURE)",
+      "county": "Example County (FIXTURE)",
+      "jurisdiction": "Example County (FIXTURE), unincorporated",
+      "building_dept_url": "https://example.invalid/example-county/building",
+      "code_edition": "2021 IECC (FIXTURE adoption)",
+      "climate_zone": "5B",
+      "elevation_ft": 5150,
+      "gas_utility": "Exampleton Gas Co. (FIXTURE)",
+      "electric_utility": "Exampleton Electric Co-op (FIXTURE)",
+      "territory_state": "UNKNOWN",
+      "absence_reason": "No utility filing names Sampleville (FIXTURE); the service-territory map is county-level only.",
+      "facts_keys": [
+        "ext-utility-territory"
+      ]
+    }
+  ],
+  "programs": [
+    {
+      "name": "Exampleton Home Energy Program (FIXTURE)",
+      "operator": "Exampleton Gas Co. (FIXTURE)",
+      "page_url": "https://example.invalid/gas/energy-program",
+      "towns_served": [
+        "Exampleton (FIXTURE)",
+        "North Exampleton (FIXTURE)"
+      ],
+      "facts_key": "ext-rebate-program"
+    }
+  ],
+  "housing": {
+    "facts_keys": [
+      "ext-housing-age"
+    ]
+  },
+  "code_facts": {
+    "attic_r": "R-60",
+    "wall_r": "R-20+5ci",
+    "floor_r": "R-30",
+    "ci_condition": "Continuous insulation is required on above-grade exterior walls in climate zone 5 (FIXTURE).",
+    "blower_door_ach": 3,
+    "facts_keys": [
+      "ext-energy-code"
+    ]
+  },
+  "citations_floor": 3,
+  "peer_publics": []
+}

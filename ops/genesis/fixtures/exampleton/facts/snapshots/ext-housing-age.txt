@@ -1,0 +1,2 @@
+FIXTURE snapshot. Example County Housing Profile (FIXTURE).
+County survey estimates show that more than half of owner-occupied homes in Exampleton were built before 1980. Many of these homes have little or no attic insulation by current standards.
