@@ -104,7 +104,7 @@
                 "type": ["string", "null"]
               }
             },
-            "if": {"properties": {"state": {"const": "UNKNOWN"}}},
+            "if": {"required": ["state"], "properties": {"state": {"const": "UNKNOWN"}}},
             "then": {
               "required": ["absence_reason"],
               "properties": {"absence_reason": {"type": "string", "minLength": 1}}

@@ -26,9 +26,10 @@ python3 ops/checks/run_checks.py --site ~/code/denvercoloradoinsulation.com \
 Order of a run:
 
 1. Load the manifest. A module name not present in `modules/` is a config error.
-2. For every selected module: import it, verify every `REQUIRES` key is in the
-   manifest and every path exists; unknown data keys or options are errors too.
-   Any failure stops the run, naming module, key and path.
+2. For every selected module: import it, verify every `REQUIRES` key not in
+   `OPTIONAL_KEYS` is in the manifest and every path exists; unknown data keys
+   or options are errors too. Any failure stops the run, naming module, key and
+   path.
 3. Run **every** selected module's canary before any real check. Missing
    fixture = `NO CANARY`; zero findings = `BLIND INSTRUMENT`; an exception =
    `CANARY ERROR`. If any canary fails, no real check runs.
