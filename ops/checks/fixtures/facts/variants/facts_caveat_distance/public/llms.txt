@@ -1,0 +1,13 @@
+# Front Range Attic Co.
+
+> Attic insulation and air sealing contractor serving Fort Collins and Loveland, Colorado.
+
+## Key facts
+
+- The Example Energy Office says homeowners can save “up to 20% on heating and cooling costs” by air sealing and adding attic insulation.
+- Closed-cell spray foam cut measured air leakage through the attic floor by about half in most tested homes.
+
+## Pages
+
+- [Attic insulation](attic.html)
+- [Rebates](rebates.html)

@@ -1,0 +1,6 @@
+{
+ "module": "facts_quote_snapshot",
+ "expected": 2,
+ "dates": {},
+ "description": "air-sealing-savings quote.text 20%->25% with fingerprint recomputed to match (substring miss only, 1); nfr-gas-attic-rebate fingerprint zeroed (mismatch, 1)."
+}

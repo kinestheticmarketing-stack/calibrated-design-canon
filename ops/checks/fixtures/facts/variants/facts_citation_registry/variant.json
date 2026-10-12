@@ -1,0 +1,10 @@
+{
+ "module": "facts_citation_registry",
+ "expected": 2,
+ "dates": {
+  "nfr-gas-attic-rebate": {
+   "retrieved.date": -93
+  }
+ },
+ "description": "rebates.html gains a cited-stat href absent from the registry (1); nfr-gas-attic-rebate (cited once, rebates.html) retrieved.date = today-93 (1)."
+}

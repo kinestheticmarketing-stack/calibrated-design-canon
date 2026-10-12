@@ -1,0 +1,43 @@
+{
+ "site": "FACTS-FIXTURE",
+ "public_dir": "public",
+ "modules": {
+  "facts_schema": {
+   "data": {
+    "facts_registry": "facts/registry.json"
+   },
+   "options": {}
+  },
+  "facts_review_due": {
+   "data": {
+    "facts_registry": "facts/registry.json"
+   },
+   "options": {}
+  },
+  "facts_quote_snapshot": {
+   "data": {
+    "facts_registry": "facts/registry.json",
+    "facts_snapshots": "facts/snapshots"
+   },
+   "options": {}
+  },
+  "facts_pages_coverage": {
+   "data": {
+    "facts_registry": "facts/registry.json"
+   },
+   "options": {}
+  },
+  "facts_citation_registry": {
+   "data": {
+    "facts_registry": "facts/registry.json"
+   },
+   "options": {}
+  },
+  "facts_caveat_distance": {
+   "data": {
+    "facts_registry": "facts/registry.json"
+   },
+   "options": {}
+  }
+ }
+}

@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ops/facts/schema.json",
+  "title": "Facts registry",
+  "description": "A property's facts/registry.json: a JSON array of fact records.",
+  "type": "array",
+  "items": {"$ref": "#/$defs/record"},
+  "$defs": {
+    "date": {
+      "description": "Calendar date YYYY-MM-DD; the validator also checks it is a real date.",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "format": "date"
+    },
+    "nonempty": {"type": "string", "minLength": 1},
+    "record": {
+      "description": "One verified fact and every place it is rendered.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "claim", "source", "retrieved", "quote", "territory", "territory_evidence", "status", "next_review", "hedge", "safety_caveat", "applies_to", "actor", "pages", "dependents", "superseded_by", "verified_by"],
+      "properties": {
+        "key": {
+          "description": "Unique id; also the snapshot filename (snapshots/<key>.txt).",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "claim": {
+          "description": "The exact text as rendered on the listed page surfaces.",
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["title", "publisher"],
+          "properties": {
+            "title": {"$ref": "#/$defs/nonempty"},
+            "publisher": {"$ref": "#/$defs/nonempty"},
+            "url": {"$ref": "#/$defs/nonempty"},
+            "doc_id": {"$ref": "#/$defs/nonempty"}
+          },
+          "anyOf": [{"required": ["url"]}, {"required": ["doc_id"]}]
+        },
+        "retrieved": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["date", "fingerprint"],
+          "properties": {
+            "date": {"$ref": "#/$defs/date"},
+            "fingerprint": {
+              "description": "sha256 hex of the normalized quote.text.",
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "quote": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "mode"],
+          "properties": {
+            "text": {
+              "description": "The source's own words, as found in the stored snapshot.",
+              "type": "string",
+              "minLength": 1
+            },
+            "mode": {
+              "description": "quote: pages render quote.text verbatim inside quotation marks; paraphrase: pages restate it and must not put quote.text in quotation marks.",
+              "enum": ["quote", "paraphrase"]
+            }
+          }
+        },
+        "territory": {
+          "description": "Map of town name to its utilities/jurisdiction; may be empty.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["gas_utility", "electric_utility", "jurisdiction", "code_edition"],
+            "properties": {
+              "gas_utility": {"type": "string"},
+              "electric_utility": {"type": "string"},
+              "jurisdiction": {"type": "string"},
+              "code_edition": {"type": "string"}
+            }
+          }
+        },
+        "territory_evidence": {
+          "description": "Map of town name to the evidence for its territory entry; towns must pair with territory when territory is non-empty.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["town_source", "utility_filing", "state"],
+            "properties": {
+              "town_source": {"type": "string"},
+              "utility_filing": {"type": "string"},
+              "state": {
+                "description": "NAMED: a source names the town; SPLIT: town is split across utilities/jurisdictions; UNKNOWN: no evidence found.",
+                "enum": ["NAMED", "SPLIT", "UNKNOWN"]
+              },
+              "absence_reason": {
+                "description": "Why evidence is absent; required and non-empty when state is UNKNOWN.",
+                "type": ["string", "null"]
+              }
+            },
+            "if": {"required": ["state"], "properties": {"state": {"const": "UNKNOWN"}}},
+            "then": {
+              "required": ["absence_reason"],
+              "properties": {"absence_reason": {"type": "string", "minLength": 1}}
+            }
+          }
+        },
+        "status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "as_of"],
+          "properties": {
+            "value": {"enum": ["open", "closed", "waitlist", "launched", "unconfirmed", "n/a"]},
+            "as_of": {"$ref": "#/$defs/date"}
+          }
+        },
+        "next_review": {
+          "description": "Date by which the fact must be re-verified against its source.",
+          "$ref": "#/$defs/date"
+        },
+        "hedge": {
+          "description": "Qualifier that must appear within max_words of each body occurrence of the claim; null if none.",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["text", "max_words"],
+          "properties": {
+            "text": {"$ref": "#/$defs/nonempty"},
+            "max_words": {"type": "integer", "minimum": 1}
+          }
+        },
+        "safety_caveat": {
+          "description": "Text every listed page must carry; null if none.",
+          "type": ["string", "null"]
+        },
+        "applies_to": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["page_types", "services"],
+          "properties": {
+            "page_types": {"type": "array", "items": {"type": "string"}},
+            "services": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "actor": {
+          "description": "Whose action or offer the claim describes.",
+          "enum": ["site", "contractor", "utility", "program", "publisher"]
+        },
+        "pages": {
+          "description": "Every (page, surface) where the claim is rendered.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "surfaces"],
+            "properties": {
+              "path": {
+                "description": "Path relative to public/, e.g. index.html or llms.txt.",
+                "type": "string",
+                "minLength": 1
+              },
+              "surfaces": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {"enum": ["body", "title", "meta", "og", "twitter", "jsonld", "llms", "embed", "og_image"]}
+              }
+            }
+          }
+        },
+        "dependents": {
+          "description": "Other text that restates or derives from this fact and must change with it.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "text"],
+            "properties": {
+              "path": {"type": "string"},
+              "text": {"type": "string"}
+            }
+          }
+        },
+        "superseded_by": {
+          "description": "Set when this fact replaced earlier text; null otherwise.",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["retired_text", "replacement_key"],
+          "properties": {
+            "retired_text": {"type": "string"},
+            "replacement_key": {"type": "string"}
+          }
+        },
+        "verified_by": {
+          "description": "Commit and command proving the fact was checked.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["commit", "command"],
+          "properties": {
+            "commit": {"type": "string"},
+            "command": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}
