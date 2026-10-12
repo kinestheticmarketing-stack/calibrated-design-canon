@@ -8,7 +8,12 @@ THRESHOLD. A missing local or peer page is a finding (the site check exits 1
 on LOCAL MISSING / CONTROL MISSING too).
 
 Every site-specific value is read from the site by declared paths:
-  data.peer_public  the peer property's built public dir (read only)
+  data.peer_public  the peer property's built public dir (read only). A
+                    relative path that stays inside the site's checkout
+                    resolves within it; one that leaves it resolves against
+                    the MAIN checkout root (parent of git --git-common-dir),
+                    so it works from a git worktree; absolute and canon:
+                    values are used as given.
   data.config       the site's .py check file (top-level literal assignments
                     PAIRS, STRIP_PATTERNS, THRESHOLD, SHINGLE_N, extracted with
                     ast.literal_eval; site code is never imported or executed)
@@ -20,17 +25,22 @@ import ast
 import html
 import json
 import re
+import subprocess
+from pathlib import Path
 
 NAME = "cross_property_similarity"
 DESCRIPTION = ("Shingle-Jaccard similarity of each listed page against its "
                "peer-property counterpart must stay below the site threshold.")
 REQUIRES = {
-    "peer_public": "the peer property's built public dir (absolute or "
-                   "relative to the site root); read only",
+    "peer_public": "the peer property's built public dir; absolute, canon:, "
+                   "or relative: a relative path that stays inside the site's "
+                   "checkout resolves within it; one that leaves it resolves "
+                   "against the MAIN checkout root; read only",
     "config": "file holding PAIRS, STRIP_PATTERNS, THRESHOLD, SHINGLE_N: a .py "
               "file (literal top-level assignments, read with ast.literal_eval) "
               "or a JSON object with those keys",
 }
+LITERAL_KEYS = {"peer_public"}
 OPTIONS = {
     "pairs_name": "PAIRS",
     "strip_name": "STRIP_PATTERNS",
@@ -39,11 +49,40 @@ OPTIONS = {
 }
 
 
+def _git(root, *args):
+    r = subprocess.run(["git", "-C", str(root), "rev-parse", *args],
+                       capture_output=True, text=True, check=False)
+    return r.stdout.strip() if r.returncode == 0 and r.stdout.strip() else None
+
+
+def _resolve_peer(ctx, raw):
+    """canon:/absolute via ctx.resolve. A relative path that stays inside the
+    site's checkout resolves within it; one that leaves it resolves against
+    the MAIN checkout root."""
+    if not isinstance(raw, str) or not raw:
+        raise ValueError("CONFIG ERROR: peer_public must be a non-empty path "
+                         "string, got %r" % (raw,))
+    if raw.startswith("canon:") or Path(raw).expanduser().is_absolute():
+        return ctx.resolve(raw)
+    site = Path(ctx.site_root).resolve()
+    rel = Path(raw).expanduser()
+    top = _git(site, "--show-toplevel")
+    common = _git(site, "--path-format=absolute", "--git-common-dir")
+    if top and common:
+        top = Path(top).resolve()
+        candidate = (site / rel).resolve()
+        if candidate.is_relative_to(top):
+            return candidate
+        base = Path(common).parent / site.relative_to(top)
+        return (base / rel).resolve()
+    return (site / rel).resolve()
+
+
 def _load_config(path, names):
     if str(path).endswith(".json"):
-        obj = json.loads(open(path, encoding="utf-8").read())
+        obj = json.loads(Path(path).read_text(encoding="utf-8"))
         return {k: obj[v] for k, v in names.items()}
-    tree = ast.parse(open(path, encoding="utf-8").read(), filename=str(path))
+    tree = ast.parse(Path(path).read_text(encoding="utf-8"), filename=str(path))
     found = {}
     for node in tree.body:
         targets = []
@@ -63,7 +102,7 @@ def _load_config(path, names):
 
 
 def _text(path, strip):
-    s = open(path, encoding="utf-8").read()
+    s = Path(path).read_text(encoding="utf-8")
     for pat in strip:
         s = re.sub(pat, " ", s, flags=re.S | re.I)
     s = re.sub(r"<[^>]+>", " ", s)
@@ -94,9 +133,11 @@ def check(ctx):
     threshold, n = float(cfg["threshold"]), int(cfg["n"])
     if not pairs:
         raise ValueError("config PAIRS is empty; nothing to judge")
-    peer = ctx.data["peer_public"]
+    raw = ctx.data["peer_public"]
+    peer = _resolve_peer(ctx, raw)
     if not peer.is_dir():
-        raise ValueError("peer_public is not a directory: %s" % peer)
+        raise ValueError("CONFIG ERROR: peer_public %r resolves to %s, which "
+                         "is not an existing directory" % (raw, peer))
     findings = []
     for local, control, label in pairs:
         lp, cp = ctx.public_dir / local, peer / control

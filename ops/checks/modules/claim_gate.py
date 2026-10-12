@@ -76,8 +76,10 @@ def check(ctx):
         if m:
             rid, name, raw, adj = m.groups()
             out.append(Finding(NAME, "public/",
-                               "claim gate %s %s: %s blocking finding(s); run "
-                               "ops/claim_gate.sh in the site for the hits"
+                               "claim gate %s %s: %s blocking finding(s); for "
+                               "the hits run from the canon root: python3 "
+                               "ops/claim_gate/claim_gate.py --config <config> "
+                               "--repo <site>"
                                % (rid, name.strip(), adj), l.strip()))
     if not out:
         out.append(Finding(NAME, "public/", "claim gate exit 1 but no FAIL "
