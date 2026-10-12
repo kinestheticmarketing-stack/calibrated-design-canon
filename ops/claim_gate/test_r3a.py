@@ -239,6 +239,69 @@ class TestNormalization(GateCase):
                 rc, out = self.gate([rendered], allowlist={"entries": []})
                 self.assertR3aFails(rc, out)
 
+    # (d, corrective D1) the ENTRY side carries the entity or the glyph and
+    # gets the same dec()-then-collapse pipeline the page side got. Each
+    # entry must clear its page with no STALE line.
+    ENTRY_CASES = [
+        ("entry &amp; (copied from page source)",
+         "Xcel pays a $400 rebate for attic &amp; wall insulation.",
+         "Xcel pays a $400 rebate for attic &amp; wall insulation."),
+        ("entry &amp;amp; (page source double-encoded)",
+         "Xcel pays a $400 rebate for attic &amp;amp; wall insulation.",
+         "Xcel pays a $400 rebate for attic &amp;amp; wall insulation."),
+        ("entry &ndash;",
+         "Xcel pays a $500 rebate for attic&ndash;floor insulation.",
+         "Xcel pays a $500 rebate for attic-floor insulation."),
+        ("entry literal en dash",
+         "Xcel pays a $500 rebate for attic–floor insulation.",
+         "Xcel pays a $500 rebate for attic&ndash;floor insulation."),
+        ("entry literal em dash",
+         "Xcel pays a $500 rebate — for attic insulation.",
+         "Xcel pays a $500 rebate &mdash; for attic insulation."),
+        ("entry hyphen, page literal en dash",
+         "Xcel pays a $500 rebate for attic-floor insulation.",
+         "Xcel pays a $500 rebate for attic–floor insulation."),
+    ]
+
+    def test_d_entry_side_entities_and_dashes_clear(self):
+        for name, allowed, rendered in self.ENTRY_CASES:
+            with self.subTest(case=name):
+                rc, out = self.gate([rendered],
+                                    allowlist={"entries": [entry(allowed)]})
+                self.assertR3aClean(rc, out)
+                self.assertGreater(summary_row(out, "R3a")[0], 0,
+                                   "plant not seen at all")
+                self.assertNotIn("STALE ALLOWLIST ENTRY", out)
+
+
+class TestMoneyNumerals(GateCase):
+    # (corrective D2) a 1900-2099 numeral is money only with a directly
+    # attached payout binder or "dollars".
+    def test_d2_code_year_not_r3a(self):
+        rc, out = self.gate(["Homes here are built up to the 2021 IECC, yes "
+                             "- several Xcel rebate programs are live."],
+                            allowlist={"entries": []})
+        self.assertR3aClean(rc, out)
+        self.assertEqual(summary_row(out, "R3a")[0], 0)
+
+    def test_d2_attached_binder_year_range_amount_is_r3a(self):
+        s = "Xcel pays up to 2000 for attic work."
+        rc, out = self.gate([s], allowlist={"entries": []})
+        self.assertR3aFails(rc, out)
+        hits, _ = enumerated(section(out, "R3a"))
+        t2 = [h for h in hits if " T2 " in h and "2000" in h]
+        self.assertEqual(len(t2), 1, hits)
+        self.assertIn(s, t2[0])
+
+    # (corrective D3) a T2 numeral inside a $ figure is not a second hit.
+    def test_d3_dollar_figure_counted_once(self):
+        rc, out = self.gate([PLANT], allowlist={"entries": []})
+        self.assertR3aFails(rc, out)
+        hits, _ = enumerated(section(out, "R3a"))
+        self.assertEqual(len([h for h in hits if " T1 " in h]), 1, hits)
+        self.assertEqual([h for h in hits if " T2 " in h], [])
+        self.assertIn("R3 RAW SPLIT", out)
+
 
 class TestEnforcement(GateCase):
     # (e)
