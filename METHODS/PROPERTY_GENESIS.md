@@ -1497,6 +1497,42 @@ Verify: `grep -n "Facts registry (2026-10)" METHODS/PROPERTY_GENESIS.md`
 
 ---
 
+## Intake and market pack (2026-10)
+
+Phase 1's inputs, written down as two files instead of carried in a
+session. **Two halves, two owners:**
+
+- **The intake** — the DIRECTOR fills it, one per property, using
+  `METHODS/INTAKE_FORM.md`; schema `ops/genesis/intake.schema.json`.
+- **The market pack** — the RESEARCH agents fill it; schema
+  `ops/genesis/market_pack.schema.json`: towns with their utilities and
+  territory state (`NAMED`, `SPLIT`, `UNKNOWN`), programs as wayfinding
+  only (no dollar or amount field exists), housing and code facts. Every
+  entry is backed by facts registry keys.
+
+Both live in the property's PRIVATE repo: `ops/intake.json`,
+`ops/market_pack.json`, `facts/registry.json` + `facts/snapshots/`.
+**Never in canon.** Canon holds only the Exampleton FIXTURE at
+`ops/genesis/fixtures/exampleton/`.
+
+The gate. Phase 1 research is not complete, and no build starts, until
+`python3 ops/genesis/validate_genesis.py ops/intake.json ops/market_pack.json facts/registry.json`
+exits 0 (1 invalid, 2 unreadable). Beyond the schemas and the registry,
+it cross-checks: every facts key the pack uses exists in the registry;
+every intake town has a market pack town; every program town is a pack
+town; each town's territory state agrees with the `territory_evidence`
+of the facts it cites; no value in either file is shaped like a secret.
+
+The steps only the Director can do (tracking number, sending email,
+server secrets, Search Console) live in `METHODS/INTAKE_FORM.md`, "Only
+the Director can do these".
+
+Tests: `python3 -m unittest ops/genesis/test_genesis.py`.
+
+Verify: `grep -n "Intake and market pack (2026-10)" METHODS/PROPERTY_GENESIS.md`
+
+---
+
 ## What a green gate does not prove
 
 Phase 8 ends on a sentence this section exists to generalize: *a gate
