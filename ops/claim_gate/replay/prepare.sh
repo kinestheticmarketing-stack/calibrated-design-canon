@@ -46,10 +46,18 @@ if [ -n "$SHA" ]; then
   PREPARE_WT="$WT"
   git -C "$SRC" worktree add --detach "$WT" "$SHA" >/dev/null 2>&1 || true
   cp -R "$WT/ops/claim_gate" "$CANON/ops/claim_gate"
+  # K45: R3a imports the retired-string lock's normalizer from ops/checks.
+  if [ -d "$WT/ops/checks/modules" ]; then
+    mkdir -p "$CANON/ops/checks"
+    cp -R "$WT/ops/checks/modules" "$CANON/ops/checks/modules"
+  fi
   git -C "$SRC" worktree remove --force "$WT" >/dev/null 2>&1 || true
   PREPARE_WT=""
 else
   cp -R "$SRC/ops/claim_gate" "$CANON/ops/claim_gate"
+  # K45: R3a imports the retired-string lock's normalizer from ops/checks.
+  mkdir -p "$CANON/ops/checks"
+  cp -R "$SRC/ops/checks/modules" "$CANON/ops/checks/modules"
 fi
 rm -rf "$CANON/ops/claim_gate/__pycache__"
 python3 - "$CANON" <<'PY'

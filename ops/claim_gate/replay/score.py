@@ -21,7 +21,7 @@ def sections(path):
     for ln in lines:
         m = RULE_HEAD.match(ln.strip()) or RULE_HEAD.match(ln)
         if ln.strip().startswith("━━━"):
-            mm = re.match(r"━━━\s+(R\d+)\s", ln.strip())
+            mm = re.match(r"━━━\s+(R\d+[a-z]?)\s", ln.strip())
             cur = mm.group(1) if mm else None
             if cur:
                 out[cur] = {"all": [], "adj": [], "removed": []}
@@ -38,7 +38,52 @@ def sections(path):
             continue
         if mode:
             out[cur][mode].append(ln)
+    _merge_r3_split(out)
     return txt, out
+
+
+_RECONCILE = re.compile(r"R3 REPORTED RECONCILE: today's R3 adjudication "
+                        r"(\d+) = R3b reported (\d+) \+ R3a hits today's "
+                        r"filters would have reported (\d+)")
+
+
+def _merge_r3_split(out):
+    """K45 split R3 into R3a and R3b. Rebuild the PRE-SPLIT R3 section these
+    rows were written against, exactly -- never the generous union:
+
+      adj      = R3b's adjudicated rows + the R3a rows tagged `R3:reported`
+                 (the ones R3's own filters would have reported);
+      removed  = R3b's removed rows + the R3a rows tagged `R3:filtered`;
+      ADJ      = the RECONCILE line's "today's R3 adjudication" figure.
+
+    R3a's own unfiltered rows (and its word-form `R3:none` rows) are NOT
+    counted as R3: that would inflate every R3 row toward CAUGHT, the
+    direction this file says a defect score must never drift. The R3a/R3b
+    keys are removed afterwards so cross-rule scans (on_artifact) see R3
+    once. An output from a pre-split gate has a real R3 section and is left
+    alone."""
+    if "R3" in out or not ("R3a" in out or "R3b" in out):
+        return
+    a = out.pop("R3a", {"all": [], "adj": [], "removed": []})
+    b = out.pop("R3b", {"all": [], "adj": [], "removed": []})
+    n = None
+    for ln in b["all"]:
+        m = _RECONCILE.search(ln)
+        if m:
+            n = int(m.group(1))
+    head = ["  ADJUDICATED  R3 rebuilt from R3b + R3a[R3:reported] by "
+            "score.py  %d" % n] if n is not None else []
+    # An R3a row the site's allowlist cleared sits in R3a's REMOVED list as
+    # `  [<filter label>] <row>`; R3 never saw that filter, so the row goes
+    # back to the plain hit shape before it is sorted by its R3 tag.
+    rows = a["adj"] + [re.sub(r"^\s*\[[^\]]*\]\s", "  ", l)
+                       for l in a["removed"]]
+    out["R3"] = {
+        "all": head + b["all"] + a["all"],
+        "adj": b["adj"] + [l for l in rows if "| R3:reported |" in l],
+        "removed": b["removed"] + [l for l in rows
+                                   if "| R3:filtered |" in l],
+    }
 
 
 def adj_count(sec, rid):

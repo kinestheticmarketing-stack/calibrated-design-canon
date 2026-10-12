@@ -2971,6 +2971,30 @@ def _t2_structural(ctx, art, text, pos, matched):
     return ""
 
 
+def r3_cleared_as_year(h, year_binders):
+    """R3's YEAR decision, shared verbatim by R3b's f_year filter and R3a's
+    money-numeral intake (K45): True when a T2 hit is a calendar year
+    1900-2099 -- a year preposition within 40 chars wins; otherwise a payout
+    binder within 40 chars keeps it as a possible amount. See f_year in
+    rule_R3 for the history of every clause."""
+    if not (h.note and re.fullmatch(r"(19|20)\d\d", h.note)):
+        return False
+    # A YEAR PREPOSITION OUTRANKS A PAYOUT BINDER. The binder test looks
+    # 40 characters wide, so an unrelated rebate word anywhere in the
+    # window re-armed a plain calendar year: GCI's "My home was built
+    # after 2010 - is there a rebate worth chasing?" was held because
+    # "rebate" is 24 characters away, and its <title> "What Actually Pays
+    # in 2026" because "Pays" is 12 away. Neither is a payout.
+    # These prepositions cannot precede a MONEY amount in English -- an
+    # amount takes "of", "at", "up to", none of which are listed here --
+    # so clearing on them cannot hide a bare rebate figure.
+    if _T2_YEARPREP.search(getattr(h, "r3_w40", "") or ""):
+        return True
+    if has_any(getattr(h, "r3_w40", "") or "", year_binders, word=False):
+        return False
+    return True
+
+
 def rule_R3(ctx, res):
     c = ctx.r("R3")
     dollar = re.compile(c.get("dollar_pattern", r"\$[0-9][0-9,.]*"))
@@ -3135,22 +3159,7 @@ def rule_R3(ctx, res):
         # characters ("up to", "pays", "capped at", "rebate of", ...). Those
         # are the constructions in which a bare amount in the year range is
         # actually plausible, and they stay.
-        if not (h.note and re.fullmatch(r"(19|20)\d\d", h.note)):
-            return False
-        # A YEAR PREPOSITION OUTRANKS A PAYOUT BINDER. The binder test looks
-        # 40 characters wide, so an unrelated rebate word anywhere in the
-        # window re-armed a plain calendar year: GCI's "My home was built
-        # after 2010 - is there a rebate worth chasing?" was held because
-        # "rebate" is 24 characters away, and its <title> "What Actually Pays
-        # in 2026" because "Pays" is 12 away. Neither is a payout.
-        # These prepositions cannot precede a MONEY amount in English -- an
-        # amount takes "of", "at", "up to", none of which are listed here --
-        # so clearing on them cannot hide a bare rebate figure.
-        if _T2_YEARPREP.search(getattr(h, "r3_w40", "") or ""):
-            return True
-        if has_any(getattr(h, "r3_w40", "") or "", year_binders, word=False):
-            return False
-        return True
+        return r3_cleared_as_year(h, year_binders)
 
     def f_comp(h):
         return has_any(h.sentence, computed, word=False)
@@ -3263,6 +3272,7 @@ _R3A_WORDFORM_RE = re.compile(
 # figure's own sentence can be found on the surface that carries it.
 _R3A_MARK_BASE = 0xF0000
 _R3A_LOC_RE = re.compile(r"^(raw|dec|rate)@(\d+)$")
+_R3A_PERCENT_RE = re.compile(r"\s?(?:%|percent\b)", re.I)
 _R3A_ATTR_RE = re.compile(
     r"""[\w:.-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)""")
 _R3A_NOT_RENDERED = (S.S_CITE, S.S_CONST, S.S_SRC)
@@ -3517,11 +3527,37 @@ def _r3_shared(ctx):
     programs = _r3a_programs(ctx)
     arts = dict((a.rel, a) for a in ctx.read_artifacts())
 
+    year_binders = ctx.r("R3").get("year_payout_binders", []) or []
+
+    def money_numeral(h):
+        # K45 follow-up ruling. T1 ($-anchored) ALWAYS qualifies, with no
+        # filter of any kind. A T2 hit qualifies only as a MONEY numeral:
+        # (a) no structural reason (_t2_structural), (b) not a calendar year
+        # by R3's own year decision (r3_cleared_as_year, shared with R3b's
+        # f_year), (c) not followed by optional space + "%" / "percent". No
+        # other R3 filter is consulted -- those are the ones that could hide
+        # a rebate amount. Non-qualifying T2 hits stay R3b.
+        if h.sub == "T1":
+            return True
+        if h.sub != "T2":
+            return False
+        if getattr(h, "r3_struct", ""):
+            return False
+        if r3_cleared_as_year(h, year_binders):
+            return False
+        m = _R3A_LOC_RE.match(str(h.locator))
+        art = arts.get(h.rel)
+        if m and art is not None:
+            at = int(m.group(2)) + len(h.note or "")
+            if _R3A_PERCENT_RE.match(art.dec, at):
+                return False
+        return True
+
     want = {}
     coord = {}
     pos_cache = {}
     for h in core.raw:
-        if h.sub not in ("T1", "T2"):
+        if not money_numeral(h):
             continue
         m = _R3A_LOC_RE.match(str(h.locator))
         art = arts.get(h.rel)
@@ -3543,9 +3579,13 @@ def _r3_shared(ctx):
             resolved[(rel, level, p)] = v
 
     r3a, a_ids = [], set()
+    core_adj = set(id(h) for h in core.adjudicated)
     fb_vis = fb_win = 0
+    t2_not_money = 0
     for h in core.raw:
-        if h.sub not in ("T1", "T2"):
+        if h.sub == "T2" and not money_numeral(h):
+            t2_not_money += 1
+        if not money_numeral(h):
             continue
         r = None
         if id(h) in coord:
@@ -3572,9 +3612,15 @@ def _r3_shared(ctx):
         if not trig:
             continue
         a_ids.add(id(h))
+        # `R3:reported` / `R3:filtered` -- whether R3's own filters would
+        # have reported this hit. It is the per-hit form of the RECONCILE
+        # line's last term, and what lets replay/score.py rebuild today's R3
+        # adjudicated population from the split output.
         r3a.append(Hit("R3a", h.sub, h.rel, skey, h.locator,
-                       "%s | trigger: %s | %s%s"
-                       % (h.note, ",".join(trig), sent, unresolved),
+                       "%s | %s | trigger: %s | %s%s"
+                       % (h.note, "R3:reported" if id(h) in core_adj
+                          else "R3:filtered", ",".join(trig), sent,
+                          unresolved),
                        note=h.note, sentence=sent))
 
     wf_all = wf_trig = 0
@@ -3593,7 +3639,7 @@ def _r3_shared(ctx):
                 fig = S.collapse(m.group(0))
                 r3a.append(Hit("R3a", "WF", art.rel, skey,
                                "%s#wf%d@%d" % (loc, k, m.start()),
-                               "%s | trigger: %s | %s"
+                               "%s | R3:none | trigger: %s | %s"
                                % (fig, ",".join(trig), sent),
                                note=fig, sentence=sent))
 
@@ -3606,7 +3652,8 @@ def _r3_shared(ctx):
     j = len([h for h in core.adjudicated if id(h) in a_ids])
     got = {"core": core, "labels": labels, "r3a": r3a, "a_ids": a_ids,
            "a_t": a_t, "b_raw": b_raw, "wf": wf_trig, "wf_all": wf_all,
-           "j": j, "fb_vis": fb_vis, "fb_win": fb_win}
+           "j": j, "fb_vis": fb_vis, "fb_win": fb_win,
+           "t2_not_money": t2_not_money}
     ctx._r3_k45 = got
     return got
 
@@ -3631,10 +3678,12 @@ def rule_R3a(ctx, res):
     res.notes.append(
         "R3a raw %d = %d T1 + %d T2 (R3's raw hits, classified BEFORE any R3 "
         "filter) + %d word-form (of %d word-form amounts found; the %d with no "
-        "trigger are reported nowhere)"
+        "trigger are reported nowhere). %d T2 raw hit(s) are not money "
+        "numerals (structural, a calendar year by R3's year decision, or a "
+        "percent) and were never R3a candidates; they stay R3b"
         % (len(res.raw), len([h for h in res.raw if h.sub == "T1"]),
            len([h for h in res.raw if h.sub == "T2"]), sh["wf"],
-           sh["wf_all"], sh["wf_all"] - sh["wf"]))
+           sh["wf_all"], sh["wf_all"] - sh["wf"], sh["t2_not_money"]))
     if sh["fb_vis"] or sh["fb_win"]:
         res.notes.append(
             "R3A SENTENCE FALLBACK: %d T1/T2 hit(s) whose own surface could "
