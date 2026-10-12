@@ -159,8 +159,10 @@ Measured examples that remain **MISSED** and are expected to:
   fire; the next three phrasings will not.
 - R5: *"forty percent"* spelled out and *"by a third"* were added; *"cuts the
   bill to two-thirds of what it was"* will not fire.
-- R3: a dollar figure written entirely in words, and *"pays the most"* as a rank
-  claim outside `rank_words`.
+- R3: a dollar figure written entirely in words OUTSIDE a rebate-trigger
+  sentence (since K45, R3a catches word forms such as *"five hundred dollars"*
+  in the same sentence as a trigger or program name), a word form with no
+  "dollar(s)" in it, and *"pays the most"* as a rank claim outside `rank_words`.
 - R1: the anaphoric form — a quotation attributed in the previous sentence.
 - R7: a superseded proposition restated in new words.
 
@@ -269,7 +271,8 @@ live in the per-property file.
 | R1 | FABRICATED QUOTATION | CLAIM TEST (+ string list for the hand-written-prose half, declared) | yes |
 | R2 | WRONG-UTILITY CLAIM | CLAIM TEST | yes |
 | R2 sub-tests | `a` attribution · `b` inherited cite key · `c` wayfinding URL · `e` electric naming · `h` hedge halves · `q` town qualifier · `x` qualifier cross-contamination · `t` town-blind tool · `p` forbidden program name · `r` locked restriction | | |
-| R3 | REBATE DOLLAR FIGURE | CLAIM TEST for T3; STRING+WINDOW LIST for T1/T2/T4, declared | yes |
+| R3a | REBATE AMOUNT, TRIGGER SENTENCE (K45 split of R3) | CLAIM TEST: a `$` figure, R3 T2 money numeral or word-form amount in the same sentence as a rebate trigger or program name; per-site sentence allowlist only | **yes once the site's `ops/r3a_allowlist.json` exists; without it, NOT ENFORCED (reports, never PASS, exit unaffected)** |
+| R3b | REBATE DOLLAR FIGURE (R3 REST) | CLAIM TEST for T3; STRING+WINDOW LIST for T1/T2/T4, declared; R3 minus R3a's hits | **no — REPORT only (K45 ruling), carries R3's 68.1% measurement** |
 | R4 | STACKING ASSERTION OR DENIAL | CLAIM TEST | yes |
 | R5 | UNCITED STATISTIC | CLAIM TEST | yes |
 | R6 | SELF-CONTRADICTING OUTPUT | CLAIM TEST (G1 branch/print identity, G2 strict monotonicity, G2-DUP two labels at one value, UNPARSEABLE) | yes |
@@ -306,7 +309,10 @@ rebate, which is a rule-shape problem, not a config gap.
 `$`-anchored figure scan, is EXACT — 198/198 on DCI and 206/206 on GCI against
 the human sweep in the 2026-09-17 replay. Demoting R3 wholesale takes T1's
 blocking power with it. The right next step is a per-sub-type verdict so T1 can
-block while T3 reports.
+block while T3 reports. **Done 2026-10-11 (K45):** R3 is split into R3a
+(BLOCKING once a site's `ops/r3a_allowlist.json` exists: an amount in the same
+sentence as a rebate trigger or program name) and R3b (the rest of R3,
+report-only, adjudication unchanged).
 
 **The two schema debts `RULES_SPEC.md` §12.1 records are PAID (2026-09-18),
 and R1 and R7 no longer print `DEGRADED` on any property.** Both messages are

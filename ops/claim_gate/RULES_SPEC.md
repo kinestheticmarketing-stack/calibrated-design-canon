@@ -61,6 +61,8 @@ calibrated-design-canon/
     fixtures/R2c_wrong_utility_anchor_only.html
     fixtures/R2b_og-image.svg
     fixtures/R3a_js_comment_cap.html
+    fixtures/R3a_rebate_sentence.html
+    fixtures/R3b_dollar_no_trigger.html
     fixtures/R3b_jsonld_amount.html
     fixtures/R3c_rank_claim_no_numeral.html
     fixtures/R4a_stacking_denial_jsonld.html
@@ -1187,7 +1189,7 @@ reachability check.
 
 **POSITIVE-CONTROL FIXTURES — three.**
 
-`fixtures/R3a_js_comment_cap.html` — **verbatim from canon
+`fixtures/R3a_js_comment_cap.html` (control **R3b-T2** since K45) — **verbatim from canon
 `METHODS/CANDIDATE-do-not-scope-with-grep-over-html.md` lines 122-123, which
 quotes the bytes that shipped live on GCI for two days** (fixed in `f0203ad`;
 the comment was written 2026-09-08). The fixture must fire on T2 and **must NOT
@@ -1204,7 +1206,7 @@ fire on T1** — that asymmetry is the control:
 </body></html>
 ```
 
-`fixtures/R3b_jsonld_amount.html` — the JSON-LD vector, built from DCI's C4
+`fixtures/R3b_jsonld_amount.html` (control **R3a-LD** since K45) — the JSON-LD vector, built from DCI's C4
 finding (`$600` in `knowsAbout`, ~71 pages) and GCI's largest removed figure
 (`$1,550` × 77, `2cecf33`):
 
@@ -1218,7 +1220,7 @@ finding (`$600` in `knowsAbout`, ~71 pages) and GCI's largest removed figure
 </body></html>
 ```
 
-`fixtures/R3c_rank_claim_no_numeral.html` — **the T3 control. No numeral, no
+`fixtures/R3c_rank_claim_no_numeral.html` (control **R3b-T3** since K45) — **the T3 control. No numeral, no
 `$`, no `cap`.** Two literal strings from GCI `a91dfd4`:
 
 ```html
@@ -1323,6 +1325,53 @@ installed-cost rates."* Additional pressure:
 - R3's expected steady state is therefore `RAW` in the low hundreds with
   `ADJUDICATED` at 0, and **that is exactly why the §4 enumeration of removed
   items is mandatory for this rule above all others.**
+
+#### K45 split (2026-10-11)
+
+R3 now runs as two rule ids (`claim_gate.py` `Rule("R3a", ...)` and
+`Rule("R3b", ...)`). Everything above is the dated R3 record and stays as
+written; this subsection states what changed.
+
+- **R3a — REBATE AMOUNT, TRIGGER SENTENCE. BLOCKING.** It classifies R3's RAW
+  T1/T2 hits BEFORE adjudication, so no R3 filter can hide a rebate amount from
+  it. A hit is R3a when an amount — a T1 `$` figure (unfiltered), a T2 money
+  numeral (a T2 raw hit with no structural reason, not a calendar year by the
+  shared `r3_cleared_as_year` helper, not followed by `%`/`percent`), or a word
+  form (*"five hundred dollars"*) — sits in the SAME sentence as a trigger:
+  `rebate(s)`, `incentive(s)`, `refund(s)`, `cash back`, `tax credit(s)`, or a
+  program name. `pays`/`paid` count only alongside a program name; bare
+  `credit`, `pay` and `payment` never do. Program names match case-sensitively:
+  a built-in floor (`Xcel`, `Atmos`, `Efficiency Works`, `HEAR`, `Power Ahead`,
+  `25C`, `Weatherization`), which `<repo>/ops/r3a_programs.json`
+  (`{"programs": [...]}`) adds to; without that file the gate prints
+  `R3A PROGRAMS: built-in list only`.
+- **The allowlist is the enforcement switch.** `<repo>/ops/r3a_allowlist.json`
+  (`{"entries": [{"sentence", "reason", "ruling"}]}`), matched exactly after
+  `ops/checks/modules/retired_strings.py` `_collapse` on both sides. An entry
+  missing `reason` or `ruling` is a config error (exit 2); an entry matching no
+  hit prints `STALE ALLOWLIST ENTRY: ...` and does not fail. File present (even
+  `{"entries": []}`): R3a is enforced and an unallowlisted hit fails the gate
+  (exit 1; the ops/checks suite reports it as `EXIT_FINDINGS`, never
+  `EXIT_CANARY`). File absent: R3a still reports every hit, prints
+  `R3A NOT ENFORCED: no allowlist at <path> (<n> hits)`, its verdict is
+  NOT ENFORCED (never PASS), and the exit code is unaffected. Paths come from
+  config keys `R3.r3a_allowlist_path` / `R3.r3a_programs_path` (set in
+  `dci.json`, `lgm.json`, `gci.json`); each site's adoption box creates its
+  own file.
+- **R3b — REBATE DOLLAR FIGURE (R3 REST). REPORT-ONLY.** Everything R3 raised
+  that R3a did not claim, adjudicated exactly as R3 was; it carries R3's 68.1%
+  measurement and never changes the exit code. Every run prints
+  `R3 RAW SPLIT: R3 raw N = R3a raw N + R3b raw N` and
+  `R3 REPORTED RECONCILE: ...`; a disagreement is an arithmetic mismatch.
+- **Controls.** R3a-T1 and R3a-WF on `fixtures/R3a_rebate_sentence.html`
+  (*"Xcel pays a $500 rebate ..."* and the meta *"five hundred dollar rebate"*),
+  R3a-LD on `R3b_jsonld_amount.html`; R3b-T2 on `R3a_js_comment_cap.html`,
+  R3b-T1 on `fixtures/R3b_dollar_no_trigger.html` (*"... get $750 back."* — a
+  `$` figure with no trigger stays R3b), R3b-T3 on
+  `R3c_rank_claim_no_numeral.html`. Each has a twin under `fixtures/repaired/`.
+- **Scope limit, by construction.** R3a is sentence-scoped: a trigger in a
+  neighbouring sentence (*"Xcel runs a program. It pays $500."*) leaves the
+  figure in R3b, and a bare numeral reaches R3a only if R3 T2 raised it.
 
 ---
 

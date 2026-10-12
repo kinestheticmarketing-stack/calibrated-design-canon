@@ -80,7 +80,7 @@ DCI main :1113-1129, LGM main :803-817, GCI main :822-832.
 |---|---|---|---|---|
 | `_check_links.py` internal `.html` hrefs resolve in `public/` | :42 `check_internal` | :43 | same as LGM (byte-identical except the docstring) | `public/` |
 | `_intra_similarity_check.py`: 5-word-shingle Jaccard ≥0.30 between pages in one property fails | identical in all three | | | `THRESHOLD` 0.30, `EXCLUDE` (4 pages), `STRIP_PATTERNS`, boilerplate cutoff 0.25 |
-| `ops/claim_gate.sh` → `canon:ops/claim_gate/claim_gate.py` (rules R1-R11) | config `dci.json` | `lgm.json` | `gci.json` | canon configs; wrappers differ only in config name |
+| `ops/claim_gate.sh` → `canon:ops/claim_gate/claim_gate.py` (rules R1-R11; R3 = R3a blocking (once the site's ops/r3a_allowlist.json exists) / R3b report-only) | config `dci.json` | `lgm.json` | `gci.json` | canon configs; wrappers differ only in config name |
 | `ops/superlative_scan.py --retired`: retired superlatives across 8 surfaces | :58 `RETIRED_PATTERNS`, :269 main | absent | different implementation, not run (see §5) | `RETIRED_PATTERNS`, `public/llms.txt` |
 | `_svc_pending_import_check.py`: every `_svc_pending_*.py` imports | — | — | :31 | glob `_svc_pending_*.py` (9 files) |
 
