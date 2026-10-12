@@ -1,0 +1,34 @@
+{
+  "property_code": "EXT",
+  "domain": "exampletoninsulation.example",
+  "display_name": "Exampleton Insulation (FIXTURE)",
+  "city": "Exampleton (FIXTURE)",
+  "state": "CO",
+  "service_area_towns": [
+    "Exampleton (FIXTURE)",
+    "North Exampleton (FIXTURE)",
+    "Sampleville (FIXTURE)"
+  ],
+  "services": [
+    "attic",
+    "air-sealing",
+    "blown-in",
+    "energy-audit"
+  ],
+  "tracking_phone": "+15555550123",
+  "lead_destination": {
+    "emails": [
+      "leads-fixture@example.invalid"
+    ],
+    "sms": [
+      "+15555550124"
+    ]
+  },
+  "sibling_properties": [
+    "DCI",
+    "LGM",
+    "GCI"
+  ],
+  "industry_pack": "insulation",
+  "launch_notes": "FIXTURE property for canon tests; not a real business."
+}

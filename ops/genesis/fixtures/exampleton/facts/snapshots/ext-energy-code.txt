@@ -1,0 +1,2 @@
+FIXTURE snapshot. City of Exampleton (FIXTURE) Building Department: Adopted Building Codes.
+The City of Exampleton has adopted the 2021 IECC, which requires R-60 ceiling insulation for new construction in this climate zone. Permits are issued by the Building Department.
