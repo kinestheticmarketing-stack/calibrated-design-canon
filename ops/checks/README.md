@@ -115,9 +115,11 @@ Copy [`MODULE_TEMPLATE.md`](MODULE_TEMPLATE.md). In short:
 <data.config> --repo <site> --brief` by subprocess with
 `PYTHONDONTWRITEBYTECODE=1`. claim_gate.py writes nothing except an explicit
 `--report` path, and the adapter never passes one. Exit 1 becomes one finding
-per blocking rule whose SUMMARY row is `FAIL` (page `public/`; run
-`ops/claim_gate.sh` in the site for the per-hit enumeration). Exit 2 means the
-gate could not judge and surfaces as a module `ERROR` (run exit 2).
+per blocking rule whose SUMMARY row is `FAIL` (page `public/`; for the per-hit
+enumeration run, from the canon root, `python3 ops/claim_gate/claim_gate.py
+--config <config> --repo <site>`). Exit 2 means the gate could not judge and
+surfaces as a module `ERROR` (run exit 2). **K47 (2026-10-12):** the finding
+message now names that direct command for the hits.
 
 Its canary (`fixtures/claim_gate/canary/`) is claim_gate's own
 `R1_fabricated_quotation.html` fixture as `public/index.html`, run against a
@@ -167,3 +169,15 @@ report-only.
 | superlative_controls | `--controls` with DCI plant strings | absent | `--self-test` with GCI plant strings | REPLACED — not a module | superseded by `fixtures/superlative_scan/canary/` (body + meta plants), run before every real check |
 
 Also not modules, for the same reason: `links_canary`, `similarity_canary`, `page_date_normaliser_selftest` (no divergence; each is replaced by its module's fixture canary).
+
+**K47 (2026-10-12), superlative_scan:** the scan always runs the shared default
+list `ops/checks/superlative_default.py` (`RETIRED_PATTERNS`, byte-copied from
+DCI). A site `patterns` file is ADDED to it (union, deduplicated), never a
+replacement; an empty patterns list does not disable the scan. `"patterns":
+null` or `""` means default only (the runner still requires the key).
+
+**K47 (2026-10-12), cross_property_similarity:** a relative `peer_public` is
+resolved against the site's MAIN checkout root (parent of `git rev-parse
+--path-format=absolute --git-common-dir`), not the worktree or cwd, so the
+suite runs from a site worktree; an absolute path is used as given. A missing
+peer is a CONFIG ERROR (exit 2).
