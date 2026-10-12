@@ -1335,9 +1335,22 @@ written; this subsection states what changed.
 - **R3a — REBATE AMOUNT, TRIGGER SENTENCE. BLOCKING.** It classifies R3's RAW
   T1/T2 hits BEFORE adjudication, so no R3 filter can hide a rebate amount from
   it. A hit is R3a when an amount — a T1 `$` figure (unfiltered), a T2 money
-  numeral (a T2 raw hit with no structural reason, not a calendar year by the
-  shared `r3_cleared_as_year` helper, not followed by `%`/`percent`), or a word
-  form (*"five hundred dollars"*) — sits in the SAME sentence as a trigger:
+  numeral, or a word form (*"five hundred dollars"*) — sits in the SAME
+  sentence as a trigger. A T2 money numeral is a T2 raw hit that (a) has no
+  structural reason; (b) is not part of a `$` figure — the text right before
+  it matches `\$[\d,.]*$`, so *"$500"* is one hit (T1 `$500`), never also T2
+  `500`, and *"$8,000"* never yields T2 `000`; such a T2 hit stays in R3b raw,
+  where it always was, so the RAW SPLIT equation holds and R3b is unchanged;
+  (c) if it is 1900–2099, has a payout binder from R3's `year_payout_binders`
+  DIRECTLY attached (the text before it ends with the binder, only whitespace
+  between: *"up to 2000"*, *"rebate of 2000"*, *"pays 2000"*) or is
+  immediately followed by `dollar(s)` — so *"up to the 2021 IECC"* and *"The
+  2026 Xcel rebate programs"* are years. This is R3a's own test
+  (`r3a_year_money`); R3b keeps R3's `f_year` / `r3_cleared_as_year` decision
+  unchanged. Blind spot, printed in the R3a notes every run: a bare 1900–2099
+  rebate amount with no attached binder (*"a 2000 rebate"*) is not caught;
+  `$`-anchored amounts always are; (d) is not followed by `%`/`percent`.
+  Triggers:
   `rebate(s)`, `incentive(s)`, `refund(s)`, `cash back`, `tax credit(s)`, or a
   program name. `pays`/`paid` count only alongside a program name; bare
   `credit`, `pay` and `payment` never do. Program names match case-sensitively:
@@ -1347,7 +1360,13 @@ written; this subsection states what changed.
   `R3A PROGRAMS: built-in list only`.
 - **The allowlist is the enforcement switch.** `<repo>/ops/r3a_allowlist.json`
   (`{"entries": [{"sentence", "reason", "ruling"}]}`), matched exactly after
-  `ops/checks/modules/retired_strings.py` `_collapse` on both sides. An entry
+  the SAME normalization of both sides' source text: `surfaces.dec()`
+  (entities decoded, dashes and glyphs folded) then
+  `ops/checks/modules/retired_strings.py` `_collapse`. The entry gets both
+  steps as written; the page sentence was already `dec()`'d once by the
+  extractor and gets `_collapse`. An entry written with `&amp;`, `&ndash;`, a
+  literal en or em dash, or a plain hyphen matches the page that renders it.
+  An entry
   missing `reason` or `ruling` is a config error (exit 2); an entry matching no
   hit prints `STALE ALLOWLIST ENTRY: ...` and does not fail. File present (even
   `{"entries": []}`): R3a is enforced and an unallowlisted hit fails the gate

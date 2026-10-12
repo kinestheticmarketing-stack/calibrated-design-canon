@@ -2972,8 +2972,11 @@ def _t2_structural(ctx, art, text, pos, matched):
 
 
 def r3_cleared_as_year(h, year_binders):
-    """R3's YEAR decision, shared verbatim by R3b's f_year filter and R3a's
-    money-numeral intake (K45): True when a T2 hit is a calendar year
+    """R3's YEAR decision, used by R3's (and so R3b's) f_year filter. R3a's
+    money-numeral intake does NOT use it since the K45 corrective (D2); it
+    applies the stricter attached-binder test r3a_year_money instead (only
+    for a hit with no resolvable locator does R3a fall back to this). True
+    when a T2 hit is a calendar year
     1900-2099 -- a year preposition within 40 chars wins; otherwise a payout
     binder within 40 chars keeps it as a possible amount. See f_year in
     rule_R3 for the history of every clause."""
@@ -3295,11 +3298,11 @@ R3A_CONTROL_ALLOWLIST = [{
 _RETIRED_LOCK_NORMALIZER = []
 
 
-def r3a_normalize(s):
-    """The RETIRED-STRING LOCK's own normalizer, imported, not rewritten:
-    ops/checks/modules/retired_strings.py `_collapse` (whitespace runs -> one
-    space, stripped; the canon port of DCI _postbuild_check.py `_l7_collapse`).
-    Applied to BOTH sides of an R3a allowlist comparison."""
+def _r3a_lock_collapse(s):
+    """The RETIRED-STRING LOCK's own whitespace normalizer, imported, not
+    rewritten: ops/checks/modules/retired_strings.py `_collapse` (whitespace
+    runs -> one space, stripped; the canon port of DCI _postbuild_check.py
+    `_l7_collapse`)."""
     if not _RETIRED_LOCK_NORMALIZER:
         import importlib.util
         p = os.path.join(_HERE, os.pardir, "checks", "modules",
@@ -3310,6 +3313,55 @@ def r3a_normalize(s):
         spec.loader.exec_module(mod)
         _RETIRED_LOCK_NORMALIZER.append(mod._collapse)
     return _RETIRED_LOCK_NORMALIZER[0](s or "")
+
+
+def r3a_normalize(s):
+    """THE R3a ALLOWLIST PIPELINE, applied to SOURCE text: surfaces.dec()
+    (entities decoded, NFC, dashes and glyphs folded) and then the lock's
+    _collapse. Composed from the two existing normalizers, not a new one.
+
+    An allowlist ENTRY goes through it as written. A PAGE sentence has already
+    been through dec() once on its way out of the extractor (it is cut from
+    dec'd surface text), so the page side gets only the remaining step,
+    _r3a_lock_collapse -- see r3a_page_key. Both sides therefore see exactly
+    dec-once-then-collapse of their source, and an entry written with
+    `&amp;`, `&ndash;`, a literal en or em dash, or a plain hyphen matches the
+    page that renders it. (Applying dec() to the page sentence a second time
+    would NOT be symmetric: a page whose source reads `&amp;amp;` displays
+    `&amp;`, and double decoding would turn it into `&`.)"""
+    return _r3a_lock_collapse(S.dec(s or ""))
+
+
+def r3a_page_key(sentence):
+    """The page side of the allowlist comparison: the sentence is already
+    dec()'d once by the extractor, so only the lock's _collapse remains."""
+    return _r3a_lock_collapse(sentence)
+
+
+def r3a_year_money(text, pos, numeral, year_binders):
+    """K45 corrective (D2), R3a's T2 intake ONLY -- R3b keeps R3's f_year /
+    r3_cleared_as_year decision unchanged. A numeral 1900-2099 is a MONEY
+    numeral only when a payout binder from R3's year_payout_binders is
+    DIRECTLY attached: the text immediately before it, whitespace collapsed,
+    ends with the binder ("up to 2000", "rebate of 2000", "pays 2000") with
+    nothing but whitespace between; or it is immediately followed by
+    "dollar"/"dollars". "up to the 2021 IECC" is a year (an article
+    intervenes); so is "The 2026 Xcel rebate programs".
+
+    BLIND SPOT, stated rather than hidden: a bare year-range rebate amount
+    with no attached binder ("a 2000 rebate") is not an R3a hit. A
+    $-anchored amount ("$2,000", "$2000") is T1 and always is."""
+    if not re.fullmatch(r"(19|20)\d\d", numeral or ""):
+        return True
+    # Whitespace runs inside the binder and before the numeral match \s+ /
+    # \s*, which is the "after collapsing whitespace" test without a copy.
+    before = text[max(0, pos - 80):pos]
+    for b in year_binders:
+        rx = r"(?<!\w)%s\s*$" % r"\s+".join(map(re.escape, b.split()))
+        if re.search(rx, before, re.I):
+            return True
+    after = text[pos + len(numeral):pos + len(numeral) + 20]
+    return bool(re.match(r"\s*dollars?\b", after, re.I))
 
 
 def r3a_load_site_files(ctx, repo):
@@ -3530,27 +3582,35 @@ def _r3_shared(ctx):
     year_binders = ctx.r("R3").get("year_payout_binders", []) or []
 
     def money_numeral(h):
-        # K45 follow-up ruling. T1 ($-anchored) ALWAYS qualifies, with no
-        # filter of any kind. A T2 hit qualifies only as a MONEY numeral:
-        # (a) no structural reason (_t2_structural), (b) not a calendar year
-        # by R3's own year decision (r3_cleared_as_year, shared with R3b's
-        # f_year), (c) not followed by optional space + "%" / "percent". No
-        # other R3 filter is consulted -- those are the ones that could hide
-        # a rebate amount. Non-qualifying T2 hits stay R3b.
+        # K45 follow-up ruling + corrective. T1 ($-anchored) ALWAYS
+        # qualifies, with no filter of any kind. A T2 hit qualifies only as a
+        # MONEY numeral: (a) no structural reason (_t2_structural), (b) not
+        # part of a $ figure (D3: the text right before it on art.dec, the
+        # level every T2 hit is found on, matches \$[\d,.]*$ -- "$500" is the
+        # T1 hit and must not also count as T2 "500", nor "$8,000" as T2
+        # "000"), (c) a 1900-2099 numeral only with a directly attached
+        # payout binder or "dollars" (D2, r3a_year_money -- R3a's own year
+        # test; R3b keeps r3_cleared_as_year), (d) not followed by optional
+        # space + "%" / "percent". No other R3 filter is consulted -- those
+        # are the ones that could hide a rebate amount. Non-qualifying T2
+        # hits stay R3b raw, exactly where they always were.
         if h.sub == "T1":
             return True
         if h.sub != "T2":
             return False
         if getattr(h, "r3_struct", ""):
             return False
-        if r3_cleared_as_year(h, year_binders):
-            return False
         m = _R3A_LOC_RE.match(str(h.locator))
         art = arts.get(h.rel)
-        if m and art is not None:
-            at = int(m.group(2)) + len(h.note or "")
-            if _R3A_PERCENT_RE.match(art.dec, at):
-                return False
+        if not m or art is None:
+            return not r3_cleared_as_year(h, year_binders)
+        pos = int(m.group(2))
+        if re.search(r"\$[\d,.]*$", art.dec[max(0, pos - 40):pos]):
+            return False
+        if not r3a_year_money(art.dec, pos, h.note, year_binders):
+            return False
+        if _R3A_PERCENT_RE.match(art.dec, pos + len(h.note or "")):
+            return False
         return True
 
     want = {}
@@ -3666,7 +3726,7 @@ def rule_R3a(ctx, res):
     al_rel = getattr(ctx, "r3a_allowlist_rel", None) or "ops/r3a_allowlist.json"
 
     def f_allow(h):
-        return r3a_normalize(h.sentence) in allowed
+        return r3a_page_key(h.sentence) in allowed
 
     res.raw = list(sh["r3a"])
     res.adjudicated, res.rows = adjudicate(res.raw, [
@@ -3679,8 +3739,12 @@ def rule_R3a(ctx, res):
         "R3a raw %d = %d T1 + %d T2 (R3's raw hits, classified BEFORE any R3 "
         "filter) + %d word-form (of %d word-form amounts found; the %d with no "
         "trigger are reported nowhere). %d T2 raw hit(s) are not money "
-        "numerals (structural, a calendar year by R3's year decision, or a "
-        "percent) and were never R3a candidates; they stay R3b"
+        "numerals (structural, part of a $ figure the T1 hit already "
+        "carries, a 1900-2099 numeral with no directly attached payout "
+        "binder or 'dollars', or a percent) and were never R3a candidates; "
+        "they stay R3b. BLIND SPOT: a bare 1900-2099 rebate amount with no "
+        "attached binder ('a 2000 rebate') is not caught; $-anchored amounts "
+        "always are"
         % (len(res.raw), len([h for h in res.raw if h.sub == "T1"]),
            len([h for h in res.raw if h.sub == "T2"]), sh["wf"],
            sh["wf_all"], sh["wf_all"] - sh["wf"], sh["t2_not_money"]))
@@ -3690,7 +3754,7 @@ def rule_R3a(ctx, res):
             "not be resolved -- %d judged on the visible sentence holding the "
             "figure, %d on R3's 120-char window. None dropped."
             % (sh["fb_vis"] + sh["fb_win"], sh["fb_vis"], sh["fb_win"]))
-    seen = set(r3a_normalize(h.sentence) for h in res.raw)
+    seen = set(r3a_page_key(h.sentence) for h in res.raw)
     for e in allow:
         s = r3a_normalize(e.get("sentence", ""))
         if s not in seen:

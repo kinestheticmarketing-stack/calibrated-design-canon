@@ -264,7 +264,7 @@ property has had four towns since `3ca991f`. `common.json` holds only values tha
 are genuinely shared and names no property; territory, figures and locked strings
 live in the per-property file.
 
-## The eleven rules
+## The twelve rules (R3 split into R3a/R3b, K45)
 
 | ID | Name | kind | blocking |
 |---|---|---|---|
