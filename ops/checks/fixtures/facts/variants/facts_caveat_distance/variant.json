@@ -1,0 +1,6 @@
+{
+ "module": "facts_caveat_distance",
+ "expected": 2,
+ "dates": {},
+ "description": "spray-foam-air-leakage hedge moved from the claim's <p> into <footer> on attic.html (claim occurs once in body) (1); its safety caveat removed from llms.txt (1)."
+}
