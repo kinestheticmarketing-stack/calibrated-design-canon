@@ -111,6 +111,15 @@
             }
           }
         },
+        "region": {
+          "description": "Optional: the state this record applies to, as a two-letter uppercase code; shape only, not cross-checked.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state"],
+          "properties": {
+            "state": {"type": "string", "pattern": "^[A-Z]{2}\\Z"}
+          }
+        },
         "status": {
           "type": "object",
           "additionalProperties": false,

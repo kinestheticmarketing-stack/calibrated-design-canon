@@ -7,7 +7,8 @@
   "service_area_towns": [
     "Exampleton (FIXTURE)",
     "North Exampleton (FIXTURE)",
-    "Sampleville (FIXTURE)"
+    "Sampleville (FIXTURE)",
+    "Testburg (FIXTURE)"
   ],
   "services": [
     "attic",

@@ -3569,6 +3569,147 @@ def _r3a_raw_pos(art, fig, dec_pos, cache):
     return None
 
 
+# K53d: R3a READS JSON-LD STRINGS, NOT JSON-LD NUMBERS. A numeric literal in a
+# JSON-LD block (an ImageObject's `"width": 1200`) is markup, not copy: T2
+# caught it whenever a money word sat within 120 characters, the R3a marker
+# then broke the JSON, the block fell back to LD[i](unparsed), and the whole
+# block's text -- "tax credit" in an Article body -- became the "sentence".
+# So a T2 hit whose DEC position falls on a JSON-LD numeric literal is never an
+# R3a candidate (it stays R3b raw, where R3's own filters judge it as before).
+# THE ONE EXCEPTION is a declared money value: a number under one of
+# _R3A_LD_PRICE_KEYS in an object that also carries priceCurrency/currency
+# (`{"@type": "Offer", "price": 500, "priceCurrency": "USD"}`). That is read
+# as a currency figure exactly as `$500` would be -- always a candidate, no
+# money-word window, no 3-digit floor -- and judged on its object chain's
+# strings. Strings in JSON-LD are untouched: "$500 rebate" still fails.
+# Body text and every other surface are untouched. R3 / R3b are untouched.
+_R3A_LD_PRICE_KEYS = ("price", "minPrice", "maxPrice", "lowPrice",
+                      "highPrice", "amount", "value")
+_R3A_LD_CUR_KEYS = ("priceCurrency", "currency")
+_R3A_LD_BLOCK_RE = re.compile(
+    r"<script\b[^>]*ld\+json[^>]*>(.*?)</script\s*>", re.I | re.S)
+_R3A_LD_WS = re.compile(r"[ \t\n\r]*")
+_R3A_LD_STR = re.compile(r'"(?:[^"\\]|\\.)*"', re.S)
+_R3A_LD_NUM = re.compile(
+    r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?")
+_R3A_LD_LIT = re.compile(r"true|false|null")
+
+
+def _r3a_ld_scan(s, base):
+    """Spans of the numeric literals in one JSON text `s` (offset `base` in
+    the page), as [(start, end, key, node)], or None when `s` does not parse
+    (the caller then changes nothing: today's behaviour). `node` is the
+    enclosing object: {"keys": {key: value}, "strs": [its direct string
+    values], "parent": node or None}. A tiny position-keeping JSON reader --
+    json.loads keeps no offsets. Depth-guarded like surfaces._ld_leaves."""
+    nums = []
+
+    def ws(i):
+        return _R3A_LD_WS.match(s, i).end()
+
+    def val(i, depth, node, key):
+        if depth > S.LD_MAX_DEPTH:
+            raise ValueError("depth")
+        i = ws(i)
+        c = s[i:i + 1]
+        if c == "{":
+            obj = {"keys": {}, "strs": [], "parent": node}
+            i = ws(i + 1)
+            if s[i:i + 1] == "}":
+                return i + 1, obj
+            while True:
+                m = _R3A_LD_STR.match(s, ws(i))
+                if not m:
+                    raise ValueError("key")
+                k = json.loads(m.group(0))
+                i = ws(m.end())
+                if s[i:i + 1] != ":":
+                    raise ValueError(":")
+                i, v = val(i + 1, depth + 1, obj, k)
+                obj["keys"][k] = v
+                if isinstance(v, str) and k != "@context":
+                    obj["strs"].append(v)
+                i = ws(i)
+                if s[i:i + 1] == ",":
+                    i += 1
+                    continue
+                if s[i:i + 1] == "}":
+                    return i + 1, obj
+                raise ValueError("}")
+        if c == "[":
+            i = ws(i + 1)
+            if s[i:i + 1] == "]":
+                return i + 1, None
+            while True:
+                i, _v = val(i, depth + 1, node, key)
+                i = ws(i)
+                if s[i:i + 1] == ",":
+                    i += 1
+                    continue
+                if s[i:i + 1] == "]":
+                    return i + 1, None
+                raise ValueError("]")
+        if c == '"':
+            m = _R3A_LD_STR.match(s, i)
+            if not m:
+                raise ValueError("str")
+            return m.end(), json.loads(m.group(0))
+        m = _R3A_LD_NUM.match(s, i)
+        if m:
+            nums.append((base + m.start(), base + m.end(), key, node))
+            return m.end(), _R3A_LD_NUM  # sentinel: "a number", never a str
+        m = _R3A_LD_LIT.match(s, i)
+        if m:
+            return m.end(), None
+        raise ValueError("value")
+
+    try:
+        end, _v = val(0, 0, None, None)
+        if ws(end) != len(s):
+            return None
+    except (ValueError, IndexError, RecursionError):
+        return None
+    return nums
+
+
+def _r3a_ld_numbers(art):
+    """(spans, money) for one artifact's JSON-LD at the DEC level -- the level
+    every T2 hit is found on. `spans`: [(start, end)] of every numeric
+    literal. `money`: [(start, figure, sentence)] for each numeric
+    _R3A_LD_PRICE_KEYS value whose object has a currency sibling; the sentence
+    is the direct string values of that object and of each enclosing object
+    (innermost first), then `<key>: <figure> <currency>`. A block that does
+    not parse at DEC (an entity that decodes to a quote) contributes nothing,
+    i.e. is read exactly as before."""
+    spans, money = [], []
+    if art.kind != "html":
+        return spans, money
+    for bm in _R3A_LD_BLOCK_RE.finditer(art.dec):
+        nums = _r3a_ld_scan(bm.group(1), bm.start(1))
+        if not nums:
+            continue
+        for a, b, key, node in nums:
+            spans.append((a, b))
+            if node is None or key not in _R3A_LD_PRICE_KEYS:
+                continue
+            ck = next((k for k in _R3A_LD_CUR_KEYS if k in node["keys"]),
+                      None)
+            if ck is None:
+                continue
+            cur = node["keys"][ck]
+            cur = cur if isinstance(cur, str) else ""
+            parts, n = [], node
+            while n is not None:
+                parts.extend(n["strs"] if n is not node else
+                             [x for x in n["strs"]
+                              if x is not node["keys"][ck]])
+                n = n["parent"]
+            fig = art.dec[a:b]
+            parts.append(("%s: %s %s" % (key, fig, cur)).strip())
+            money.append((a, fig, S.collapse(" | ".join(parts))))
+    return spans, money
+
+
 def _r3_shared(ctx):
     """R3's pipeline ONCE per context, plus the R3a/R3b partition."""
     got = getattr(ctx, "_r3_k45", None)
@@ -3613,11 +3754,32 @@ def _r3_shared(ctx):
             return False
         return True
 
+    ld_cache = {}
+
+    def ld_numbers(rel):
+        if rel not in ld_cache:
+            art = arts.get(rel)
+            ld_cache[rel] = _r3a_ld_numbers(art) if art is not None \
+                else ([], [])
+        return ld_cache[rel]
+
+    def on_ld_number(h):
+        # K53d: a T2 hit sitting on a JSON-LD numeric literal is not R3a's.
+        # T2 hits are all found on art.dec (`dec@` / `rate@`); T1 needs a `$`,
+        # which no JSON number contains.
+        if h.sub != "T2":
+            return False
+        m = _R3A_LOC_RE.match(str(h.locator))
+        if not m or m.group(1) == "raw":
+            return False
+        pos = int(m.group(2))
+        return any(a <= pos < b for a, b in ld_numbers(h.rel)[0])
+
     want = {}
     coord = {}
     pos_cache = {}
     for h in core.raw:
-        if not money_numeral(h):
+        if not money_numeral(h) or on_ld_number(h):
             continue
         m = _R3A_LOC_RE.match(str(h.locator))
         art = arts.get(h.rel)
@@ -3642,10 +3804,14 @@ def _r3_shared(ctx):
     core_adj = set(id(h) for h in core.adjudicated)
     fb_vis = fb_win = 0
     t2_not_money = 0
+    ld_num = 0
     for h in core.raw:
         if h.sub == "T2" and not money_numeral(h):
             t2_not_money += 1
         if not money_numeral(h):
+            continue
+        if on_ld_number(h):
+            ld_num += 1
             continue
         r = None
         if id(h) in coord:
@@ -3683,6 +3849,22 @@ def _r3_shared(ctx):
                           unresolved),
                        note=h.note, sentence=sent))
 
+    # K53d: JSON-LD currency values -- read as $ figures, from the LD parse
+    # itself, so like the word-form hits they sit OUTSIDE the R3 raw split
+    # (any T2 hit on the same literal was excluded above: never two copies).
+    ld_cur_all = ld_cur_trig = 0
+    for art in ctx.read_artifacts():
+        for pos, fig, sent in ld_numbers(art.rel)[1]:
+            ld_cur_all += 1
+            trig = r3a_triggers(sent, programs)
+            if not trig:
+                continue
+            ld_cur_trig += 1
+            r3a.append(Hit("R3a", "LD$", art.rel, S.S_LD, "dec@%d" % pos,
+                           "%s | R3:none | trigger: %s | %s"
+                           % (fig, ",".join(trig), sent),
+                           note=fig, sentence=sent))
+
     wf_all = wf_trig = 0
     for art in ctx.read_artifacts():
         if art.kind == "src":
@@ -3713,7 +3895,8 @@ def _r3_shared(ctx):
     got = {"core": core, "labels": labels, "r3a": r3a, "a_ids": a_ids,
            "a_t": a_t, "b_raw": b_raw, "wf": wf_trig, "wf_all": wf_all,
            "j": j, "fb_vis": fb_vis, "fb_win": fb_win,
-           "t2_not_money": t2_not_money}
+           "t2_not_money": t2_not_money, "ld_num": ld_num,
+           "ld_cur": ld_cur_trig, "ld_cur_all": ld_cur_all}
     ctx._r3_k45 = got
     return got
 
@@ -3738,7 +3921,11 @@ def rule_R3a(ctx, res):
     res.notes.append(
         "R3a raw %d = %d T1 + %d T2 (R3's raw hits, classified BEFORE any R3 "
         "filter) + %d word-form (of %d word-form amounts found; the %d with no "
-        "trigger are reported nowhere). %d T2 raw hit(s) are not money "
+        "trigger are reported nowhere) + %d JSON-LD currency value(s) (of %d "
+        "numeric price/amount/value literals with a priceCurrency/currency "
+        "sibling, read as $ figures). %d T2 raw hit(s) sit on a JSON-LD "
+        "numeric literal (markup such as an image width, not copy) and were "
+        "never R3a candidates; they stay R3b. %d T2 raw hit(s) are not money "
         "numerals (structural, part of a $ figure the T1 hit already "
         "carries, a 1900-2099 numeral with no directly attached payout "
         "binder or 'dollars', or a percent) and were never R3a candidates; "
@@ -3747,7 +3934,8 @@ def rule_R3a(ctx, res):
         "always are"
         % (len(res.raw), len([h for h in res.raw if h.sub == "T1"]),
            len([h for h in res.raw if h.sub == "T2"]), sh["wf"],
-           sh["wf_all"], sh["wf_all"] - sh["wf"], sh["t2_not_money"]))
+           sh["wf_all"], sh["wf_all"] - sh["wf"], sh["ld_cur"],
+           sh["ld_cur_all"], sh["ld_num"], sh["t2_not_money"]))
     if sh["fb_vis"] or sh["fb_win"]:
         res.notes.append(
             "R3A SENTENCE FALLBACK: %d T1/T2 hit(s) whose own surface could "

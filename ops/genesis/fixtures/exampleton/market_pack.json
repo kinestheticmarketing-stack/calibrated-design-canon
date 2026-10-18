@@ -41,12 +41,29 @@
       "code_edition": "2021 IECC (FIXTURE adoption)",
       "climate_zone": "5B",
       "elevation_ft": 5150,
-      "gas_utility": "Exampleton Gas Co. (FIXTURE)",
-      "electric_utility": "Exampleton Electric Co-op (FIXTURE)",
+      "gas_utility": "none named (FIXTURE)",
+      "electric_utility": "none named (FIXTURE)",
       "territory_state": "UNKNOWN",
-      "absence_reason": "No utility filing names Sampleville (FIXTURE); the service-territory map is county-level only.",
+      "absence_reason": "exclusivity not verified",
       "facts_keys": [
         "ext-utility-territory"
+      ]
+    },
+    {
+      "name": "Testburg (FIXTURE)",
+      "county": "Example County (FIXTURE)",
+      "jurisdiction": "Town of Testburg (FIXTURE)",
+      "building_dept_url": "https://example.invalid/testburg/building",
+      "code_edition": "2024 IECC (FIXTURE adoption)",
+      "climate_zone": "5B",
+      "elevation_ft": 5320,
+      "gas_utility": "Testburg Gas Co. (FIXTURE)",
+      "electric_utility": "Exampleton Electric Co-op (FIXTURE)",
+      "territory_state": "NAMED",
+      "absence_reason": null,
+      "facts_keys": [
+        "ext-utility-territory",
+        "ext-crawl-wall-code"
       ]
     }
   ],
@@ -71,10 +88,12 @@
     "attic_r": "R-60",
     "wall_r": "R-20+5ci",
     "floor_r": "R-30",
+    "crawl_wall_r": "R-15",
     "ci_condition": "Continuous insulation is required on above-grade exterior walls in climate zone 5 (FIXTURE).",
     "blower_door_ach": 3,
     "facts_keys": [
-      "ext-energy-code"
+      "ext-energy-code",
+      "ext-crawl-wall-code"
     ]
   },
   "citations_floor": 3,

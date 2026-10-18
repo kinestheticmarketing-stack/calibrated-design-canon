@@ -7,6 +7,8 @@ A check module is ops/checks/modules/<name>.py and exposes:
     REQUIRES = {"key": "one-line description"}   # manifest data keys
     LITERAL_KEYS = {"key"}           # optional: REQUIRES keys that are literal
                                      # values, not paths (no existence check)
+    OPTIONAL_KEYS = {"key"}          # optional: REQUIRES keys a manifest may
+                                     # omit (then data[key] is None)
     OPTIONS = {"opt": default}       # optional: option defaults
     def check(ctx) -> list[Finding]
 

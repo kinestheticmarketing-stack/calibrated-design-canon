@@ -19,6 +19,7 @@ REQUIRES = {                           # manifest data keys; {} if none
     "threshold": "literal: integer cap",
 }
 LITERAL_KEYS = {"threshold"}           # REQUIRES keys that are values, not paths
+# OPTIONAL_KEYS = {"threshold"}        # optional: REQUIRES keys a manifest may omit
 OPTIONS = {"include_llms_txt": True}   # defaults; manifest options override
 
 
@@ -39,6 +40,10 @@ def check(ctx):
 Rules: no network, no writes, no `ssh `/`paramiko` text anywhere in the file
 (even in comments: the runner refuses to run). Return `[]` when clean. Raise
 only when the module cannot judge; a crash in a real run exits 2.
+`OPTIONAL_KEYS` must be a subset of `REQUIRES` (else a config error); an
+optional key the manifest omits reaches `check()` as `ctx.data[key] is None`,
+so handle `None`; when present it is resolved like any other key (path, or
+literal if in `LITERAL_KEYS`). Unknown data keys and options stay config errors.
 
 ## 2. `ops/checks/fixtures/my_check/canary/` (a mini site root)
 

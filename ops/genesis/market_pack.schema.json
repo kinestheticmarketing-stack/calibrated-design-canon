@@ -36,6 +36,7 @@
         "attic_r": {"$ref": "#/$defs/nonempty"},
         "wall_r": {"$ref": "#/$defs/nonempty"},
         "floor_r": {"$ref": "#/$defs/nonempty"},
+        "crawl_wall_r": {"$ref": "#/$defs/nonempty"},
         "ci_condition": {
           "description": "When continuous insulation is required.",
           "type": "string",

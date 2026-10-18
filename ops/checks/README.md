@@ -160,6 +160,8 @@ reaches this adapter and the suite exits 1. Without that file R3a reports
 `NOT ENFORCED` and the gap above still holds; R3b (the rest of R3) stays
 report-only.
 
+**K53d (2026-10-18), claim_gate R3a JSON-LD:** on the JSON-LD surface R3a reads string values as before but not numeric or boolean values, except a numeric `price`/`minPrice`/`maxPrice`/`lowPrice`/`highPrice`/`amount`/`value` with a `priceCurrency` or `currency` sibling, read as a currency figure (sub `LD$`). Body text and other surfaces are unchanged; numeric JSON-LD T2 hits stay in R3b raw. Verify: `cd ops/checks && python3 -m unittest test_k53d`
+
 ## Divergence: strictest choice
 
 | check | DCI | LGM | GCI | chosen | why |
@@ -194,6 +196,10 @@ site's MAIN checkout root (parent of `git rev-parse --path-format=absolute
 canary reads its own worktree's fixture; an absolute path is used as given. A
 missing peer is a CONFIG ERROR (exit 2).
 
+**K53d (2026-10-18), rvalue_targets_lock:** option `rows_from_market` (default `false` = unchanged). When true, a row whose source market fact (ceiling→attic; floor→floor, crawl-vented; crawl1→crawl-encap) is absent or `None` in the facts dict generated from the property's market pack is NOT APPLICABLE (counted, never PASS or FAIL); every run with the option on prints `rvalue_targets_lock: rows_from_market checked=<n> not_applicable=<k> [<names>|none]`. Supplied rows are checked as before; canary unchanged. Verify: `cd ops/checks && python3 -m unittest test_k53d`
+
+**K53d (2026-10-18), embed_callout:** heading and button text are compared after `html.unescape` on both sides (`Quotes &amp; Costs` matches `Quotes & Costs`); this widens matching by entity decoding only. Verify: `cd ops/checks && python3 -m unittest test_k53d`
+
 ## Facts registry modules (K50, 2026-10-12)
 
 Six modules read a property's facts registry. Each one is **NOT ENABLED**
@@ -222,6 +228,10 @@ invalid / 2 unreadable). Stored source text lives at
 `facts/snapshots/<key>.txt`. An unreadable registry makes any `facts_*`
 module raise (run exit 2); the other five skip malformed fields silently and
 leave them to `facts_schema`.
+
+**K53d (2026-10-18), facts region:** optional record field `region` = `{"state": <two-letter uppercase code, ^[A-Z]{2}\Z>}`; `validate_facts` checks shape only. The enforcing consumer is the site-engine build (K53c A8), and `facts_pages_coverage` only if a later box teaches it region; optional and validated does not mean enforced. `territory` is unchanged. Verify: `cd ops/checks && python3 -m unittest test_k53d`
+
+**K53d (2026-10-18), market pack crawl_wall_r:** `ops/genesis/market_pack.schema.json` adds optional `code_facts.crawl_wall_r`, backed by `code_facts.facts_keys` like the other code facts. Verify: `cd ops/checks && python3 -m unittest test_k53d`
 
 **Enabling.** One manifest entry per module. Five take only the registry:
 
