@@ -1,0 +1,2 @@
+FIXTURE snapshot. Town of Testburg (FIXTURE) Building Department: Adopted Building Codes.
+The Town of Testburg has adopted the 2024 IECC, which requires R-15 continuous or R-19 cavity insulation on crawl space walls for new construction in this climate zone. Permits are issued by the Building Department.

@@ -10,6 +10,14 @@ _shared_components.py), never typed here.
 The site's facts file is Python source; it is parsed with ast and only the
 named top-level assignment is evaluated, by a literal-only evaluator that also
 accepts dict(key=literal, ...) calls. No site code is imported or executed.
+
+Option rows_from_market (default False): when true, a row whose source market
+fact (ceiling for attic; floor for floor and crawl-vented; crawl1 for
+crawl-encap) is missing from the facts dict or is None is NOT APPLICABLE: not
+compared, never a finding, not counted as a pass. Supplied rows are checked
+exactly as with the option off. Each run with the option on prints one line:
+  rvalue_targets_lock: rows_from_market checked=<n> not_applicable=<k> [<names>|none]
+With the option off, behaviour and output are unchanged.
 """
 
 import ast
@@ -25,7 +33,7 @@ REQUIRES = {
     "pages": "literal: list of rendered calculator pages, relative to the public dir",
 }
 LITERAL_KEYS = {"facts_key", "pages"}
-OPTIONS = {"facts_var": "CODE_FACTS"}
+OPTIONS = {"facts_var": "CODE_FACTS", "rows_from_market": False}
 
 ROW = re.compile(r"'(?P<area>[a-z-]+)':\s*\{label:'[^']*', target:'(?P<target>[^']*)', "
                  r"targetMin:(?P<min>\d+), targetRec:(?P<rec>\d+)\}")
@@ -60,16 +68,36 @@ def _load_facts(ctx):
     return _lit(found)
 
 
+SOURCES = (("attic", "ceiling"), ("floor", "floor"),
+           ("crawl-vented", "floor"), ("crawl-encap", "crawl1"))
+
+
+def expected_rows(d, rows_from_market=False):
+    """(expected, not_applicable): expected maps area -> (target, n); with
+    rows_from_market, areas whose source fact is absent or None are left out
+    of expected and named, in row order, in not_applicable."""
+    na = [a for a, k in SOURCES if d.get(k) is None] if rows_from_market else []
+    rows = {}
+    if "crawl-encap" not in na:
+        crawl_n = int(re.search(r"\d+", d["crawl1"]).group(0))
+        rows["crawl-encap"] = ("%s walls" % d["crawl1"], crawl_n)
+    if "attic" not in na:
+        rows["attic"] = ("R-%s" % d["ceiling"], d["ceiling"])
+    if "floor" not in na:
+        rows["floor"] = ("R-%s" % d["floor"], d["floor"])
+        rows["crawl-vented"] = ("R-%s floor" % d["floor"], d["floor"])
+    return {a: rows[a] for a, _ in SOURCES if a in rows}, na
+
+
 def check(ctx):
     facts = _load_facts(ctx)
     d = facts[ctx.data["facts_key"]]
-    crawl_n = int(re.search(r"\d+", d["crawl1"]).group(0))
-    expected = {
-        "attic":        ("R-%s" % d["ceiling"], d["ceiling"]),
-        "floor":        ("R-%s" % d["floor"], d["floor"]),
-        "crawl-vented": ("R-%s floor" % d["floor"], d["floor"]),
-        "crawl-encap":  ("%s walls" % d["crawl1"], crawl_n),
-    }
+    from_market = bool(ctx.options.get("rows_from_market"))
+    expected, not_applicable = expected_rows(d, from_market)
+    if from_market:
+        print("%s: rows_from_market checked=%d not_applicable=%d [%s]" % (
+            NAME, len(expected), len(not_applicable),
+            ", ".join(not_applicable) or "none"))
     pages = ctx.data["pages"]
     if isinstance(pages, str):
         pages = [pages]

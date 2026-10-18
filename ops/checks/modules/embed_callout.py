@@ -16,6 +16,9 @@ page and a page must satisfy each one (union of findings = strictest):
        contains an <a class="btn"> whose collapsed text is the button text;
        every such href (query/fragment stripped) must start with '/' and be a
        file in public/.
+Heading and button text compare after HTML entity decoding on both sides
+(html.unescape): "Quotes &amp; Costs" matches "Quotes & Costs"; nothing else
+is normalized.
 Plus: every listed page must exist; option expected_page_count (GCI: 4) pins
 the size of the page list.
 
@@ -25,7 +28,9 @@ the size of the page list.
 """
 
 import ast
+import html
 import re
+from html.entities import html5
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -50,6 +55,18 @@ _WRAPPERS = {"frozenset", "set", "tuple", "list", "sorted"}
 
 def _collapse(s):
     return re.sub(r"\s+", " ", s).strip()
+
+
+def _text_re(text):
+    """Regex source matching `text` in raw HTML, each character literal or as
+    any entity html.unescape decodes to it (both sides compared unescaped)."""
+    out = []
+    for ch in html.unescape(text):
+        alts = sorted({"&" + k for k, v in html5.items() if v == ch}, key=len, reverse=True)
+        alts = [re.escape(ch)] + [re.escape(a) for a in alts] + [
+            "&#0*%d;" % ord(ch), "&#[xX]0*%x;" % ord(ch)]
+        out.append("(?:%s)" % "|".join(alts))
+    return "".join(out)
 
 
 def _literal(node):
@@ -140,7 +157,7 @@ def _gci_callouts(raw, style, button_text):
 
         def handle_endtag(self, tag):
             if tag == "a" and self.anchor is not None:
-                if _collapse("".join(self.anchor[1])) == button_text:
+                if _collapse("".join(self.anchor[1])) == html.unescape(button_text):
                     for d in self.divs:
                         if d[0]:
                             d[1].append(self.anchor[0])
@@ -176,15 +193,16 @@ def check(ctx):
                                     % (len(pages), exp), ctx.data["pages_var"]))
     dci_re = None
     if heading:
+        heading_re = re.compile(_text_re(heading))
         dci_re = re.compile(
-            r'<div style="[^"]*">\s*<p><strong>' + re.escape(heading) +
-            r'</strong></p>.*?<a class="btn" href="([^"]+)">' + re.escape(btn) +
+            r'<div style="[^"]*">\s*<p><strong>' + _text_re(heading) +
+            r'</strong></p>.*?<a class="btn" href="([^"]+)">' + _text_re(btn) +
             r'</a>.*?</div>', re.S)
     box_re = re.compile(r'<div\b[^>]*\bstyle="[^"]*' + re.escape(style) + r'[^"]*"[^>]*>')
     if pin:
-        lgm_btn = re.compile(re.escape('<a class="btn" href="%s">%s</a>' % (pin, btn)))
+        lgm_btn = re.compile(re.escape('<a class="btn" href="%s">' % pin) + _text_re(btn) + '</a>')
     else:
-        lgm_btn = re.compile(r'<a class="btn" href="[^"]*">' + re.escape(btn) + r'</a>')
+        lgm_btn = re.compile(r'<a class="btn" href="[^"]*">' + _text_re(btn) + r'</a>')
 
     for name in pages:
         p = ctx.public_dir / name
@@ -194,7 +212,7 @@ def check(ctx):
         doc = ctx.read_text(p)
         # dci matcher
         if dci_re is not None:
-            n = doc.count(heading)
+            n = len(heading_re.findall(doc))
             hrefs = dci_re.findall(doc)
             if n != 1 or len(hrefs) != 1:
                 findings.append(ctx.finding(p, "[dci] %d callout heading(s), %d with a %r "

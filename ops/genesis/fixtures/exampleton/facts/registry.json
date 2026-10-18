@@ -34,6 +34,12 @@
         "electric_utility": "",
         "jurisdiction": "Example County (FIXTURE)",
         "code_edition": "2021 IECC"
+      },
+      "Testburg (FIXTURE)": {
+        "gas_utility": "Testburg Gas Co. (FIXTURE)",
+        "electric_utility": "Exampleton Electric Co-op (FIXTURE)",
+        "jurisdiction": "Town of Testburg (FIXTURE)",
+        "code_edition": "2024 IECC"
       }
     },
     "territory_evidence": {
@@ -53,7 +59,13 @@
         "town_source": "",
         "utility_filing": "",
         "state": "UNKNOWN",
-        "absence_reason": "No utility filing names Sampleville (FIXTURE); the service-territory map is county-level only."
+        "absence_reason": "exclusivity not verified"
+      },
+      "Testburg (FIXTURE)": {
+        "town_source": "https://example.invalid/testburg/utilities",
+        "utility_filing": "TBG Advice Letter 3 (FIXTURE), service-territory exhibit",
+        "state": "NAMED",
+        "absence_reason": null
       }
     },
     "status": {
@@ -222,6 +234,55 @@
     "pages": [
       {
         "path": "attic.html",
+        "surfaces": [
+          "body"
+        ]
+      }
+    ],
+    "dependents": [],
+    "superseded_by": null,
+    "verified_by": {
+      "commit": "FIXTURE",
+      "command": "python3 ops/genesis/validate_genesis.py ops/genesis/fixtures/exampleton/intake.json ops/genesis/fixtures/exampleton/market_pack.json ops/genesis/fixtures/exampleton/facts/registry.json"
+    }
+  },
+  {
+    "key": "ext-crawl-wall-code",
+    "claim": "Testburg (FIXTURE) builds to the 2024 IECC, which calls for R-15 crawl space wall insulation in new homes.",
+    "source": {
+      "title": "Adopted Building Codes (FIXTURE)",
+      "publisher": "Town of Testburg (FIXTURE) Building Department",
+      "url": "https://example.invalid/testburg/building/adopted-codes"
+    },
+    "retrieved": {
+      "date": "2026-10-02",
+      "fingerprint": "5d92a095140f3e940e68608a7e584f94c9e1cc42c9189e8eeefed8533d58b0be"
+    },
+    "quote": {
+      "text": "The Town of Testburg has adopted the 2024 IECC, which requires R-15 continuous or R-19 cavity insulation on crawl space walls for new construction in this climate zone.",
+      "mode": "paraphrase"
+    },
+    "territory": {},
+    "territory_evidence": {},
+    "status": {
+      "value": "n/a",
+      "as_of": "2026-10-02"
+    },
+    "next_review": "2027-01-02",
+    "hedge": null,
+    "safety_caveat": null,
+    "applies_to": {
+      "page_types": [
+        "service"
+      ],
+      "services": [
+        "energy-audit"
+      ]
+    },
+    "actor": "publisher",
+    "pages": [
+      {
+        "path": "crawl-space.html",
         "surfaces": [
           "body"
         ]
