@@ -98,13 +98,16 @@ class TestA_RowsFromMarket(TempCase):
     def run_rvl(self, site, mod_path=MODULES / (RVL + ".py"), **opts):
         return run_module(RVL, mod_path, site, self.entry(site, **opts))
 
-    def head_module(self):
-        """The module as committed at HEAD (pre-K53d), in a temp file."""
-        p = subprocess.run(["git", "-C", str(CHECKS), "show",
-                            "HEAD:ops/checks/modules/%s.py" % RVL],
+    # K53d base commit (pre-change): 6751dc8 "Merge K51: intake form + market pack".
+    K53D_BASE = "6751dc89432f52665cae0ec0c37b5a640316cc87"
+
+    def base_module(self):
+        """The module as committed at the K53d base (pre-K53d), in a temp file."""
+        p = subprocess.run(["git", "-C", str(OPS.parent), "show",
+                            "%s:ops/checks/modules/%s.py" % (self.K53D_BASE, RVL)],
                            capture_output=True, text=True, check=True)
         self.assertNotIn("rows_from_market", p.stdout)
-        path = self.T / "head_mod" / (RVL + ".py")
+        path = self.T / "base_mod" / (RVL + ".py")
         path.parent.mkdir()
         path.write_text(p.stdout, encoding="utf-8")
         return path
@@ -152,9 +155,9 @@ class TestA_RowsFromMarket(TempCase):
                 self.assertEqual(self.summary(out), want)
 
     def test_a3_option_off_is_old_behaviour(self):
-        """(a) rows_from_market false (default): same findings as the HEAD
-        module on canary and clean, no stdout, absent crawl1 -> KeyError."""
-        head = self.head_module()
+        """(a) rows_from_market false (default): same findings as the K53d
+        base module on canary and clean, no stdout, absent crawl1 -> KeyError."""
+        head = self.base_module()
         for which in ("canary", "clean"):
             with self.subTest(fixture=which):
                 site = self.site(which)
