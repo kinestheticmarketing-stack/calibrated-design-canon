@@ -10,7 +10,7 @@ tags: [verify-prod]
 Commits: DCI `c144ad8`, LGM `795c2ef`, GCI `5b8b4cb`, all deployed and
 MD5-verified live at the time. Session-paperwork wave then authored
 Pattern 14, two scanner-discipline rules, the RECEIPTS entry, and ROADMAP
-updates in canon (`bea41af`, later `66b6336`).
+updates in canon (`bea41af`, later `e7939b7`).
 
 **Verify:**
 ```

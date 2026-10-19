@@ -502,18 +502,18 @@ def _pages2540(s):
 # RETRACTED BASELINE BEING BROUGHT INTO LINE, NOT A SCORE BEING TUNED, AND THE
 # DISTINCTION IS THE WHOLE POINT -- editing a scoring baseline is the change
 # most easily mistaken for tuning, so the justification is quoted in full
-# rather than summarised. Canon 96d8f8d, subject "Commit the replay harness,
+# rather than summarised. Canon d76983f, subject "Commit the replay harness,
 # and retract this pass's phantom regression: 21 was the inflated score, not
 # 20", body:
 #
-#     canon eafada2   exit 1   R3 RAW 769  ADJ 92
-#     canon 9dc1277   exit 1   R3 RAW 769  ADJ 91
-#     canon c327bab   exit 1   R3 RAW 769  ADJ 91
+#     canon 22caf78   exit 1   R3 RAW 769  ADJ 92
+#     canon a2e042f   exit 1   R3 RAW 769  ADJ 91
+#     canon 44dca63   exit 1   R3 RAW 769  ADJ 91
 #
 #                      adjudicated only        adjudicated + filter-removed
-#       eafada2        7 figures / 16 files    9 figures / 25 files
-#       9dc1277        7 figures / 16 files    9 figures / 25 files
-#       c327bab        7 figures / 16 files    9 figures / 25 files
+#       22caf78        7 figures / 16 files    9 figures / 25 files
+#       a2e042f        7 figures / 16 files    9 figures / 25 files
+#       44dca63        7 figures / 16 files    9 figures / 25 files
 #
 #     GATE_CLOSE's "9 of 9 across 24 of 24" counted ADJUDICATED PLUS
 #     FILTER-REMOVED; this document counted ADJUDICATED. [...]
@@ -533,7 +533,7 @@ def _pages2540(s):
 #     the commit's ADJUDICATED-PLUS-FILTER-REMOVED column. The PRIOR entry was
 #     recorded from the inflated count while the lambda measures the
 #     adjudicated one, so the two disagreed by construction and every run since
-#     96d8f8d has printed "<<< CHANGED" against a baseline canon had already
+#     d76983f has printed "<<< CHANGED" against a baseline canon had already
 #     withdrawn.
 #
 # NOT CHANGED, deliberately: no scoring lambda, and no other PRIOR entry.

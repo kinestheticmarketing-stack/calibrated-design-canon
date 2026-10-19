@@ -33,7 +33,7 @@ setting — verify the instrument before believing the finding.
 
 ## Closed — 2026-08-19
 
-**Commits:** DCI `5087737` · LGM `6f3018a` · GCI `3aa6f0f` · CANON `c08a2db`
+**Commits:** DCI `5087737` · LGM `6f3018a` · GCI `3aa6f0f` · CANON `90c8f83`
 
 All three corpora re-scored fresh against the post-remediation copy, diffed
 against the 2026-08-18 audits by content, never by line number.
@@ -53,7 +53,7 @@ omitted silently and not carded.
 
 2. **342 files of paid, watermarked course material were stageable by one
    `git add -A`.** Every EXTRACTION_LOG declared `sources/` gitignored. It
-   was not — only untracked. Fixed in canon `c08a2db`.
+   was not — only untracked. Fixed in canon `90c8f83`.
 
 **Three prior-audit defects recorded** (see the R1 file): the Allsopp
 EXTRACTION_LOG omits the TLB prefix entirely and does not disclose that the

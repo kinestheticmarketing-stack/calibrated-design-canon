@@ -6,7 +6,7 @@ real detection. It changed no page, no copy, no generator and nothing in any
 property repo.
 
 Gate under test: canon `ops/claim_gate/` at the head of this row's work.
-Comparison point: canon `9dc1277`, this lane's base, i.e. the gate exactly as
+Comparison point: canon `a2e042f`, this lane's base, i.e. the gate exactly as
 it stood before this pass.
 
 Method, identical to `GATE_CLOSE_2026-09-18.md`: 20 detached worktrees under
@@ -25,7 +25,7 @@ gone — that tree now exits 1.
 
 ## THE RESULT
 
-### **20 CAUGHT · 3 PARTIAL · 2 MISSED — and the same 20 / 3 / 2 at canon `9dc1277`.**
+### **20 CAUGHT · 3 PARTIAL · 2 MISSED — and the same 20 / 3 / 2 at canon `a2e042f`.**
 
 ```
 $ cd ops/claim_gate/replay
@@ -35,7 +35,7 @@ $ python3 score.py | tail -3
 SCORE: 20 CAUGHT / 3 PARTIAL / 2 MISSED   (of 25)
 ```
 
-Run again with `./prepare.sh 9dc1277` for the before side and diffed:
+Run again with `./prepare.sh a2e042f` for the before side and diffed:
 
 ```
 $ diff <(python3 score.py)   # after
@@ -51,12 +51,12 @@ author. The harness is now committed at `ops/claim_gate/replay/` and the
 command above is the real one.
 
 **Not one of the 25 rows changed VERDICT or evidence line between canon
-`9dc1277` and this pass's head.** RAW counts did move and the first revision's
+`a2e042f` and this pass's head.** RAW counts did move and the first revision's
 "changed a single count" was overstated; the correct statement is that no
 ADJUDICATED verdict changed. The repairs in this pass removed no detection
 anywhere in the replay.
 
-Row-by-row, at this pass's head (identical at `9dc1277`):
+Row-by-row, at this pass's head (identical at `a2e042f`):
 
 | # | defect | repo @ pre-fix SHA | verdict | evidence |
 |---|---|---|---|---|
@@ -91,25 +91,25 @@ Row-by-row, at this pass's head (identical at `9dc1277`):
 ## THE ONE ROW THAT DIFFERS FROM 21/25 — AND `21` WAS THE INFLATED NUMBER
 
 `GATE_CLOSE_2026-09-18.md` scored **21 CAUGHT / 2 PARTIAL / 2 MISSED** at canon
-`eafada2`. This re-score reads **20 / 3 / 2**. The single difference is row
+`22caf78`. This re-score reads **20 / 3 / 2**. The single difference is row
 **5c**, GCI's 206 rebate dollar figures, which that pass scored CAUGHT on
 "9 of 9 distinct figures across 24 of 24 files" and which this document first
-scored PARTIAL and then **wrongly attributed to a regression between `eafada2`
-and `9dc1277`.**
+scored PARTIAL and then **wrongly attributed to a regression between `22caf78`
+and `a2e042f`.**
 
 **THAT REGRESSION DOES NOT EXIST. RETRACTED.** The first revision never ran the
-replay at `eafada2` — it inferred the drop from the other document's prose. The
+replay at `22caf78` — it inferred the drop from the other document's prose. The
 seventh adversarial read caught that, and running it settles it:
 
 ```
-canon eafada2   exit 1   R3 RAW 769  ADJ 92
-canon 9dc1277   exit 1   R3 RAW 769  ADJ 91
-canon c327bab   exit 1   R3 RAW 769  ADJ 91
+canon 22caf78   exit 1   R3 RAW 769  ADJ 92
+canon a2e042f   exit 1   R3 RAW 769  ADJ 91
+canon 44dca63   exit 1   R3 RAW 769  ADJ 91
 
                  adjudicated only          adjudicated + filter-removed
-  eafada2        7 figures / 16 files      9 figures / 25 files
-  9dc1277        7 figures / 16 files      9 figures / 25 files
-  c327bab        7 figures / 16 files      9 figures / 25 files
+  22caf78        7 figures / 16 files      9 figures / 25 files
+  a2e042f        7 figures / 16 files      9 figures / 25 files
+  44dca63        7 figures / 16 files      9 figures / 25 files
 ```
 
 **Detection is identical at every SHA. The two documents counted different
@@ -123,7 +123,7 @@ statement of the gate's recall on this row is: it DETECTS all nine figures and
 ADJUDICATES seven, with two removed by the income-eligibility filter.
 
 This is this repo's own already-named **raw-vs-adjudicated** defect class
-(commit `b152b08`) recurring inside the gate's own scorekeeping, and it cost a
+(commit `85321e6`) recurring inside the gate's own scorekeeping, and it cost a
 false regression claim in the first revision of this file. A score row must say
 which set it counted.
 

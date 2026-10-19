@@ -8,7 +8,7 @@
 # 2026-09-18 scores used, recorded in both.
 #
 #   ./prepare.sh              # scratch canon from the working tree
-#   ./prepare.sh 9dc1277      # scratch canon from a SHA, for a before/after
+#   ./prepare.sh a2e042f      # scratch canon from a SHA, for a before/after
 set -euo pipefail
 SHA="${1:-}"
 S="${REPLAY_SCRATCH:-/tmp/claim-gate-replay}"

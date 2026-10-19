@@ -4,16 +4,16 @@ R5 of a 6-row pass. This row re-scored the gate, wired it into the builds that
 pass it, and shipped all three properties. It was the only row authorised to
 deploy. It changed no page, no copy and no generator.
 
-Gate under test: canon `ops/claim_gate/` at canon HEAD `eafada2`.
+Gate under test: canon `ops/claim_gate/` at canon HEAD `22caf78`.
 
 ---
 
 ## 0. THE RE-SCORE — 21 of 25, up from 16 of 25
 
-The gate was previously scored (`GATE_SCORE_2026-09-17.md`, canon `7a091a0`) by
+The gate was previously scored (`GATE_SCORE_2026-09-17.md`, canon `811a0ec`) by
 replaying 25 known defect instances out of git at the commit immediately before
 each fix: **16 CAUGHT, 2 PARTIAL, 7 MISSED**. That replay was repeated with the
-current gate at canon `eafada2`, same method — 20 detached worktrees in scratch,
+current gate at canon `22caf78`, same method — 20 detached worktrees in scratch,
 `--today` set to each fixing commit's date, all 20 removed and pruned afterwards.
 
 ### **21 of 25 CAUGHT · 2 PARTIAL · 2 MISSED**
@@ -32,17 +32,17 @@ not harness results.
 
 | # | defect | repo | moved by |
 |---|---|---|---|
-| **4b** | short-form `Dec. 31, 2026` (DCI) | DCI | `7be4641` — the sentence splitter broke at the abbreviation period, so two shipped R7 patterns containing "Dec." could never fire. The gate had reproduced, inside itself, the exact trap the defect describes. |
-| **4c** | the invented fifth Xcel program | DCI | `57421dc` / `32b1ec1` — `forbidden_program_names` was dead config read by no code path; now wired as R2 sub-class `p`, firing 287 hits across 72 files |
-| **7d** | FAQPage stacking denial | GCI | `8ff3a55` + `da6663d` — new `ASSERTS-SET` class for programs named anaphorically ("these programs"), where the phrase supplies the count and never a name |
-| **7e** | knob-and-tube stacking denial | LGM | `8ff3a55` — same anaphora class, on "either insulation rebate program" |
-| **7f** | `llms.txt` "Xcel rebate-stack eligibility" | DCI | `da6663d` — bare `"Xcel"` added to `R4.programs`, span-consuming `names_in()` so `"Xcel Energy"` cannot self-satisfy the two-program test, plus the single-program `ASSERTS-1P`/`DENIES-1P` class |
+| **4b** | short-form `Dec. 31, 2026` (DCI) | DCI | `d8666f3` — the sentence splitter broke at the abbreviation period, so two shipped R7 patterns containing "Dec." could never fire. The gate had reproduced, inside itself, the exact trap the defect describes. |
+| **4c** | the invented fifth Xcel program | DCI | `64a8a17` / `8f34f4f` — `forbidden_program_names` was dead config read by no code path; now wired as R2 sub-class `p`, firing 287 hits across 72 files |
+| **7d** | FAQPage stacking denial | GCI | `2f8f88d` + `8efd68b` — new `ASSERTS-SET` class for programs named anaphorically ("these programs"), where the phrase supplies the count and never a name |
+| **7e** | knob-and-tube stacking denial | LGM | `2f8f88d` — same anaphora class, on "either insulation rebate program" |
+| **7f** | `llms.txt` "Xcel rebate-stack eligibility" | DCI | `8efd68b` — bare `"Xcel"` added to `R4.programs`, span-consuming `names_in()` so `"Xcel Energy"` cannot self-satisfy the two-program test, plus the single-program `ASSERTS-1P`/`DENIES-1P` class |
 
 ### The two that still miss
 
 **2b — GCI `og-image.svg`.** Verdict unchanged; cause completely changed. The
 prior diagnosis was structural — *"an artifact with no town scope produces zero
-R2 hits by construction"*. `47a50c8` closed that: the SVG is now read on a
+R2 hits by construction"*. `cd1f960` closed that: the SVG is now read on a
 `SVGTEXT` surface and **does** produce an R2 hit, which is then filtered, raised
 and enumerated rather than dropped silently:
 `[sitewide artifact, no town named in the clause … (raised and enumerated, never dropped silently)] public/og-image.svg:SVGTEXT  a  Atmos Energy | no town bound in the clause, no town scope on the page | Atmos rebates explained · Local contractors · Existing-home retrofits  [sitewide-no-town-in-clause]`
@@ -50,7 +50,7 @@ Scored MISSED because it does not block. The blindness the prior score named is
 gone; what remains is a visible ruling.
 
 **10 — DCI hidden `calc_output`.** Verdict unchanged; diagnosis now sharp enough
-to act on. `d8be8fd` implemented R9's N3b half and its positive control fires
+to act on. `2ce17c4` implemented R9's N3b half and its positive control fires
 (`canary+ R9-N3b … DETECTED (1 N3b: N3b)`). **The rule works; the config is one
 page short.** `dci.json`'s `R9.tools` lists only
 `public/r-value-needed-calculator.html`, while on the tree where the defect is
@@ -64,7 +64,7 @@ one `R9.tools` entry closes it.
   schedule is substantially closed: `$1.16` 0 → 63 adjudicated rows, `$0.77`
   0 → 31. Still removed: `$2,000` ×2, the Boulder County EnergySmart cap, by the
   same filter.
-- **8 — DCI's `25-40%`: 14 → 15 of 16 pages.** `1bcc0b7` removed R5's blanket
+- **8 — DCI's `25-40%`: 14 → 15 of 16 pages.** `94c6ca1` removed R5's blanket
   `recognised_publishers` exemption, which had pardoned `insulation-lakewood.html`
   because Xcel was named as the *payer*. The one remaining miss is unchanged in
   cause: `air-sealing.html`'s sentence never enters R5 RAW because its verbs
@@ -72,7 +72,7 @@ one `R9.tools` entry closes it.
 
 ### The one thing that got worse
 
-**R3 no longer blocks.** `b00e3b1` demoted it to report-only on its own measured
+**R3 no longer blocks.** `32f2e73` demoted it to report-only on its own measured
 68.1% false-positive rate. Rows 5a, 5b, 5c and 5d — all four rebate-dollar-figure
 defects, 537 figures between them — are still **DETECTED** but no longer
 **BLOCK**. Detection held or improved in every case (5a `T1 $-anchored 222`;
@@ -126,7 +126,7 @@ both are floors, so `10` preserves the empty-corpus trap while letting smaller
 historical trees run at all.
 
 **NOT TESTED in the replay:** `--opt-in=R6b` (the prior score found it forces
-exit 2 on any repo; whether `429b82c` changed that was not re-tested), and
+exit 2 on any repo; whether `05d039e` changed that was not re-tested), and
 `--peer`, so R9's cross-property half ran on none of the 25 rows — the same as
 the prior score's method, and no row depends on it. False-positive rates were not
 re-adjudicated; this was a defect-recall re-score only.
@@ -360,7 +360,7 @@ main working tree was ever checked out to a different commit. Pre-existing
 worktrees under `~/code/canon-wt/` belong to other sessions and were not touched.
 
 ```
-calibrated-design-canon         eafada2   clean   0 0
+calibrated-design-canon         22caf78   clean   0 0
 denvercoloradoinsulation.com    bdf6701   clean   0 0
 longmontcoloradoinsulation.com  4211b8d   clean   0 0
 greeleycoloradoinsulation.com   3a1357f   clean   0 0
