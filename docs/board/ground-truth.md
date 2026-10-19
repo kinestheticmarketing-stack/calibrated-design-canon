@@ -15,7 +15,7 @@ These decisions are settled. If your context disagrees, your context is stale.
   `check_interactive_js`, `check_placeholders`, `check_duplicate_labels`,
   `check_credentials`, `check_jsonld`. RECEIPTS.md carried "six" for a full
   day after a kickoff-supplied figure was never checked against the code —
-  corrected `66b6336`. Any future reference to "the validator layer" cites
+  corrected `e7939b7`. Any future reference to "the validator layer" cites
   five.
 - **2026-08-19 — a figure asserted in a kickoff is not a verified figure.**
   Standing rule, `CANON_QUEUE.md`. The validator-count error is the
