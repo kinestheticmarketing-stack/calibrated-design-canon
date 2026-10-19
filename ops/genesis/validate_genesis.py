@@ -9,17 +9,28 @@ What it validates:
      ops/genesis/market_pack.schema.json (both with the schema interpreter of
      ops/facts/validate_facts.py, no second engine), and the registry with
      validate_facts.validate (each error prefixed "registry: ").
-  2. every facts key the market pack uses exists in the registry.
+  2. every facts key the market pack uses exists in the registry (including
+     a town's code_facts.facts_keys).
   3. every intake service_area_towns entry has a market pack town of that name.
   4. every program towns_served entry is a market pack town name.
-  5. each town's territory_state equals the state in the territory_evidence of
-     the registry facts it cites, and at least one cited fact carries evidence.
+  5. a town carries one territory shape: territory_state OR territory_states,
+     never both. Each town is read as {electric, gas}; a single territory_state
+     is the same state for both. Single form: territory_state equals the state
+     in the territory_evidence of every registry fact it cites. Per-key form:
+     each cited fact's evidence state equals the state for that fact's utility
+     kind (electric when the fact's territory entry for the town names only an
+     electric_utility, gas when it names only a gas_utility); when the kind
+     cannot be told, it equals one of the two per-key states. Either form: at
+     least one cited fact carries evidence.
   6. no string value in the intake or market pack is shaped like a secret (the
      error names only the file and JSON path, never the value). Secret-shaped
      means: contains "-----BEGIN", an SG. key, AC + 32 hex, a 32+ hex run, or
      a 40+ char run of [A-Za-z0-9+/_=-] that mixes upper, lower AND digits
-     (token entropy), so lowercase URL paths and slugs pass.
+     (token entropy), so lowercase URL paths and slugs pass. A lead_destination
+     in server-copy reference form (server-copy:<CODE>:LEAD_TO) is a pointer,
+     not a value, and is never flagged.
   7. the intake's property_code is not listed in its own sibling_properties.
+  8. a server-copy lead_destination names the intake's own property_code.
 One error per defect. Cross-reference rules skip any part the schema already
 rejected, so a structural error does not cascade.
 
@@ -55,6 +66,8 @@ _SECRET_RES = (
 # that run holds at least one uppercase letter, one lowercase letter and one
 # digit. Plain lowercase URL paths and slugs pass; base64/API tokens fail.
 _LONG_RUN_RE = re.compile(r"[A-Za-z0-9+/_=-]{40,}")
+# lead_destination reference form: the real destination lives only in the server copy.
+_SERVER_COPY_RE = re.compile(r"^server-copy:([A-Z]{3}):LEAD_TO\Z")
 
 
 class GenesisUnreadable(ValueError):
@@ -114,7 +127,10 @@ def _bad(errpaths, path):
     return any(q[:n] == path for q in errpaths if len(q) >= n)
 
 
-def _walk_strings(v, path):
+def _walk_strings(v, path=()):
+    if not isinstance(path, tuple):
+        # accept a str / Path / other single segment: "" -> (), else (segment,)
+        path = () if path == "" else (path,)
     if isinstance(v, str):
         yield path, v
     elif isinstance(v, list):
@@ -123,6 +139,22 @@ def _walk_strings(v, path):
     elif isinstance(v, dict):
         for k, item in v.items():
             yield from _walk_strings(item, path + (k,))
+
+
+def _utility_kind(record, town):
+    """'electric' / 'gas' when the fact's territory entry for town names only
+    that utility; None when the kind cannot be told."""
+    terr = record.get("territory")
+    entry = terr.get(town) if isinstance(terr, dict) else None
+    if not isinstance(entry, dict):
+        return None
+    elec = isinstance(entry.get("electric_utility"), str) and entry["electric_utility"].strip()
+    gas = isinstance(entry.get("gas_utility"), str) and entry["gas_utility"].strip()
+    if elec and not gas:
+        return "electric"
+    if gas and not elec:
+        return "gas"
+    return None
 
 
 def _ok_str(doc, errpaths, path):
@@ -180,6 +212,9 @@ def validate(intake_path, market_pack_path, registry_path):
         for part in ("housing", "code_facts"):
             fk = _ok_list(mp, me, (part, "facts_keys"))
             key_paths += [(part, "facts_keys", j) for j in range(len(fk or []))]
+        for i in range(len(towns or [])):
+            fk = _ok_list(mp, me, ("towns", i, "code_facts", "facts_keys"))
+            key_paths += [("towns", i, "code_facts", "facts_keys", j) for j in range(len(fk or []))]
         for p in key_paths:
             k = _ok_str(mp, me, p)
             if k is not None and k not in by_key:
@@ -204,13 +239,31 @@ def validate(intake_path, market_pack_path, registry_path):
                 if t is not None and t not in town_names:
                     errors.append(f"xref: market_pack {_vf._jpath(p)}: town {t!r} is not a market_pack town")
 
-    # 5 territory_state agrees with the cited facts' territory_evidence
+    # 5 one territory shape per town; territory state(s) agree with the cited facts' territory_evidence
+    if isinstance(towns, list):
+        for i, t in enumerate(towns):
+            if isinstance(t, dict) and "territory_state" in t and "territory_states" in t:
+                errors.append(
+                    f"xref: market_pack $.towns[{i}]: carries both territory_state and "
+                    f"territory_states (one territory shape per town)")
     if registry_ok:
         for i in range(len(towns or [])):
             name = _ok_str(mp, me, ("towns", i, "name"))
-            state = _ok_str(mp, me, ("towns", i, "territory_state"))
+            t = _at(mp, ("towns", i))
+            per_key = isinstance(t, dict) and "territory_states" in t
+            if per_key and "territory_state" in t:
+                continue  # shape error reported above
+            if per_key:
+                states = {k: _ok_str(mp, me, ("towns", i, "territory_states", k)) for k in ("electric", "gas")}
+                state = None
+                if any(v not in _STATES for v in states.values()):
+                    continue
+            else:
+                state = _ok_str(mp, me, ("towns", i, "territory_state"))
+                if state not in _STATES:
+                    continue
             fk = _ok_list(mp, me, ("towns", i, "facts_keys"))
-            if name is None or state not in _STATES or not fk:
+            if name is None or not fk:
                 continue
             kps = [("towns", i, "facts_keys", j) for j in range(len(fk))]
             if any(_ok_str(mp, me, p) is None for p in kps):
@@ -228,11 +281,19 @@ def validate(intake_path, market_pack_path, registry_path):
                         malformed = True  # registry rule 1 already reports it
                         continue
                     evidenced.append(k)
-                    if entry["state"] != state and k not in disagree:
+                    if per_key:
+                        kind = _utility_kind(r, name)
+                        ok = (entry["state"] == states[kind] if kind
+                              else entry["state"] in states.values())
+                    else:
+                        ok = entry["state"] == state
+                    if not ok and k not in disagree:
                         disagree.append(k)
             if disagree:
+                shape = (f"territory_states electric {states['electric']} gas {states['gas']}"
+                         if per_key else f"territory_state {state}")
                 errors.append(
-                    f"xref: market_pack $.towns[{i}]: town {name!r} territory_state {state} "
+                    f"xref: market_pack $.towns[{i}]: town {name!r} {shape} "
                     f"disagrees with territory_evidence in {', '.join(disagree)}")
             elif not evidenced and not any_missing and not malformed:
                 errors.append(f"xref: market_pack $.towns[{i}]: no fact carries territory evidence for town {name!r}")
@@ -240,6 +301,8 @@ def validate(intake_path, market_pack_path, registry_path):
     # 6 secret-shaped values (never echo the value)
     for label, doc in (("intake", intake), ("market_pack", mp)):
         for p, s in _walk_strings(doc, ()):
+            if label == "intake" and p == ("lead_destination",) and _SERVER_COPY_RE.match(s):
+                continue  # a server-copy pointer, not a value
             if _secret_shaped(s):
                 errors.append(f"secret: {label}:{_vf._jpath(p)}: value is shaped like a secret")
 
@@ -250,6 +313,14 @@ def validate(intake_path, market_pack_path, registry_path):
         for j in range(len(sibs)):
             if _ok_str(intake, ie, ("sibling_properties", j)) == code:
                 errors.append(f"xref: intake $.sibling_properties[{j}]: lists the property's own code {code!r}")
+
+    # 8 a server-copy lead_destination names this property's code
+    ld = _ok_str(intake, ie, ("lead_destination",))
+    m = _SERVER_COPY_RE.match(ld) if ld is not None else None
+    if m and code is not None and m.group(1) != code:
+        errors.append(
+            f"xref: intake $.lead_destination: server-copy code {m.group(1)!r} "
+            f"does not equal property_code {code!r}")
     return errors
 
 

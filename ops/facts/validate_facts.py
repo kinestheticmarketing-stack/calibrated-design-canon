@@ -97,6 +97,15 @@ def _canon(v):
     return json.dumps(v, sort_keys=True, ensure_ascii=False)
 
 
+def _as_path_tuple(p):
+    """Tuple paths pass through unchanged; "" -> (); any other str, Path or
+    non-tuple value -> (str(p),)."""
+    if isinstance(p, tuple):
+        return p
+    s = p if isinstance(p, str) else str(p)
+    return () if s == "" else (s,)
+
+
 class _Interp:
     def __init__(self, root):
         self.root = root
@@ -108,7 +117,9 @@ class _Interp:
         return self.root["$defs"][m.group(1)]
 
     def check(self, s, v, path):
-        """Return [(path tuple, message)]."""
+        """Return [(path tuple, message)]. path may be a tuple or a str/Path
+        (normalized by _as_path_tuple)."""
+        path = _as_path_tuple(path)
         unknown = set(s) - _KEYWORDS - _ANNOTATIONS
         if unknown:
             raise ValueError(f"schema: unsupported keyword(s) {sorted(unknown)} at {path}")
@@ -195,6 +206,7 @@ def _jtype(v):
 
 
 def _jpath(p):
+    p = _as_path_tuple(p)
     out = "$"
     for part in p:
         out += f"[{part}]" if isinstance(part, int) else f".{part}"

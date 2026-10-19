@@ -49,26 +49,35 @@
       "$ref": "#/$defs/e164"
     },
     "lead_destination": {
-      "description": "Where form leads are delivered; the system routes each submitted lead here. Stored only in the private site repo (ops/intake.json), never in canon. Addresses and numbers only: no API key, token, password or SID.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["emails", "sms"],
-      "properties": {
-        "emails": {
-          "description": "At least one email address that receives each lead; the system needs one so no lead is dropped.",
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+      "description": "Where form leads are delivered; the system routes each submitted lead here. Either the address object, stored only in the private site repo (ops/intake.json) and never in canon, or a server-copy reference string of the form server-copy:<PROPERTY_CODE>:LEAD_TO, meaning the actual destination lives only in the server copy and is never written here as a literal. Addresses and numbers only: no API key, token, password or SID.",
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["emails", "sms"],
+          "properties": {
+            "emails": {
+              "description": "At least one email address that receives each lead; the system needs one so no lead is dropped.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+              }
+            },
+            "sms": {
+              "description": "E.164 numbers that get a text alert per lead; may be empty when no text alert is wanted.",
+              "type": "array",
+              "items": {"$ref": "#/$defs/e164"}
+            }
           }
         },
-        "sms": {
-          "description": "E.164 numbers that get a text alert per lead; may be empty when no text alert is wanted.",
-          "type": "array",
-          "items": {"$ref": "#/$defs/e164"}
+        {
+          "description": "Server-copy reference: three-letter uppercase property code, then LEAD_TO. The destination itself lives only in the server copy, never as a literal value here.",
+          "type": "string",
+          "pattern": "^server-copy:[A-Z]{3}:LEAD_TO\\Z"
         }
-      }
+      ]
     },
     "sibling_properties": {
       "description": "Property codes of portfolio siblings; the system uses them to avoid cross-property duplication and to share canon. May be empty; must not include this property's own code.",
