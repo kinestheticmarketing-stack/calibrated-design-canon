@@ -30,9 +30,9 @@ if ! in_scope_repo "$CWD"; then exit 0; fi
 
 ```
 $ git -C ~/code/calibrated-design-canon worktree list
-/Users/vongimbel/code/canon-wt/rule-10-canon     4596d99 [lane/rule-10-canon]
-/Users/vongimbel/code/canon-wt/rule-11-canon     9493d7d [lane/rule-11-canon]
-/Users/vongimbel/code/canon-wt/seo-geo-scaffold  1f282fa [feat/seo-geo-scaffold]
+/Users/vongimbel/code/canon-wt/rule-10-canon     99d36cd [lane/rule-10-canon]
+/Users/vongimbel/code/canon-wt/rule-11-canon     f605578 [lane/rule-11-canon]
+/Users/vongimbel/code/canon-wt/seo-geo-scaffold  9b72676 [feat/seo-geo-scaffold]
 ```
 
 So a session working a lane — **the documented normal case**, since every

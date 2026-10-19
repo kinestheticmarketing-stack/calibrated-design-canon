@@ -4,10 +4,10 @@ Date: 2026-08-19 · Canon branch feat/seo-geo-scaffold
 ## PRE-FLIGHT DISCREPANCY — kickoff hashes
 None of the four hashes named in the kickoff exist in any repo:
   DCI 9a0e93a · LGM 41f6bc5 · GCI 9e04a17 · CANON 08de56b  -> `git cat-file -e` fails on all four.
-Real HEADs at wave start: DCI 0f95413 · LGM 5ccb2e8 · GCI 2a7e43d · CANON fd4b2fb.
+Real HEADs at wave start: DCI 0f95413 · LGM 5ccb2e8 · GCI 2a7e43d · CANON 0e1bb4c.
 All four trees clean. Proceeding on real HEADs.
 
-## CORPUS SECURITY DEFECT — FOUND AND FIXED (canon c08a2db)
+## CORPUS SECURITY DEFECT — FOUND AND FIXED (canon 90c8f83)
 Every EXTRACTION_LOG states "sources/ is gitignored — local-only, never
 committed, never public, never free." FALSE as configuration: sources/ was
 merely untracked. `git add -A --dry-run` at canon root staged **342 files**

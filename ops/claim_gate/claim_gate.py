@@ -603,7 +603,7 @@ def unread_config_keys(cfg):
     # key is read -- it made `draft_gate` itself look wired up to code. So the
     # one key in the portfolio that asserted a corpus fact was the one key
     # nothing could falsify. It stayed green through the 2026-09-21 publication
-    # that made all four of its clauses false, and through 6e4c939 the day
+    # that made all four of its clauses false, and through 139aae0 the day
     # before, which edited two keys higher in the same file for exactly that
     # publication. See lgm.json's `draft_gate_retired_note` for the
     # clause-by-clause refutation and the measurements behind it.
@@ -2157,8 +2157,8 @@ _CLAUSE_SPLIT = re.compile(
     r"|\s*[\u2013\u2014]\s*|\s+-\s+|\s+/\s+",
     re.IGNORECASE)
 # The SPACED ASCII hyphen is in that set because two of my own fixes from one
-# round cancelled each other: c6b9651 made dash folding UNCONDITIONAL (which is
-# what fixes R7-G2's U+2011 print code) and 3cf3d97 added the em and en dash as
+# round cancelled each other: 9e156a9 made dash folding UNCONDITIONAL (which is
+# what fixes R7-G2's U+2011 print code) and 4f910a4 added the em and en dash as
 # clause boundaries (which is what fixes NEW-16). The fold runs FIRST, so by the
 # time the splitter looks there is no em dash left --
 # dec('Greeley \u2014 Atmos') is 'Greeley - Atmos' -- and the inverted
@@ -5175,7 +5175,7 @@ def rule_R5(ctx, res):
         RAW 11 ADJUDICATED 0 before this change):
 
           property   probes cleared   at figure   carried by
-          DCI          0 of 16          20%       list already empty (a5baa0f)
+          DCI          0 of 16          20%       list already empty (5eda2bd)
           LGM         12 of 16          25%       tier / of project cost /
                                                   capped at
           GCI         14 of 16          20%       the bare words "reduction"
@@ -5384,7 +5384,7 @@ def rule_R5(ctx, res):
     #
     # AND THE FIX PROOF CONTAINED THE HOLE. repaired/R5j paired an ENERGY STAR
     # statistic about ANNUAL SPACE-CONDITIONING ENERGY USE with a question about
-    # WINTER HEATING COSTS -- different claims -- and bfbad20's own commit
+    # WINTER HEATING COSTS -- different claims -- and 4115aa1's own commit
     # message recorded that pair's local overlap as 0. The pass measured the
     # hole and recorded it as proof the control exercises the filter. That
     # fixture's anchor is rewritten here to state the claim its question asks
@@ -7382,7 +7382,7 @@ RULES = [
              # NAMED FILTER, never deleted from the pool; the claim assigned
              # to el.innerHTML inside the bundle MUST still fire, because the
              # rendered page reads exactly that literal out of the same bytes.
-             # Commit 1c7b354 moved the split into ctx.pool() as a bare
+             # Commit 0ea75da moved the split into ctx.pool() as a bare
              # `continue` and this fixture went RAW 1 ADJ 1 -> RAW 0 ADJ 0 on
              # R2 (wrong utility) with no finding raised and no filter row to read.
              Control("R2f", "R2", _f("R2f_src_bundle_literal.py"),
@@ -7492,7 +7492,7 @@ RULES = [
              # FILTER, never deleted from the pool; the claim assigned to
              # el.innerHTML inside the bundle MUST still fire, because the
              # rendered page reads exactly that literal out of the same bytes.
-             # Commit 1c7b354 moved the split into ctx.pool() as a bare
+             # Commit 0ea75da moved the split into ctx.pool() as a bare
              # `continue` and this fixture went RAW 1 ADJ 1 -> RAW 0 ADJ 0 on
              # R4 (stacking) with no finding raised and no filter row to read.
              Control("R4h", "R4", _f("R4h_src_bundle_literal.py"),
@@ -7582,7 +7582,7 @@ RULES = [
                    # the other half -- correct copy with markup and an em dash
                    # inside the first 48 characters, which must stay clean.
                    # Same split, same blindfold proof, on R5. This one
-                   # also missed at 889e172, where the split was an
+                   # also missed at 4235b56, where the split was an
                    # R5-ONLY filter keyed to the whole run: the literal
                    # went down with the bundle.
                    Control("R5-SRCLITERAL", "R5",
@@ -7623,7 +7623,7 @@ RULES = [
                                        "R5j_interrogative_anchor.html")),
                    # ---------------------------------------------------------
                    # THE THREE A1 CONTROLS, 2026-09-20. Each fixture measured
-                   # ZERO adjudicated hits against claim_gate.py at bfbad20 on
+                   # ZERO adjudicated hits against claim_gate.py at 4115aa1 on
                    # all three property configs -- that is the hole, measured
                    # rather than asserted -- and each fires after the rewrite.
                    # Each has a repaired counterpart that must be CLEAN, so the
@@ -7698,11 +7698,11 @@ RULES = [
                    # non-possessive publisher, a head noun that is not an
                    # artifact noun, og:DESCRIPTION and twitter:DESCRIPTION
                    # rather than the titles, a meta description, and visible
-                   # prose. Measured at d064ccf, BEFORE the filter: RAW 7,
+                   # prose. Measured at 4127f76, BEFORE the filter: RAW 7,
                    # ADJUDICATED 7. It must still read 7 after, and it does.
                    #
                    # The REPAIRED half is the false-positive repair: the page
-                   # title on its three surfaces. Measured at d064ccf, BEFORE
+                   # title on its three surfaces. Measured at 4127f76, BEFORE
                    # the filter: RAW 3, *** FIRES ON REPAIRED *** 3. That was
                    # the hole. Its three rows are genuine RAW hits -- "lower"
                    # is a magnitude_word and has_any is a substring test, so
@@ -7728,7 +7728,7 @@ RULES = [
                    # performance claims, one per threshold_context_marker
                    # family, every one of which carries a configured figure and
                    # a marker and so cleared f_struct outright. Measured at
-                   # 3ccf154, BEFORE the veto: RAW 11, ADJUDICATED 0. That was
+                   # 1bd0c15, BEFORE the veto: RAW 11, ADJUDICATED 0. That was
                    # the hole, and it is the hole the gate's own R5n control
                    # sentence fell through on live GCI. It must read 11 after,
                    # and it does.
@@ -7795,7 +7795,7 @@ RULES = [
              # FILTER, never deleted from the pool; the claim assigned to
              # el.innerHTML inside the bundle MUST still fire, because the
              # rendered page reads exactly that literal out of the same bytes.
-             # Commit 1c7b354 moved the split into ctx.pool() as a bare
+             # Commit 0ea75da moved the split into ctx.pool() as a bare
              # `continue` and this fixture went RAW 1 ADJ 1 -> RAW 0 ADJ 0 on
              # R7 (superseded source) with no finding raised and no filter row to read.
              Control("R7c", "R7", _f("R7c_src_bundle_literal.py"),
@@ -8349,7 +8349,7 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
         # operator the other ten rules.
         #
         # CORRECTED 2026-09-21: THE REASON RULING A GAVE WAS FALSE, AND IT
-        # BLAMED THE OPERATOR'S MACHINE. Through 20b9455 this line read,
+        # BLAMED THE OPERATOR'S MACHINE. Through 224dc7a this line read,
         # verbatim: "UNAVAILABLE: requires a Chrome binary this gate cannot
         # assume (spec 6, 7.3). No browser, no outbound request. Disclosed, not
         # run, not counted as a control." That sentence says two things, and
@@ -8359,7 +8359,7 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
         # MEASURED 2026-09-21, both halves.
         #
         # (1) R6b HAS NO IMPLEMENTATION ANYWHERE IN THIS GATE. Denominator:
-        # claim_gate.py at 20b9455, 7737 lines. `grep -in 'chrome\|chromium'`
+        # claim_gate.py at 224dc7a, 7737 lines. `grep -in 'chrome\|chromium'`
         # returns exactly 2 hits and BOTH are inside these disclosure strings;
         # there is no third. `grep -nE
         # 'playwright|puppeteer|selenium|webdriver|--headless|CDP|devtools'`
@@ -8374,7 +8374,7 @@ def run_controls(out, cfg, repo, opt_in, gen, registry=None):
         # QUOTES ITS OWN PATTERN. Re-run it after this commit and it returns 3
         # lines, not 0, and all three are the comment above and the message
         # string below. The 'chrome\|chromium' grep is contaminated the same
-        # way: 2 hits at 20b9455, 13 lines in this file as it now stands, every
+        # way: 2 hits at 224dc7a, 13 lines in this file as it now stands, every
         # one of them disclosure text and none of them a code path. Said out
         # loud so the next reader does not mistake a self-referential hit for
         # an implementation.

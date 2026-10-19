@@ -136,7 +136,7 @@ DCI — denvercoloradoinsulation.com (flagship, only revenue asset)
   no such standard and the string "NACH" appears nowhere in Xcel's source
   documentation. Xcel's actual first-party figure is "20% Reduction in CFM
   50." First caught at the `METHODS/PROPERTY_GENESIS.md` surface (commit
-  `5265f69`); this receipt and the one below were two of the three
+  `59ba3f8`); this receipt and the one below were two of the three
   remaining false-metric surfaces (the third, `RETROSPECTIVES/
   2026-08-10-citation-integrity.md`, was corrected 2026-09-02 by a prior
   pass this same day). This correction does not change what the
@@ -722,7 +722,7 @@ Format: [DATE] · [ASSET] · [CAUGHT: PRE-LIVE | POST-LIVE] · [WHAT] ·
   showed success and the canary refused to pass in all three; first clean
   run green on all three properties (DCI ids 22/23, GCI 16/17, LGM 9/10,
   including the first time Longmont's form was shown to work end to end).
-  · commit `66b6336`
+  · commit `e7939b7`
 
 - 2026-08-20 · Greeley + DCI · POST-LIVE · A citation-scoring instrument
   issued verdicts (LLS-13, LLS-41, LLS-90, part of LLS-86) on surfaces it

@@ -22,7 +22,7 @@ exist only in a transcript and must reach canon:
 Landing sites:
 
 - `METHODS/DESIGN_REVIEW.md` — the pre-launch/redesign checklist (added
-  `fb4cf78`). Accessibility bullet gets the two-viewport + Tab rule.
+  `646e16b`). Accessibility bullet gets the two-viewport + Tab rule.
 - `METHODS/ARCHITECT_DISCIPLINE.md` — this canon's blind-spot catalogue
   (numbered PATTERN entries, FAILURE MODE / CANON RULE / PRACTICAL
   IMPLEMENTATION). Both lessons are the Pattern 14 class: a check that is
@@ -34,8 +34,8 @@ Landing sites:
 
 ## Closed 2026-09-27 — all three landed
 
-Commits: claim `47f15c8`, checklist + ground truth `a95df44`, blind-spot
-catalogue `ef844ae`, this closure `b3c0e35`.
+Commits: claim `46a423e`, checklist + ground truth `4071e54`, blind-spot
+catalogue `fd72df0`, this closure `7eb515e`.
 
 The blind-spot catalogue turned out to BE `METHODS/ARCHITECT_DISCIPLINE.md`'s
 numbered PATTERN series — the doc `ground-truth.md` cites for Patterns 11, 13

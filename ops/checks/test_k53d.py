@@ -98,8 +98,8 @@ class TestA_RowsFromMarket(TempCase):
     def run_rvl(self, site, mod_path=MODULES / (RVL + ".py"), **opts):
         return run_module(RVL, mod_path, site, self.entry(site, **opts))
 
-    # K53d base commit (pre-change): 6751dc8 "Merge K51: intake form + market pack".
-    K53D_BASE = "6751dc89432f52665cae0ec0c37b5a640316cc87"
+    # K53d base commit (pre-change): a7935ee "Merge K51: intake form + market pack".
+    K53D_BASE = "a7935ee0602971849560df3ff7055132a546dd6f"
 
     def base_module(self):
         """The module as committed at the K53d base (pre-K53d), in a temp file."""

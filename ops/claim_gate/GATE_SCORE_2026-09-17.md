@@ -9,7 +9,7 @@ The only file it wrote in canon is this one.
 
 Gate under test: canon `ops/claim_gate/claim_gate.py` + `surfaces.py` +
 `config/{common,dci,lgm,gci}.json` + `fixtures/` (24 positive, 15 negative),
-at canon HEAD `7a091a0`.
+at canon HEAD `811a0ec`.
 
 Properties, at the HEADs measured:
 
@@ -845,7 +845,7 @@ it by page (R2, R3-T2) are noise.**
 ## 4. PART 4 — THE SCORE
 
 Method: for each known defect, a worktree in `/tmp/claim-gate-scratch/r3/wt` at
-the commit immediately before the fix, `CANON_ROOT` at canon HEAD `7a091a0`, and
+the commit immediately before the fix, `CANON_ROOT` at canon HEAD `811a0ec`, and
 `--today` set to the fixing commit's date (the fair test: judging a tree by facts
 from its own day, not from a week in its future). The gate wrapper
 `ops/claim_gate.sh` was added on 2026-09-17 and does not exist in the historical
@@ -1360,7 +1360,7 @@ $ git -C <each> worktree list
 /Users/vongimbel/code/longmontcoloradoinsulation.com  a86c5af [main]
 /Users/vongimbel/code/greeleycoloradoinsulation.com   ee0157d [main]
 ```
-HEAD SHAs are identical to the session's opening snapshot: canon `7a091a0`,
+HEAD SHAs are identical to the session's opening snapshot: canon `811a0ec`,
 DCI `1b6949c`, LGM `a86c5af`, GCI `ee0157d`. No page, generator, config,
 fixture or live site was changed by this row.
 

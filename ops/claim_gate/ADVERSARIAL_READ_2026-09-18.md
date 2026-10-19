@@ -4,14 +4,14 @@ Sixth adversarial pass. Zero inherited context: every instrument below was built
 from scratch in `/tmp/gate-close/r6/`, and every number was measured, not read
 out of a prior document. Nothing in canon or in the three properties was edited.
 
-**State found, and left.** The brief named canon `f8fe33a`, DCI `bdf6701`,
+**State found, and left.** The brief named canon `5137e8b`, DCI `bdf6701`,
 LGM `4211b8d`, GCI `3a1357f`. Those were each one commit stale by the time the
 first command ran — a concurrent session landed `Release lane
 gate-close-findings-2026-09-18-*` in all four repos at `17:11` and pushed canon.
 Actual heads under review:
 
 ```
-calibrated-design-canon         58e98a0   main   clean   0 0
+calibrated-design-canon         5d53a22   main   clean   0 0
 denvercoloradoinsulation.com    65383a7   main   clean   0 0
 longmontcoloradoinsulation.com  95c93d1   main   clean   0 0
 greeleycoloradoinsulation.com   34adbf4   main   clean   0 0
@@ -228,7 +228,7 @@ above. It fires on correct attributions and on non-attributions. It is latent on
 all three properties today (all show R2 `ADJ 0`), and live for anyone who writes
 a concatenated utility name.
 
-**The splitter fix opened no pardon — tested and clean.** `7be4641` stopped the
+**The splitter fix opened no pardon — tested and clean.** `d8666f3` stopped the
 sentence splitter breaking at an abbreviation period, which is what let R7-G1
 finally fire. The obvious new hole is that a longer sentence lets an allowlisted
 phrase pardon a defect joined to it across the abbreviation. It does not:
@@ -246,7 +246,7 @@ allowlist + "Colo."    + defect                      RAW 1 ADJ 1 exit 1  CAUGHT
 allowlist + "Ave."/"Mr."/"vs." + defect              RAW 1 ADJ 1 exit 1  CAUGHT
 ```
 
-**The R4 anaphora class (`8ff3a55`) does not over-sweep — tested and clean.**
+**The R4 anaphora class (`2f8f88d`) does not over-sweep — tested and clean.**
 Every legitimate use the brief protects is raised and cleared through a *named*
 filter rather than silently dropped, and a real denial still fires:
 
@@ -272,7 +272,7 @@ control: inversion joined by ", and"                    RAW 2 ADJ 2 exit 1  CAUG
 ```
 
 **NEW-23 (severe, enforcement not detection) — R3's demotion silently removed
-20 of the 86 vectors from the blocking set.** `b00e3b1` made R3 report-only on
+20 of the 86 vectors from the blocking set.** `32f2e73` made R3 report-only on
 its measured 68.1% false-positive rate. 17 of the 20 R3 vectors are still
 DETECTED, and **every one of them now exits 0**. A rebate dollar figure —
 the defect class that produced 545 live instances and the owner's ban — can no
@@ -368,7 +368,7 @@ controls do not.
 
 ## (c) Every exception added this pass, and whether its justification is TRUE
 
-Config commits this pass: `8ff3a55 … eafada2`, 24 of them. The exception-adding
+Config commits this pass: `2f8f88d … 22caf78`, 24 of them. The exception-adding
 ones are enumerated below with the assertion each makes and my test of it.
 
 ### R1 `quotation_allowlist` — 13 entries across three properties
@@ -436,7 +436,7 @@ characters of the figure, so this is not a loosening.
 narrowest possible form of the change: it widens *who counts as a publisher*,
 not *what counts as attribution*. Note, though, that `f_pub` is the filter the
 prior read found exempts a sentence that merely **names** a publisher regardless
-of whether that publisher is the source (vector R5-E3) — and `1bcc0b7` this pass
+of whether that publisher is the source (vector R5-E3) — and `94c6ca1` this pass
 removed R5's blanket `recognised_publishers` exemption, which is what flipped
 DCI's `insulation-lakewood.html`. The two changes pull in opposite directions
 and both are defensible; the net is not measured anywhere.
@@ -1555,7 +1555,7 @@ Regeneration-prone files checked individually — all 200, all exact:
 ## (j) All four repos' state
 
 ```
-calibrated-design-canon         58e98a0   main   clean   0 0
+calibrated-design-canon         5d53a22   main   clean   0 0
 denvercoloradoinsulation.com    65383a7   main   clean   0 0
 longmontcoloradoinsulation.com  95c93d1   main   clean   0 0
 greeleycoloradoinsulation.com   34adbf4   main   clean   0 0

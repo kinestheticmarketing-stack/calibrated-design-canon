@@ -74,9 +74,9 @@ configured for it. `METHODS/ARCHITECT_DISCIPLINE.md`'s Rule 3 says so outright.
 commits pushed that day added zero occurrences:
 
 ```
-$ git diff 4c76593..HEAD -- . | grep -c "^[+].*$VPS"
+$ git diff 8135ebd..HEAD -- . | grep -c "^[+].*$VPS"
 0
-$ git grep -l "$VPS" 4c76593 -- | wc -l
+$ git grep -l "$VPS" 8135ebd -- | wc -l
 11
 ```
 
@@ -133,7 +133,7 @@ it would break every published `raw.githubusercontent` URL that
 The first version of this card spelled the address out four times. That was
 caught before anything was pushed and replaced with `$VPS` above, so the card's
 own file adds **zero** occurrences. But the commit that created it,
-`6ce922f`, carries the literal address once in its message, and that message
+`aa5fba8`, carries the literal address once in its message, and that message
 cannot be corrected: the commit is no longer `HEAD`, three later commits sit on
 top of it, and amending it would mean rewriting history — which this pass is
 explicitly forbidden to do. So the net effect of this pass on the exposure is
@@ -162,7 +162,7 @@ it remains fetchable from chat.
 grep -A5 "^## Closed" docs/board/done/canon-is-public-and-publishes-the-production-vps-address.md
 ```
 
-Commit: `002ca34` (row R1, lane `close-down-rev2-2026-09-28`)
+Commit: `75935d2` (row R1, lane `close-down-rev2-2026-09-28`)
 
 ## Superseded
 
@@ -186,5 +186,5 @@ for r in origin/main origin/feat/seo-geo-scaffold; do
 done   # both must print 0
 ```
 
-Commits: `f3580bd` (canon `main`), `36ad27b` (canon `feat/seo-geo-scaffold`),
+Commits: `583267c` (canon `main`), `27c1224` (canon `feat/seo-geo-scaffold`),
 `0ccaeb0` (`~/.claude`, rules.md re-sync). Lane `close-down-rev2-2026-09-28`.

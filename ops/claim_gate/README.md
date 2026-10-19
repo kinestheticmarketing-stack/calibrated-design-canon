@@ -352,7 +352,7 @@ gate prints *"`canary= R6b-G3 ... UNAVAILABLE: requires a Chrome binary this
 gate cannot assume (spec 6, 7.3). No browser, no outbound request. Disclosed,
 not run, not counted as a control.`"* **That told the operator their machine was
 the problem, and it was false twice over.** Measured 2026-09-21 against
-`claim_gate.py` at `20b9455` (7737 lines): `grep -nE
+`claim_gate.py` at `224dc7a` (7737 lines): `grep -nE
 'playwright|puppeteer|selenium|webdriver|--headless|CDP|devtools'` returns **0**
 — a tested zero, since adding `|opt_in` to the same alternation returns hits in
 the same run — and `grep -in 'chrome\|chromium'` returns **exactly 2**, both
