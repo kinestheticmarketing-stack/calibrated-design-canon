@@ -41,7 +41,7 @@ property. Shared infrastructure belongs in canon.
 | VPS-side systemd timers | `/etc/systemd/system/*.timer` on the VPS only — no copy in any repo (confirmed 2026-08-30, still true) | Schedule the checks in `ops/` |
 | Deploy path | `scripts/deploy_ops_to_vps.sh` | The **only** sanctioned way a canon change to `ops/` reaches the VPS |
 | Drift check | `scripts/monitoring/ops_drift_check.sh`, wired into `scripts/monitoring/daily_checks.sh` | Alerts if the VPS ever diverges from canon again |
-| Rules pipeline (code) | `~/.claude/hooks/sync_rules_from_canon.sh` — **not in this repo**, local-machine config | Regenerates `~/.claude/context/rules.md` from this repo's `METHODS/ARCHITECT_DISCIPLINE.md` (Rules 1-11 block) plus `~/.claude/CLAUDE.md`'s kickoff-decomposition section, every session, before `~/.claude/hooks/h01_session_start.sh` injects it |
+| Rules pipeline (code) | The realm system (private) — **not in this repo** | Rules live in one home, the realm registry. The realm generator compiles the global rules file, the packs and the guard specifications from it. Canon documents explain methods; a canon passage that states a rule cites its registry id. The earlier canon-to-`rules.md` sync script was deleted in REALM KICKOFF 3 v3 (2026-10-13); see [The rules pipeline](#the-rules-pipeline-claudecontextrulesmd) for its history |
 | Rules pipeline drift check | `scripts/monitoring/rules_drift_check.sh`, wired into `scripts/monitoring/daily_checks.sh` | Alerts if `rules.md` ever diverges from canon's `ARCHITECT_DISCIPLINE.md`, or if the local canon checkout falls behind `origin/main` |
 | Mac-side monitoring layer | `scripts/monitoring/` in this repo | Uptime, TLS expiry, deploy drift (per-site), page-200, ops drift, and rules drift — see below |
 | Mac-side scheduling | `~/Library/LaunchAgents/com.vongimbel.r2uptime.plist` and `com.vongimbel.r2daily.plist` — **not in this repo**, local-machine config | Run the checks in `scripts/monitoring/` |
@@ -640,6 +640,13 @@ LGM, a re-run left zero drift-check state files for any property — fully
 clean across all three.
 
 ## The rules pipeline (`~/.claude/context/rules.md`)
+
+**Superseded by the realm system.** Rules live in one home, the realm
+registry. The realm generator compiles the global rules file, the packs
+and the guard specifications from it. Canon documents explain methods; a
+canon passage that states a rule cites its registry id. The sync script
+described below was deleted in REALM KICKOFF 3 v3 (2026-10-13); the rest
+of this section is kept as history of the 2026-09-02 fix.
 
 **Gap found and fixed 2026-09-02.** `~/.claude/context/rules.md` — the file
 `~/.claude/hooks/h01_session_start.sh`'s `SessionStart` hook tells every

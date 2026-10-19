@@ -1058,10 +1058,12 @@ under-decomposition by watching a wave run slowly has already lost
 the time this rule exists to protect.
 
 PRACTICAL IMPLEMENTATION
-- Enforcement is machine-level, at ~/.claude/CLAUDE.md, so it binds
-  every Architect chat — not only chats that have read this
-  document.
-- The enforced directive text, verbatim:
+- Rules live in one home, the realm registry. The realm generator
+  compiles the global rules file, the packs and the guard
+  specifications from it. Canon documents explain methods; a canon
+  passage that states a rule cites its registry id.
+- The directive, as the registry now states it (K0002, K1380,
+  K0005):
 
 DECOMPOSITION DIRECTIVE — EXECUTE BEFORE PHASE 1
 
@@ -1069,12 +1071,14 @@ Count the independent work units in this kickoff. Independent means two units th
 
 If there are 2 or more, spawn one sub-agent per unit and run them in parallel. Serial execution of parallelizable work is a defect.
 
-If this kickoff contains 2 or more independent units and no NON-PARALLELIZABLE clause naming the specific dependency that forces serial execution, HALT IMMEDIATELY and report: "Kickoff is under-decomposed: N independent units, no fan-out specified, no NON-PARALLELIZABLE clause." Do not execute. Do not work around it.
+A kickoff with 2 or more independent units and no NON-PARALLELIZABLE clause is not a stop: the Executor fans out one agent per unit and reports the missing fan-out (N independent units, no fan-out specified) in the Final Report (K0002).
+
+A missing or late ledger is not a stop: the Executor builds the ledger from the closed scope, reports it and finishes (K1380). Declared agent count equals row count: if the declared agent count is below the ledger row count, the Executor raises it to the row count, runs every row and reports the correction (K0005).
 
 - Anti-gaming rule: a NON-PARALLELIZABLE clause naming a dependency
   that does not exist is a worse defect than the under-decomposition
   it conceals — it is an assertion, not an omission, and it defeats
-  the halt check by design rather than by oversight.
+  the decomposition check by design rather than by oversight.
 - Visibility rule: the fan-out must be legible at a glance — stated
   in the first block of the kickoff, not buried in a later section
   where the Director has to go looking for it.

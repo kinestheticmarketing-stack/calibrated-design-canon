@@ -516,6 +516,72 @@ METHODOLOGY — The Calibrated Stack (meta-receipt)
   whole portfolio, AND productized for sale ($47, Gumroad). Not just using
   AI: built a repeatable governance system for it and sells it. · Gumroad
 
+───────────────────────────────────────────────────────────────
+LIBRARY (second brain course library)
+───────────────────────────────────────────────────────────────
+
+- 2026-10-11 · LIBRARY · CAPABILITY · Verified inventory of the full
+  shared course library: 533 folders, 124,450 files, 26,450 videos, 6,051
+  GB of video, 0 folders failed, positive control passed. · course-library
+  inventory_v3 Final Report
+
+- 2026-10-11 · LIBRARY · PERFORMANCE · One 120-video copywriting course
+  transcribed on a laptop at 11.44x real time: 50.5 hours of video in 4.4
+  hours, 503,956 words. · course-library stage 2 pilot Final Report
+
+- 2026-10-11 · LIBRARY · CAPABILITY · That course distilled into 776
+  attributed tactics and merged into a 630-entry playbook; 93 entries
+  taught in two or more lessons; 776 of 776 tactics mapped to a source
+  lesson; 0 copy-check failures. · course-library stage 4 and stage 5
+  Final Reports
+
+- 2026-10-11 · LIBRARY · PERFORMANCE · Blind test: the Director chose the
+  email series written with the course-derived pack over the no-pack
+  series, without knowing which was which. One offer, one judge; the
+  baseline was the model alone. · course-library test/email-blind key file
+
+- 2026-10-11 · LIBRARY · CAPABILITY · All 630 playbook entries tagged with
+  a cross-field principle; 111 principles in the shared list. ·
+  course-library stage 6 Progress report
+
+───────────────────────────────────────────────────────────────
+REALM (private rule system: one registry, compiled rules and guards)
+───────────────────────────────────────────────────────────────
+
+Every number below is computed by a script that reads the named
+source; rerun it to check.
+
+- 2026-10-19 · REALM · CAPABILITY · 1743 rule statements mapped from the
+  rule sources into one registry. · realm registry/RULES_MAP.tsv data
+  rows, commit 9bb2221
+
+- 2026-10-19 · REALM · CAPABILITY · 1395 unique rules after merging
+  duplicates; 1365 active, the rest superseded. · realm
+  registry/REGISTRY.tsv active+superseded rows, commit d85b4af
+
+- 2026-10-19 · REALM · PERFORMANCE · 23 core rules loaded every session,
+  in a compiled core file of 61 lines. · realm registry/REGISTRY.tsv
+  active layer B rows, commit d85b4af; realm out/CLAUDE.core.md line
+  count, commit d0c636f
+
+- 2026-10-19 · REALM · CAPABILITY · 20 topic packs compiled from the
+  registry. · realm out/packs/*.md count, commit d85b4af
+
+- 2026-10-19 · REALM · CAPABILITY · 12 hard-stop rules (layer A). · realm
+  registry/REGISTRY.tsv active layer A rows, commit d85b4af
+
+- 2026-10-19 · REALM · PERFORMANCE · Guard install gate in REALM KICKOFF
+  7c: 510 of 510 deploy-guard test rows passed. ·
+  ~/.claude/realm-install/INSTALL_7c.md (not in git), md5 d2e605d2c37d
+
+- 2026-10-19 · REALM · PERFORMANCE · 40 rows recorded in the breach ledger
+  (counts only here). · ~/.claude/realm-install/ledger/breaches.tsv data
+  rows (not in git), md5 07f15d5a4833
+
+- 2026-10-19 · REALM · CAPABILITY · 2 tool-neutral outputs from one
+  registry: AGENTS.md and the Claude Code adapter. · realm out/AGENTS.md +
+  out/adapters/claude-code/, commit d0c636f/d85b4af
+
 ═══════════════════════════════════════════════════════════════
 VERIFICATION RECEIPTS — defects our checks caught, and missed
 ═══════════════════════════════════════════════════════════════
@@ -758,20 +824,6 @@ Format: [DATE] · [ASSET] · [CAUGHT: PRE-LIVE | POST-LIVE] · [WHAT] ·
   affected. · commit `78f5a92`
 
 SUMMARY: 24 rows · 9 PRE-LIVE · 15 POST-LIVE · computed 2026-09-21
-
-───────────────────────────────────────────────────────────────
-LIBRARY (second brain course library)
-───────────────────────────────────────────────────────────────
-
-- 2026-10-11 · LIBRARY · CAPABILITY · Verified inventory of the full shared course library: 533 folders, 124,450 files, 26,450 videos, 6,051 GB of video, 0 folders failed, positive control passed. · course-library inventory_v3 Final Report
-
-- 2026-10-11 · LIBRARY · PERFORMANCE · One 120-video copywriting course transcribed on a laptop at 11.44x real time: 50.5 hours of video in 4.4 hours, 503,956 words. · course-library stage 2 pilot Final Report
-
-- 2026-10-11 · LIBRARY · CAPABILITY · That course distilled into 776 attributed tactics and merged into a 630-entry playbook; 93 entries taught in two or more lessons; 776 of 776 tactics mapped to a source lesson; 0 copy-check failures. · course-library stage 4 and stage 5 Final Reports
-
-- 2026-10-11 · LIBRARY · PERFORMANCE · Blind test: the Director chose the email series written with the course-derived pack over the no-pack series, without knowing which was which. One offer, one judge; the baseline was the model alone. · course-library test/email-blind key file
-
-- 2026-10-11 · LIBRARY · CAPABILITY · All 630 playbook entries tagged with a cross-field principle; 111 principles in the shared list. · course-library stage 6 Progress report
 
 ═══════════════════════════════════════════════════════════════
 PROJECTIONS (not receipts — targets awaiting real numbers)

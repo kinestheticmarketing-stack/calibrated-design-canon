@@ -77,6 +77,7 @@ Standard and philosophy:
   and methods
 
 Method specs (METHODS/):
+The live rule set is compiled by the realm system (private): registry, generator, global rules file, packs and guards. Rule changes go to the registry; canon documents explain methods.
 - [the-calibrated-stack.md](METHODS/the-calibrated-stack.md) —
   the practitioner's method
 - [AUDITOR_PROTOCOL.md](METHODS/AUDITOR_PROTOCOL.md) — Auditor

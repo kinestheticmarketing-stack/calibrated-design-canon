@@ -27,6 +27,15 @@ Per site, one kickoff, run in that site's repo:
 The Final Report states the finding count and the previous
 check's count.
 
+# Hard-stop retroactive check
+During each property's quarterly check, run the realm's
+state-checkable hard-stop checks against that property's repo,
+read only: the server address written literally in a tracked
+file; course source material committed; secret patterns in
+tracked files. Report raw counts and file names only, never a
+value. A hit is fixed in the same pass, one defect type, every
+instance.
+
 # RULES ADDED 2026-10-11
 1. When the check finds a topic false on one page, the correction pass covers every sentence on every page of every property that mentions that topic, listed by a term sweep with a positive control, not only the sentences the check quoted.
 2. Sweeps read rendered text including text a page's own script generates (run the page in a browser, or extract the script's own string constants), and also list sentences that state a topic's status without naming the program (launch, coming, open, closed, waitlist, and number words for counts).

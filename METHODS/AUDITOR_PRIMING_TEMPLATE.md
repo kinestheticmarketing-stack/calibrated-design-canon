@@ -123,7 +123,9 @@ DIMENSION U6 — DECOMPOSITION
     decomposes.
   - Does the kickoff OPEN with a unit ledger — one row per file
     changed, per page authored, per repo swept, per deploy? A
-    kickoff with no unit ledger is an automatic CRITICAL, not a flag.
+    kickoff missing its ledger is an automatic CRITICAL, not a flag.
+    It is not a stop: the Executor builds the ledger from the closed
+    scope, reports it and finishes (K1380).
   - Does the declared agent count equal the ledger row count? An
     agent count below the ledger row count is an automatic CRITICAL.
   - Count the ledger rows yourself against the files, pages, repos,
@@ -132,7 +134,7 @@ DIMENSION U6 — DECOMPOSITION
   - A ledger that under-counts is a CRITICAL carrying the same
     weight as no ledger at all. An under-counted ledger is worse
     than useless: it feeds the agent-count check a false row count,
-    so the check passes on work it should have halted.
+    so the check passes on work it should have caught.
 
 DIMENSION U7 — RULE 1 / EFFICIENCY BACKSTOP
   - Full rule text lives in METHODS/ARCHITECT_DISCIPLINE.md, Rule 1
