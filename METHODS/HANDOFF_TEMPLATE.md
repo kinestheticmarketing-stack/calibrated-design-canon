@@ -555,6 +555,19 @@ INFORMATION RETRIEVAL ORDER. (1) Architect looks it up: memory, past chats, web,
 
 NO OWNER/PARTNER QUESTIONS. Clients and partners (Garrett, Rob, any owner) are not accessible and the Director is not a courier. Owner info is gathered ONCE via a complete intake form at genesis. After intake: zero owner questions. A gap after intake is the form's failure; ship without the fact. Executors never flag work for 'owner review'.
 
+### Live-production rules
+
+These bind any wave that touches a live production system. Copy them into the handoff's Rules section verbatim.
+
+- **Pacing:** Live probes against production are paced: at most one request per second, or a declared batch size with a sleep between batches. Scanner-shaped paths are probed last and slowest. No probe burst runs while a deploy, restore, or migration is in flight.
+- **Completion notices:** Act only on completion notices the harness delivers. Never write one yourself. Before acting on a timed wait, re-measure the clock. A self-written notice found afterward is reported as a process slip in that wave's Final Report.
+- **Replay baselines:** Capture sets and replay scripts live under a persistent per-project captures folder (~/.<project>-captures/<wave>/), never /tmp. Time-varying cells are masked by the replay script itself, not by judgment on each run.
+- **Addresses:** Production is reached only through its ssh alias. Never resolve or print any hostname's A record or the production IP during a wave; public sites and servers may share the address.
+- **Live containers:** Live-verify agents read logs and probe HTTP; they never execute application entrypoints in a production container. Log greps that can emit client IPs are piped through a redaction before display.
+- **Probe marker:** Every live probe that can create a countable row (page view, tap, lead) carries a fixed marker (utm_source=<project>-probe, lowercase); every owner-facing count excludes it.
+- **New-route checklist:** Every new public or HQ route gets, in the same wave: a slash-variant probe on every host, an every-method probe, and a secrets-in-logs grep after the first live request.
+- **Personal-data lookups:** Lookups of leads, sessions or other personal data during a wave select only the columns the task needs. Never SELECT *.
+
 ═══════════════════════════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════════════════════════
