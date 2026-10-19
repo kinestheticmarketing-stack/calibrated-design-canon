@@ -36,7 +36,7 @@ here. One line per entry: date, source project, lesson.
   METHODS/DESIGN_PSYCHOLOGY.md overlap dr-canon principles
   (offer-stack architecture, damaging admission) — fold
   cross-references into dr-canon when it stands up.
-- 2026-07-22 | seo-geo extraction (Vahe Arabian Publisher SEO course, M5-M7) | Knowledge corpora referencing third-party platforms/tools should maintain one shared deprecation/currency ledger rather than independently re-verifying and re-flagging the same stale-tool fact across multiple documents — recurred 3x in this project alone (M5, M6, M7 rollups each separately proposed this).
+- 2026-07-22 | seo-geo extraction (Vahe Arabian SEO course, M5-M7) | Knowledge corpora referencing third-party platforms/tools should maintain one shared deprecation/currency ledger rather than independently re-verifying and re-flagging the same stale-tool fact across multiple documents — recurred 3x in this project alone (M5, M6, M7 rollups each separately proposed this).
 - 2026-08-06 | seo-geo sources pipeline | Standing deprecation-ledger
   proposal — a "retired Google/platform features" ledger, independently
   raised in Vahe's Practical Implementation, Reporting & Analytics, and
@@ -47,7 +47,7 @@ here. One line per entry: date, source project, lesson.
   should be built once as a standalone corpus artifact at skill-build
   time rather than re-derived per course. See SKILL_GATE.md.
 - 2026-08-08 | automation layer / portfolio ops | Add the two rungs above skills — loops (scheduled, local machine) and routines (scheduled, cloud, no operator). Prompt→skill is in use; loop→routine is not. Research (per-market competitor/ranking/citation pulls) is ONE automation inside this layer, not the layer itself. WHY: a solo operator can't hand-watch rankings, AI citations, GSC/Bing data, and leads across a dozen+ corridor sites daily — this layer makes the empire-coverage play physically possible for one person, and can partly self-feed RECEIPTS.md. TRIGGER (do NOT build before): build the whole-build automation layer AFTER Longmont — the 3rd complete manual clone (DCI=1, GCI=2, Longmont=3), where the repeating pattern separates from per-site variation and the build is settled enough to encode as a control; automating a still-moving target (nginx sitemap trap, link-styling, per-market rebate re-verification) codifies the wrong thing. Then PROVE the layer on Fort Collins + Loveland before the expansion cities (Boulder, Castle Rock, Colorado Springs, Pueblo, etc.). EXCEPTION: atomic sub-steps that have stopped teaching (identical sitemap-verify sequence, fixed SEO-audit checklist) are automatable the moment they're done twice with zero variation — "say it twice → skill" at sub-step level. DISCIPLINE: routines touching LIVE properties inherit full stakes (Auditor + verification), NOT the cavalier bypass-permissions posture that suits disposable ad-gen. SEQUENCE: 1) finish DCI SEO catch-up 2) GCI manual 3) Longmont manual 4) build automation layer 5) Fort Collins + Loveland through it 6) expansion cities = clone the system.
-- 2026-08-12 | seo-geo sources pipeline | **Olga Zarr "SEO Audit Mastery"
+- 2026-08-12 | seo-geo sources pipeline | **Olga Zarr OZA corpus
   baseline counts recorded from its first-ever audit use.** 50 tactics,
   OZA-01..OZA-50, contiguous, zero gaps, across 6 TEACHING lesson files +
   ROLLUP; module `seo-audit-mastery-core`, prefix OZA. **No SKILL_GATE.md and
@@ -219,7 +219,7 @@ OPEN ITEMS ACROSS THE PORTFOLIO (2026-08-12 session paperwork)
   `-longmont` pattern) need independent verification per property before
   either page is authored.
 
-- 2026-08-12 | Portfolio | Zarr audit (Olga Zarr, "SEO Audit Mastery," 50
+- 2026-08-12 | Portfolio | Zarr audit (Olga Zarr, OZA corpus, 50
   tactics) has not been run on DCI or Greeley — Longmont is the only
   property with a Zarr baseline. Both siblings have only ever been audited
   against three corpora (Allsopp, Vahe, Floate); the fourth is a later wave.

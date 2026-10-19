@@ -51,7 +51,7 @@ Read direction only flows sources → playbook → skill. Nothing downstream edi
 
 ## Extraction schema
 
-This is the convention the existing folders (Glen Allsopp's SEO Blueprint 3, Vahe Arabian's Publisher SEO course) already implement — documented here, not invented:
+This is the convention the existing folders (Glen Allsopp's SB3 corpus, Vahe Arabian's SEO course) already implement — documented here, not invented:
 
 - **Per-module folders.** One directory per course module (e.g. `on-site-blueprint/`, `technical-seo/`), matching the course's own module structure.
 - **Per-lesson files.** One `.md` file per lesson, named `lesson-NN-{slug}.md`, each following a fixed section order:
@@ -68,28 +68,28 @@ Every source gets a unique prefix so an audit verdict stays traceable to its aut
 
 | Prefix | Source | Meaning | Range in use |
 |--------|--------|---------|--------------|
-| TLB | Glen Allsopp — SEO Blueprint 3 | Link Building Blueprint | TLB-01..38 |
-| TKR | Glen Allsopp — SEO Blueprint 3 | Keyword Research Blueprint | TKR-01..29 |
-| TSC | Glen Allsopp — SEO Blueprint 3 | Super Content Blueprint | TSC-01..22 |
-| TLO | Glen Allsopp — SEO Blueprint 3 | Local SEO Blueprint | TLO-01..73 |
-| TEB | Glen Allsopp — SEO Blueprint 3 | Experts Blueprint | TEB-01..14 |
-| TSP | Glen Allsopp — SEO Blueprint 3 | Superpixels | TSP-01..36 |
-| TPB | Glen Allsopp — SEO Blueprint 3 | SEO Blueprint 3 Playbook | TPB-01..09 (partial source — see Known gaps) |
-| PIN | Vahe Arabian — Publisher SEO | Introduction | PIN-01..03 |
-| PTE | Vahe Arabian — Publisher SEO | Technical SEO | PTE-01..77 |
-| PCO | Vahe Arabian — Publisher SEO | Content SEO | PCO-01..52 |
-| PTA | Vahe Arabian — Publisher SEO | Tactics | PTA-01..30 |
-| PPI | Vahe Arabian — Publisher SEO | Practical Implementation | PPI-01..22 |
-| PRA | Vahe Arabian — Publisher SEO | Reporting & Analytics | PRA-01..26 |
-| PCD | Vahe Arabian — Publisher SEO | Content Distribution | PCD-01..30 |
-| PAR | Charles Floate — Parasite SEO | Parasite SEO (39 BLOCKED / 15 ADMIT — see SKILL_GATE.md) | PAR-01..54 |
-| OZA | Olga Zarr — SEO Audit Mastery | SEO Audit Mastery (SEOSLY) | OZA-01..50 |
-| LLS | Luther Landro — Local SEO Checklist | Local SEO Checklist, 2024 Edition | LLS-01..110 |
-| GLB | Julian Goldie — Link-Building Mastery | Link Building Mastery (1 FORBIDDEN tactic — see EXTRACTION_LOG.md) | GLB-01..101 |
-| JNP | Jesper Nissen — Parasite SEO 2025 | Parasite SEO 2025 (62 BLOCKED / 24 ADMIT — see SKILL_GATE.md) | JNP-01..86 |
-| LSR | Local SEO Revolution / GBP Next Gen | GBP generative-SEO optimization (agency material excluded — see EXTRACTION_LOG.md) | LSR-01..33 |
+| TLB | Glen Allsopp — SB3 corpus | Link Building Blueprint | TLB-01..38 |
+| TKR | Glen Allsopp — SB3 corpus | Keyword Research Blueprint | TKR-01..29 |
+| TSC | Glen Allsopp — SB3 corpus | Super Content Blueprint | TSC-01..22 |
+| TLO | Glen Allsopp — SB3 corpus | Local SEO Blueprint | TLO-01..73 |
+| TEB | Glen Allsopp — SB3 corpus | Experts Blueprint | TEB-01..14 |
+| TSP | Glen Allsopp — SB3 corpus | Superpixels | TSP-01..36 |
+| TPB | Glen Allsopp — SB3 corpus | SB3 Playbook | TPB-01..09 (partial source — see Known gaps) |
+| PIN | Vahe Arabian — SEO course | Introduction | PIN-01..03 |
+| PTE | Vahe Arabian — SEO course | Technical SEO | PTE-01..77 |
+| PCO | Vahe Arabian — SEO course | Content SEO | PCO-01..52 |
+| PTA | Vahe Arabian — SEO course | Tactics | PTA-01..30 |
+| PPI | Vahe Arabian — SEO course | Practical Implementation | PPI-01..22 |
+| PRA | Vahe Arabian — SEO course | Reporting & Analytics | PRA-01..26 |
+| PCD | Vahe Arabian — SEO course | Content Distribution | PCD-01..30 |
+| PAR | Charles Floate — PAR corpus | PAR (39 BLOCKED / 15 ADMIT — see SKILL_GATE.md) | PAR-01..54 |
+| OZA | Olga Zarr — OZA corpus | OZA (SEOSLY) | OZA-01..50 |
+| LLS | Luther Landro — LLS corpus | LLS, 2024 edition | LLS-01..110 |
+| GLB | Julian Goldie — GLB corpus | GLB (1 FORBIDDEN tactic — see EXTRACTION_LOG.md) | GLB-01..101 |
+| JNP | Jesper Nissen — JNP corpus | JNP (62 BLOCKED / 24 ADMIT — see SKILL_GATE.md) | JNP-01..86 |
+| LSR | LSR corpus (a GBP course) | GBP generative-SEO optimization (agency material excluded — see EXTRACTION_LOG.md) | LSR-01..33 |
 
-Glen's On-Site Blueprint (58 lessons) and Audits Blueprint (13 audits) mint no tactic IDs of their own — On-Site content is folded into the tactic prefixes above via cross-reference, and Audits synthesizes existing tactics rather than minting new ones. seo-jesus-one-page-websites-2025 has no prefix minted yet (see Known gaps — extraction not present on disk).
+Glen's On-Site Blueprint (58 lessons) and Audits Blueprint (13 audits) mint no tactic IDs of their own — On-Site content is folded into the tactic prefixes above via cross-reference, and Audits synthesizes existing tactics rather than minting new ones. <SEO Jesus course corpus> has no prefix minted yet (see Known gaps — extraction not present on disk).
 
 Next available prefix for a new source: pick two or three letters not in the table above, unique to that author. Do not reuse a prefix across sources even if a course is later found to be the "same" material re-packaged.
 
@@ -108,12 +108,12 @@ How a site audit consumes this layer (the consolidated one-kickoff method proven
 - **Sources get re-extracted when the course itself updates** (new lessons, revised modules). The source's `EXTRACTION_LOG.md` gets a new entry; existing tactic IDs are never renumbered, new ones append.
 - **The playbook re-distills deltas**, not the whole source, when a source updates — only the changed tactics need re-synthesis.
 - **The skill inherits** from the playbook on its own release cycle, not on every source update.
-- SEO/GEO is not static — engine algorithm changes, deprecated rich-result types, and platform sunsets (see the M7/PCD currency correction on FAQ/How-to rich results, `sources/vahe-arabian-publisher-seo/EXTRACTION_LOG.md`) mean a **periodic refresh pass is expected**, not a one-time extraction. Treat every source as due for a currency check on a regular cadence, not just when the underlying course itself is revised.
+- SEO/GEO is not static — engine algorithm changes, deprecated rich-result types, and platform sunsets (see the M7/PCD currency correction on FAQ/How-to rich results, `sources/<Arabian SEO course corpus>/EXTRACTION_LOG.md`) mean a **periodic refresh pass is expected**, not a one-time extraction. Treat every source as due for a currency check on a regular cadence, not just when the underlying course itself is revised.
 
 ## Known gaps
 
-- **Glen Allsopp — SEO Blueprint 3 Playbook module (TPB).** Only the intro video and "State of SEO 2024" report page were supplied (TPB-01..09). Eight further Playbook report pages were never provided: Two Goliath Secrets, Goliath List Building, Goliaths Plan Their Year, Content Creation Mindset, Utilise Trending Bars, Focus on Link Velocity, Screenshot the SERPs, Analyse Footer Links. This is a documented partial-source gap, not a stalled extraction — re-open the Playbook module and resume minting from **TPB-10** if/when those pages are obtained. Full detail: `sources/glen-allsopp-seo-blueprint-3/EXTRACTION_LOG.md`.
-- **seo-jesus-one-page-websites-2025.** Module folders exist (`intro/`, `01-finding-emds/`, `02-launching-sites/`, `03-niche-selection/`, `04-link-building/`) but contain zero files — no lesson `.md` files, no `_MODULE_ROLLUP.md`, no `EXTRACTION_LOG.md`, no tactic-ID prefix minted. `SEO_GEO_SOURCES.md` previously stated "13 lessons already extracted," which does not match the current working tree on any branch (confirmed via `git log --all` — the path has no history anywhere, and `sources/` is correctly gitignored so this isn't a git-visibility issue). Either the extraction was done in an environment whose files never made it into this repo checkout, or it was never actually run. **Not audit-ready.** Needs Director decision: re-run the extraction from the original course material, or confirm the "13 lessons" claim was aspirational and update tracking accordingly.
+- **Glen Allsopp — SB3 Playbook module (TPB).** Only the intro video and "State of SEO 2024" report page were supplied (TPB-01..09). Eight further Playbook report pages were never provided: Two Goliath Secrets, Goliath List Building, Goliaths Plan Their Year, Content Creation Mindset, Utilise Trending Bars, Focus on Link Velocity, Screenshot the SERPs, Analyse Footer Links. This is a documented partial-source gap, not a stalled extraction — re-open the Playbook module and resume minting from **TPB-10** if/when those pages are obtained. Full detail: `sources/<SB3 corpus>/EXTRACTION_LOG.md`.
+- **<SEO Jesus course corpus>.** Module folders exist (`intro/`, `01-finding-emds/`, `02-launching-sites/`, `03-niche-selection/`, `04-link-building/`) but contain zero files — no lesson `.md` files, no `_MODULE_ROLLUP.md`, no `EXTRACTION_LOG.md`, no tactic-ID prefix minted. `SEO_GEO_SOURCES.md` previously stated "13 lessons already extracted," which does not match the current working tree on any branch (confirmed via `git log --all` — the path has no history anywhere, and `sources/` is correctly gitignored so this isn't a git-visibility issue). Either the extraction was done in an environment whose files never made it into this repo checkout, or it was never actually run. **Not audit-ready.** Needs Director decision: re-run the extraction from the original course material, or confirm the "13 lessons" claim was aspirational and update tracking accordingly.
 
 ## Build philosophy
 

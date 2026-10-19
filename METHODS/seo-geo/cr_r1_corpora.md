@@ -17,7 +17,7 @@ Fixed: METHODS/seo-geo/sources/ added to .gitignore. Re-ran dry-run: 0 staged.
 
 ## CENSUS — verified by walking the files, not read from the logs
 
-### Allsopp — glen-allsopp-seo-blueprint-3 · 197 files · 289 minted IDs
+### Allsopp — <SB3 corpus> · 197 files · 289 minted IDs
 | module | dir | prefix | n | contiguity |
 |---|---|---|---|---|
 | On-Site SEO | on-site-blueprint/ | T31..T58 (13 per-lesson prefixes) | 68 | contiguous within each lesson |
@@ -38,11 +38,11 @@ lessons carry tactics as named `### <Tactic Name>` headings under `## TACTICS`
 with no ID. So "289 minted IDs" understates On-Site's true tactic count.
 Proceeding on the real numbers.
 
-### Vahe — vahe-arabian-publisher-seo · 55 files · 240 minted IDs
+### Vahe — <Arabian SEO course corpus> · 55 files · 240 minted IDs
 PIN 3 · PTE 77 · PCO 52 · PTA 30 · PPI 22 · PRA 26 · PCD 30. All contiguous,
 no gaps, no duplicates. **Matches its EXTRACTION_LOG exactly.** Clean corpus.
 
-### Floate — charles-floate-parasite-seo · 10 files · 54 minted IDs
+### Floate — <PAR corpus> · 10 files · 54 minted IDs
 PAR-01..54, contiguous. Matches its log ("course-wide census: 54 tactics").
 
 ## ADMIT vs SKILL_GATE

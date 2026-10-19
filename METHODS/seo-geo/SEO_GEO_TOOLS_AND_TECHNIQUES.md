@@ -58,7 +58,7 @@ site:example.com intitle:[previous_year]
 "distinctive sentence from candidate page"
 ```
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lessons 5, 6, 7, 8.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lessons 5, 6, 7, 8.
 
 ═══════════════════════════════════════════════════════════════
 T2 — REGEX PATTERNS FOR URL AUDITS
@@ -96,7 +96,7 @@ For use in Screaming Frog (URL Address search field), Sitebulb, Google Sheets (C
 \.html$
 ```
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 12.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 12.
 
 ═══════════════════════════════════════════════════════════════
 T3 — REGEX PATTERNS FOR TITLE-TAG AUDITS
@@ -124,7 +124,7 @@ For use in Screaming Frog (Page Titles tab) or Google Sheets (Ctrl+F).
 \b([A-Z]\w+)\b.*\b\1\b
 ```
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 13.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 13.
 
 ═══════════════════════════════════════════════════════════════
 T4 — GOOGLE SHEETS IMPORTXML FOR ON-PAGE EXTRACTION
@@ -189,7 +189,7 @@ Free-tier alternative to paid crawlers for small-to-medium audits.
 
 **Caveat:** IMPORTXML has rate limits. Batch large URL lists. Reliability has degraded over time — for thousands of URLs, consider Apps Script or Python + BeautifulSoup.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 14.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 14.
 
 ═══════════════════════════════════════════════════════════════
 T5 — GOOGLE SHEETS IMPORTHTML FOR LIVE TABLE EXTRACTION
@@ -210,7 +210,7 @@ T5 — GOOGLE SHEETS IMPORTHTML FOR LIVE TABLE EXTRACTION
 =IMPORTHTML("https://example.com/page", "list", 1)
 ```
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 14.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 14.
 
 ═══════════════════════════════════════════════════════════════
 T6 — GOOGLE SEARCH CONSOLE WORKFLOWS
@@ -227,7 +227,7 @@ T6 — GOOGLE SEARCH CONSOLE WORKFLOWS
 2. Click on the query > Pages tab.
 3. Check if other pages on the same site rank for the same query.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 9.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 9.
 
 ═══════════════════════════════════════════════════════════════
 T7 — ARCHIVE.ORG HISTORICAL DIFF
@@ -241,7 +241,7 @@ For pages with traffic decline of unknown cause:
 
 **Caveat:** Coverage is uneven. Some pages have daily snapshots, others yearly.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 9.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 9.
 
 ═══════════════════════════════════════════════════════════════
 T8 — REDIRECT-CHAIN VERIFICATION TOOLS
@@ -257,7 +257,7 @@ Use cases:
 
 **Caveat:** Tool results vary by tool location (German-hosted tool may get redirected to .de variants). Cross-check with multiple tools.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 11.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 11.
 
 ═══════════════════════════════════════════════════════════════
 T9 — CRAWLERS
@@ -273,7 +273,7 @@ T9 — CRAWLERS
 - Different UX, similar capabilities.
 
 ### DLC Crawler (Glen Allsopp's free tool)
-- Free, distributed via SEO Blueprint 3.
+- Free, distributed via Glen Allsopp's SB3 corpus.
 - Cross-platform (Windows / Mac / Linux).
 - Suitable for sites under 500 pages.
 - Did not support regex search at time of course recording — verify current capability.

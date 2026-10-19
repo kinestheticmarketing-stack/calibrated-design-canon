@@ -60,16 +60,16 @@ For each quarterly review, check:
 
 
 ═══════════════════════════════════════════════════════════════
-LLS — LUTHER LANDRO, *THE LOCAL SEO CHECKLIST* (2024 ed.)
+LLS — LUTHER LANDRO, LLS CORPUS (2024 ed.)
 ADMISSIBILITY SCREEN — SCHEMA EXTENSION
 ═══════════════════════════════════════════════════════════════
 
-**Screened:** 2026-08-20. **Corpus:** `sources/luther-landro-local-seo-checklist/`,
+**Screened:** 2026-08-20. **Corpus:** `sources/<LLS corpus>/`,
 110 tactics LLS-01..LLS-110, contiguous, zero gaps, zero duplicates (re-verified).
 **Screened against:** DCI (Denver, 73 pp.), LGM (Longmont, 47 pp.), GCI (Greeley,
 34 pp.) — live, revenue-generating insulation-referral properties.
 **Full working record:** `/tmp/lls_phaseA_screen.md`. **Gate:**
-`sources/luther-landro-local-seo-checklist/SKILL_GATE.md`.
+`sources/<LLS corpus>/SKILL_GATE.md`.
 
 **SCHEMA NOTE — read before using this section.** The tracker's existing `Status`
 column is a **durability** axis (DURABLE / FRONTIER / DEAD): does the tactic still

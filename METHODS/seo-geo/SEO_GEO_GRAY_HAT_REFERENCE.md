@@ -29,7 +29,7 @@ STATUS
 
 **Build phase:** Phase 1 — tactics being added as extractions from gray-hat-heavy sources complete.
 
-Initial population is from SEO Jesus / One Page Websites 2025 extractions (13 lessons already captured).
+Initial population is from SEO Jesus course corpus extractions (13 lessons already captured).
 
 ═══════════════════════════════════════════════════════════════
 TACTIC FORMAT

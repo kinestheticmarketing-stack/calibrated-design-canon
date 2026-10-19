@@ -12,7 +12,7 @@ Never fix issues as they're discovered during an audit. Sweep the full site firs
 
 **Why:** Bias-to-action breaks attribution. When traffic moves after multiple simultaneous changes, you can't identify which change caused which effect. Audit-first preserves the diagnostic capacity for future ranking shifts.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 2.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 2.
 
 ═══════════════════════════════════════════════════════════════
 P2 — INCREMENTAL ROLLOUT (THE 5% RULE)
@@ -24,7 +24,7 @@ When fixing an issue that affects many pages, fix 5% of affected pages first. Ob
 
 **Applies to:** Title-tag rewrites, canonical-tag changes, URL structure migrations, internal-link refactors, schema additions, any change affecting >50 pages.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 4.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 4.
 
 ═══════════════════════════════════════════════════════════════
 P3 — CHANGE-BUNDLING PROHIBITION
@@ -34,7 +34,7 @@ Never fix multiple issue types simultaneously on the same surface. Don't fix red
 
 **Why:** When traffic moves, attribution requires isolation. Bundled changes make it impossible to identify which change caused which effect.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 4.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 4.
 
 ═══════════════════════════════════════════════════════════════
 P4 — LEAVE-WELL-ENOUGH-ALONE
@@ -46,7 +46,7 @@ Pages currently ranking well are excluded from "technically perfect" cleanup wor
 
 **Exceptions:** Clear technical errors that affect indexing or canonical signals (broken canonicals, parameter explosions, indexing-blocking misconfigurations).
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 4. Reinforced in Lessons 10, 11, 13.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 4. Reinforced in Lessons 10, 11, 13.
 
 ═══════════════════════════════════════════════════════════════
 P5 — FORWARD-ONLY FOR ESTABLISHED SITES
@@ -58,7 +58,7 @@ When changing URL conventions, title-tag templates, or other site-wide patterns 
 
 **Why:** Mass URL or convention changes risk rankings even with proper 301s. Forward-only changes carry zero risk and gradually migrate the site to better conventions over months.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lessons 10, 11.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lessons 10, 11.
 
 ═══════════════════════════════════════════════════════════════
 P6 — DESERVE-TO-RANK AS PRECONDITION
@@ -73,7 +73,7 @@ Before any technical audit fires on a site that has lost rankings, evaluate the 
 
 If the site fails this filter, no amount of technical SEO will save it. The content/UX work comes first.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 3.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 3.
 
 ═══════════════════════════════════════════════════════════════
 P7 — SITE-LEVEL CAUSE FOR PAGE-LEVEL SYMPTOMS
@@ -83,7 +83,7 @@ Most page-level traffic losses are not page-level problems. They're symptoms of 
 
 When auditing a stubborn page, also audit the site as a whole. Fixing only the affected page often misses the actual cause.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lessons 3, 9.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lessons 3, 9.
 
 ═══════════════════════════════════════════════════════════════
 P8 — NO-SINGLE-CAUSE FRAMING
@@ -93,7 +93,7 @@ There is no one thing Google changed that can be reverse-engineered to restore r
 
 Audit findings should be presented as a portfolio of issues to address, not as a search for the magic switch.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 3.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 3.
 
 ═══════════════════════════════════════════════════════════════
 P9 — REACTIVITY DISCIPLINE
@@ -105,7 +105,7 @@ Wait for clear patterns over months before triggering a recovery audit. Hallowee
 
 Google ships approximately 9 production changes per day (~654,000 experiments / 3,234 shipped improvements per year per their 2018 documentation). Volatility without a clear cause is the default state.
 
-**Source:** Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lessons 3, 9.
+**Source:** Glen Allsopp, SB3 corpus, On-Site Blueprint Lessons 3, 9.
 
 ═══════════════════════════════════════════════════════════════
 P10 — FIELD-TESTED OVER THEORY-TESTED

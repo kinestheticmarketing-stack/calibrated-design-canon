@@ -56,7 +56,7 @@ Consolidates multiple sub-types of URL variant issues:
 - Cross-reference robots.txt for misconfigured Disallow rules.
 
 **Sources:**
-- Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lessons 5, 6, 8, 10, 11, 12.
+- Glen Allsopp, SB3 corpus, On-Site Blueprint Lessons 5, 6, 8, 10, 11, 12.
 
 ---
 
@@ -80,7 +80,7 @@ Find pages that exist in Google's index but shouldn't — dev sites, staging env
 - Cross-reference with crawler-based audit for completeness.
 
 **Sources:**
-- Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lessons 5, 6.
+- Glen Allsopp, SB3 corpus, On-Site Blueprint Lessons 5, 6.
 
 ---
 
@@ -106,7 +106,7 @@ Identify title tags with repeated keywords or unnatural keyword density that may
 - Regex pattern: `\b(\w{4,})\b.*\b\1\b` for word repetition (4+ char words).
 
 **Sources:**
-- Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 13.
+- Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 13.
 
 ---
 
@@ -129,7 +129,7 @@ Identify evergreen content with stale year-stamps in titles, headlines, or URLs.
 - Google search operators with date-range filter.
 
 **Sources:**
-- Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 7.
+- Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 7.
 
 ---
 
@@ -156,7 +156,7 @@ Six-check sequence for pages that have lost significant search traffic.
 - GSC Pages and Queries reports.
 
 **Sources:**
-- Glen Allsopp, SEO Blueprint 3, On-Site Blueprint Lesson 9.
+- Glen Allsopp, SB3 corpus, On-Site Blueprint Lesson 9.
 
 ═══════════════════════════════════════════════════════════════
 GEO / AI SEARCH DIMENSIONS (LAYER 2)

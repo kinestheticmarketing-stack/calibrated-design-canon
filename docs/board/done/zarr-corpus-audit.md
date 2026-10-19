@@ -5,7 +5,7 @@ type: chore
 created: 2026-08-18
 tags: [verify-prod]
 ---
-# Zarr (Olga Zarr SEO Audit Mastery) corpus scored against all three properties, then remediated
+# Zarr (Olga Zarr, OZA) corpus scored against all three properties, then remediated
 
 50 tactics × 3 properties = 150 verdicts. Found DCI has real Search Console
 data and reads it; Greeley has consoles verified but never harvested; Longmont

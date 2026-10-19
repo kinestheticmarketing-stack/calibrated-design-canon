@@ -301,7 +301,7 @@ GCI — greeleycoloradoinsulation.com (corridor property #2)
 
 - 2026-08-10 · GCI · PERFORMANCE · Greeley's first three SEO-corpus
   alignment audits written and committed: Allsopp SB3 (9 modules),
-  Arabian Publisher SEO (7 modules / 240 tactic IDs), Floate Parasite (15
+  Arabian SEO course (7 modules / 240 tactic IDs), Floate PAR (15
   ADMIT tactics; the 39 BLOCKED tactics excluded per the corpus gate).
   Five-verdict vocabulary used, including an APPLIED-UNTRACKED verdict
   this property needed that the control property's own audits never

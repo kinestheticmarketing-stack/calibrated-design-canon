@@ -1,7 +1,7 @@
 # Super 100 — Dream List (Link-Building Foundation)
 
 This is the curated list of ~100 relationship and link targets that every
-Module 2 link-building tactic plugs into (Glen Allsopp SEO Blueprint 3,
+Module 2 link-building tactic plugs into (Glen Allsopp SB3 corpus,
 Link Building Blueprint, L04/L06). The Super 100 is the strategy; the
 individual tactics (outreach laws, angle plays, sourcing recipes) are just
 different ways of sourcing and contacting the names on this list.
