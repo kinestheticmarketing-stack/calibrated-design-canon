@@ -1,16 +1,16 @@
 # Independent adjudication of DCI's R5 and R9 findings — 2026-09-18
 
 Written by an independent reviewer row with no inherited context, against
-DCI `ba2fc22` / canon `c660a1d`. Every classification below was reached and
+DCI `ba2fc22` / canon `34d5fa1`. Every classification below was reached and
 written down BEFORE the other row's artifacts were opened; the comparison
 section at the end was added afterwards. Nothing in any property repo was
 changed by this pass: all mutation ran in `/tmp/r4pass/r3` mirrors.
 
 Reviewer row: R3. Zero inherited context. /tmp/r4pass/r2 NOT read at time of writing.
 Bench: /tmp/r4pass/r3/dci (rsync mirror of DCI @ ba2fc22), canon mirrors:
-  canon      = c660a1d (HEAD, shipped)
-  canon_pre  = c5ff426 tree (= c660a1d's parent), NEG16 moved aside
-  canon_pre5 = 86b4ffd tree (= c5ff426's parent), NEG15/NEG16 moved aside
+  canon      = 34d5fa1 (HEAD, shipped)
+  canon_pre  = 6e9f73e tree (= 34d5fa1's parent), NEG16 moved aside
+  canon_pre5 = 5f906c4 tree (= 6e9f73e's parent), NEG15/NEG16 moved aside
   canon_alt  = my alternative narrower R9 fix (slot-pattern qualified, no context guard)
 
 ## MEASURED BASELINE (run by me, DCI real repo, HEAD ba2fc22)
@@ -23,7 +23,7 @@ git status --porcelain in DCI after the run: 0 lines (gate wrote nothing).
 
 ## TASK 2 — GATE COMMIT AUDIT (measured)
 
-### c660a1d — R9 whe_audit_precondition `context` guard
+### 34d5fa1 — R9 whe_audit_precondition `context` guard
 VERDICT: REPAIR of a genuine defect, but OVER-NARROW — a demonstrated silent miss,
 and a strictly better fix existed and is measured below.
 
@@ -40,12 +40,12 @@ SILENT MISS, PROVEN:
   Probe A (must fire): injected into scratch vermiculite page, replacing the above:
     "An energy audit is a prerequisite for the Whole Home Efficiency Bonus, and Xcel
      will not pay the bonus without one."
-    -> canon (c660a1d):  R9 RAW 2 ADJ 2 FAIL   STILL FIRES. Guard does not blind the rule.
+    -> canon (34d5fa1):  R9 RAW 2 ADJ 2 FAIL   STILL FIRES. Guard does not blind the rule.
   Probe B (same proposition, ordinary synonyms):
     "An energy assessment is a prerequisite for the bonus, and Xcel will not pay it
      without one."
-    -> canon (c660a1d):     R9 RAW 1 ADJ 1   MISSED
-    -> canon_pre (c5ff426): R9 RAW 2 ADJ 2   CAUGHT
+    -> canon (34d5fa1):     R9 RAW 1 ADJ 1   MISSED
+    -> canon_pre (6e9f73e): R9 RAW 2 ADJ 2   CAUGHT
   So the guard, not anything else, causes the miss. The commit message's claim that
   "a sentence genuinely about the WHE audit precondition necessarily passes it" is
   FALSE AS STATED: "energy assessment ... prerequisite for the bonus" is genuinely
@@ -58,7 +58,7 @@ and qualify the one slot pattern that carries none of its own subject —
   -> Probe B injected:   R9 RAW 2 ADJ 2   (still caught — shipped fix misses it)
 That is the same cure with no loss of coverage.
 
-### c5ff426 — R5 src_dup probe normalization
+### 6e9f73e — R5 src_dup probe normalization
 VERDICT: REPAIR in kind (the alphabet mismatch was real), but it ENLARGES a
 pre-existing 48-character-prefix blind spot into a live silent miss.
 
@@ -70,18 +70,18 @@ SILENT MISS, PROVEN. Injected into scratch _shared_components.py a generator str
 that renders on NO page and carries a brand-new uncited magnitude:
   COLLIDE   '<p>Loose-fill cellulose settles 10 to 20 percent; rebate paperwork cuts
              your bill by 47% in the first year.</p>'
-    -> canon (c660a1d):      R5 RAW 533 ADJ 31 — probe appears under the src_dup FILTER. MISSED.
-    -> canon_pre5 (86b4ffd): R5 RAW 533 ADJ 38 — probe ADJUDICATED. CAUGHT.
+    -> canon (34d5fa1):      R5 RAW 533 ADJ 31 — probe appears under the src_dup FILTER. MISSED.
+    -> canon_pre5 (5f906c4): R5 RAW 533 ADJ 38 — probe ADJUDICATED. CAUGHT.
   Same string without markup, prefix still colliding:
     -> canon: R5 RAW 533 ADJ 31, filtered. MISSED. (collision hole predates the fix)
   POSITIVE CONTROL, no prefix collision:
     'Zebra paperwork throughput for quokka invoicing cuts your bill by 47% in the first year.'
     -> canon: R5 RAW 533 ADJ 32, ADJUDICATED. Instrument fires; the zero above is real.
-So: before c5ff426 a markup-bearing generator string was immune to the collision;
+So: before 6e9f73e a markup-bearing generator string was immune to the collision;
 after it, it is not. The right completion is the same normalization compared on the
 FULL normalized sentence, not a 48-char prefix.
 
-### 86b4ffd — R4 URL masking + no cross-sentence program-name carry
+### 5f906c4 — R4 URL masking + no cross-sentence program-name carry
 VERDICT: REPAIR of two genuine defects. Both halves are load-bearing (proved below).
 BUT it also creates a silent miss on ordinary pronominal anaphora.
 
@@ -98,7 +98,7 @@ enumeration read — NOT the gate's --canary self-report):
   4 second program in adjacent sentence R4f repaired  -> 0 rows. DOES NOT FIRE.
 
 ATTACK — can a repaired fixture pass while the defect it names is still present?
-NO. Ran the identical four against the PRE-fix gate (canon_pre4 = 03af70f):
+NO. Ran the identical four against the PRE-fix gate (canon_pre4 = d35398d):
   R4e repaired -> 2 rows, one of them
      "stack,stacking | ... and both sets of conditions sit at https://..."
      i.e. the token came from the URL alone. Post-fix: 0. Masking IS load-bearing.
@@ -113,7 +113,7 @@ commentary is a claim surface. Harmless today, a trap tomorrow.
 SILENT MISS, PROVEN (probe injected as public/404.html in the scratch mirror):
   P1  "The Whole Home Efficiency Bonus and the Combo Bonus are both live in 2026.
        They stack on the same measure, so one job earns both."
-        canon (86b4ffd+): 0 rows   MISSED
+        canon (5f906c4+): 0 rows   MISSED
         canon_pre4:       1 ASSERTS row   CAUGHT
   P2 (positive control) both names repeated inside the predicate sentence
         canon: 1 row. canon_pre4: 1 row. Instrument fires; P1's zero is real.
@@ -283,7 +283,7 @@ R5 false-positive rate 22/31 = 71.0%.  R9 false-positive rate 1/1 = 100%.
 
 ## TASK 5 — NOTHING CHANGED
 Repos at the SHAs the brief named, all clean:
-  DCI ba2fc22, LGM 95c93d1, GCI 34adbf4, canon c660a1d; porcelain 0 lines each.
+  DCI ba2fc22, LGM 95c93d1, GCI 34adbf4, canon 34d5fa1; porcelain 0 lines each.
 LIVE SITE, method: curl -sS --compressed -o <file> <url>, then cmp <file> <repo path>.
 Command substitution was not used to capture any fetched body.
   https://denvercoloradoinsulation.com/is-my-attic-insulation-failing.html         200 IDENTICAL
@@ -304,7 +304,7 @@ and cmp'd byte-identical against the real repo before moving on.
   denvercoloradoinsulation.com   ba2fc22  porcelain 0  origin 0 0
   longmontcoloradoinsulation.com 95c93d1  porcelain 0  origin 0 0
   greeleycoloradoinsulation.com  34adbf4  porcelain 0  origin 0 0
-  calibrated-design-canon        c660a1d  porcelain 0  origin 0 0
+  calibrated-design-canon        34d5fa1  porcelain 0  origin 0 0
 
 ## COMPARISON WITH THE OTHER ROW
 RETRIEVAL TRAIL. The brief said the other row's classifications "live in its report".
@@ -316,10 +316,10 @@ There is no such report on disk. What I searched and what came back:
   /usr/bin/grep -rlI 'AMBIGUOUS' /tmp/r4pass/r2 /tmp/r4pass/*.txt  -> no files
   /usr/bin/grep -rlI 'DIRECTOR'  /tmp/r4pass/r2 /tmp/r4pass/*.txt  -> no files
   POSITIVE CONTROL /usr/bin/grep -rlI 'R5' /tmp/r4pass/r2 -> 15 files. The grep works.
-  git log in canon: HEAD is c660a1d; no commit after it adds a findings document.
+  git log in canon: HEAD is 34d5fa1; no commit after it adds a findings document.
   find canon -name '*.md' -newermt '2026-09-18 12:00' -> docs/lanes.md,
-    ops/claim_gate/ADVERSARIAL_READ_2026-09-18.md (last touched by 9d2daed, an
-    EARLIER row), ops/claim_gate/GATE_CLOSE_2026-09-18.md (b1dd4ea, earlier row).
+    ops/claim_gate/ADVERSARIAL_READ_2026-09-18.md (last touched by df6385a, an
+    EARLIER row), ops/claim_gate/GATE_CLOSE_2026-09-18.md (d9f3c05, earlier row).
 So the other row's only surviving written classifications are its three commit
 messages. I compare against those.
 
@@ -329,7 +329,7 @@ same starting point. Their earlier runs show the trajectory I reproduced
 independently: dci_run.txt R5 ADJ 37 / R9 ADJ 2, fixsim.txt R5 31 / R9 2.
 
 DISAGREEMENT 1 — the SRC Climate Zone 5 stat.
-  c5ff426: "SIX were prose that renders in public/ ... and exactly one was real
+  6e9f73e: "SIX were prose that renders in public/ ... and exactly one was real
   (the ENERGY STAR Climate Zone 5 registry stat in _shared_components.py, which
   renders on no page)."
   I AGREE it renders on no page (measured: '16%' 0 occurrences in public/, positive
@@ -341,7 +341,7 @@ DISAGREEMENT 1 — the SRC Climate Zone 5 stat.
   I THINK I AM RIGHT: the evidence is four lines of the same dict literal.
 
 DISAGREEMENT 2 — "a sentence genuinely about the WHE audit precondition necessarily
-passes [the context guard]" (c660a1d, and the same sentence in config.context_note).
+passes [the context guard]" (34d5fa1, and the same sentence in config.context_note).
   DISPROVED BY MEASUREMENT. "An energy assessment is a prerequisite for the bonus"
   is genuinely about it and does not pass: R9 RAW 1 ADJ 1 on the shipped gate vs
   RAW 2 ADJ 2 on its parent. I THINK I AM RIGHT — I ran it both ways.
@@ -354,7 +354,7 @@ DISAGREEMENT 3 — the shape of the R9 fix.
 
 DISAGREEMENT 4 — completeness.
   Their commits treat R5's remaining findings as out of scope ("R5 37 and R9 2 still
-  stand and are not this change's scope", 86b4ffd). Nothing in the three commits
+  stand and are not this change's scope", 5f906c4). Nothing in the three commits
   classifies those 31. On my reading 22 of the 31 are FALSE, 17 of them for a single
   shared cause — f_instat's 5-shared-content-word threshold, raised in that same file
   to protect a live figure ("15% reduction in heating and cooling costs") that

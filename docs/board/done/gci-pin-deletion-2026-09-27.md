@@ -10,7 +10,7 @@ lane: none — see "Lane discipline defect" below
 # Delete the 13 GCI claim-gate pins whose pages got a real review, not a relocation
 
 **This card is RETROACTIVE and that is itself the finding.** The work landed in
-`76c32b4` with no card, no lane, and no Project-Rule entry, after
+`b4aa23d` with no card, no lane, and no Project-Rule entry, after
 `closeout-2026-09-27-canon` had already been released. A verification agent
 caught it on 2026-09-27. The card is written now so the change is not
 invisible to the board, and the defect is recorded rather than tidied away.
@@ -87,16 +87,16 @@ grep -rn 'expected_footer\|expected_sitemap' ops/claim_gate/claim_gate.py
 Measured at GCI HEAD `69009d4` (the tree this config governs): 20 keyed-LIVE, 0
 keyed-expired, 0 unkeyed, 0 missing. 20 pinned + 18 unpinned = 38 pages.
 
-**Commit: `76c32b4`.** Follow-up commit correcting this card's own defects and
+**Commit: `b4aa23d`.** Follow-up commit correcting this card's own defects and
 the note's stale VERIFY: see the lane row and `docs/lanes.md`.
 
 ## Lane discipline defect, recorded not hidden
 
-1. `76c32b4` touched `ops/claim_gate/config/gci.json`, which was **outside** the
+1. `b4aa23d` touched `ops/claim_gate/config/gci.json`, which was **outside** the
    declared ownership of `closeout-2026-09-27-canon` (that lane declared
    `METHODS/DESIGN_REVIEW.md`, `METHODS/ARCHITECT_DISCIPLINE.md`,
    `docs/board/ground-truth.md`, `docs/board/**` and `docs/lanes.md`).
-2. It landed **after** that lane was released, as did `77f4ba3`.
+2. It landed **after** that lane was released, as did `6fc7796`.
 3. It carried no card until this one.
 
 The work itself is sound and independently verified. The process defect is that

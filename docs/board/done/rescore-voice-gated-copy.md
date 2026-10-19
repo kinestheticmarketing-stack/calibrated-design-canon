@@ -111,6 +111,6 @@ cd /Users/vongimbel/code/denvercoloradoinsulation.com && python3 _postbuild_chec
 cd /Users/vongimbel/code/longmontcoloradoinsulation.com && python3 _postbuild_check.py --canary 2>&1 | grep "title-meta:.*DETECTED"
 # -> each prints its planted-violation DETECTED line; all three print CANARY PASS
 ```
-Commit: `f81dac4` (classification, prior pass) plus this pass's canon commit
+Commit: `86bcb6d` (classification, prior pass) plus this pass's canon commit
 landing the closure (see `docs/lanes.md` lane `director-rulings-close-r4-canon`
 for the exact hash).

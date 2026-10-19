@@ -12,7 +12,7 @@ State at the start of the pass, measured:
 $ git -C ~/code/denvercoloradoinsulation.com   rev-parse HEAD   1b6949c0ade3a7b7825e0d36916e9f38d5b0da62   main   clean   0 0 vs origin
 $ git -C ~/code/longmontcoloradoinsulation.com rev-parse HEAD   a86c5afac76e23d05ebc261fdfbda9c4a33eee0c   main   clean   0 0 vs origin
 $ git -C ~/code/greeleycoloradoinsulation.com  rev-parse HEAD   ee0157d7fee1a46cdc9d9e3da0e18f37bcf23fe7   main   clean   0 0 vs origin
-$ git -C ~/code/calibrated-design-canon        rev-parse HEAD   4bf5373b6e8deebd8237329843343462f7f58e5c   main   clean   0 1 vs origin (one unpushed commit, not mine)
+$ git -C ~/code/calibrated-design-canon        rev-parse HEAD   f91eb743e48011528bc7274c0235ad6dc430e798   main   clean   0 1 vs origin (one unpushed commit, not mine)
 ```
 
 Baseline runs, as the gate reported them:
@@ -981,7 +981,7 @@ ee0157d7fee1a46cdc9d9e3da0e18f37bcf23fe7
 0	0
 === calibrated-design-canon ===
 main
-4bf5373b6e8deebd8237329843343462f7f58e5c
+f91eb743e48011528bc7274c0235ad6dc430e798
 --- ahead/behind:
 0	1
 ```
@@ -991,7 +991,7 @@ main
 on `origin/main`, right = commits only on `HEAD`. The three property repos are
 `0 0`. **Canon is `0 1`: one commit ahead of `origin/main`, unpushed, and not
 mine** — it was already there when I arrived (the session's own recent-commit
-list named `b152b08` as HEAD while the live HEAD was `4bf5373`, so another agent
+list named `85321e6` as HEAD while the live HEAD was `f91eb74`, so another agent
 committed in between). I did not push it and did not touch it.
 
 No page, generator or `public/` artifact changed anywhere — proved in (f) by a
@@ -1437,7 +1437,7 @@ file was the only dirty path, staged by explicit path.
 # SECOND SECTION — RE-TEST AFTER THE FIX ROUND — 2026-09-17
 
 Same reviewer, same scratch dir, same byte-exact fixtures. The first section
-above drove a fix round of fifteen commits, `283d1eb..e1b9166`. This section
+above drove a fix round of fifteen commits, `98b81df..a8fe0a3`. This section
 re-runs the original vectors against the rewritten gate, re-runs the
 repair-the-fixture test on every control, confirms the halt-level regression,
 and attacks everything the fix round added. **Nothing was fixed by this pass.**
@@ -1448,7 +1448,7 @@ State at the start of the re-test, measured:
 denvercoloradoinsulation.com    main  ac2b7b8cbeee41d6bafd5ebd48aa9473d3879cc6  clean  0 0
 longmontcoloradoinsulation.com  main  124682275e2e3b1859314a5a51c409199cb078a6  clean  0 0
 greeleycoloradoinsulation.com   main  7a832b80022a1a63b16bd6c6eb1f6fe9ef345ec9  clean  0 0
-calibrated-design-canon         main  e1b91661555143c521a92b7287e515da0c9d436e  clean  0 0
+calibrated-design-canon         main  a8fe0a32904a71e6a5d222614713637c20a6ac76  clean  0 0
 ```
 
 `claim_gate.py` 2,698 → 3,894 lines; `surfaces.py` 698 → 913; `README.md`
@@ -2104,13 +2104,13 @@ sitewide hole, one still not addressed.**
 # THIRD SECTION — FINAL VERIFICATION AFTER THE SECOND FIX ROUND — 2026-09-17
 
 Same reviewer, same scratch dir, same 86 byte-exact vectors. The second section
-drove seven more commits, `66bf1dd..32b1ec1`. **Nothing was fixed by this pass.**
+drove seven more commits, `a23400e..8f34f4f`. **Nothing was fixed by this pass.**
 
 ```
 denvercoloradoinsulation.com    main  ac2b7b8cbeee41d6bafd5ebd48aa9473d3879cc6  clean  0 0
 longmontcoloradoinsulation.com  main  124682275e2e3b1859314a5a51c409199cb078a6  clean  0 0
 greeleycoloradoinsulation.com   main  7a832b80022a1a63b16bd6c6eb1f6fe9ef345ec9  clean  0 0
-calibrated-design-canon         main  32b1ec1ef36a586bc4c1c5b1a40bc0b1b7565bbe  clean  0 0
+calibrated-design-canon         main  8f34f4f199ce14eae2c86bf9f219ce738808d128  clean  0 0
 ```
 
 `claim_gate.py` 3,894 → 4,196 lines; `surfaces.py` 913 → 975; `README.md`
@@ -2187,15 +2187,15 @@ My NEW-1 is fixed. The renamed-severity-words vector now reads:
 and DCI's real chain reads `RAW 0 … PASS` with a **nonzero** denominator
 (`chains examined 1 · JS texts read 4 · conditions located 166 · label
 assignments found 9 · branches bound to a condition 9 · configured labels seen
-in text 3`), confirming the per-chain correction in `2a36b1f`. LGM and GCI,
+in text 3`), confirming the per-chain correction in `395ab9c`. LGM and GCI,
 which configure no chain, print `DENOMINATOR chains examined 0 … -- RAW 0 here
 means NOTHING WAS REGISTERED, not 'clean'`.
 
-`2a36b1f`'s commit message also retracts a false claim in `6a9cd4e`'s own
+`395ab9c`'s commit message also retracts a false claim in `dd9a7d0`'s own
 message — *"No live movement: DCI's real chain still reports RAW 0 PASS"*,
 written before the verification was run, when the run returned
 `RAW 1 ADJ 1 FAIL`. I verified the retraction is accurate: the current state is
-the one `2a36b1f` describes. That is the seventh recorded instance of this
+the one `395ab9c` describes. That is the seventh recorded instance of this
 portfolio's own defect class, and the second in this document — mine was the
 sixth.
 
@@ -2456,13 +2456,13 @@ original defect. One still not addressed.**
 # FOURTH SECTION — CLOSING VERIFICATION — 2026-09-17
 
 Same reviewer, same 86 byte-exact vectors. Six further commits,
-`3552d00..5107f1a`. **Nothing was fixed by this pass.**
+`037b9b3..e7d147b`. **Nothing was fixed by this pass.**
 
 ```
 denvercoloradoinsulation.com    main  ac2b7b8  clean  0 0
 longmontcoloradoinsulation.com  main  1246822  clean  0 0
 greeleycoloradoinsulation.com   main  7a832b8  clean  0 0
-calibrated-design-canon         main  5107f1a  clean  0 0
+calibrated-design-canon         main  e7d147b  clean  0 0
 ```
 
 `claim_gate.py` 4,196 → 4,273 lines; `surfaces.py` 975 → 1,014; `README.md`
@@ -2809,13 +2809,13 @@ not addressed.**
 # FIFTH SECTION — FINAL — 2026-09-17
 
 Same reviewer, same 86 byte-exact vectors. Five further commits,
-`752b3e5..4284975`. **Nothing was fixed by this pass.**
+`fb0cb00..4346c06`. **Nothing was fixed by this pass.**
 
 ```
 denvercoloradoinsulation.com    main  ac2b7b8  clean  0 0
 longmontcoloradoinsulation.com  main  1246822  clean  0 0
 greeleycoloradoinsulation.com   main  7a832b8  clean  0 0
-calibrated-design-canon         main  4284975  clean  0 0
+calibrated-design-canon         main  4346c06  clean  0 0
 ```
 
 `claim_gate.py` 4,273 → 4,361 lines; `surfaces.py` 1,014 → 1,025. Live R2:
@@ -3013,8 +3013,8 @@ mutually defeating.** Traced:
    dec('Greeley — Atmos') -> 'Greeley - Atmos'
 ```
 
-`c6b9651` made dashes U+2010–U+2015 and U+2212 fold unconditionally to an ASCII
-hyphen, to fix my NEW-14. `3cf3d97` added the em dash and en dash to the
+`9e156a9` made dashes U+2010–U+2015 and U+2212 fold unconditionally to an ASCII
+hyphen, to fix my NEW-14. `4f910a4` added the em dash and en dash to the
 unconditional clause-boundary set, to fix my NEW-16. The folding runs first, so
 by the time the splitter looks for an em dash there is none left — only a
 hyphen, which is not a boundary. **Two fixes shipped in the same round cancel

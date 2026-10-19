@@ -4,7 +4,7 @@
 Everything below verified the FIRST version of Rule 9 (headline "THE
 FINAL REPORT IS THE COMPLETE RECORD," sub-points 9a-9g). That version was
 judged incomplete and fully replaced — not merged, not amended — at
-commit `352249b`, then swept again at `2c2813d`. Rule 9's live headline,
+commit `5501f00`, then swept again at `dc2ee63`. Rule 9's live headline,
 text, and sub-point lettering (now 9a-9i) are in `METHODS/ARCHITECT_DISCIPLINE.md`
 and `METHODS/HANDOFF_TEMPLATE.md` — read them there, not here. Every
 sub-point letter cited below (9b, 9e) refers to the OLD lettering and is
@@ -27,11 +27,11 @@ a. Rule 9 landed in `METHODS/ARCHITECT_DISCIPLINE.md` at line 287,
 immediately after Rule 8's closing line 285, with one blank line between
 them — no other content intervenes. Rule 8 did not exist on `main` before
 this pass (confirmed independently by R1's discovery and R3's direct
-check: `git show c1e1e51:METHODS/ARCHITECT_DISCIPLINE.md | grep "RULE 8"`
+check: `git show d4954af:METHODS/ARCHITECT_DISCIPLINE.md | grep "RULE 8"`
 returned nothing); it existed only on the unmerged `feat/seo-geo-scaffold`
-branch (commit `40d1c1b`), so R1 merged that branch first (merge commit
-`9befe81`, verified by R3 as a genuine two-parent merge via
-`git cat-file -p 9befe81`, not fabricated or a no-op) before inserting
+branch (commit `4e16245`), so R1 merged that branch first (merge commit
+`db98fbd`, verified by R3 as a genuine two-parent merge via
+`git cat-file -p db98fbd`, not fabricated or a no-op) before inserting
 Rule 9 immediately after the now-present Rule 8. In
 `METHODS/HANDOFF_TEMPLATE.md`, Rule 9 lands at the identical line number,
 287, in the same relative position, inside that file's own "VERBATIM
@@ -139,10 +139,10 @@ patterns (`if applicable`, `as needed`, `where applicable`, `see above`,
 repo and finding no missed instance.
 
 d. Merged and pushed, raw `/main/` URL verified. Two commits landed the
-work: `9befe81` (merge reconciling Rule 8) and `0965057` (Rule 9 added to
-all four files), then `d066140` (R2's sweep fix). `git rev-parse HEAD`,
+work: `db98fbd` (merge reconciling Rule 8) and `39db5bb` (Rule 9 added to
+all four files), then `db1ff41` (R2's sweep fix). `git rev-parse HEAD`,
 `git rev-parse origin/main`, and a fresh `git fetch origin main` all
-resolve to the identical SHA `d06614006152fff497bf2214c9ef0b4f65580289`
+resolve to the identical SHA `db1ff4127dbc715b1559b3155422056187dbe7c6`
 — local `main` matches the pushed remote exactly, confirmed independently
 by R3, not just R1/R2's self-report. R3's own fresh `diff` between local
 working-tree files and freshly-`curl`-fetched raw-GitHub copies returned
@@ -155,10 +155,10 @@ sub-points 1a-1m plus the "THE TEST" coda; 2; 3; 4; 5 with 5a-5g; 6 with
 6a-6f; 7 with 7a-7f; 8 with 8a-8d including its 5-step numbered recovery
 procedure) reads as a coherent, complete, non-truncated unit with no
 orphaned fragments or broken sequences. Separately verified via commit
-diffs: `git show --stat 9befe81` shows 68 insertions, 0 deletions to
-`ARCHITECT_DISCIPLINE.md`; `git diff c1e1e51 9befe81 -- METHODS/ARCHITECT_DISCIPLINE.md | grep '^-'`
+diffs: `git show --stat db98fbd` shows 68 insertions, 0 deletions to
+`ARCHITECT_DISCIPLINE.md`; `git diff d4954af db98fbd -- METHODS/ARCHITECT_DISCIPLINE.md | grep '^-'`
 returned empty on both the main-side and branch-side comparison;
-`git show 0965057 -- METHODS/ARCHITECT_DISCIPLINE.md | grep '^-'` also
+`git show 39db5bb -- METHODS/ARCHITECT_DISCIPLINE.md | grep '^-'` also
 returned empty. The only deletions anywhere in the Rule 9 commit were two
 lines in `HANDOFF_TEMPLATE.md`'s notice preamble (updating a stale "seven
 rules" count to reflect nine, and extending a parenthetical rule-name
@@ -177,21 +177,21 @@ up to date with `origin/main`.
 
 g. Commit SHAs, pushed, confirmed via git log origin by R3 independently:
 
-- `40d1c1b59d0b693e6df3399a0287fe552b8dba95` — Rule 8, authored on
+- `4e162456527fa2dfd68de0db2a5bc7aff12db0cf` — Rule 8, authored on
   `feat/seo-geo-scaffold`, confirmed NOT an ancestor of main's pre-merge
-  tip via `git merge-base --is-ancestor 40d1c1b c1e1e51` → false,
+  tip via `git merge-base --is-ancestor 4e16245 d4954af` → false,
   confirmed an ancestor of the branch tip via the same check against
-  `f1ebe0e` → true.
-- `f1ebe0e6dd0568b02ffd0facb143d0a4f1de7a46` — branch tip (gitignore
+  `c994d7a` → true.
+- `c994d7acb0136e88dd25c3ab2fe3a37c320b40b1` — branch tip (gitignore
   fix), parent of the merge on the branch side.
-- `c1e1e511f5e4513f62ca9dd362a1aacb926e0a5f` — main's pre-merge tip,
+- `d4954afba9f0b445e62a1818d98f5934319dc04e` — main's pre-merge tip,
   parent of the merge on the main side.
-- `9befe811a9b94a8f15c297e2d1671c5a0ecf63df` — the merge, two real
+- `db98fbd9dc6ae92eab39f5ba256a9c0ccf5fc3aa` — the merge, two real
   parents, 68 insertions / 0 deletions to `ARCHITECT_DISCIPLINE.md`.
-- `0965057875ba33695c5bfd9f78f92ad55ccd0920` — Rule 9 added:
+- `39db5bba5b0ed18782d774622345f0e94fca5aaf` — Rule 9 added:
   `ARCHITECT_DISCIPLINE.md` +34/-0, `AUDITOR_PRIMING_TEMPLATE.md` +9/-0,
   `AUDITOR_PROTOCOL.md` +9/-0, `HANDOFF_TEMPLATE.md` +109/-2.
-- `d06614006152fff497bf2214c9ef0b4f65580289` — R2's sweep fix, current
+- `db1ff4127dbc715b1559b3155422056187dbe7c6` — R2's sweep fix, current
   HEAD and current `origin/main` tip, 17 insertions / 2 deletions across
   the three neutralized files.
 

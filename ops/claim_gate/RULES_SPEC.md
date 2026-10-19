@@ -353,7 +353,7 @@ because the disagreement is the interesting result.
 
 ## 4. OUTPUT CONTRACT
 
-**A bare zero is FORBIDDEN.** The standing rule, from canon `b152b08`
+**A bare zero is FORBIDDEN.** The standing rule, from canon `85321e6`
 (`METHODS/CANDIDATE-do-not-scope-with-grep-over-html.md` §"REPORT THE RAW MATCH
 COUNT NEXT TO THE ADJUDICATED ONE"): *"any sweep reported as zero states its raw
 match count, its filter, and what the filter removed. The null half of a sweep
@@ -529,7 +529,7 @@ a rule that was never written.** This section previously described it as a real
 opt-in rule blocked by a missing Chrome binary. That was false in both halves,
 and the false version is quoted and refuted below rather than deleted.
 
-**WHAT THIS SECTION USED TO SAY**, verbatim, through commit `20b9455`:
+**WHAT THIS SECTION USED TO SAY**, verbatim, through commit `224dc7a`:
 
 > **R6b — the browser cross-product — is OPT-IN, and it is the only one.** Named,
 > not silently dropped. R6a (the static form) is blocking and runs every pass.
@@ -550,7 +550,7 @@ and the false version is quoted and refuted below rather than deleted.
 > `blind spot: R6a reads the branch quantity statically and cannot enumerate the
 > rendered cross-product; R6b does that and is opt-in.`
 
-**WHY THAT IS FALSE.** Measured 2026-09-21 against `claim_gate.py` at `20b9455`,
+**WHY THAT IS FALSE.** Measured 2026-09-21 against `claim_gate.py` at `224dc7a`,
 denominator 7737 lines:
 
 - `grep -in 'chrome\|chromium'` returns **exactly 2 hits**, and both are inside
@@ -1051,7 +1051,7 @@ names no utility; the `href` host does.
 
 **WHAT IT DELIBERATELY DOES NOT CATCH.**
 - **Territory itself.** A tariff is authority for PRESENCE, never for
-  EXCLUSIVITY (GCI ground-truth, and canon `f1c4008`'s transferable rule part 4).
+  EXCLUSIVITY (GCI ground-truth, and canon `52c47d5`'s transferable rule part 4).
   The gate enforces the config; it cannot discover that a town's utility changed.
   Re-establishing territory is a two-legged primary-source pass — the town's own
   source **and** the utility's own tariff — *"because they fail in opposite
@@ -1109,7 +1109,7 @@ names no utility; the `href` host does.
   `\b`-anchored, case-sensitive matching for town names, and runs the
   known-present control (`Greeley` on GCI, `Longmont` on LGM, `Denver` on DCI)
   before trusting any absence.
-- **`La Salle` vs `LaSalle`.** Recorded in canon `f1c4008` as *"a FALSE ABSENCE
+- **`La Salle` vs `LaSalle`.** Recorded in canon `52c47d5` as *"a FALSE ABSENCE
   indistinguishable from the true absence"* — the repo spells it `LaSalle`, the
   tariff `La Salle`. The config carries `spelling_variants` per town.
 - **`Weld County`** — legitimate on LGM as an Erie-split disclosure, which is why
@@ -1148,7 +1148,7 @@ Four sub-tests, because the class defeated four instruments in sequence:
   `/usr/bin/grep -rhoE '\$[0-9][0-9,.]*' public/ --include='*.html'
   --include='*.txt' --include='*.js' --include='*.json' --include='*.xml'`. It
   is kept because it is the one already in use, and **its blind spot is printed
-  with its result**, per §4(5) and canon `a891b83`.
+  with its result**, per §4(5) and canon `2aa46a9`.
 - **T2 — BARE NUMERALS IN A MONEY WINDOW.** The rule T1 cannot reach. From GCI
   `f0203ad` D1, verbatim: the cap *"carried no `$`, which is exactly why the
   `$`-anchored acceptance gate could not see it."* The second gate that commit
@@ -1275,7 +1275,7 @@ ruling, quoted from `2cecf33`'s own list ("RULINGS 2/3/4 RESPECTED") and
   ban is on page copy. The gate reads `public/`, so this is out of scope by
   construction, and the config names it so nobody re-scopes it in.
 - **A removal note that restates the figure it removed.** The gate catches the
-  *numeral* (T2) but not the general form. Canon `a891b83`: *"A removal note that
+  *numeral* (T2) but not the general form. Canon `2aa46a9`: *"A removal note that
   restates the figure it removed re-publishes it … record the fact and the
   reason, never the numeral."* R10 covers the inverse (a promise with no figure).
 
@@ -1305,7 +1305,7 @@ ruling, quoted from `2cecf33`'s own list ("RULINGS 2/3/4 RESPECTED") and
 }
 ```
 
-**EXPECTED FALSE-POSITIVE PRESSURE — measured, not guessed.** Canon `b152b08`
+**EXPECTED FALSE-POSITIVE PRESSURE — measured, not guessed.** Canon `85321e6`
 records the real number: three JS-comment scans *"fired **153 times** (DCI 150,
 LGM 2, GCI 1) and every hit was adjudicated away as a non-rebate numeral: form-page
 counts, a commit SHA, R-values, decision-path counts, and LGM's permitted
@@ -1634,7 +1634,7 @@ anything, however completely it restates the sentence that sources it.
 **⚠ RETRACTION, 2026-09-20 — THE PARAGRAPH THAT STOOD HERE DESCRIBED A FILTER
 THE CODE DID NOT IMPLEMENT.** It said *"The question is then judged through the
 sentence that actually makes the claim"*. **It was not.** As shipped in
-`bfbad20`, `_anchored()` collected the **bare numeral tokens** of every cleared
+`4115aa1`, `_anchored()` collected the **bare numeral tokens** of every cleared
 non-interrogative in the same FILE and `f_question` cleared a question when
 `all(n in anchors)`. **No content relation between the question and its anchor
 was required at all** — the same rule's `f_instat` demanded four shared content
@@ -1782,7 +1782,7 @@ is precisely the class these properties are most likely to get wrong.
 
 | property | probes cleared | at figure | carried by |
 |---|---|---|---|
-| DCI | 0 of 16 | `20%` | list already `[]` (`a5baa0f`) |
+| DCI | 0 of 16 | `20%` | list already `[]` (`5eda2bd`) |
 | LGM | **12 of 16** | `25%` | `tier` / `of project cost` / `capped at` |
 | GCI | **14 of 16** | `20%` | the bare words **`reduction`** and **`leakage`** |
 
@@ -1893,7 +1893,7 @@ rejected **by measurement**, so a later row need not re-derive them.
 **CONTROL — `R5-STRUCT-FP`**, `R5p_struct_first_party.html` /
 `repaired/R5p_struct_first_party.html`, `expect=11`. Non-repaired: eleven
 uncited first-party performance claims, one per marker family, each carrying a
-configured figure and a marker. Measured at `3ccf154`, before the veto: **`RAW
+configured figure and a marker. Measured at `1bd0c15`, before the veto: **`RAW
 11 ADJUDICATED 0`** — the hole. **`RAW 11 ADJUDICATED 11`** after. Repaired: five
 third-party program-structure and qualifying-condition statements carrying the
 **same** figures and the **same** markers — `RAW 5 ADJUDICATED 0` before *and*
@@ -1918,7 +1918,7 @@ substring match (`us` in *because* reddens the repaired half too).
 | `R5-STRUCT-FP` | `R5p_struct_first_party.html` | **0 hits — the `f_struct` first-party hole** | **11 hits** |
 | `R5-STRUCT-FP` *(repaired half)* | `repaired/R5p_struct_first_party.html` | 0 hits | 0 hits |
 
-Every `0 hits` above was **measured against `claim_gate.py` at `bfbad20` on all
+Every `0 hits` above was **measured against `claim_gate.py` at `4115aa1` on all
 three property configs** before the code was touched, not asserted. `R5k` holds
 seven attributed statistics beside seven uncited questions sharing **only a
 numeral** — including this document's own named adversary, *"Did you know homes
@@ -1931,7 +1931,7 @@ reddens the repaired half.
 `R5j`'s repaired half was **itself part of the defect** and is rewritten. It
 paired an ENERGY STAR statistic about *annual space-conditioning energy use*
 with a question about *winter heating costs* — different claims — and
-`bfbad20`'s own commit message recorded that pair's local overlap as **0**. The
+`4115aa1`'s own commit message recorded that pair's local overlap as **0**. The
 pass measured the hole and filed it as proof the control exercised the filter.
 Its anchors now state the claim their questions ask about, and are attributed
 **prose** rather than `cited-stat` blocks on purpose: a `cited-stat` would set
@@ -2056,9 +2056,9 @@ exactly as *"ENERGY STAR's attic guidance states 40%"* already clears through
 `f_struct`), `expect=7`. The non-repaired half holds **seven** laundering routes
 a title-scoped clearance must not open — figure outside the noun phrase, bare
 non-possessive publisher, non-artifact head noun, `og:description`,
-`twitter:description`, `meta[description]`, visible prose. Measured at `d064ccf`
+`twitter:description`, `meta[description]`, visible prose. Measured at `4127f76`
 **before** the filter: `RAW 7 / ADJUDICATED 7`; after: `RAW 7 / ADJUDICATED 7`.
-The repaired half is the page title on its three surfaces: measured at `d064ccf`
+The repaired half is the page title on its three surfaces: measured at `4127f76`
 **`RAW 3 / *** FIRES ON REPAIRED *** 3`** — that was the hole — and
 `RAW 3 / ADJUDICATED 0` after, all three removals credited to the `f_title_np`
 row. The repaired half is **not vacuously clean**: its rows are genuine RAW hits
@@ -2603,7 +2603,7 @@ control output:
 
 **WHAT IT DELIBERATELY DOES NOT CATCH.**
 - **A source that went stale since the config was written.** The gate enforces a
-  list. Canon `f1c4008` names this as its own class: **"`Advice Letter No. 544
+  list. Canon `52c47d5` names this as its own class: **"`Advice Letter No. 544
   -> No. 647`, a citation going stale INDEPENDENTLY of the fact it supports —
   Atmos's Colorado territory did not change between 2018 and 2026; the filing
   that states it did."** Discovering that is `scripts/staleness_watcher.py`'s
@@ -3801,7 +3801,7 @@ assumed, in the lane rows cited in §11.
 ```
 
 **CORRECTION, 2026-09-21 — `draft_gate` IS RETIRED, AND THIS SECTION CARRIED THE
-FALSE BLOCK VERBATIM.** Until commit 20b9455 both `config/lgm.json` and this
+FALSE BLOCK VERBATIM.** Until commit 224dc7a both `config/lgm.json` and this
 listing carried, word for word:
 
 ```json
@@ -3843,7 +3843,7 @@ taken as **documentation, not as a replacement rule**: LGM now has no unpublishe
 pages, so a checkable successor would be a rule configured with an empty input
 set — the blind-rule condition the audit already reports as CONFIG KEYS READ BY
 CODE BUT EMPTY. The live check that the three pages are present is `min_artifacts`
-(62) and `expected_html` (51), both raised for this publication in `6e4c939`.
+(62) and `expected_html` (51), both raised for this publication in `139aae0`.
 
 ### 10.4 GCI — `config/gci.json`
 
@@ -4010,7 +4010,7 @@ catch it; `—` means no rule here catches it and the reason is in that rule's
 | # | Rule | Repo | Defect | Found in |
 |---|---|---|---|---|
 | 1 | R1 | LGM | `CITED_SOURCES['XCEL_BLOWER_DOOR']` attributed a 20% CFM50 requirement to Xcel's **insulation** rebates **inside quotation marks** on **11 pages**; the cited 2024 sheet scopes it to air sealing alone and never uses "blower door" against those standards | `186d311` (claim `8b0f1a9`, release `d64c8a1`), lane `lgm-rebate-defect-repair-r5b` |
-| 2 | R2 | GCI | **Johnstown, Milliken and Severance credited to Atmos for two years.** They are Xcel gas. Premise formed once at genesis from a source naming three towns, generalised to nine, never tested against the utility's own tariff | `e6cb44e` (release `a51046e`), lane `gci-xcel-gas-towns-correct`; canon `f1c4008` |
+| 2 | R2 | GCI | **Johnstown, Milliken and Severance credited to Atmos for two years.** They are Xcel gas. Premise formed once at genesis from a source naming three towns, generalised to nine, never tested against the utility's own tariff | `e6cb44e` (release `a51046e`), lane `gci-xcel-gas-towns-correct`; canon `52c47d5` |
 | 3 | R7 | DCI | The retired WHE audit entry path — "Home Energy Squad Plus visit" — published as current on **35 pages**, sourced to the superseded 2024 sheet, which the current CO sheet † drops entirely | `b47a3c2`, lane `xcel-25-12-215-figures-dci` |
 | 4 | R5+R7 | DCI | A **fifth Xcel program with four invented eligibility pathways on 72-73 pages**: "LEAP, SNAP, or TANF participation… or living in a disproportionately impacted community — that last pathway is geographic, with no income paperwork." 0 cited-stats, 0 outbound links, 0 registry entries in any repo | `3da02df`, lane `xcel-25-12-215-figures-dci` |
 | 5 | R3 | all three | **537 rebate dollar figures the Director ruled off** (canon's addendum states 545; the 8-figure difference is unresolved and recorded as such): DCI **198**, GCI **206**, LGM **133 removed / 8 kept** | DCI `5703f8c`; GCI `2cecf33`; LGM `d6e8dab` |
@@ -4048,13 +4048,13 @@ catch it; `—` means no rule here catches it and the reason is in that rule's
 
 | Rule | Repo | Defect | Found in |
 |---|---|---|---|
-| R3 | GCI | **A rebate cap shipped live inside the JS comment documenting its own removal** — `// CAP/RATE (1550 / 0.75)` — inlined into a live 200 page, in view-source, in what LLM crawlers read. It carried no `$`, "which is exactly why the `$`-anchored acceptance gate could not see it" | `f0203ad` D1; canon `a891b83` |
+| R3 | GCI | **A rebate cap shipped live inside the JS comment documenting its own removal** — `// CAP/RATE (1550 / 0.75)` — inlined into a live 200 page, in view-source, in what LLM crawlers read. It carried no `$`, "which is exactly why the `$`-anchored acceptance gate could not see it" | `f0203ad` D1; canon `2aa46a9` |
 | R3 | GCI | **"the largest rebate" — a rank claim with no `cap` and no numeral, live on six pages** (`_generate_service_pages.py` `CROSS_CONTEXT['attic']`). Plus "the published per-measure amounts drop to a small fraction of the figures usually quoted", three "the attic cap is the larger of the two" comparatives, and "the smallest cap in its residential program" — **which the lane's own first pass introduced as a fix for a figure** | `a91dfd4` D5 |
 | R3 | DCI | `$600` Combo Bonus in `Organization.knowsAbout` JSON-LD on ~71 pages; "the prose cap sweep never looked at JSON-LD" | C4, `81f4bca` |
 | R3 | DCI | Three figure sites R1's inventory missed: `_generate_service_pages.py` 1121, 1141, 1611 | `5703f8c` |
-| R3 | GCI | **An entire live data module never listed** — `_area_pages.py`, 17 live figures across six town pages | `2cecf33`; canon `a891b83` |
-| R3 | LGM | Four figure sites unlisted; three pages had seven surfaces where the inventory said six | `d6e8dab`; canon `a891b83` |
-| R3 | LGM | `spray-foam-vs-blown-in-comparator` carried `$1.16` and `$0.77` **although neither string appears anywhere in that page's generator** — inherited via a shared `CITED_SOURCES` key in `cite_keys` | canon `a891b83` |
+| R3 | GCI | **An entire live data module never listed** — `_area_pages.py`, 17 live figures across six town pages | `2cecf33`; canon `2aa46a9` |
+| R3 | LGM | Four figure sites unlisted; three pages had seven surfaces where the inventory said six | `d6e8dab`; canon `2aa46a9` |
+| R3 | LGM | `spray-foam-vs-blown-in-comparator` carried `$1.16` and `$0.77` **although neither string appears anywhere in that page's generator** — inherited via a shared `CITED_SOURCES` key in `cite_keys` | canon `2aa46a9` |
 | R3 | GCI | `ATMOS_REBATE_AMOUNTS` and `WAP_INCOME_FIGURES` were **detectors, not sources** — tuples scanned against built HTML to inject a verification note; with the amounts gone the note vanished from every page | `2cecf33` |
 | R3 | GCI | 15 orphaned "This figure was verified in August 2026 against the Atmos rebate page" sentences | `2cecf33` |
 | R3 | GCI | A first fix attempt **left the superseded amount inside a JS comment**, which ships because the JS is inlined, and that made `rebate_note_section_html()` inject an "Atmos rebate amounts verified" note onto a page that no longer quotes an amount | `bf240f8` |
@@ -4102,7 +4102,7 @@ catch it; `—` means no rule here catches it and the reason is in that rule's
 | R7 | LGM | An **unrestricted universal negative in 8 places** — "neither Xcel nor Efficiency Works publishes a dollar figure for the audit" — refuted by the current CO sheet †'s own `HOME ENERGY AUDIT` / `REBATE AMOUNT` table | `58646f0` |
 | R7 | LGM | Seven stale `24-02-205` claims across `_generate_area_pages.py`, an open Director card, `STATE_OF_PROJECT.md` ×2, `WEBSITE_ARCHITECTURE.md`, and a done card whose polarity was inverted | `858bb26` |
 | R7 | LGM | `llms.txt`'s tile description **asserted the conflation and denied it in the same sentence** — and it was a half-fix of the same lane's own commit `58646f0` | `e329db7` |
-| R7 | all four | `24-02-205`/`24_02_205`/`23-11-205` census: canon 3 hits, **DCI 62**, **LGM 64**, GCI 3 — 9 live defects | canon `087a3be`, lane `xcel-25-12-215-registry-canon` |
+| R7 | all four | `24-02-205`/`24_02_205`/`23-11-205` census: canon 3 hits, **DCI 62**, **LGM 64**, GCI 3 — 9 live defects | canon `4ef12e5`, lane `xcel-25-12-215-registry-canon` |
 | R7 | GCI | The done card `lgm-r49-r60-harmonize.md` carried a **live forward-looking instruction** to go quote a superseded edition | `71e9217` |
 
 **R8 — stale review date**
@@ -4129,8 +4129,8 @@ catch it; `—` means no rule here catches it and the reason is in that rule's
 
 | Rule | Repo | Defect | Found in |
 |---|---|---|---|
-| R10 | DCI | "The standard rebate guide covers the base amounts the bonus multiplies" pointing at a page stating "Per-measure dollar caps are deliberately not enumerated on this page." **7 inbound promises across 2 refusing destinations, 5 of them predating the ruling by 16 days** — pages told readers a calculator "estimates the project cost" while that calculator said it "does not compute a dollar estimate" | canon `a891b83` |
-| R10 | GCI | "The Atmos **figures** quoted elsewhere on this site are for the towns Atmos serves" on a property quoting zero Atmos figures — **and this was the variant that survived after "the Atmos amounts quoted elsewhere" was corrected and the class reported closed.** Each of the two pages shipped it twice: body prose and `FAQPage` JSON-LD | `f0203ad` D2; canon `a891b83` |
+| R10 | DCI | "The standard rebate guide covers the base amounts the bonus multiplies" pointing at a page stating "Per-measure dollar caps are deliberately not enumerated on this page." **7 inbound promises across 2 refusing destinations, 5 of them predating the ruling by 16 days** — pages told readers a calculator "estimates the project cost" while that calculator said it "does not compute a dollar estimate" | canon `2aa46a9` |
+| R10 | GCI | "The Atmos **figures** quoted elsewhere on this site are for the towns Atmos serves" on a property quoting zero Atmos figures — **and this was the variant that survived after "the Atmos amounts quoted elsewhere" was corrected and the class reported closed.** Each of the two pages shipped it twice: body prose and `FAQPage` JSON-LD | `f0203ad` D2; canon `2aa46a9` |
 | R10 | GCI | Three "the Atmos caps say the same thing" comparatives on the wall and crawl-space hubs, pointing at caps the site no longer publishes | `f0203ad` D2 |
 
 **R11 — attribution debt (added, report-only)**
@@ -4159,16 +4159,16 @@ excludes them would be read as covering them.
 Every one is recorded in this portfolio, with the pass that hit it.
 
 1. `grep -c` counts **lines**, not occurrences. Measured live: `Xcel` on GCI's payback page, `grep -c` **10**, true count **11** (GCI `bf240f8`).
-2. A `$`-anchored gate **cannot see a bare-digit cap** — `1550 / 0.75` in a JS comment (GCI `f0203ad`; canon `a891b83`).
+2. A `$`-anchored gate **cannot see a bare-digit cap** — `1550 / 0.75` in a JS comment (GCI `f0203ad`; canon `2aa46a9`).
 3. A cap-anchored sweep cannot see **"the largest rebate"** (GCI `a91dfd4`).
 4. A line-based grep cannot see a phrase that **wraps a line break** — `Advice Letter No. 647` returns a false `0` on two of three documents; `"Weld County rows are"` returns `0` where a wrap-insensitive check returns `1`; a `grep -oF` for a shipped sentence returns `0` because the string straddles `680</code> instead: the` ⏎ `result will then fit` (GCI `5f9698b`, `12dfcbf`; DCI `3a6b76b`).
 5. A whole-phrase grep cannot see a string **split across Python concatenation** — `"...the primary rebate " "stack for Denver-area..."` matched the `.pyc` and not the `.py` (DCI `fca41f6`, `fb08735`).
 6. A **sitemap-enumerated** sweep cannot see `llms.txt` or the embed frame. Eleven rounds and every automated gate walked past `llms.txt` (DCI `84a9c10`, `fb08735`; LGM `e329db7`).
 7. A **body-text scan cannot reach** `<head>`, meta, `og:`, `twitter:` or JSON-LD. DCI's `normfind.py` *"structurally cannot see `<head>`"* and a P0 typo shipped live in the SERP snippet.
 8. `/usr/bin/grep -ci 'ault'` gives **8** where the locality appears **once**; a bare `the the` matches `the thermal`/`the thermostat`/`the thermometer` on 9 pages where the real count is **1** (GCI `12dfcbf`; DCI `84a9c10`).
-9. The session's bundled `grep` is **ugrep with `--ignore-files`** and **silently skips gitignored paths** — reproduced: 2 files shadowed, **3** with `/usr/bin/grep`. **Every count in this spec was taken with `/usr/bin/grep`** (LGM `858bb26`; canon `087a3be`).
+9. The session's bundled `grep` is **ugrep with `--ignore-files`** and **silently skips gitignored paths** — reproduced: 2 files shadowed, **3** with `/usr/bin/grep`. **Every count in this spec was taken with `/usr/bin/grep`** (LGM `858bb26`; canon `4ef12e5`).
 10. `textutil -convert txt` does **not** extract the Atmos PDF and reports all nine towns absent **including the six provably present**; `strings` fails identically; only `pdftotext -layout` works (GCI `12dfcbf`).
-11. **A grep-built inventory is incomplete by construction** and must not be handed downstream as a specification. All three editing rows found figures the inventory missed, each by running the gate past the list's end (canon `a891b83`).
+11. **A grep-built inventory is incomplete by construction** and must not be handed downstream as a specification. All three editing rows found figures the inventory missed, each by running the gate past the list's end (canon `2aa46a9`).
 12. **Each round's instrument was built from the previous round's findings, so each round the defect stepped one word sideways. A grep shaped like the last defect cannot see the next one** (DCI `31484f1`).
 13. **Every instrument in five rounds was pointed at the CHANGE; none was pointed at the PAGE.** A diff-scoped read shows what a pass altered; 7 of 11 defects were sentences the pass *should* have altered and did not, sitting in the pre-pass baseline where no diff can reach them (DCI `eb5c939`).
 14. **A corpus widened for VERIFICATION is not widened for AUDIT.** Byte-comparing 83 artifacts proves they shipped intact and says nothing about what they claim (DCI `fb08735`).
@@ -4177,7 +4177,7 @@ Every one is recorded in this portfolio, with the pass that hit it.
 17. **`ops/functional_proof.sh` CHECK 3 discovers tools from the live sitemap, so the embed frame is permanently outside its perimeter** — measured: the frame *does* satisfy `is_tool_page` structurally and is skipped only for sitemap non-membership (DCI `dci-calculator-embed-phase1`).
 18. **A gate had been red across sessions and nobody reported it** — `_artifact_grep.sh` was already failing at GCI HEAD before a pass started (GCI `5f9698b`).
 19. **Subtraction is not measurement.** `26 = 36 − 10` was wrong because 8 pages do both (DCI `1794f98`).
-20. **A bare zero conceals that the zero came from judgment applied after the match.** Three JS-comment scans reported "0" fired **153 times** (canon `b152b08`).
+20. **A bare zero conceals that the zero came from judgment applied after the match.** Three JS-comment scans reported "0" fired **153 times** (canon `85321e6`).
 21. **Search for a term you KNOW is present before trusting a term you believe is absent.** Greeley is in that tariff, so any pipeline that cannot find Greeley cannot establish Johnstown is missing (GCI ground-truth; canon `PROPERTY_GENESIS.md`).
 22. **A citation sweep must search for the CLAIM, not only for the identifier** (GCI `44d638c`).
 23. **The unit of work is the defect class, portfolio-wide, never the page that surfaced it** (canon Rule 8c; hit on DCI's unswept `prerequisite`, and hit again on the `before and after` class still live on DCI today).

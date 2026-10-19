@@ -9,13 +9,13 @@ State at review time (measured, `git rev-parse` + `git status --porcelain`):
 
 | repo | HEAD | branch | dirty | ahead/behind origin |
 |---|---|---|---|---|
-| calibrated-design-canon | `c327bab` | main | 0 | 0/0 |
+| calibrated-design-canon | `44dca63` | main | 0 | 0/0 |
 | denvercoloradoinsulation.com | `0d473a5` | main | 0 | 0/0 |
 | longmontcoloradoinsulation.com | `95c93d1` | main | 0 | 0/0 |
 | greeleycoloradoinsulation.com | `34adbf4` | main | 0 | 0/0 |
 
-The brief named canon `38f177c` and DCI `74e8429`. Both advanced by one lane
-*release* commit during this review (canon `c327bab` 18:18:59, DCI `0d473a5`
+The brief named canon `48195ae` and DCI `74e8429`. Both advanced by one lane
+*release* commit during this review (canon `44dca63` 18:18:59, DCI `0d473a5`
 18:19:30, both by the pass's own author). DCI's `public/` tree hash is identical
 across `74e8429..0d473a5` (`3936110639f81588aec41aa981615457beccb227` both
 sides), so no content finding is affected.
@@ -24,18 +24,18 @@ sides), so no content finding is affected.
 
 ## MOST SEVERE FINDING
 
-**`1c7b354` silently blinded three BLOCKING rules on all three live properties,
+**`0ea75da` silently blinded three BLOCKING rules on all three live properties,
 and it is a regression created inside this pass.**
 
-`889e172` added the SRC code/prose split as a **named, counted, R5-only filter**,
+`4235b56` added the SRC code/prose split as a **named, counted, R5-only filter**,
 with a design note saying so: *"Marked, not dropped — the removal goes through a
-named filter so it is counted and enumerated like every other one."* `1c7b354`
+named filter so it is counted and enumerated like every other one."* `0ea75da`
 then moved it into `ctx.pool()` as a bare `continue` (`claim_gate.py:1216`),
 which deletes the surface **before any hit is raised, for every rule that reads
 SRC — R2, R3-T3, R4, R5, R7.** Identical fixture bytes, three commits:
 
 ```
-                 base 9dc1277        889e172 (R5-only)   HEAD c327bab
+                 base a2e042f        4235b56 (R5-only)   HEAD 44dca63
 SRC-R2-CSSWRAP   RAW 1 ADJ 1 exit 1  RAW 1 ADJ 1 exit 1  RAW 0 ADJ 0 exit 0  *** NEW EVASION ***
 SRC-R4-CSSWRAP   RAW 1 ADJ 1 exit 1  RAW 1 ADJ 1 exit 1  RAW 0 ADJ 0 exit 0  *** NEW EVASION ***
 SRC-R7-CSSWRAP   RAW 1 ADJ 1 exit 1  RAW 1 ADJ 1 exit 1  RAW 0 ADJ 0 exit 0  *** NEW EVASION ***
@@ -98,7 +98,7 @@ them. The only thing selecting 4 over 5 is that 4 takes DCI to zero. The pass
 shipped that cell.
 
 The cost is **18 reproduced silent misses** in R5 — sentences that fired at the
-pass's base commit `9dc1277` and clear at HEAD. Among them:
+pass's base commit `a2e042f` and clear at HEAD. Among them:
 
 - `Our crews measured a 42% reduction in attic heat loss after air sealing.`
   clears solely because the threshold moved 5 → 4.
@@ -133,12 +133,12 @@ exists and holds ≥10 HTML files. `ops/push-to-staging.sh <domain>` followed by
 
 | change | commit | verdict |
 |---|---|---|
-| 1a threshold 5→4 + fold + question guard | `0fdd7a9` | **ALLOWLIST** |
-| 1b publisher-as-subject | `84422d4` | **ALLOWLIST** |
-| 1c wire `R5.derivable_constants` | `bf3fafe` | **ALLOWLIST** |
-| 1d short-form publishers | `84422d4` | **ALLOWLIST** |
-| 1e SRC code/prose split | `889e172` | **REPAIR**, with a new silent-miss channel |
-| `src_dup` drop 48-char slice | `1c7b354` | **REPAIR**; the bundled pool move is allowlist-shaped |
+| 1a threshold 5→4 + fold + question guard | `f550cd1` | **ALLOWLIST** |
+| 1b publisher-as-subject | `0e6d4d7` | **ALLOWLIST** |
+| 1c wire `R5.derivable_constants` | `8395118` | **ALLOWLIST** |
+| 1d short-form publishers | `0e6d4d7` | **ALLOWLIST** |
+| 1e SRC code/prose split | `4235b56` | **REPAIR**, with a new silent-miss channel |
+| `src_dup` drop 48-char slice | `0ea75da` | **REPAIR**; the bundled pool move is allowlist-shaped |
 
 ### 1a — ALLOWLIST
 
@@ -169,7 +169,7 @@ RAW 2   ADJUDICATED 0
   FILTER CLEARED 1 by: the figure appears in a cited-stat rendered on this page
       -> 42% | Our crews measured a 42% reduction in attic heat loss after air sealing.
 
-$ python3 drive_pre1a.py A2_thresh4.html      # canon 9dc1277
+$ python3 drive_pre1a.py A2_thresh4.html      # canon a2e042f
 RAW 2   ADJUDICATED 1
   FIRES: 42% | Our crews measured a 42% reduction in attic heat loss after air sealing.
 ```
@@ -190,7 +190,7 @@ real; the implementation does not solve it and adds collisions.
 ### 1b — ALLOWLIST
 
 The letter of the prohibition was honoured. `estimates` is genuinely **not** in
-`R1.attribution_verbs`; `git show 84422d4 -- config/common.json` is one hunk
+`R1.attribution_verbs`; `git show 0e6d4d7 -- config/common.json` is one hunk
 adding `publisher_short_forms` and `subject_attribution_verbs` only. Positive
 control: `"According to" in R1.attribution_verbs -> True`,
 `"estimates" -> False`.
@@ -342,9 +342,9 @@ developer comments in `DCI/_generate_calculator_pages.py:347`.
 The silent-miss claim is **true**, proved at both SHAs on one fixture:
 
 ```
-########## CANON=889e172 (48-char prefix probe) ##########   EXIT=1
+########## CANON=4235b56 (48-char prefix probe) ##########   EXIT=1
   RAW 4   FILTER src restatement 2 (removed 2)   ADJUDICATED 0    VERDICT PASS
-########## CANON=1c7b354 (full sentence) ##########          EXIT=1
+########## CANON=0ea75da (full sentence) ##########          EXIT=1
   RAW 4   FILTER src restatement 1 (removed 1)   ADJUDICATED 1    VERDICT FAIL
   --- 1 hits --- mag …,47% | <p>Loose-fill cellulose settles 10 to 20 percent …
                              cuts your bill by 47% in the first year.</p>
@@ -357,13 +357,13 @@ probe cleared them.
 
 **The pool move is the problem.** It was measured for R5 only and then applied
 to every proposition rule. A real R2 wrong-utility finding present at
-`1c7b354^` is silently dropped at `1c7b354`:
+`0ea75da^` is silently dropped at `0ea75da`:
 
 ```
-##### 889e172 #####  R2 RAW 2  ADJ 2
+##### 4235b56 #####  R2 RAW 2  ADJ 2
   src:…SRC | <p>Atmos Energy is the natural gas utility for Denver homes and pays the rebate.</p>
   src:…SRC | els.forEach(function (el) { … el.innerHTML = 'Atmos Energy is the n
-##### 1c7b354 #####  R2 RAW 1  ADJ 1
+##### 0ea75da #####  R2 RAW 1  ADJ 1
   src:…SRC | <p>Atmos Energy is the natural gas utility for Denver homes and pays the rebate.</p>
 ```
 
@@ -400,7 +400,7 @@ harness was copied to scratch, `ROOT` repointed and `CANON` parameterised by
 
 ### How many miss now — 14 of 86 mechanically, 12 measurable, against a prior 12
 
-Sixteen `**MISS**` lines at `c327bab`, two of which are not vectors, giving 14:
+Sixteen `**MISS**` lines at `44dca63`, two of which are not vectors, giving 14:
 
 | vector | result at HEAD | construction | vs prior |
 |---|---|---|---|
@@ -436,8 +436,8 @@ so `R9-I1`/`R9-I2` cannot be scored either way. The 09-18 headline of 11 counts
 the direction that flatters.**
 
 **Both regressions PREDATE this pass**, bisected across all seven SHAs:
-`R2-B8` → `55c5ca8` (deliberate and correct; the 09-18 read itself refused to
-credit B8's catch and printed "Honest count: 12 of 86"). `R4-D1` → `86b4ffd`,
+`R2-B8` → `ec71fd5` (deliberate and correct; the 09-18 read itself refused to
+credit B8's catch and printed "Honest count: 12 of 86"). `R4-D1` → `5f906c4`,
 and **that one is a real, undeclared detection loss** still open: the hit is
 raised and then pardoned — `[NEUTRAL -- fewer than two distinct programs]
 public/a.html:VIS NEUTRAL on top,on top of,stack | programs=- | They stack on
@@ -446,16 +446,16 @@ top of each other.`
 ### NEW evasions this pass opened — 20 proven pairs on 5 of the 6 commits
 
 **The headline null result first, because it is not reassuring.** The 86-vector
-result is **byte-identical at all seven SHAs** (`9dc1277`, `0fdd7a9`, `84422d4`,
-`bf3fafe`, `889e172`, `1c7b354`, `c327bab`) — same 16 rows, same RAW/ADJ on
+result is **byte-identical at all seven SHAs** (`a2e042f`, `f550cd1`, `0e6d4d7`,
+`8395118`, `4235b56`, `0ea75da`, `44dca63`) — same 16 rows, same RAW/ADJ on
 every one of the 86. Zero fixed, zero broken. The recorded folklore ("every
 Unicode fix opened the next hole") did not repeat *among the 86*.
 
 It did not repeat because **the 86 cannot reach any of this pass's changes.**
 Every hole below is outside their span. Twenty hand-built probes, each run at
-`9dc1277` and `c327bab` on identical fixture bytes.
+`a2e042f` and `44dca63` on identical fixture bytes.
 
-**C1 — the question guard (`0fdd7a9`): 8 evasions.** `_is_plain_question` clears
+**C1 — the question guard (`f550cd1`): 8 evasions.** `_is_plain_question` clears
 any sentence ending `?` that opens with one of 24 interrogatives and contains
 none of 13 hardcoded factive frames. Loaded questions are not a subset of that.
 
@@ -471,19 +471,19 @@ control Q-CTRL-plain                  CAUGHT at both
 presuppose X. The guard's comment names its blind spot, but ships 13 *idioms*
 against a grammatical *class*.
 
-**C2 — `_R5_INSTAT_MIN` 5→4 (`0fdd7a9`): 1 evasion, and it is the one that
+**C2 — `_R5_INSTAT_MIN` 5→4 (`f550cd1`): 1 evasion, and it is the one that
 flipped DCI's release gate.** Isolated against a scratch canon identical to HEAD
 except the integer: `CAUGHT`. Control `T2-CTRL2` (same numeral, overlap 0) still
 fires, so `f_instat` is not a blanket.
 
-**C3 — suffix folding (`0fdd7a9`): 1 evasion, independent of the threshold.**
+**C3 — suffix folding (`f550cd1`): 1 evasion, independent of the threshold.**
 Defect is *"once the attic is **sealed**"* against the citation's *"air
 **sealing**"* — unfolded overlap 4, folded 5. At the `min5` scratch canon
 (threshold reverted, folding intact) it **still misses**, so folding is the
 cause. Reusing a citation's vocabulary in a different part of speech now buys
 attribution.
 
-**C4 — publisher short forms (`84422d4`): 2 evasions.**
+**C4 — publisher short forms (`0e6d4d7`): 2 evasions.**
 
 ```
 P-XCEL-BARE  "Xcel reports a 42% reduction in heating costs for Denver homes."
@@ -497,19 +497,19 @@ added to close."* The verb requirement did not close it, because the possessive
 group is optional in S1. `P-ENERGY-BARE` and `P-NATIONAL-BARE` are clean
 (CAUGHT at both); `P-EPA-BARE` misses at both — pre-existing, via `f_pub`.
 
-**C5 — `derivable_constants` (`bf3fafe`): 2 evasions.** Control
+**C5 — `derivable_constants` (`8395118`): 2 evasions.** Control
 `D-CTRL-OTHERFIG` (42% instead of 17%) CAUGHT at both, so the *figure* binding
 holds; the *subject* binding does not.
 
-**C6 — the SRC split moved into the shared pool (`1c7b354`): 6 evasions across
-FOUR rules. This is the most severe finding of the read.** `889e172` added
-`_src_is_code` as a **named, counted, R5-only FILTER**. `1c7b354` moved it into
+**C6 — the SRC split moved into the shared pool (`0ea75da`): 6 evasions across
+FOUR rules. This is the most severe finding of the read.** `4235b56` added
+`_src_is_code` as a **named, counted, R5-only FILTER**. `0ea75da` moved it into
 `ctx.pool()` as a bare `continue` (`claim_gate.py:1216`), removing the surface
 **before any hit is raised, for every rule that reads SRC — R2, R3-T3, R4, R5,
 R7**:
 
 ```
-                 base 9dc1277        889e172 (R5-only)   HEAD c327bab
+                 base a2e042f        4235b56 (R5-only)   HEAD 44dca63
 SRC-R2-CSSWRAP   RAW 1 ADJ 1 exit 1  RAW 1 ADJ 1 exit 1  RAW 0 ADJ 0 exit 0  *** NEW ***
 SRC-R4-CSSWRAP   RAW 1 ADJ 1 exit 1  RAW 1 ADJ 1 exit 1  RAW 0 ADJ 0 exit 0  *** NEW ***
 SRC-R7-CSSWRAP   RAW 1 ADJ 1 exit 1  RAW 1 ADJ 1 exit 1  RAW 0 ADJ 0 exit 0  *** NEW ***
@@ -522,7 +522,7 @@ controls SRC-R2/R4/R7/R3-PROSE and S-PROSE: CAUGHT at all three commits
 **R2 (wrong utility), R4 (stacking) and R7 (superseded source) are all BLOCKING
 rules.** A wrong-utility attribution or a stacking assertion written into a
 generator string that also contains a stylesheet is now invisible to the gate
-that exists to stop it. The bisect is exact: `889e172` catches, `1c7b354` misses.
+that exists to stop it. The bisect is exact: `4235b56` catches, `0ea75da` misses.
 
 And the removal is **not enumerated as a filter** — R5's block shows `RAW 0` and
 no removal line. It appears only as a global byte tally naming no rule and no
@@ -536,11 +536,11 @@ SRC CODE SURFACES EXCLUDED FROM THE PROPOSITION POOL: 18 run(s), 82219 chars  (D
 
 **189,985 characters** of generator string content dropped from the proposition
 pool of five rules across three live properties, with no per-rule accounting.
-`889e172`'s design note — *"Marked, not dropped — the removal goes through a
+`4235b56`'s design note — *"Marked, not dropped — the removal goes through a
 named filter so it is counted and enumerated like every other one"* — was true
-at `889e172` and is **false at `c327bab`**.
+at `4235b56` and is **false at `44dca63`**.
 
-**C7 — `38f177c`:** no probe found a hole. Config date only.
+**C7 — `48195ae`:** no probe found a hole. Config date only.
 
 ### The live consequence: DCI's "R5 to zero" is entirely filter-widening
 
@@ -589,14 +589,14 @@ four shared tokens with a different sentence that happens to carry 25%.
 **The flagship property's release gate flipped from exit 1 to exit 0 on one
 integer.**
 
-Note also that `0fdd7a9`'s own sweep table predicts `DCI +fold` leaves **3**
+Note also that `f550cd1`'s own sweep table predicts `DCI +fold` leaves **3**
 uncleared at threshold 4; the shipped run leaves **0**. The table and the engine
 disagree. Which is wrong is NOT DETERMINED.
 
 ### The Unicode-confusable family, in full — 8 misses, 0 opened, 0 closed
 
 43 fixtures, each byte-verified for the codepoint it claims via
-`unicodedata.name`, run at `9dc1277` and `c327bab`.
+`unicodedata.name`, run at `a2e042f` and `44dca63`.
 
 **CAUGHT at both:** Cyrillic А U+0410, Cyrillic о U+043E, Greek Α U+0391, Greek
 ο U+03BF, fullwidth letters U+FF21…, NBSP U+00A0, narrow NBSP U+202F, hair space
@@ -636,8 +636,8 @@ and `U-R5-fullwidth-in-word` (a dead `if False` branch). Both NOT TESTED.
   does not fire.
 - Folding-off at threshold 5 — the mutation makes control `R5-INSTAT` fire on
   repaired and the gate self-aborts at exit 2. (This independently corroborates
-  `0fdd7a9`'s claim that the fold is load-bearing for that control.)
-- `0fdd7a9`'s measured near-miss sweep was not reconstructed.
+  `f550cd1`'s claim that the fold is load-bearing for that control.)
+- `f550cd1`'s measured near-miss sweep was not reconstructed.
 - LGM/GCI R5 removed-sets — both are ADJ 0 at base and HEAD, so the four widened
   filters are latent there; whether they pardon anything was not tested.
 - `--peer`, `--opt-in=R6b`, and the R6/R11 control phases.
@@ -863,7 +863,7 @@ as a candidate**. It is not filtered — it is invisible. 73 of the 523 R5
 candidates do use spelled-out `percent`, so this is the magnitude-word gate, not
 a regex gap.
 
-Canon already recorded the companion limitation itself, in commit `55c5ca8`:
+Canon already recorded the companion limitation itself, in commit `ec71fd5`:
 *"R2 sub-test `t` is a REVIEW class: it cannot tell a correct attribution from a
 wrong one."* No rule in the gate checks quotation fidelity against a source.
 
@@ -1287,7 +1287,7 @@ IDENTICAL: every one of the 25 rows scores the same before and after this pass
 **Neither script exists and neither was ever committed** —
 `git log --all --diff-filter=A -- '*score.py' '*score_base.py'` → 0 across all
 313 commits (positive control: the same query finds `claim_gate.py` at
-`0e979f6`). The board's Project Rule requires a Done card to carry a
+`5df3731`). The board's Project Rule requires a Done card to carry a
 verification command; **this one cannot be run by anyone, including its author.**
 
 The narrow claim nonetheless **holds**, reproduced by rebuilding the replay for
@@ -1295,19 +1295,19 @@ the moved row (5c, GCI's rebate figures at pre-fix `236c464`, `--today 2026-09-1
 at four canon SHAs:
 
 ```
-canon eafada2  EXIT=1   R3  RAW 769  ADJ 92
-canon 9dc1277  EXIT=1   R3  RAW 769  ADJ 91
-canon 38f177c  EXIT=1   R3  RAW 769  ADJ 91
-canon c327bab  EXIT=1   R3  RAW 769  ADJ 91
+canon 22caf78  EXIT=1   R3  RAW 769  ADJ 92
+canon a2e042f  EXIT=1   R3  RAW 769  ADJ 91
+canon 48195ae  EXIT=1   R3  RAW 769  ADJ 91
+canon 44dca63  EXIT=1   R3  RAW 769  ADJ 91
 distinct $ figures adjudicated: 7 at every SHA; $-bearing files: 16 at every SHA
 ```
 
-Identical at `9dc1277` and HEAD, so **this pass did not cause the drop**.
+Identical at `a2e042f` and HEAD, so **this pass did not cause the drop**.
 Arithmetic checks: 20 CAUGHT + 3 PARTIAL + 2 MISSED = 25, and the table has
 exactly 25 rows.
 
-**But the "regression between `eafada2` and `9dc1277`" does not exist.** The
-rerun never ran the replay at `eafada2`; doing so yields the same 7 figures
+**But the "regression between `22caf78` and `a2e042f`" does not exist.** The
+rerun never ran the replay at `22caf78`; doing so yields the same 7 figures
 across the same 16 files. The entire delta is one row carrying no `$` at all — a
 generator-SRC rank claim the config already files as REVIEW class. The two
 documents measured different things on identical detection:
@@ -1321,7 +1321,7 @@ The two figures adjudication drops are `$70,000` and `$99,920` — the WAP
 income-eligibility limits, not rebate payouts. **So `21` was the inflated score,
 not `20` the degraded one.** The rerun mis-attributes the difference to a
 phantom regression and opens a debt to chase it. This is the repo's own
-already-named `raw-vs-adjudicated` defect class (commit `b152b08`) recurring
+already-named `raw-vs-adjudicated` defect class (commit `85321e6`) recurring
 inside the gate's own scorekeeping. Secondary: the prose *"Not one … changed a
 single count"* is overstated — RAW counts did move (R2 337→316, R4 198→195,
 R5 201→197); it should read "no adjudicated verdict changed."
@@ -1347,7 +1347,7 @@ including the one named "stale review date", anchor on git history instead.
 Run tomorrow with today's config, all three stay green and byte-identical.
 Because the test is `v > today`, a **stale** as-of is strictly *more* sensitive —
 it can only produce false positives, never false negatives. The gate cannot stop
-detecting by going stale. The `38f177c` bump was genuinely load-bearing (48
+detecting by going stale. The `48195ae` bump was genuinely load-bearing (48
 `[future-date]` findings at 2026-09-18, matching the commit message).
 
 **The real risk runs the other way.** An as-of set a month into the future is
@@ -1392,7 +1392,7 @@ The other real class (4 occurrences): *"capped per measure, so the larger the
 job, the smaller the percentage."*
 
 **The demotion measurement is stale.** R3's measured FP rate on DCI today is
-**113/121 = 93.4%**, not the 68.1% pinned in config (taken at canon `62a09c7` on
+**113/121 = 93.4%**, not the 68.1% pinned in config (taken at canon `f1d8d00` on
 47 findings portfolio-wide; DCI alone now has 121). The gate never re-takes it.
 
 **SEVERE — R11 is excluded from the false-alarm sweep.** The negative-control
@@ -1482,11 +1482,11 @@ pool-move that silently drops a rule the move was never measured against.
 
 **What is still wrong, in severity order:**
 
-1. **`1c7b354` blinds R2, R4 and R7 — three BLOCKING rules — plus R3, on all
+1. **`0ea75da` blinds R2, R4 and R7 — three BLOCKING rules — plus R3, on all
    three properties**, to any claim wrapped in a code-shaped generator string.
    189,985 characters excluded with no per-rule accounting, on a 143-character
-   blindfold. A regression created inside this pass: `889e172` catches these,
-   `1c7b354` does not.
+   blindfold. A regression created inside this pass: `4235b56` catches these,
+   `0ea75da` does not.
 2. **DCI's R5 zero is filter-widening, not repair.** With the same content, the
    pre-pass gate still finds 24 R5 findings; all 24 are cleared by the four
    filters this pass widened, and restoring one integer returns the flagship
@@ -1524,11 +1524,11 @@ pool-move that silently drops a rule the move was never measured against.
 9. **LGM offers Efficiency Works without its LPC restriction** on three TL;DR
    blocks, one cellulose page, and 10 of 15 meta descriptions.
 10. **The replay score's verification command does not exist**, and its stated
-    diagnosis ("a pre-existing regression between `eafada2` and `9dc1277`") is a
+    diagnosis ("a pre-existing regression between `22caf78` and `a2e042f`") is a
     raw-vs-adjudicated artifact, not a regression.
 
 **The structural point underneath all of it:** the gate has no rule that checks
 whether a citation is *correct* — canon recorded this itself in commit
-`55c5ca8`. Exit 0 is evidence about form, never about truth. This pass's
+`ec71fd5`. Exit 0 is evidence about form, never about truth. This pass's
 sourcing held up under retrieval; that was the authors' judgement doing the
 work, not the gate's.

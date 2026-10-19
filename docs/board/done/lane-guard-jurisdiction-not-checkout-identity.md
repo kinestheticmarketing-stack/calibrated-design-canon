@@ -133,7 +133,7 @@ jurisdiction guard suffices.
 grep -A5 "^## Closed" docs/board/done/lane-guard-jurisdiction-not-checkout-identity.md
 ```
 
-Commit: `002ca34` (row R1, lane `close-down-rev2-2026-09-28`)
+Commit: `75935d2` (row R1, lane `close-down-rev2-2026-09-28`)
 
 ## Superseded
 
