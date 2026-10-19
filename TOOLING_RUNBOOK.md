@@ -42,8 +42,7 @@ property. Shared infrastructure belongs in canon.
 | Deploy path | `scripts/deploy_ops_to_vps.sh` | The **only** sanctioned way a canon change to `ops/` reaches the VPS |
 | Drift check | `scripts/monitoring/ops_drift_check.sh`, wired into `scripts/monitoring/daily_checks.sh` | Alerts if the VPS ever diverges from canon again |
 | Rules pipeline (code) | The realm system (private) — **not in this repo** | Rules live in one home, the realm registry. The realm generator compiles the global rules file, the packs and the guard specifications from it. Canon documents explain methods; a canon passage that states a rule cites its registry id. The earlier canon-to-`rules.md` sync script was deleted in REALM KICKOFF 3 v3 (2026-10-13); see [The rules pipeline](#the-rules-pipeline-claudecontextrulesmd) for its history |
-| Rules pipeline drift check | `scripts/monitoring/rules_drift_check.sh`, wired into `scripts/monitoring/daily_checks.sh` | Alerts if `rules.md` ever diverges from canon's `ARCHITECT_DISCIPLINE.md`, or if the local canon checkout falls behind `origin/main` |
-| Mac-side monitoring layer | `scripts/monitoring/` in this repo | Uptime, TLS expiry, deploy drift (per-site), page-200, ops drift, and rules drift — see below |
+| Mac-side monitoring layer | `scripts/monitoring/` in this repo | Uptime, TLS expiry, deploy drift (per-site), page-200, and ops drift — see below |
 | Mac-side scheduling | `~/Library/LaunchAgents/com.vongimbel.r2uptime.plist` and `com.vongimbel.r2daily.plist` — **not in this repo**, local-machine config | Run the checks in `scripts/monitoring/` |
 | Citation staleness watcher | `scripts/staleness_watcher.py` in this repo; its data is one `docs/citation-registry.json` per **site** repo | Re-fetches each cited source and diffs a per-provision fingerprint. Report-only, not currently scheduled. **It cannot read PDFs and cannot read JS-shell pages** — see [The citation staleness watcher](#the-citation-staleness-watcher-scriptsstaleness_watcherpy) below before registering any source |
 
@@ -135,7 +134,7 @@ already local because of that host setting):**
 | Agent | Schedule | Runs |
 |---|---|---|
 | `com.vongimbel.r2uptime` | every 600s (10 min), `RunAtLoad=false` | `scripts/monitoring/uptime_check.sh` |
-| `com.vongimbel.r2daily` | daily, 07:00 | `scripts/monitoring/daily_checks.sh` → `deploy_drift_check.sh`, `tls_expiry_check.sh`, `page200_check.sh`, `ops_drift_check.sh`, `rules_drift_check.sh` |
+| `com.vongimbel.r2daily` | daily, 07:00 | `scripts/monitoring/daily_checks.sh` → `deploy_drift_check.sh`, `tls_expiry_check.sh`, `page200_check.sh`, `ops_drift_check.sh` |
 
 **Historical note — FIXED 2026-08-31 (lane `uptime-false-alert-fix`).** The
 limitation described below was real and did fire: three false "Uptime
@@ -645,8 +644,9 @@ clean across all three.
 registry. The realm generator compiles the global rules file, the packs
 and the guard specifications from it. Canon documents explain methods; a
 canon passage that states a rule cites its registry id. The sync script
-described below was deleted in REALM KICKOFF 3 v3 (2026-10-13); the rest
-of this section is kept as history of the 2026-09-02 fix.
+described below was deleted in REALM KICKOFF 3 v3 (2026-10-13) and its
+drift check in REALM KICKOFF 4b; the rest of this section is kept as
+history of the 2026-09-02 fix.
 
 **Gap found and fixed 2026-09-02.** `~/.claude/context/rules.md` — the file
 `~/.claude/hooks/h01_session_start.sh`'s `SessionStart` hook tells every
@@ -664,9 +664,9 @@ OF THIS IN FULL...") that rules.md's copy lacked.
 
 | Component | Location | What it is |
 |---|---|---|
-| Sync script | `~/.claude/hooks/sync_rules_from_canon.sh` — **not in this repo**, local-machine config | Regenerates `~/.claude/context/rules.md` from this file's Rules 1-11 block (everything above the `# ARCHITECT_DISCIPLINE.md` header, located by grep, never hardcoded) plus `~/.claude/CLAUDE.md`'s kickoff-decomposition section. Idempotent (no-op, no write, no backup file if content is already byte-identical); backs up the prior `rules.md` to `rules.md.bak-pre-sync-<date>` only when it actually changes something; fails loudly (stderr + exit 1) and leaves the existing `rules.md` completely untouched if canon's file is missing/unreadable or its expected structure isn't found. Deliberately never runs `git pull` — a `SessionStart` hook must not perform a network git operation that could hang or conflict; catching a stale local canon checkout is `rules_drift_check.sh`'s job below. |
+| Sync script | `~/.claude/hooks/sync_rules_from_canon.sh` — **not in this repo**, local-machine config | Regenerates `~/.claude/context/rules.md` from this file's Rules 1-11 block (everything above the `# ARCHITECT_DISCIPLINE.md` header, located by grep, never hardcoded) plus `~/.claude/CLAUDE.md`'s kickoff-decomposition section. Idempotent (no-op, no write, no backup file if content is already byte-identical); backs up the prior `rules.md` to `rules.md.bak-pre-sync-<date>` only when it actually changes something; fails loudly (stderr + exit 1) and leaves the existing `rules.md` completely untouched if canon's file is missing/unreadable or its expected structure isn't found. Deliberately never runs `git pull` — a `SessionStart` hook must not perform a network git operation that could hang or conflict; catching a stale local canon checkout was the rules-drift check's job below. |
 | Hook wiring | `~/.claude/hooks/h01_session_start.sh` | Calls the sync script as its first step, before reading and injecting `rules.md`, so the file can never be stale at the moment it's loaded. On a sync failure it logs a `WARN` to `~/.claude/hooks/hook.log` and falls through to whatever `rules.md` already holds (last-known-good) — a session is never left with zero rules loaded. |
-| Drift check | `scripts/monitoring/rules_drift_check.sh`, wired into `daily_checks.sh` (07:00 daily via `r2daily`) | Two checks in one: (1) is the local canon checkout behind `origin/main` (`git fetch` + `git rev-list --count HEAD..origin/main`); (2) does `~/.claude/context/rules.md` still contain canon's current Rules 1-11 text verbatim, independently re-derived from `ARCHITECT_DISCIPLINE.md` using the same header-boundary logic as the sync script (a separate re-implementation, so this check can catch the sync script itself being broken or bypassed, not just canon having moved). Routes through the same `_mon_lib.sh` `handle_check_result`/`send_alert` machinery as every other check here — same per-day suppression, same recovery-on-clean-run, same VPS-side sender (`send_alert.js` → `DIRECTOR_ALERT_EMAIL`), never a new alert channel. |
+| Drift check | the rules-drift check script (deleted in REALM KICKOFF 4b), wired into `daily_checks.sh` (07:00 daily via `r2daily`) | Two checks in one: (1) is the local canon checkout behind `origin/main` (`git fetch` + `git rev-list --count HEAD..origin/main`); (2) does `~/.claude/context/rules.md` still contain canon's current Rules 1-11 text verbatim, independently re-derived from `ARCHITECT_DISCIPLINE.md` using the same header-boundary logic as the sync script (a separate re-implementation, so this check can catch the sync script itself being broken or bypassed, not just canon having moved). Routes through the same `_mon_lib.sh` `handle_check_result`/`send_alert` machinery as every other check here — same per-day suppression, same recovery-on-clean-run, same VPS-side sender (`send_alert.js` → `DIRECTOR_ALERT_EMAIL`), never a new alert channel. |
 
 **Why a session-start regenerate instead of a git hook or a manual step:**
 `~/.claude` is not a git repo (no post-merge/post-checkout hook is available
@@ -676,7 +676,7 @@ top of every `SessionStart` means the file cannot be stale at the moment
 it's read, at the cost of one cheap idempotent script run per session.
 
 **Verified both directions, 2026-09-02:** a canary run of
-`rules_drift_check.sh` against a deliberately corrupted `rules.md` (RULE 9
+the rules-drift check against a deliberately corrupted `rules.md` (RULE 9
 stripped) registered a consecutive-failure count of 1 (below the
 shared 2-run alert threshold, by design — see the false-alert fix above);
 restoring the correct `rules.md` and re-running cleared the count and

@@ -113,7 +113,7 @@ SCHEDULED-class. They run where noted:
 - `ops/canary_check.js` (DCI-hosted, covers all 3): daily `lead-canary.timer` on the server
 - `ops/browser_canary.js` (DCI-hosted): weekly headless lead-path on the server
 - canon `scripts/monitoring/uptime_check.sh`: launchd `r2uptime`, every 600 s on the Mac
-- canon `scripts/monitoring/daily_checks.sh` (launchd `r2daily`, 07:00) bundles `deploy_drift_check.sh`, `tls_expiry_check.sh`, `page200_check.sh` (wraps each site's `live_token_check.sh`), `ops_drift_check.sh`, `rules_drift_check.sh`
+- canon `scripts/monitoring/daily_checks.sh` (launchd `r2daily`, 07:00) bundles `deploy_drift_check.sh`, `tls_expiry_check.sh`, `page200_check.sh` (wraps each site's `live_token_check.sh`), `ops_drift_check.sh` (a rules-drift check was also bundled until REALM KICKOFF 4b removed it)
 - canon `scripts/staleness_watcher.py check`: launchd `citation-staleness-watcher`, Mondays 09:00, via `~/.config/monitoring/staleness_watcher_run.sh`
 - canon `ops/stale_site_check.js`, `ops/unhandled_lead_check.js`, `ops/backup_heartbeat_check.sh`: timers on the server
 - Not a check, not counted: `ops/retention_cleanup.js` (DCI-hosted daily deletion job)

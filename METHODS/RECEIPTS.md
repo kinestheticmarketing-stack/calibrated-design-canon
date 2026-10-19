@@ -97,15 +97,15 @@ DCI — denvercoloradoinsulation.com (flagship, only revenue asset)
   directly from production Postgres** (`porter-db-1`, `WHERE canary = false`),
   replacing the previously-uncitable "lead record" claim above with row ids
   and dates. **DCI — 8 non-canary rows, of which 3 are genuine third-party
-  submissions:** id 5 [name removed], 2026-07-25, from
-  `/insulation-westminster.html`; id 6 [name removed], 2026-08-05, from
-  `/insulation-removal.html`; id 8 "[name removed]", 2026-08-08, from
+  submissions:** id 5, 2026-07-25, from
+  `/insulation-westminster.html`; id 6, 2026-08-05, from
+  `/insulation-removal.html`; id 8, 2026-08-08, from
   `/vermiculite-insulation-denver.html` — **all three `delivered = true`.**
   The remaining five are internal: ids 1-2 launch tests (2026-05-05), ids 3,
   4, 7 operator submissions. **DCI id 1 is `delivered = false` — a
   pre-SendGrid test row, not a delivery failure**; id 2 the same day is
   `delivered = true`, which dates SendGrid being wired between the two.
-  **GCI — 3 non-canary rows, 1 third-party:** id 3 "[name removed]", 2026-08-08, from
+  **GCI — 3 non-canary rows, 1 third-party:** id 3, 2026-08-08, from
   `/` — the templated-pitch spam that triggered the Lead 3 hardening, external
   and non-test but not a customer. ids 1-2 are operator submissions.
   **LGM — 0 non-canary rows. No human has ever submitted that form.** ·

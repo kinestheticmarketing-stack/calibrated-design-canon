@@ -57,12 +57,9 @@ their own design without an external check.
 
 ## Standing rules
 
-The four rules opening
-[METHODS/ARCHITECT_DISCIPLINE.md](METHODS/ARCHITECT_DISCIPLINE.md) —
-efficiency (outranks every other rule), no dead anything, never write
-the Director an scp command, and answer his question first — are the
-entry point to this canon. Any new canon doc that touches these
-topics points back to them rather than restating their text.
+Standing rules live in one home, the realm registry (private).
+[METHODS/ARCHITECT_DISCIPLINE.md](METHODS/ARCHITECT_DISCIPLINE.md)
+explains the Architect's method.
 
 ## Canon contents
 

@@ -2,19 +2,18 @@
 # Bundles the heavier, less time-sensitive checks into one daily run:
 # deploy drift (~40s, scp's public/ per property), TLS expiry (safety net,
 # certbot already renews automatically), every-page-200 (~38s, wraps
-# ops/live_token_check.sh), ops drift (added 2026-08-31, ~5s, one
+# ops/live_token_check.sh), and ops drift (added 2026-08-31, ~5s, one
 # directory not per-property -- does canon's ops/ match the VPS's
 # /root/ops/scripts/, the shared alerting layer this whole monitoring
-# directory depends on), and rules drift (added 2026-09-02, ~2s, one file
-# pair not per-property -- does ~/.claude/context/rules.md still match
-# canon's METHODS/ARCHITECT_DISCIPLINE.md, and is the local canon checkout
-# itself current with origin/main). Uptime is scheduled separately, far
+# directory depends on). A fifth child, the rules-drift check (added
+# 2026-09-02), was removed in REALM KICKOFF 4b with the rules sync it
+# checked. Uptime is scheduled separately, far
 # more frequently, since it's cheap (a handful of curls) and time-sensitive
-# in a way these five aren't.
+# in a way these four aren't.
 #
 # EXIT SEMANTICS (added 2026-09-28). This parent used to invoke the five
 # children and check none of their exit codes. Without `set -e` that means
-# its status was simply the LAST child's -- rules_drift_check.sh's -- so any
+# its status was simply the LAST child's -- the rules-drift check's, at the time -- so any
 # failure in the first four was reported as success. Measured, not assumed:
 # with children 1 and 4 stubbed to exit 3 and 7, the previous version exited
 # 0 and printed nothing. (In the all-five-fail case it happened to exit 1,
@@ -49,7 +48,6 @@ CHECKS=(
   tls_expiry_check.sh
   page200_check.sh
   ops_drift_check.sh
-  rules_drift_check.sh
 )
 
 failed=()
