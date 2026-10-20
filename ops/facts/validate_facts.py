@@ -98,10 +98,12 @@ def _canon(v):
 
 
 def _as_path_tuple(p):
-    """Tuple paths pass through unchanged; "" -> (); any other str, Path or
-    non-tuple value -> (str(p),)."""
+    """Tuple paths pass through unchanged; a list -> tuple(list); "" -> ();
+    any other str, Path or value -> (str(p),)."""
     if isinstance(p, tuple):
         return p
+    if isinstance(p, list):
+        return tuple(p)
     s = p if isinstance(p, str) else str(p)
     return () if s == "" else (s,)
 

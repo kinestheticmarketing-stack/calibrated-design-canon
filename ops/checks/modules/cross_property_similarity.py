@@ -154,7 +154,10 @@ def check(ctx):
     if not peer.is_dir():
         raise ValueError("CONFIG ERROR: peer_public %r resolves to %s, which "
                          "is not an existing directory" % (raw, peer))
-    if o.get("all_peers"):
+    if not isinstance(o.get("all_peers"), bool):
+        raise ValueError("CONFIG ERROR: option all_peers must be true or false, "
+                         "got %r" % (o.get("all_peers"),))
+    if o["all_peers"]:
         return _check_all(ctx, pairs, strip, threshold, n, raw, peer)
     findings = []
     for local, control, label in pairs:

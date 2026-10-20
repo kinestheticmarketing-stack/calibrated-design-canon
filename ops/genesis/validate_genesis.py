@@ -129,8 +129,9 @@ def _bad(errpaths, path):
 
 def _walk_strings(v, path=()):
     if not isinstance(path, tuple):
-        # accept a str / Path / other single segment: "" -> (), else (segment,)
-        path = () if path == "" else (path,)
+        # same normalization as validate_facts: list -> tuple, "" -> (),
+        # any other str / Path / value -> (str(segment),)
+        path = _vf._as_path_tuple(path)
     if isinstance(v, str):
         yield path, v
     elif isinstance(v, list):
