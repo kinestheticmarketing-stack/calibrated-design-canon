@@ -170,6 +170,16 @@ class TestK2LeadDestination(K56bBase):
                 for frag in {value, value.strip()} - {""}:
                     self.assertNotIn(frag, text)
 
+    def test_server_copy_regex_alone(self):
+        # isolates _SERVER_COPY_RE from the schema pattern and check 8
+        rx = VG._SERVER_COPY_RE
+        self.assertTrue(rx.match("server-copy:FCI:LEAD_TO"))
+        for bad in ("server-copy:fci:LEAD_TO", "server-copy:FCI:LEAD_TO\n",
+                    "server-copy:FCIX:LEAD_TO", "server-copy:FC:LEAD_TO",
+                    "server-copy:FCI:lead_to", " server-copy:FCI:LEAD_TO", ""):
+            with self.subTest(bad=bad):
+                self.assertIsNone(rx.match(bad))
+
     def test_mismatch_error_names_codes_only(self):
         self.set_ld("server-copy:ABC:LEAD_TO", code="FCI")
         errs = self.errors()
