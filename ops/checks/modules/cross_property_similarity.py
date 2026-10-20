@@ -14,11 +14,22 @@ Every site-specific value is read from the site by declared paths:
                     the MAIN checkout root (parent of git --git-common-dir),
                     so it works from a git worktree; absolute and canon:
                     values are used as given.
+  data.peer_publics OPTIONAL list of further peer public dirs, each resolved
+                    exactly like peer_public. Read only when the option
+                    all_peers is True.
   data.config       the site's .py check file (top-level literal assignments
                     PAIRS, STRIP_PATTERNS, THRESHOLD, SHINGLE_N, extracted with
                     ast.literal_eval; site code is never imported or executed)
                     or a JSON object with those keys.
 Assignment names are options, so a site with different names can map them.
+
+Option all_peers (default False):
+  False  only peer_public is compared; peer_publics is ignored and output is
+         exactly the single-peer form.
+  True   every pair is compared against peer_public and each peer_publics
+         entry (deduplicated by resolved path, order preserved; peer_publics
+         absent means peer_public only). Each CONTROL MISSING / Jaccard
+         finding names the peer (its manifest path string).
 """
 
 import ast
@@ -36,12 +47,17 @@ REQUIRES = {
                    "or relative: a relative path that stays inside the site's "
                    "checkout resolves within it; one that leaves it resolves "
                    "against the MAIN checkout root; read only",
+    "peer_publics": "OPTIONAL list of further peer public dirs, each resolved "
+                    "like peer_public; compared only when option all_peers "
+                    "is True",
     "config": "file holding PAIRS, STRIP_PATTERNS, THRESHOLD, SHINGLE_N: a .py "
               "file (literal top-level assignments, read with ast.literal_eval) "
               "or a JSON object with those keys",
 }
-LITERAL_KEYS = {"peer_public"}
+LITERAL_KEYS = {"peer_public", "peer_publics"}
+OPTIONAL_KEYS = {"peer_publics"}
 OPTIONS = {
+    "all_peers": False,
     "pairs_name": "PAIRS",
     "strip_name": "STRIP_PATTERNS",
     "threshold_name": "THRESHOLD",
@@ -55,13 +71,13 @@ def _git(root, *args):
     return r.stdout.strip() if r.returncode == 0 and r.stdout.strip() else None
 
 
-def _resolve_peer(ctx, raw):
+def _resolve_peer(ctx, raw, key="peer_public"):
     """canon:/absolute via ctx.resolve. A relative path that stays inside the
     site's checkout resolves within it; one that leaves it resolves against
     the MAIN checkout root."""
     if not isinstance(raw, str) or not raw:
-        raise ValueError("CONFIG ERROR: peer_public must be a non-empty path "
-                         "string, got %r" % (raw,))
+        raise ValueError("CONFIG ERROR: %s must be a non-empty path "
+                         "string, got %r" % (key, raw))
     if raw.startswith("canon:") or Path(raw).expanduser().is_absolute():
         return ctx.resolve(raw)
     site = Path(ctx.site_root).resolve()
@@ -138,6 +154,11 @@ def check(ctx):
     if not peer.is_dir():
         raise ValueError("CONFIG ERROR: peer_public %r resolves to %s, which "
                          "is not an existing directory" % (raw, peer))
+    if not isinstance(o.get("all_peers"), bool):
+        raise ValueError("CONFIG ERROR: option all_peers must be true or false, "
+                         "got %r" % (o.get("all_peers"),))
+    if o["all_peers"]:
+        return _check_all(ctx, pairs, strip, threshold, n, raw, peer)
     findings = []
     for local, control, label in pairs:
         lp, cp = ctx.public_dir / local, peer / control
@@ -155,4 +176,44 @@ def check(ctx):
                 lp, "Jaccard %.4f >= %.2f vs peer %s (%s)"
                 % (score, threshold, control, label),
                 "%s vs %s: %.4f" % (local, control, score)))
+    return findings
+
+
+def _check_all(ctx, pairs, strip, threshold, n, raw, peer):
+    """all_peers path: peer_public plus every peer_publics entry."""
+    extra = ctx.data.get("peer_publics")
+    if extra is None:
+        extra = []
+    if not isinstance(extra, list):
+        raise ValueError("CONFIG ERROR: peer_publics must be a list of path "
+                         "strings, got %r" % (extra,))
+    peers, seen = [(raw, peer)], {peer}
+    for r in extra:
+        p = _resolve_peer(ctx, r, "peer_publics entry")
+        if not p.is_dir():
+            raise ValueError("CONFIG ERROR: peer_publics entry %r resolves to "
+                             "%s, which is not an existing directory" % (r, p))
+        if p not in seen:
+            seen.add(p)
+            peers.append((r, p))
+    findings = []
+    for local, control, label in pairs:
+        lp = ctx.public_dir / local
+        if not lp.is_file():
+            findings.append(ctx.finding(local, "LOCAL MISSING (%s)" % label, local))
+            continue
+        local_sh = _shingles(_text(lp, strip), n)
+        for pname, pdir in peers:
+            cp = pdir / control
+            if not cp.is_file():
+                findings.append(ctx.finding(local, "CONTROL MISSING (%s): peer "
+                                            "%s %s" % (label, pname, control),
+                                            control))
+                continue
+            score = _jaccard(local_sh, _shingles(_text(cp, strip), n))
+            if score >= threshold:
+                findings.append(ctx.finding(
+                    lp, "Jaccard %.4f >= %.2f vs peer %s %s (%s)"
+                    % (score, threshold, pname, control, label),
+                    "%s vs %s %s: %.4f" % (local, pname, control, score)))
     return findings

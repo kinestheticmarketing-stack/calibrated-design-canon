@@ -1989,3 +1989,8 @@ F16. Warn before a stricter instrument (2026-10-12). Before any check,
     - the option to run it on new properties only.
     He decides before it is built. If it surfaces findings anyway, the
     report opens with that explanation, unasked.
+F17. The Director never fetches or relays (2026-10-19). The Director
+    never fetches or relays content. Every hand-off to him is one copy
+    box he gives to a named destination. Anything the Architect needs
+    from a machine or a repo, it gets itself, or a kickoff makes
+    Claude Code print it in the Final Report.

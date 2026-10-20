@@ -49,8 +49,8 @@
       "$ref": "#/$defs/e164"
     },
     "lead_destination": {
-      "description": "Where form leads are delivered; the system routes each submitted lead here. Stored only in the private site repo (ops/intake.json), never in canon. Addresses and numbers only: no API key, token, password or SID.",
-      "type": "object",
+      "description": "Where form leads are delivered; the system routes each submitted lead here. Either the address object, stored only in the private site repo (ops/intake.json) and never in canon, or a server-copy reference string of the form server-copy:<PROPERTY_CODE>:LEAD_TO, meaning the actual destination lives only in the server copy and is never written here as a literal. Addresses and numbers only: no API key, token, password or SID.",
+      "type": ["object", "string"],
       "additionalProperties": false,
       "required": ["emails", "sms"],
       "properties": {
@@ -68,6 +68,11 @@
           "type": "array",
           "items": {"$ref": "#/$defs/e164"}
         }
+      },
+      "if": {"type": "string"},
+      "then": {
+        "description": "Server-copy reference: three-letter uppercase property code, then LEAD_TO. The destination itself lives only in the server copy, never as a literal value here. Wrapped in anyOf so a rejected string is never echoed in the error.",
+        "anyOf": [{"pattern": "^server-copy:[A-Z]{3}:LEAD_TO\\Z"}]
       }
     },
     "sibling_properties": {

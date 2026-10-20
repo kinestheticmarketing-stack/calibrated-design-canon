@@ -83,7 +83,7 @@
       "description": "One town: jurisdiction, code, climate and utility territory.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "county", "jurisdiction", "building_dept_url", "code_edition", "climate_zone", "elevation_ft", "gas_utility", "electric_utility", "territory_state", "facts_keys"],
+      "required": ["name", "county", "jurisdiction", "building_dept_url", "code_edition", "climate_zone", "elevation_ft", "gas_utility", "electric_utility", "facts_keys"],
       "properties": {
         "name": {"$ref": "#/$defs/nonempty"},
         "county": {"$ref": "#/$defs/nonempty"},
@@ -101,8 +101,18 @@
           "description": "NAMED: a source names the town's utilities; SPLIT: the town is split between territories; UNKNOWN: no source settles it.",
           "enum": ["NAMED", "SPLIT", "UNKNOWN"]
         },
+        "territory_states": {
+          "description": "Per-utility territory state, used instead of territory_state when electric and gas territory differ; a single territory_state is read as the same state for both keys. A town carries territory_state or territory_states.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["electric", "gas"],
+          "properties": {
+            "electric": {"enum": ["NAMED", "SPLIT", "UNKNOWN"]},
+            "gas": {"enum": ["NAMED", "SPLIT", "UNKNOWN"]}
+          }
+        },
         "absence_reason": {
-          "description": "Why territory is unsettled; required and non-empty when territory_state is UNKNOWN.",
+          "description": "Why territory is unsettled; required and non-empty when territory_state, territory_states.electric or territory_states.gas is UNKNOWN.",
           "type": ["string", "null"]
         },
         "facts_keys": {
@@ -111,11 +121,48 @@
           "minItems": 1,
           "uniqueItems": true,
           "items": {"$ref": "#/$defs/facts_key"}
+        },
+        "code_facts": {
+          "description": "Optional per-town overrides of the property-wide code_facts: a key present here replaces the root value for this town. No key is required.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "attic_r": {"$ref": "#/$defs/nonempty"},
+            "wall_r": {"$ref": "#/$defs/nonempty"},
+            "floor_r": {"$ref": "#/$defs/nonempty"},
+            "crawl_wall_r": {"$ref": "#/$defs/nonempty"},
+            "ci_condition": {
+              "description": "When continuous insulation is required.",
+              "type": "string",
+              "minLength": 1
+            },
+            "blower_door_ach": {
+              "description": "Maximum air changes per hour at 50 Pa.",
+              "type": "number"
+            },
+            "cfm50_rule": {
+              "description": "Air-leakage rule stated as CFM50.",
+              "type": "string"
+            },
+            "facts_keys": {"$ref": "#/$defs/facts_keys"}
+          }
         }
       },
+      "anyOf": [{"required": ["territory_state"]}, {"required": ["territory_states"]}],
       "if": {
-        "required": ["territory_state"],
-        "properties": {"territory_state": {"const": "UNKNOWN"}}
+        "anyOf": [
+          {
+            "required": ["territory_state"],
+            "properties": {"territory_state": {"const": "UNKNOWN"}}
+          },
+          {
+            "required": ["territory_states"],
+            "properties": {"territory_states": {"anyOf": [
+              {"type": "object", "required": ["electric"], "properties": {"electric": {"const": "UNKNOWN"}}},
+              {"type": "object", "required": ["gas"], "properties": {"gas": {"const": "UNKNOWN"}}}
+            ]}}
+          }
+        ]
       },
       "then": {
         "required": ["absence_reason"],
